@@ -4,6 +4,9 @@ from PyDrocsid.translations import t
 
 
 def visit_path(path: Path, prio: int = 0):
+    if path.name.startswith("."):
+        return
+
     if (p := path.joinpath("translations")).is_dir():
         t.register_namespace(path.name, p, prio=prio)
         return

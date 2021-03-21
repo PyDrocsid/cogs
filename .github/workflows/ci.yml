@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  - push
+  - pull_request
+
+env:
+  PYTHON_VERSION: 3.9
+
+jobs:
+  codestyle:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pipenv
+          pipenv sync --dev
+
+      - name: Check code formatting with black
+        run: pipenv run black --diff --check
+
+  linter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Lint with wemake-python-styleguide
+        uses: wemake-services/wemake-python-styleguide@0.15.2
+        with:
+          reporter: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && 'github-pr-review' || 'terminal' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
