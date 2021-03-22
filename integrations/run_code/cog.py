@@ -11,8 +11,8 @@ from PyDrocsid.material_colors import MaterialColors
 from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed
-from .api import Emkc, EmkcAPIException
 from cogs.library.contributor import Contributor
+from .api import Emkc, EmkcAPIException
 
 tg = t.g
 t = t.run_code
@@ -33,7 +33,7 @@ def supported_languages_docs(f):
     return f
 
 
-class RunCodeCog(Cog):
+class RunCodeCog(Cog, name="Run Code"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
     PERMISSIONS = BasePermission
 
