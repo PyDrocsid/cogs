@@ -12,15 +12,15 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.logger import get_logger
 from PyDrocsid.multilock import MultiLock
-from PyDrocsid.settings import Settings
+from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import get_prefix
 from PyDrocsid.util import send_long_embed, is_teamler
+from cogs.library.contributor import Contributor
+from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import DynamicVoiceChannel, DynamicVoiceGroup, RoleVoiceLink
 from .permissions import VoiceChannelPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
 
 tg = t.g
 t = t.voice_channel
@@ -185,7 +185,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             guild.default_role: PermissionOverwrite(read_messages=False, connect=False),
             guild.me: PermissionOverwrite(read_messages=True, connect=True),
         }
-        if (team_role := guild.get_role(await Settings.get(int, "team_role"))) is not None:
+        if (team_role := guild.get_role(await RoleSettings.get("team"))) is not None:
             overwrites[team_role] = PermissionOverwrite(read_messages=True, connect=True)
         text_chat: TextChannel = await category.create_text_channel(chan.name, overwrites=overwrites)
 

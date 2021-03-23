@@ -1,8 +1,8 @@
+import html
 from datetime import datetime
 from typing import Optional, List
 
 import requests
-import html
 from discord import Embed, TextChannel
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
@@ -11,13 +11,13 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.logger import get_logger
-from PyDrocsid.settings import Settings
 from PyDrocsid.translations import t
+from cogs.library.contributor import Contributor
+from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import RedditPost, RedditChannel
 from .permissions import RedditPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
+from .settings import RedditSettings
 
 tg = t.g
 t = t.reddit
@@ -90,7 +90,7 @@ class RedditCog(Cog, name="Reddit"):
     PERMISSIONS = RedditPermission
 
     async def on_ready(self):
-        interval = await Settings.get(int, "reddit_interval", 4)
+        interval = await RedditSettings.interval.get()
         await self.start_loop(interval)
 
     @tasks.loop()
@@ -99,7 +99,7 @@ class RedditCog(Cog, name="Reddit"):
 
     async def pull_hot_posts(self):
         logger.info("pulling hot reddit posts")
-        limit = await Settings.get(int, "reddit_limit", 4)
+        limit = await RedditSettings.limit.get()
         for reddit_channel in await db_thread(db.all, RedditChannel):  # type: RedditChannel
             text_channel: Optional[TextChannel] = self.bot.get_channel(reddit_channel.channel)
             if text_channel is None:
@@ -135,10 +135,10 @@ class RedditCog(Cog, name="Reddit"):
 
         embed = Embed(title=t.reddit, colour=Colors.Reddit)
 
-        interval = await Settings.get(int, "reddit_interval", 4)
+        interval = await RedditSettings.interval.get()
         embed.add_field(name=t.interval, value=t.x_hours(cnt=interval))
 
-        limit = await Settings.get(int, "reddit_limit", 4)
+        limit = await RedditSettings.limit.get()
         embed.add_field(name=t.limit, value=str(limit))
 
         out = []
@@ -203,7 +203,7 @@ class RedditCog(Cog, name="Reddit"):
         if not 0 < hours < (1 << 31):
             raise CommandError(tg.invalid_interval)
 
-        await Settings.set(int, "reddit_interval", hours)
+        await RedditSettings.interval.set(hours)
         await self.start_loop(hours)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_interval_set)
         await ctx.send(embed=embed)
@@ -218,7 +218,7 @@ class RedditCog(Cog, name="Reddit"):
         if not 0 < limit < (1 << 31):
             raise CommandError(t.invalid_limit)
 
-        await Settings.set(int, "reddit_limit", limit)
+        await RedditSettings.limit.set(limit)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_limit_set)
         await ctx.send(embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_limit_set(limit))
@@ -229,6 +229,6 @@ class RedditCog(Cog, name="Reddit"):
         pull hot posts now and reset the timer
         """
 
-        await self.start_loop(await Settings.get(int, "reddit_interval", 4))
+        await self.start_loop(await RedditSettings.interval.get())
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.done)
         await ctx.send(embed=embed)

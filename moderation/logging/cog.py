@@ -7,14 +7,14 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread
-from PyDrocsid.settings import Settings
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, send_long_embed
+from cogs.library.contributor import Contributor
+from cogs.library.pubsub import send_to_changelog, send_alert
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog, send_alert
+from .settings import LoggingSettings
 
 tg = t.g
 t = t.logging
@@ -39,39 +39,40 @@ def add_field(embed: Embed, name: str, text: str):
         first = False
 
 
+async def send_to_channel(guild: Guild, setting: LoggingSettings, message: Union[str, Embed]):
+    channel: Optional[TextChannel] = guild.get_channel(await setting.get())
+    if not channel:
+        return
+
+    if isinstance(message, str):
+        embed = Embed(colour=Colors.changelog, description=message)
+    else:
+        embed = message
+    await channel.send(embed=embed)
+
+
+async def is_logging_channel(channel: TextChannel) -> bool:
+    for setting in [LoggingSettings.edit_channel, LoggingSettings.delete_channel]:
+        if channel.id == await setting.get():
+            return True
+
+    return False
+
+
 class LoggingCog(Cog, name="Logging"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
     PERMISSIONS = LoggingPermission
 
-    async def get_logging_channel(self, event: str) -> Optional[TextChannel]:
-        return self.bot.get_channel(await Settings.get(int, "logging_" + event, -1))
-
-    async def is_logging_channel(self, channel: TextChannel) -> bool:
-        return channel.id in [(await self.get_logging_channel(event)).id for event in ["edit", "delete"]]
+    async def get_logging_channel(self, setting: LoggingSettings) -> Optional[TextChannel]:
+        return self.bot.get_channel(await setting.get())
 
     @send_to_changelog.subscribe
     async def handle_send_to_changelog(self, guild: Guild, message: Union[str, Embed]):
-        channel: Optional[TextChannel] = guild.get_channel(await Settings.get(int, "logging_changelog", -1))
-        if not channel:
-            return
-
-        if isinstance(message, str):
-            embed = Embed(colour=Colors.changelog, description=message)
-        else:
-            embed = message
-        await channel.send(embed=embed)
+        await send_to_channel(guild, LoggingSettings.changelog_channel, message)
 
     @send_alert.subscribe
     async def handle_send_alert(self, guild: Guild, message: Union[str, Embed]):
-        channel: Optional[TextChannel] = guild.get_channel(await Settings.get(int, "logging_alert", -1))
-        if not channel:
-            return
-
-        if isinstance(message, str):
-            embed = Embed(colour=Colors.changelog, description=message)
-        else:
-            embed = message
-        await channel.send(embed=embed)
+        await send_to_channel(guild, LoggingSettings.alert_channel, message)
 
     async def on_ready(self):
         try:
@@ -81,13 +82,13 @@ class LoggingCog(Cog, name="Logging"):
 
     @tasks.loop(minutes=30)
     async def cleanup_loop(self):
-        days: int = await Settings.get(int, "logging_maxage", -1)
+        days: int = await LoggingSettings.maxage.get()
         if days == -1:
             return
 
         timestamp = datetime.utcnow() - timedelta(days=days)
-        for event in ["edit", "delete"]:
-            channel: Optional[TextChannel] = await self.get_logging_channel(event)
+        for setting in [LoggingSettings.edit_channel, LoggingSettings.delete_channel]:
+            channel: Optional[TextChannel] = await self.get_logging_channel(setting)
             if channel is None:
                 continue
 
@@ -103,10 +104,10 @@ class LoggingCog(Cog, name="Logging"):
         if before.id in ignored_messages:
             ignored_messages.remove(before.id)
             return
-        mindiff: int = await Settings.get(int, "logging_edit_mindiff", 1)
+        mindiff: int = await LoggingSettings.edit_mindiff.get()
         if calculate_edit_distance(before.content, after.content) < mindiff:
             return
-        if (edit_channel := await self.get_logging_channel("edit")) is None:
+        if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
         if await db_thread(LogExclude.exists, after.channel.id):
             return
@@ -125,7 +126,7 @@ class LoggingCog(Cog, name="Logging"):
         if message.id in ignored_messages:
             ignored_messages.remove(message.id)
             return
-        if (edit_channel := await self.get_logging_channel("edit")) is None:
+        if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
         if await db_thread(LogExclude.exists, message.channel.id):
             return
@@ -144,9 +145,9 @@ class LoggingCog(Cog, name="Logging"):
         if message.id in ignored_messages:
             ignored_messages.remove(message.id)
             return
-        if (delete_channel := await self.get_logging_channel("delete")) is None:
+        if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
-        if await self.is_logging_channel(message.channel):
+        if await is_logging_channel(message.channel):
             return
         if await db_thread(LogExclude.exists, message.channel.id):
             return
@@ -173,7 +174,7 @@ class LoggingCog(Cog, name="Logging"):
         if event.message_id in ignored_messages:
             ignored_messages.remove(event.message_id)
             return
-        if (delete_channel := await self.get_logging_channel("delete")) is None:
+        if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
         if await db_thread(LogExclude.exists, event.channel_id):
             return
@@ -181,7 +182,7 @@ class LoggingCog(Cog, name="Logging"):
         embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=datetime.utcnow())
         channel: Optional[TextChannel] = self.bot.get_channel(event.channel_id)
         if channel is not None:
-            if await self.is_logging_channel(channel):
+            if await is_logging_channel(channel):
                 return
 
             embed.add_field(name=t.channel, value=channel.mention)
@@ -201,11 +202,11 @@ class LoggingCog(Cog, name="Logging"):
                 raise UserInputError
             return
 
-        edit_channel: Optional[TextChannel] = await self.get_logging_channel("edit")
-        delete_channel: Optional[TextChannel] = await self.get_logging_channel("delete")
-        alert_channel: Optional[TextChannel] = await self.get_logging_channel("alert")
-        changelog_channel: Optional[TextChannel] = await self.get_logging_channel("changelog")
-        maxage: int = await Settings.get(int, "logging_maxage", -1)
+        edit_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.edit_channel)
+        delete_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.delete_channel)
+        alert_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.alert_channel)
+        changelog_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.changelog_channel)
+        maxage: int = await LoggingSettings.maxage.get()
 
         embed = Embed(title=t.logging, color=Colors.Logging)
 
@@ -215,7 +216,7 @@ class LoggingCog(Cog, name="Logging"):
             embed.add_field(name=t.maxage, value=tg.disabled, inline=False)
 
         if edit_channel is not None:
-            mindiff: int = await Settings.get(int, "logging_edit_mindiff", 1)
+            mindiff: int = await LoggingSettings.edit_mindiff.get()
             embed.add_field(name=t.msg_edit, value=edit_channel.mention, inline=True)
             embed.add_field(name=t.mindiff, value=str(mindiff), inline=True)
         else:
@@ -248,7 +249,7 @@ class LoggingCog(Cog, name="Logging"):
         if days != -1 and not 0 < days < (1 << 31):
             raise CommandError(tg.invalid_duration)
 
-        await Settings.set(int, "logging_maxage", days)
+        await LoggingSettings.maxage.set(days)
         embed = Embed(title=t.logging, color=Colors.Logging)
         if days == -1:
             embed.description = t.maxage_set_disabled
@@ -277,7 +278,7 @@ class LoggingCog(Cog, name="Logging"):
         if mindist <= 0:
             raise CommandError(t.min_diff_gt_zero)
 
-        await Settings.set(int, "logging_edit_mindiff", mindist)
+        await LoggingSettings.edit_mindiff.set(mindist)
         embed = Embed(title=t.logging, description=t.edit_mindiff_updated(mindist), color=Colors.Logging)
         await ctx.send(embed=embed)
         await send_to_changelog(ctx.guild, t.log_mindiff_updated(mindist))
@@ -291,7 +292,7 @@ class LoggingCog(Cog, name="Logging"):
         if not channel.permissions_for(channel.guild.me).send_messages:
             raise CommandError(t.log_not_changed_no_permissions)
 
-        await Settings.set(int, "logging_edit", channel.id)
+        await LoggingSettings.edit_channel.set(channel.id)
         embed = Embed(
             title=t.logging,
             description=t.log_edit_updated(channel.mention),
@@ -306,7 +307,7 @@ class LoggingCog(Cog, name="Logging"):
         disable edit event logging
         """
 
-        await Settings.set(int, "logging_edit", -1)
+        await LoggingSettings.edit_channel.reset()
         embed = Embed(title=t.logging, description=t.log_edit_disabled, color=Colors.Logging)
         await ctx.send(embed=embed)
         await send_to_changelog(ctx.guild, t.log_edit_disabled)
@@ -329,7 +330,7 @@ class LoggingCog(Cog, name="Logging"):
         if not channel.permissions_for(channel.guild.me).send_messages:
             raise CommandError(t.log_not_changed_no_permissions)
 
-        await Settings.set(int, "logging_delete", channel.id)
+        await LoggingSettings.delete_channel.set(channel.id)
         embed = Embed(
             title=t.logging,
             description=t.log_delete_updated(channel.mention),
@@ -344,7 +345,7 @@ class LoggingCog(Cog, name="Logging"):
         disable delete event logging
         """
 
-        await Settings.set(int, "logging_delete", -1)
+        await LoggingSettings.delete_channel.reset()
         embed = Embed(title=t.logging, description=t.log_delete_disabled, color=Colors.Logging)
         await ctx.send(embed=embed)
         await send_to_changelog(ctx.guild, t.log_delete_disabled)
@@ -367,7 +368,7 @@ class LoggingCog(Cog, name="Logging"):
         if not channel.permissions_for(channel.guild.me).send_messages:
             raise CommandError(t.log_not_changed_no_permissions)
 
-        await Settings.set(int, "logging_alert", channel.id)
+        await LoggingSettings.alert_channel.set(channel.id)
         embed = Embed(
             title=t.logging,
             description=t.log_alert_updated(channel.mention),
@@ -383,7 +384,7 @@ class LoggingCog(Cog, name="Logging"):
         """
 
         await send_to_changelog(ctx.guild, t.log_alert_disabled)
-        await Settings.set(int, "logging_alert", -1)
+        await LoggingSettings.alert_channel.reset()
         embed = Embed(title=t.logging, description=t.log_alert_disabled, color=Colors.Logging)
         await ctx.send(embed=embed)
 
@@ -405,7 +406,7 @@ class LoggingCog(Cog, name="Logging"):
         if not channel.permissions_for(channel.guild.me).send_messages:
             raise CommandError(t.log_not_changed_no_permissions)
 
-        await Settings.set(int, "logging_changelog", channel.id)
+        await LoggingSettings.changelog_channel.set(channel.id)
         embed = Embed(
             title=t.logging,
             description=t.log_changelog_updated(channel.mention),
@@ -421,7 +422,7 @@ class LoggingCog(Cog, name="Logging"):
         """
 
         await send_to_changelog(ctx.guild, t.log_changelog_disabled)
-        await Settings.set(int, "logging_changelog", -1)
+        await LoggingSettings.changelog_channel.reset()
         embed = Embed(title=t.logging, description=t.log_changelog_disabled, color=Colors.Logging)
         await ctx.send(embed=embed)
 

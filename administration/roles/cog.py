@@ -8,13 +8,13 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor, Config
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.emojis import name_to_emoji
-from PyDrocsid.settings import Settings
+from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed
+from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import RoleAuth
 from .permissions import RolesPermission
-from cogs.library.pubsub import send_to_changelog
 
 tg = t.g
 t = t.roles
@@ -26,7 +26,7 @@ async def configure_role(ctx: Context, role_name: str, role: Role, check_assigna
             raise CommandError(t.role_not_set_too_high(role, ctx.me.top_role))
         if role.managed:
             raise CommandError(t.role_not_set_managed_role(role))
-    await Settings.set(int, role_name + "_role", role.id)
+    await RoleSettings.set(role_name, role.id)
     await ctx.send(t.role_set)
     await send_to_changelog(
         ctx.guild,
@@ -67,7 +67,7 @@ class RolesCog(Cog, name="Roles"):
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
-    @roles.group(name="config", aliases=["conf", "set", "s"])
+    @roles.group(name="config", aliases=["conf", "c", "set", "s"])
     @RolesPermission.config.check
     async def roles_config(self, ctx: Context):
         """
@@ -81,7 +81,7 @@ class RolesCog(Cog, name="Roles"):
 
         embed = Embed(title=t.roles, color=Colors.Roles)
         for name, (title, _) in Config.ROLES.items():
-            role = ctx.guild.get_role(await Settings.get(int, name + "_role"))
+            role = ctx.guild.get_role(await RoleSettings.get(name))
             val = role.mention if role is not None else t.role_not_set
             embed.add_field(name=title, value=val, inline=True)
         await ctx.send(embed=embed)

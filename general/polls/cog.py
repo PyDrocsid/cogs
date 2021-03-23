@@ -10,12 +10,12 @@ from discord.ext.commands import Context, guild_only, CommandError
 from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji, emoji_to_name
 from PyDrocsid.events import StopEventHandling
-from PyDrocsid.settings import Settings
+from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler, check_wastebasket
+from cogs.library.contributor import Contributor
 from .colors import Colors
 from .permissions import PollsPermission
-from cogs.library.contributor import Contributor
 
 tg = t.g
 t = t.polls
@@ -72,7 +72,7 @@ class PollsCog(Cog, name="Polls"):
     async def get_reacted_teamlers(self, message: Optional[Message] = None) -> str:
         guild: Guild = self.bot.guilds[0]
 
-        if (team_role := guild.get_role(await Settings.get(int, "team_role"))) is None:
+        if (team_role := guild.get_role(await RoleSettings.get("team"))) is None:
             return t.team_role_not_set
 
         teamlers = {member for member in team_role.members if not member.bot}

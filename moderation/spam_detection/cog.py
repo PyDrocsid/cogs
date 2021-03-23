@@ -4,22 +4,14 @@ from discord.ext.commands import Context, guild_only, UserInputError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor
-from PyDrocsid.settings import Settings
 from PyDrocsid.translations import t
 from cogs.library.moderation.spam_detection.colors import Colors
 from cogs.library.moderation.spam_detection.permissions import SpamDetectionPermission
+from cogs.library.moderation.spam_detection.settings import SpamDetectionSettings
 from cogs.library.pubsub import send_to_changelog, send_alert
 
 tg = t.g
 t = t.spam_detection
-
-
-async def get_max_hops() -> int:
-    """
-    Retrieves the channel hops per minute in order for a message to appear
-    """
-
-    return await Settings.get(int, "spam_detection_max_hops", 5)
 
 
 class SpamDetectionCog(Cog, name="Spam Detection"):
@@ -44,7 +36,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
             return
 
         hops: int = self.user_hops.setdefault(member.id, 0) + 1
-        max_hops: int = await get_max_hops()
+        max_hops: int = await SpamDetectionSettings.max_hops.get()
 
         if max_hops <= 0 or self.user_hops[member.id] < max_hops:
             self.user_hops[member.id] = hops
@@ -82,7 +74,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
 
         embed = Embed(title=t.spam_detection, color=Colors.SpamDetection)
 
-        if (max_hops := await get_max_hops()) <= 0:
+        if (max_hops := await SpamDetectionSettings.max_hops.get()) <= 0:
             embed.add_field(name=t.channel_hopping, value=tg.disabled)
         else:
             embed.add_field(name=t.channel_hopping, value=t.max_x_hops(cnt=max_hops))
@@ -96,7 +88,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         set this to 0 to disable channel hopping alerts
         """
 
-        await Settings.set(int, "spam_detection_max_hops", amount)
+        await SpamDetectionSettings.max_hops.set(amount)
         embed = Embed(
             title=t.channel_hopping,
             description=t.hop_amount_set(amount) if amount > 0 else t.hop_detection_disabled,

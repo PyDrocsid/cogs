@@ -10,7 +10,7 @@ from discord.utils import snowflake_time
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.emojis import name_to_emoji
-from PyDrocsid.settings import Settings
+from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import get_prefix
 from PyDrocsid.util import is_teamler, send_long_embed
@@ -38,7 +38,7 @@ class DurationConverter(Converter):
 
 
 async def get_mute_role(guild: Guild) -> Role:
-    mute_role: Optional[Role] = guild.get_role(await Settings.get(int, "mute_role"))
+    mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
     if mute_role is None:
         raise CommandError(t.mute_role_not_set)
     return mute_role
@@ -95,7 +95,7 @@ class ModCog(Cog, name="Mod Tools"):
 
     async def on_ready(self):
         guild: Guild = self.bot.guilds[0]
-        mute_role: Optional[Role] = guild.get_role(await Settings.get(int, "mute_role"))
+        mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
         if mute_role is not None:
             for mute in await db_thread(db.all, Mute, active=True):
                 member: Optional[Member] = guild.get_member(mute.member)
@@ -129,7 +129,7 @@ class ModCog(Cog, name="Mod Tools"):
                     t.log_unbanned_expired,
                 )
 
-        mute_role: Optional[Role] = guild.get_role(await Settings.get(int, "mute_role"))
+        mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
             return
 
@@ -156,7 +156,7 @@ class ModCog(Cog, name="Mod Tools"):
 
     async def on_member_join(self, member: Member):
         await db_thread(Join.create, member.id, str(member))
-        mute_role: Optional[Role] = member.guild.get_role(await Settings.get(int, "mute_role"))
+        mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
             return
 

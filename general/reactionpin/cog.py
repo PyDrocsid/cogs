@@ -8,14 +8,15 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
-from PyDrocsid.settings import Settings
+from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import make_error
+from cogs.library.contributor import Contributor
+from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import ReactionPinChannel
 from .permissions import ReactionPinPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
+from .settings import ReactionPinSettings
 
 tg = t.g
 t = t.reactionpin
@@ -35,7 +36,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         if not (await db_thread(db.get, ReactionPinChannel, message.channel.id) is not None or access):
             return
 
-        blocked_role = await Settings.get(int, "mute_role", None)
+        blocked_role = await RoleSettings.get("mute")
         if access or (member == message.author and all(r.id != blocked_role for r in member.roles)):
             if message.type != MessageType.default:
                 await message.remove_reaction(emoji, member)
@@ -70,7 +71,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         if message.guild is None:
             return
 
-        pin_messages_enabled = await Settings.get(bool, "reactionpin_pin_message", True)
+        pin_messages_enabled = await ReactionPinSettings.keep_pin_message.get()
         if not pin_messages_enabled and message.type == MessageType.pins_add:
             await message.delete()
             raise StopEventHandling
@@ -90,7 +91,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
 
         embed = Embed(title=t.reactionpin, colour=Colors.ReactionPin)
 
-        if await Settings.get(bool, "reactionpin_pin_message", True):
+        if await ReactionPinSettings.keep_pin_message.get():
             embed.add_field(name=t.pin_messages, value=tg.enabled, inline=False)
         else:
             embed.add_field(name=t.pin_messages, value=tg.disabled, inline=False)
@@ -145,7 +146,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         """
 
         embed = Embed(title=t.reactionpin, colour=Colors.ReactionPin)
-        await Settings.set(bool, "reactionpin_pin_message", enabled)
+        await ReactionPinSettings.keep_pin_message.set(enabled)
         if enabled:
             embed.description = t.pin_messages_now_enabled
             await send_to_changelog(ctx.guild, t.log_pin_messages_now_enabled)

@@ -12,7 +12,6 @@ from discord.ext.commands import Context, UserInputError, CommandError, guild_on
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.emojis import name_to_emoji
-from PyDrocsid.settings import Settings
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed
 from .colors import Colors
@@ -20,6 +19,7 @@ from .models import AOCLink
 from .permissions import AdventOfCodePermission
 from cogs.library.contributor import Contributor
 from cogs.library.pubsub import send_to_changelog
+from .settings import AdventOfCodeSettings
 
 tg = t.g
 t = t.adventofcode
@@ -205,10 +205,10 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
     async def update_roles(self, leaderboard: dict):
         guild: Guild = self.bot.guilds[0]
-        role: Optional[Role] = guild.get_role(await Settings.get(int, "aoc_role", -1))
+        role: Optional[Role] = guild.get_role(await AdventOfCodeSettings.role.get())
         if not role:
             return
-        rank: int = await Settings.get(int, "aoc_rank", 10)
+        rank: int = await AdventOfCodeSettings.rank.get()
 
         new_members: set[Member] = set()
         for member in list(leaderboard["members"].values())[:rank]:
@@ -317,7 +317,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             aoc_member["rank"] % 10 * (aoc_member["rank"] // 10 % 10 != 1),
             "th",
         )
-        if aoc_member["rank"] <= await Settings.get(int, "aoc_rank", 10):
+        if aoc_member["rank"] <= await AdventOfCodeSettings.rank.get():
             rank = f"**{rank}**"
             trophy = "medal"
         if aoc_member["rank"] <= 3:
@@ -447,10 +447,10 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
                 raise UserInputError
             return
 
-        embed = Embed(title=t.aoc_role)
+        embed = Embed(title=t.role)
 
-        role: Optional[Role] = ctx.guild.get_role(await Settings.get(int, "aoc_role", -1))
-        rank: int = await Settings.get(int, "aoc_rank", 10)
+        role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get())
+        rank: int = await AdventOfCodeSettings.rank.get()
 
         if not role:
             embed.colour = Colors.error
@@ -471,9 +471,9 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         configure aoc role
         """
 
-        old_role: Optional[Role] = ctx.guild.get_role(await Settings.get(int, "aoc_role", -1))
+        old_role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get())
 
-        await Settings.set(int, "aoc_role", role.id)
+        await AdventOfCodeSettings.role.set(role.id)
 
         if old_role:
             for member in old_role.members:
@@ -489,9 +489,9 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         disable aoc role
         """
 
-        role: Optional[Role] = ctx.guild.get_role(await Settings.get(int, "aoc_role", -1))
+        role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get())
 
-        await Settings.set(int, "aoc_role", -1)
+        await AdventOfCodeSettings.role.reset()
 
         if role:
             for member in role.members:
@@ -509,7 +509,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         if not 1 <= rank <= 200:
             raise CommandError(t.invalid_rank)
 
-        await Settings.set(int, "aoc_rank", rank)
+        await AdventOfCodeSettings.rank.set(rank)
         await self.update_roles(await AOCConfig.get_leaderboard(disable_hook=True))
 
         await ctx.send(t.rank_set)
