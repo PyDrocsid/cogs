@@ -11,7 +11,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed
+from PyDrocsid.util import send_long_embed, reply
 from .colors import Colors
 from .models import MediaOnlyChannel
 from .permissions import MediaOnlyPermission
@@ -86,7 +86,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
             await send_long_embed(ctx, embed)
         else:
             embed.description = t.no_media_only_channels
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
 
     @mediaonly.command(name="add", aliases=["a", "+"])
     async def mediaonly_add(self, ctx: Context, channel: TextChannel):
@@ -105,7 +105,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
             description=t.channel_now_media_only,
             colour=Colors.MediaOnly,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_now_media_only(channel.mention))
 
     @mediaonly.command(name="remove", aliases=["del", "r", "d", "-"])
@@ -123,5 +123,5 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
             description=t.channel_not_media_only_anymore,
             colour=Colors.MediaOnly,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_not_media_only_anymore(channel.mention))

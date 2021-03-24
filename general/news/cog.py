@@ -7,7 +7,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, read_normal_message, attachment_to_file, Color
+from PyDrocsid.util import send_long_embed, read_normal_message, attachment_to_file, Color, reply
 from .colors import Colors
 from .models import NewsAuthorization
 from .permissions import NewsPermission
@@ -87,7 +87,7 @@ class NewsCog(Cog, name="News"):
 
         await db_thread(NewsAuthorization.create, user.id, channel.id, role_id)
         embed = Embed(title=t.news, colour=Colors.News, description=t.news_authorized)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_news_authorized(user.mention, channel.mention))
 
     @news_auth.command(name="remove", aliases=["del", "r", "d", "-"])
@@ -107,7 +107,7 @@ class NewsCog(Cog, name="News"):
 
         await db_thread(db.delete, authorization)
         embed = Embed(title=t.news, colour=Colors.News, description=t.news_unauthorized)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_news_unauthorized(user.mention, channel.mention))
 
     @news.command(name="send", aliases=["s"])
@@ -138,7 +138,7 @@ class NewsCog(Cog, name="News"):
         embed = Embed(title=t.news, colour=Colors.News, description="")
         if not message and not ctx.message.attachments:
             embed.description = t.send_message
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             message, files = await read_normal_message(self.bot, ctx.channel, ctx.author)
         else:
             files = [await attachment_to_file(attachment) for attachment in ctx.message.attachments]
@@ -163,4 +163,4 @@ class NewsCog(Cog, name="News"):
             raise CommandError(t.msg_could_not_be_sent)
         else:
             embed.description = t.msg_sent
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)

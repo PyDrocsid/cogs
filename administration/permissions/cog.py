@@ -9,7 +9,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
 from PyDrocsid.permission import BasePermissionLevel
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed
+from PyDrocsid.util import send_long_embed, reply
 from .colors import Colors
 from .permissions import PermissionsPermission
 from cogs.library.contributor import Contributor
@@ -112,5 +112,5 @@ class PermissionsCog(Cog, name="Permissions"):
             colour=Colors.Permissions,
             description=t.permission_set(*description),
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_permission_set(*description))

@@ -6,7 +6,7 @@ from discord.ext.commands import guild_only, Context, CommandError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.translations import t
-from PyDrocsid.util import set_prefix
+from PyDrocsid.util import set_prefix, reply
 from .colors import Colors
 from .permissions import SettingsPermission
 from cogs.library.contributor import Contributor
@@ -37,5 +37,5 @@ class SettingsCog(Cog, name="Settings"):
 
         await set_prefix(new_prefix)
         embed = Embed(title=t.prefix, description=t.prefix_updated, colour=Colors.prefix)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_prefix_updated(new_prefix))

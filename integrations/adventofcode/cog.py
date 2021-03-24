@@ -13,7 +13,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed
+from PyDrocsid.util import send_long_embed, reply
 from .colors import Colors
 from .models import AOCLink
 from .permissions import AdventOfCodePermission
@@ -266,7 +266,8 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         request instructions on how to join the private leaderboard
         """
 
-        await ctx.send(
+        await reply(
+            ctx,
             embed=Embed(
                 title=t.join_title,
                 colour=Colors.AdventOfCode,
@@ -291,7 +292,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             ],
         )
 
-        await ctx.send(out)
+        await reply(ctx, out)
 
     @aoc.command(name="user")
     async def aoc_user(self, ctx: Context, *, user: Optional[Union[Member, str]]):
@@ -352,7 +353,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         embed.set_footer(text="Last Update:")
         embed.timestamp = datetime.utcfromtimestamp(AOCConfig.last_update)
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @aoc.command(name="clear_cache", aliases=["clear", "cc"])
     @AdventOfCodePermission.clear.check
@@ -414,7 +415,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             raise CommandError(t.link_already_exists)
 
         await db_thread(AOCLink.create, member.id, aoc_member["id"])
-        await ctx.send(t.link_created)
+        await reply(ctx, t.link_created)
 
     @aoc_link.command(name="remove", aliases=["r", "del", "d", "-"])
     async def aoc_link_remove(self, ctx: Context, *, member: Union[Member, str]):
@@ -432,7 +433,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             raise CommandError(t.link_not_found)
 
         await db_thread(db.delete, link)
-        await ctx.send(t.link_removed)
+        await reply(ctx, t.link_removed)
 
     @aoc.group(name="role", aliases=["r"])
     @AdventOfCodePermission.role.check
@@ -480,7 +481,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
                 await member.remove_roles(old_role)
         await self.update_roles(await AOCConfig.get_leaderboard(disable_hook=True))
 
-        await ctx.send(t.role_set)
+        await reply(ctx, t.role_set)
         await send_to_changelog(ctx.guild, t.log_role_set(role.name, role.id))
 
     @aoc_role.command(name="disable", aliases=["d", "off"])
@@ -497,7 +498,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             for member in role.members:
                 await member.remove_roles(role)
 
-        await ctx.send(t.role_disabled)
+        await reply(ctx, t.role_disabled)
         await send_to_changelog(ctx.guild, t.role_disabled)
 
     @aoc_role.command(name="rank", aliases=["r"])
@@ -512,7 +513,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await AdventOfCodeSettings.rank.set(rank)
         await self.update_roles(await AOCConfig.get_leaderboard(disable_hook=True))
 
-        await ctx.send(t.rank_set)
+        await reply(ctx, t.rank_set)
         await send_to_changelog(ctx.guild, t.log_rank_set(rank))
 
     @aoc.command(name="publish")
@@ -529,7 +530,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             raise CommandError(t.invalid_url)
 
         await db_thread(AOCLink.publish, ctx.author.id, url)
-        await ctx.send(t.published)
+        await reply(ctx, t.published)
 
     @aoc.command(name="unpublish")
     async def aoc_unpublish(self, ctx: Context):
@@ -544,7 +545,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             raise CommandError(t.not_published)
 
         await db_thread(AOCLink.unpublish, ctx.author.id)
-        await ctx.send(t.unpublished)
+        await reply(ctx, t.unpublished)
 
     @aoc.command(name="solutions", aliases=["repos"])
     async def aoc_solutions(self, ctx: Context):

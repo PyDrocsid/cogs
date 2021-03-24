@@ -10,7 +10,7 @@ from PyDrocsid.database import db_thread, db
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed
+from PyDrocsid.util import send_long_embed, reply
 from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import RoleAuth
@@ -27,7 +27,7 @@ async def configure_role(ctx: Context, role_name: str, role: Role, check_assigna
         if role.managed:
             raise CommandError(t.role_not_set_managed_role(role))
     await RoleSettings.set(role_name, role.id)
-    await ctx.send(t.role_set)
+    await reply(ctx, t.role_set)
     await send_to_changelog(
         ctx.guild,
         t.log_role_set(Config.ROLES[role_name][0], role.name, role.id),
@@ -84,7 +84,7 @@ class RolesCog(Cog, name="Roles"):
             role = ctx.guild.get_role(await RoleSettings.get(name))
             val = role.mention if role is not None else t.role_not_set
             embed.add_field(name=title, value=val, inline=True)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @roles.group(name="auth")
     @RolesPermission.auth.check
@@ -111,7 +111,7 @@ class RolesCog(Cog, name="Roles"):
         if not members and not roles:
             embed.description = t.no_role_auth
             embed.colour = Colors.error
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             return
 
         def make_field(auths: Dict[Union[Member, Role], List[Role]]) -> List[str]:
@@ -124,7 +124,7 @@ class RolesCog(Cog, name="Roles"):
             embed.add_field(name=t.role_auths, value="\n".join(make_field(roles)), inline=False)
         if members:
             embed.add_field(name=t.user_auths, value="\n".join(make_field(members)), inline=False)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @roles_auth.command(name="add", aliases=["a", "+"])
     async def roles_auth_add(self, ctx: Context, source: Union[Member, Role], target: Role):
@@ -136,7 +136,7 @@ class RolesCog(Cog, name="Roles"):
             raise CommandError(t.role_auth_already_exists)
 
         await db_thread(RoleAuth.add, source.id, target.id)
-        await ctx.send(t.role_auth_created)
+        await reply(ctx, t.role_auth_created)
         await send_to_changelog(ctx.guild, t.log_role_auth_created(source, target))
 
     @roles_auth.command(name="remove", aliases=["r", "del", "d", "-"])
@@ -149,7 +149,7 @@ class RolesCog(Cog, name="Roles"):
             raise CommandError(t.role_auth_not_found)
 
         await db_thread(RoleAuth.remove, source.id, target.id)
-        await ctx.send(t.role_auth_removed)
+        await reply(ctx, t.role_auth_removed)
         await send_to_changelog(ctx.guild, t.log_role_auth_removed(source, target))
 
     @roles.command(name="add", aliases=["a", "+"])

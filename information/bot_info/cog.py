@@ -8,7 +8,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
 from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, get_prefix
+from PyDrocsid.util import send_long_embed, get_prefix, reply
 from .colors import Colors
 from .permissions import InfoPermission
 from ...contributor import Contributor
@@ -122,7 +122,7 @@ class BotInfoCog(Cog, name="Bot Information"):
         )
         embed.set_author(name="GitHub", icon_url="https://github.com/fluidicon.png")
         embed.set_thumbnail(url=Config.REPO_ICON)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @commands.command()
     async def version(self, ctx: Context):
@@ -131,7 +131,7 @@ class BotInfoCog(Cog, name="Bot Information"):
         """
 
         embed = Embed(title=f"{Config.NAME} v{Config.VERSION}", colour=Colors.version)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @commands.command(aliases=["infos", "about"])
     async def info(self, ctx: Context):
@@ -173,4 +173,4 @@ class BotInfoCog(Cog, name="Bot Information"):
         )
 
     async def on_bot_ping(self, message: Message):
-        await message.channel.send(embed=await self.build_info_embed(False))
+        await reply(message, embed=await self.build_info_embed(False))

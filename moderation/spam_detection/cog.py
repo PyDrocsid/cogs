@@ -5,6 +5,7 @@ from discord.ext.commands import Context, guild_only, UserInputError
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor
 from PyDrocsid.translations import t
+from PyDrocsid.util import reply
 from cogs.library.moderation.spam_detection.colors import Colors
 from cogs.library.moderation.spam_detection.permissions import SpamDetectionPermission
 from cogs.library.moderation.spam_detection.settings import SpamDetectionSettings
@@ -79,7 +80,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         else:
             embed.add_field(name=t.channel_hopping, value=t.max_x_hops(cnt=max_hops))
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @spam_detection.command(name="hops", aliases=["h"])
     async def spam_detection_hops(self, ctx: Context, amount: int):
@@ -94,5 +95,5 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
             description=t.hop_amount_set(amount) if amount > 0 else t.hop_detection_disabled,
             colour=Colors.SpamDetection,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.hop_amount_set(amount) if amount > 0 else t.hop_detection_disabled)

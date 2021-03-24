@@ -14,7 +14,7 @@ from PyDrocsid.logger import get_logger
 from PyDrocsid.multilock import MultiLock
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import get_prefix
+from PyDrocsid.util import get_prefix, reply
 from PyDrocsid.util import send_long_embed, is_teamler
 from cogs.library.contributor import Contributor
 from cogs.library.pubsub import send_to_changelog
@@ -359,7 +359,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await db_thread(DynamicVoiceGroup.create, name, voice_channel.id, public)
         await voice_channel.edit(name=f"New {name}")
         embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.dyn_group_created)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_dyn_group_created(name))
 
     @voice_dynamic.command(name="remove", aliases=["del", "d", "r", "-"])
@@ -384,7 +384,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         await voice_channel.edit(name=group.name)
         embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.dyn_group_removed)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_dyn_group_removed(group.name))
 
     @voice.command(name="info")
@@ -420,7 +420,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         embed = Embed(
             title=t.voice_info,
             timestamp=channel.created_at,
-            colour=Colors.Voice[["private", "public"][group.public]],
+            colour=[Colors.private, Colors.public][group.public],
         )
         embed.set_footer(text=t.voice_create_date)
         embed.add_field(name=t.voice_name, value=channel.name)
@@ -444,7 +444,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             name += f" ({len(out)})"
         embed.add_field(name=name, value="\n".join(out), inline=False)
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @voice.command(name="close", aliases=["c"])
     async def voice_close(self, ctx: Context):
@@ -465,7 +465,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await self.update_dynamic_voice_group(group)
         if text_channel != ctx.channel:
             embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.private_voice_closed)
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
 
     @voice.command(name="invite", usage="<member> [members...]", aliases=["i", "add", "a", "+"])
     async def voice_invite(self, ctx: Context, members: Greedy[Member]):
@@ -512,7 +512,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                     colour=Colors.Voice,
                     description=t.user_added_to_private_voice_response,
                 )
-                await ctx.send(embed=embed)
+                await reply(ctx, embed=embed)
 
     @voice.command(name="remove", usage="<member> [members...]", aliases=["r", "kick", "k", "-"])
     async def voice_remove(self, ctx: Context, members: Greedy[Member]):
@@ -548,7 +548,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                     colour=Colors.Voice,
                     description=t.user_removed_from_private_voice_response,
                 )
-                await ctx.send(embed=embed)
+                await reply(ctx, embed=embed)
 
     @voice.command(name="owner", aliases=["o"])
     async def voice_owner(self, ctx: Context, member: Optional[Member]):
@@ -565,7 +565,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 colour=Colors.Voice,
                 description=t.owner_of_private_voice(f"<@{dyn_channel.owner}>"),
             )
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             return
 
         if member not in voice_channel.members:
@@ -587,7 +587,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 colour=Colors.Voice,
                 description=t.private_voice_owner_changed_response,
             )
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
 
     @voice.group(name="link", aliases=["l"])
     @VoiceChannelPermission.manage_link.check
@@ -656,7 +656,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             colour=Colors.Voice,
             description=t.link_created(channel, role.id),
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_link_created(channel, role))
 
     @voice_link.command(name="remove", aliases=["del", "r", "d", "-"])
@@ -681,5 +681,5 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                         await member.remove_roles(role)
 
         embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.link_deleted)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_link_deleted(channel, role))

@@ -12,7 +12,7 @@ from PyDrocsid.database import db_thread, db
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import get_prefix
+from PyDrocsid.util import get_prefix, reply
 from PyDrocsid.util import is_teamler, send_long_embed
 from .colors import Colors
 from .models import Join, Mute, Ban, Leave, UsernameUpdate, Report, Warn, Kick
@@ -187,7 +187,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         await db_thread(Report.create, member.id, str(member), ctx.author.id, reason)
         embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, member, reason)
 
     @commands.command()
@@ -216,7 +216,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
         await db_thread(Warn.create, member.id, str(member), ctx.author.id, reason)
-        await ctx.send(embed=server_embed)
+        await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, member, reason)
 
     async def get_user(self, guild: Guild, user: Union[Member, User, int]) -> Union[Member, User]:
@@ -302,7 +302,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
 
-        await ctx.send(embed=server_embed)
+        await reply(ctx, embed=server_embed)
 
     @commands.command()
     @ModPermission.mute.check
@@ -330,7 +330,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.not_muted)
 
         embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unmute, t.log_unmuted, user, reason)
 
     @commands.command()
@@ -371,7 +371,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         await member.kick(reason=reason)
 
-        await ctx.send(embed=server_embed)
+        await reply(ctx, embed=server_embed)
 
     @commands.command()
     @ModPermission.ban.check
@@ -457,7 +457,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         await ctx.guild.ban(user, delete_message_days=delete_days, reason=reason)
 
-        await ctx.send(embed=server_embed)
+        await reply(ctx, embed=server_embed)
 
     @commands.command()
     @ModPermission.ban.check
@@ -488,7 +488,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.not_banned)
 
         embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unban, t.log_unbanned, user, reason)
 
     async def get_stats_user(
@@ -567,7 +567,7 @@ class ModCog(Cog, name="Mod Tools"):
         embed.add_field(name=tg.status, value=status, inline=False)
 
         if arg_passed:
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
         else:
             try:
                 await ctx.author.send(embed=embed)
@@ -686,7 +686,7 @@ class ModCog(Cog, name="Mod Tools"):
             description=t.filling_join_log(cnt=len(guild.members)),
             color=Colors.ModTools,
         )
-        msg: Message = await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await db_thread(init)
-        embed.description += "\n\n" + t.join_log_filled
-        await msg.edit(embed=embed)
+        embed.description = t.join_log_filled
+        await reply(ctx, embed=embed)

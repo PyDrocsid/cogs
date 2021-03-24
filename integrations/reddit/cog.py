@@ -12,6 +12,7 @@ from PyDrocsid.config import Config
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
+from PyDrocsid.util import reply
 from cogs.library.contributor import Contributor
 from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
@@ -151,7 +152,7 @@ class RedditCog(Cog, name="Reddit"):
                 out.append(f":small_orange_diamond: [r/{sub}](https://reddit.com/r/{sub}) -> {text_channel.mention}")
         embed.add_field(name=t.reddit_links, value="\n".join(out) or t.no_reddit_links, inline=False)
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @reddit.command(name="add", aliases=["a", "+"])
     async def reddit_add(self, ctx: Context, subreddit: str, channel: TextChannel):
@@ -170,7 +171,7 @@ class RedditCog(Cog, name="Reddit"):
 
         await db_thread(RedditChannel.create, subreddit, channel.id)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_link_created)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_link_created(subreddit, channel.mention))
 
     @reddit.command(name="remove", aliases=["r", "del", "d", "-"])
@@ -191,7 +192,7 @@ class RedditCog(Cog, name="Reddit"):
 
         await db_thread(db.delete, link)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_link_removed)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_link_removed(subreddit, channel.mention))
 
     @reddit.command(name="interval", aliases=["int", "i"])
@@ -206,7 +207,7 @@ class RedditCog(Cog, name="Reddit"):
         await RedditSettings.interval.set(hours)
         await self.start_loop(hours)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_interval_set)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_interval_set(cnt=hours))
 
     @reddit.command(name="limit", aliases=["lim"])
@@ -220,7 +221,7 @@ class RedditCog(Cog, name="Reddit"):
 
         await RedditSettings.limit.set(limit)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_limit_set)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_limit_set(limit))
 
     @reddit.command(name="trigger", aliases=["t"])
@@ -231,4 +232,4 @@ class RedditCog(Cog, name="Reddit"):
 
         await self.start_loop(await RedditSettings.interval.get())
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.done)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)

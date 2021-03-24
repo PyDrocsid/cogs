@@ -9,7 +9,7 @@ from discord.ext.commands import Context, guild_only, CommandError, UserInputErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed
+from PyDrocsid.util import send_long_embed, reply
 from .api import CleverBot
 from .colors import Colors
 from .models import CleverBotChannel
@@ -50,7 +50,7 @@ class CleverBotCog(Cog, name="CleverBot"):
             if not response:
                 response = "..."
 
-            await message.channel.send(response)
+            await reply(message, response)
 
     @commands.group(aliases=["cb"])
     @guild_only()
@@ -97,7 +97,7 @@ class CleverBotCog(Cog, name="CleverBot"):
 
         await db_thread(CleverBotChannel.create, channel.id)
         embed = Embed(title=t.cleverbot, description=t.channel_whitelisted, colour=Colors.CleverBot)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_whitelisted(channel.mention))
 
     @cleverbot.command(name="remove", aliases=["del", "d", "-"])
@@ -115,7 +115,7 @@ class CleverBotCog(Cog, name="CleverBot"):
 
         await db_thread(db.delete, row)
         embed = Embed(title=t.cleverbot, description=t.channel_removed, colour=Colors.CleverBot)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_removed(channel.mention))
 
     @cleverbot.command(name="reset", aliases=["r"])
@@ -133,4 +133,4 @@ class CleverBotCog(Cog, name="CleverBot"):
                 self.states.pop(channel)
         else:
             embed.description = t.channel_not_whitelisted
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)

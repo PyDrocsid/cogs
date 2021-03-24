@@ -14,7 +14,7 @@ from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
-from PyDrocsid.util import get_prefix, send_long_embed
+from PyDrocsid.util import get_prefix, send_long_embed, reply
 from .colors import Colors
 from .models import InviteLog, AllowedInvite
 from .permissions import InvitesPermission
@@ -187,7 +187,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             await send_long_embed(ctx, embed)
         else:
             embed.description = t.no_server_allowed
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
 
     @invites.command(name="show", aliases=["info", "s", "i"])
     async def invites_show(self, ctx: Context, *, invite: AllowedServerConverter):
@@ -212,7 +212,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         embed.add_field(name=t.approver, value=f"<@{invite.approver}>")
         embed.add_field(name=t.date, value=f"{date.day:02}.{date.month:02}.{date.year:02}")
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @invites.command(name="add", aliases=["+", "a"])
     @InvitesPermission.manage.check
@@ -231,7 +231,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         await db_thread(AllowedInvite.create, guild.id, invite.code, guild.name, applicant.id, ctx.author.id)
         await db_thread(InviteLog.create, guild.id, guild.name, applicant.id, ctx.author.id, True)
         embed = Embed(title=t.invites, description=t.server_whitelisted, color=Colors.Invites)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_server_whitelisted(guild.name))
 
     @invites.command(name="update", aliases=["u"])
@@ -257,7 +257,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             description=t.invite_updated(guild.name),
             color=Colors.Invites,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_invite_updated(ctx.author.mention, guild.name))
 
     @invites.command(name="remove", aliases=["r", "del", "d", "-"])
@@ -271,5 +271,5 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         await db_thread(db.delete, server)
         await db_thread(InviteLog.create, server.guild_id, server.guild_name, server.applicant, ctx.author.id, False)
         embed = Embed(title=t.invites, description=t.server_removed, color=Colors.Invites)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_server_removed(server.guild_name))

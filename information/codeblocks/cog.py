@@ -4,6 +4,7 @@ from discord.ext import commands
 from PyDrocsid.cog import Cog
 from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
+from PyDrocsid.util import reply
 from .colors import Colors
 from cogs.library.contributor import Contributor
 
@@ -16,7 +17,8 @@ class CodeblocksCog(Cog, name="Codeblocks command"):
 
     @commands.command(name="codeblocks", aliases=["codeblock", "code", "c"])
     async def codeblocks(self, ctx):
-        await ctx.send(
+        await reply(
+            ctx,
             embed=Embed(
                 title=t.title,
                 description=t.description,

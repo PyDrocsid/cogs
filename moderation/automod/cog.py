@@ -8,6 +8,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.translations import t
+from PyDrocsid.util import reply
 from cogs.library.contributor import Contributor
 from cogs.library.pubsub import send_to_changelog, log_auto_kick
 from .colors import Colors
@@ -132,7 +133,7 @@ class AutoModCog(Cog, name="AutoMod"):
         role: Optional[Role] = await self.get_autokick_role()
         if mode == AutoKickMode.off or role is None:
             embed.add_field(name=tg.status, value=t.autokick_disabled, inline=False)
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             return
 
         embed.add_field(name=tg.status, value=t.autokick_mode[mode - 1], inline=False)
@@ -141,7 +142,7 @@ class AutoModCog(Cog, name="AutoMod"):
         embed.add_field(name=tg.delay, value=t.x_seconds(cnt=delay), inline=False)
         embed.add_field(name=tg.role, value=role.mention, inline=False)
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @autokick.command(name="mode", aliases=["m"])
     async def autokick_mode(self, ctx: Context, mode: str):
@@ -153,13 +154,14 @@ class AutoModCog(Cog, name="AutoMod"):
         `reverse` - kick members with a specific role
         """
 
-        mode: Optional[int] = {"off": 0, "normal": 1, "reverse": 2}.get(mode.lower())
-        if mode is None:
+        mode: str = mode.lower()
+        if not hasattr(AutoKickMode, mode):
             raise UserInputError
 
+        mode: int = getattr(AutoKickMode, mode)
         await AutoModSettings.autokick_mode.set(mode)
         embed = Embed(title=t.autokick, description=t.autokick_mode_configured[mode], colour=Colors.AutoMod)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.autokick_mode_configured[mode])
 
     @autokick.command(name="delay", aliases=["d"])
@@ -173,7 +175,7 @@ class AutoModCog(Cog, name="AutoMod"):
 
         await AutoModSettings.autokick_delay.set(seconds)
         embed = Embed(title=t.autokick, description=t.autokick_delay_configured, colour=Colors.AutoMod)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_autokick_delay_configured(cnt=seconds))
 
     @autokick.command(name="role", aliases=["r"])
@@ -184,7 +186,7 @@ class AutoModCog(Cog, name="AutoMod"):
 
         await AutoModSettings.autokick_role.set(role.id)
         embed = Embed(title=t.autokick, description=t.autokick_role_configured, colour=Colors.AutoMod)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_autokick_role_configured(role.mention, role.id))
 
     @commands.group(aliases=["ik"])
@@ -204,14 +206,14 @@ class AutoModCog(Cog, name="AutoMod"):
         role: Optional[Role] = await self.get_instantkick_role()
         if role is None:
             embed.add_field(name=tg.status, value=t.instantkick_disabled)
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             return
 
         embed.add_field(name=tg.status, value=t.instantkick_enabled, inline=False)
         embed.colour = Colors.AutoMod
         embed.add_field(name=tg.role, value=role.mention, inline=False)
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @instantkick.command(name="disable", aliases=["d", "off"])
     async def instantkick_disable(self, ctx: Context):
@@ -221,7 +223,7 @@ class AutoModCog(Cog, name="AutoMod"):
 
         await AutoModSettings.instantkick_role.reset()
         embed = Embed(title=t.instantkick, description=t.instantkick_set_disabled, colour=Colors.AutoMod)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.instantkick_set_disabled)
 
     @instantkick.command(name="role", aliases=["r"])
@@ -235,5 +237,5 @@ class AutoModCog(Cog, name="AutoMod"):
 
         await AutoModSettings.instantkick_role.set(role.id)
         embed = Embed(title=t.instantkick, description=t.instantkick_role_configured, colour=Colors.AutoMod)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_instantkick_role_configured(role.mention, role.id))

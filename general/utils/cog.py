@@ -8,9 +8,9 @@ from discord.utils import snowflake_time
 from PyDrocsid.cog import Cog
 from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
-from PyDrocsid.util import measure_latency
-from .colors import Colors
+from PyDrocsid.util import measure_latency, reply
 from cogs.library.contributor import Contributor
+from .colors import Colors
 
 tg = t.g
 t = t.utils
@@ -30,7 +30,7 @@ class UtilsCog(Cog, name="Utils"):
         embed = Embed(title=t.pong, colour=Colors.ping)
         if latency is not None:
             embed.description = t.pong_latency(latency * 1000)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @commands.command(aliases=["sf", "time"])
     async def snowflake(self, ctx: Context, arg: int):
@@ -38,4 +38,4 @@ class UtilsCog(Cog, name="Utils"):
         display snowflake timestamp
         """
 
-        await ctx.send(snowflake_time(arg).strftime("%d.%m.%Y %H:%M:%S"))
+        await reply(ctx, snowflake_time(arg).strftime("%d.%m.%Y %H:%M:%S"))

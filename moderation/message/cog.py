@@ -7,7 +7,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.translations import t
-from PyDrocsid.util import Color
+from PyDrocsid.util import Color, reply
 from PyDrocsid.util import read_normal_message, read_complete_message
 from .colors import Colors
 from .permissions import MessagePermission
@@ -55,7 +55,7 @@ class MessageCog(Cog, name="Message Commands"):
             colour=Colors.MessageCommands,
             description=t.send_message(t.cancel),
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         content, files = await self.get_message_cancel(ctx.channel, ctx.author)
 
         if content is None:
@@ -67,7 +67,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.msg_could_not_be_sent)
         else:
             embed.description = t.msg_sent
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
 
     @send.command(name="embed", aliases=["e"])
     async def send_embed(self, ctx: Context, channel: TextChannel, color: Optional[Color] = None):
@@ -86,7 +86,7 @@ class MessageCog(Cog, name="Message Commands"):
             colour=Colors.MessageCommands,
             description=t.send_embed_title(t.cancel),
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         title, _ = await self.get_message_cancel(ctx.channel, ctx.author)
         if title is None:
             return
@@ -94,7 +94,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.title_too_long)
 
         embed.description = t.send_embed_content(t.cancel)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         content, files = await self.get_message_cancel(ctx.channel, ctx.author)
 
         if content is None:
@@ -114,7 +114,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.msg_could_not_be_sent)
         else:
             embed.description = t.msg_sent
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
 
     @send.command(name="copy", aliases=["c"])
     async def send_copy(self, ctx: Context, channel: TextChannel, message: Message):
@@ -129,7 +129,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.msg_could_not_be_sent)
         else:
             embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.msg_sent)
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
 
     @commands.group()
     @MessagePermission.edit.check
@@ -156,7 +156,7 @@ class MessageCog(Cog, name="Message Commands"):
             colour=Colors.MessageCommands,
             description=t.send_new_message(t.cancel),
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         content, files = await self.get_message_cancel(ctx.channel, ctx.author)
 
         if content is None:
@@ -167,7 +167,7 @@ class MessageCog(Cog, name="Message Commands"):
 
         await message.edit(content=content, embed=None)
         embed.description = t.msg_edited
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @edit.command(name="embed", aliases=["e"])
     async def edit_embed(self, ctx: Context, message: Message, color: Optional[Color] = None):
@@ -183,7 +183,7 @@ class MessageCog(Cog, name="Message Commands"):
             colour=Colors.MessageCommands,
             description=t.send_embed_title(t.cancel),
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         title, _ = await self.get_message_cancel(ctx.channel, ctx.author)
 
         if title is None:
@@ -192,7 +192,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.title_too_long)
 
         embed.description = t.send_embed_content(t.cancel)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         content, _ = await self.get_message_cancel(ctx.channel, ctx.author)
 
         if content is None:
@@ -205,7 +205,7 @@ class MessageCog(Cog, name="Message Commands"):
 
         await message.edit(content=None, files=[], embed=send_embed)
         embed.description = t.msg_edited
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @edit.command(name="copy", aliases=["c"])
     async def edit_copy(self, ctx: Context, message: Message, source: Message):
@@ -221,7 +221,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.cannot_edit_files)
         await message.edit(content=content, embed=embed)
         embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.msg_edited)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @commands.command()
     @MessagePermission.delete.check
@@ -241,4 +241,4 @@ class MessageCog(Cog, name="Message Commands"):
 
         await message.delete()
         embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.msg_deleted)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)

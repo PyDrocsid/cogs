@@ -39,6 +39,7 @@ from discord.ext.commands import Context
 from PyDrocsid.cog import Cog
 from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
+from PyDrocsid.util import reply
 from .colors import Colors
 from cogs.library.contributor import Contributor
 
@@ -183,7 +184,7 @@ class DiscordpyDocumentationCog(Cog, name="Discordpy Documentation"):
                 description=page_types[key],
                 colour=Colors.DiscordPy,
             )
-            return await ctx.send(embed=embed)
+            return await reply(ctx, embed=embed)
 
         if not self._cache:
             await ctx.trigger_typing()
@@ -211,12 +212,12 @@ class DiscordpyDocumentationCog(Cog, name="Discordpy Documentation"):
                 description=t.no_results,
                 colour=Colors.error,
             )
-            return await ctx.send(embed=embed)
+            return await reply(ctx, embed=embed)
 
         e = discord.Embed(colour=Colors.DiscordPy, title=t.documentation(key.capitalize()))
         e.description = "\n".join(f"[`{key}`]({url})" for key, url in matches)
         e.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
-        await ctx.send(embed=e)
+        await reply(ctx, embed=e)
 
     @commands.command(aliases=["dpy"])
     async def dpy_docs(self, ctx: Context, *, obj: str = None):

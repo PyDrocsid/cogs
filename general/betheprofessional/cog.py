@@ -8,7 +8,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance, send_long_embed
+from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
 from .colors import Colors
 from .models import BTPRole
 from .permissions import BeTheProfessionalPermission
@@ -106,7 +106,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         if not out:
             embed.colour = Colors.error
             embed.description = t.no_topics_registered
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             return
 
         out.sort(key=str.lower)
@@ -130,7 +130,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         if not roles:
             embed.colour = Colors.error
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @commands.command(name="-")
     @guild_only()
@@ -150,7 +150,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_removed(cnt=len(roles))
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @commands.command(name="*")
     @BeTheProfessionalPermission.manage.check
@@ -199,7 +199,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             ctx.guild,
             t.log_topics_registered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @commands.command(name="/")
     @BeTheProfessionalPermission.manage.check

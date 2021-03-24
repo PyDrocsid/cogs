@@ -9,6 +9,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
+from PyDrocsid.util import reply
 from ...contributor import Contributor
 from ...moderation import ModCog
 from ...moderation.mod.models import Kick, Join
@@ -71,4 +72,4 @@ class MemberInfoCog(Cog, name="Member Information"):
             title=t.member_info,
             description=f"{member.mention} {date_diff_to_str(datetime.today(), relevant_join)}",
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)

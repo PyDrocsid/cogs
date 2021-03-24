@@ -7,6 +7,7 @@ from discord.ext.commands import guild_only, Context, UserInputError
 from PyDrocsid.cog import Cog
 from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
+from PyDrocsid.util import send_long_embed
 from .colors import Colors
 from ...contributor import Contributor
 
@@ -55,7 +56,7 @@ class ServerInfoCog(Cog, name="Server Information"):
         for name, value in await self.get_additional_fields(guild):
             embed.add_field(name=name, value=value)
 
-        await ctx.send(embed=embed)
+        await send_long_embed(ctx, embed)
 
     @server.command(name="bots")
     async def server_bots(self, ctx: Context):
@@ -90,4 +91,4 @@ class ServerInfoCog(Cog, name="Server Information"):
                 value="\n".join(":small_blue_diamond: " + m.mention for m in offline),
             )
 
-        await ctx.send(embed=embed)
+        await send_long_embed(ctx, embed=embed)

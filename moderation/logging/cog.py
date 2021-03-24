@@ -8,7 +8,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance, send_long_embed
+from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
 from cogs.library.contributor import Contributor
 from cogs.library.pubsub import send_to_changelog, send_alert
 from .colors import Colors
@@ -237,7 +237,7 @@ class LoggingCog(Cog, name="Logging"):
         else:
             embed.add_field(name=t.changelog, value=tg.disabled, inline=False)
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @logging.command(name="maxage", aliases=["ma"])
     async def logging_maxage(self, ctx: Context, days: int):
@@ -258,7 +258,7 @@ class LoggingCog(Cog, name="Logging"):
             embed.description = t.maxage_set(cnt=days)
             await send_to_changelog(ctx.guild, t.maxage_set(cnt=days))
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @logging.group(name="edit", aliases=["e"])
     async def logging_edit(self, ctx: Context):
@@ -280,7 +280,7 @@ class LoggingCog(Cog, name="Logging"):
 
         await LoggingSettings.edit_mindiff.set(mindist)
         embed = Embed(title=t.logging, description=t.edit_mindiff_updated(mindist), color=Colors.Logging)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_mindiff_updated(mindist))
 
     @logging_edit.command(name="channel", aliases=["ch", "c"])
@@ -298,7 +298,7 @@ class LoggingCog(Cog, name="Logging"):
             description=t.log_edit_updated(channel.mention),
             color=Colors.Logging,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_edit_updated(channel.mention))
 
     @logging_edit.command(name="disable", aliases=["d"])
@@ -309,7 +309,7 @@ class LoggingCog(Cog, name="Logging"):
 
         await LoggingSettings.edit_channel.reset()
         embed = Embed(title=t.logging, description=t.log_edit_disabled, color=Colors.Logging)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_edit_disabled)
 
     @logging.group(name="delete", aliases=["d"])
@@ -336,7 +336,7 @@ class LoggingCog(Cog, name="Logging"):
             description=t.log_delete_updated(channel.mention),
             color=Colors.Logging,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_delete_updated(channel.mention))
 
     @logging_delete.command(name="disable", aliases=["d"])
@@ -347,7 +347,7 @@ class LoggingCog(Cog, name="Logging"):
 
         await LoggingSettings.delete_channel.reset()
         embed = Embed(title=t.logging, description=t.log_delete_disabled, color=Colors.Logging)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_delete_disabled)
 
     @logging.group(name="alert", aliases=["al", "a"])
@@ -374,7 +374,7 @@ class LoggingCog(Cog, name="Logging"):
             description=t.log_alert_updated(channel.mention),
             color=Colors.Logging,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_alert_updated(channel.mention))
 
     @logging_alert.command(name="disable", aliases=["d"])
@@ -386,7 +386,7 @@ class LoggingCog(Cog, name="Logging"):
         await send_to_changelog(ctx.guild, t.log_alert_disabled)
         await LoggingSettings.alert_channel.reset()
         embed = Embed(title=t.logging, description=t.log_alert_disabled, color=Colors.Logging)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @logging.group(name="changelog", aliases=["cl", "c", "change"])
     async def logging_changelog(self, ctx: Context):
@@ -412,7 +412,7 @@ class LoggingCog(Cog, name="Logging"):
             description=t.log_changelog_updated(channel.mention),
             color=Colors.Logging,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_changelog_updated(channel.mention))
 
     @logging_changelog.command(name="disable", aliases=["d"])
@@ -424,7 +424,7 @@ class LoggingCog(Cog, name="Logging"):
         await send_to_changelog(ctx.guild, t.log_changelog_disabled)
         await LoggingSettings.changelog_channel.reset()
         embed = Embed(title=t.logging, description=t.log_changelog_disabled, color=Colors.Logging)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @logging.group(name="exclude", aliases=["x", "ignore", "i"])
     async def logging_exclude(self, ctx: Context):
@@ -463,7 +463,7 @@ class LoggingCog(Cog, name="Logging"):
 
         await db_thread(LogExclude.add, channel.id)
         embed = Embed(title=t.excluded_channels, description=t.excluded, colour=Colors.Logging)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_excluded(channel.mention))
 
     @logging_exclude.command(name="remove", aliases=["r", "del", "d", "-"])
@@ -477,5 +477,5 @@ class LoggingCog(Cog, name="Logging"):
 
         await db_thread(LogExclude.remove, channel.id)
         embed = Embed(title=t.excluded_channels, description=t.unexcluded, colour=Colors.Logging)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_unexcluded(channel.mention))

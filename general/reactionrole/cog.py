@@ -9,12 +9,16 @@ from PyDrocsid.database import db_thread, db
 from PyDrocsid.emoji_converter import EmojiConverter
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed
+from PyDrocsid.util import send_long_embed, reply
 from .colors import Colors
 from .models import ReactionRole
 from .permissions import ReactionRolePermission
 from cogs.library.contributor import Contributor
 from cogs.library.pubsub import send_to_changelog
+
+
+tg = t.g
+t = t.reactionrole
 
 
 async def get_role(message: Message, emoji: PartialEmoji, add: bool) -> Optional[Tuple[Role, bool]]:
@@ -178,7 +182,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         await db_thread(ReactionRole.create, msg.channel.id, msg.id, str(emoji), role.id, auto_remove)
         await msg.add_reaction(emoji)
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole, description=t.rr_link_created)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_rr_link_created(emoji, role.id, msg.jump_url, msg.channel.mention))
 
     @reactionrole.command(name="remove", aliases=["r", "del", "d", "-"])
@@ -197,7 +201,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
             if str(emoji) == str(reaction.emoji):
                 await reaction.clear()
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole, description=t.rr_link_removed)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(
             ctx.guild,
             t.log_rr_link_removed(emoji, link.role_id, msg.jump_url, msg.channel.mention),

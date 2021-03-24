@@ -8,6 +8,7 @@ from discord.ext.commands import Context, CommandError, CheckFailure, check, gui
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_thread, db
 from PyDrocsid.translations import t
+from PyDrocsid.util import reply
 from cogs.library.contributor import Contributor
 from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
@@ -71,7 +72,7 @@ class VerificationCog(Cog, name="Verification"):
         await member.add_roles(*add)
         await member.remove_roles(*remove)
         embed = Embed(title=t.verification, description=t.verified, colour=Colors.Verification)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @commands.group(aliases=["vf"])
     @VerificationPermission.manage.check
@@ -100,7 +101,7 @@ class VerificationCog(Cog, name="Verification"):
         embed = Embed(title=t.verification, colour=Colors.error)
         if not password or not normal + reverse:
             embed.add_field(name=tg.status, value=t.verification_disabled, inline=False)
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             return
 
         embed.colour = Colors.Verification
@@ -122,7 +123,7 @@ class VerificationCog(Cog, name="Verification"):
                 value="\n".join(f":small_blue_diamond: {role.mention}" for role in reverse),
             )
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @verification.command(name="add", aliases=["a", "+"])
     async def verification_add(self, ctx: Context, role: Role, reverse: bool = False):
@@ -146,7 +147,7 @@ class VerificationCog(Cog, name="Verification"):
             description=t.verification_role_added,
             colour=Colors.Verification,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         if reverse:
             await send_to_changelog(ctx.guild, t.log_verification_role_added_reverse(role.name, role.id))
         else:
@@ -167,7 +168,7 @@ class VerificationCog(Cog, name="Verification"):
             description=t.verification_role_removed,
             colour=Colors.Verification,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_verification_role_removed(role.name, role.id))
 
     @verification.command(name="password", aliases=["p"])
@@ -185,7 +186,7 @@ class VerificationCog(Cog, name="Verification"):
             description=t.verification_password_configured,
             colour=Colors.Verification,
         )
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_verification_password_configured(password))
 
     @verification.command(name="delay", aliases=["d"])
@@ -206,4 +207,4 @@ class VerificationCog(Cog, name="Verification"):
         else:
             embed.description = t.verification_delay_configured
             await send_to_changelog(ctx.guild, t.log_verification_delay_configured(cnt=seconds))
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)

@@ -10,7 +10,7 @@ from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import make_error
+from PyDrocsid.util import make_error, reply
 from cogs.library.contributor import Contributor
 from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
@@ -109,7 +109,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
             embed.colour = Colors.error
             embed.add_field(name=t.whitelisted_channels, value=t.no_whitelisted_channels)
 
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
 
     @reactionpin.command(name="add", aliases=["a", "+"])
     async def reactionpin_add(self, ctx: Context, channel: TextChannel):
@@ -122,7 +122,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
 
         await db_thread(ReactionPinChannel.create, channel.id)
         embed = Embed(title=t.reactionpin, colour=Colors.ReactionPin, description=t.channel_whitelisted)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_whitelisted_rp(channel.mention))
 
     @reactionpin.command(name="remove", aliases=["del", "r", "d", "-"])
@@ -136,7 +136,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
 
         await db_thread(db.delete, row)
         embed = Embed(title=t.reactionpin, colour=Colors.ReactionPin, description=t.channel_removed)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.f_log_channel_removed_rp(channel.mention))
 
     @reactionpin.command(name="pin_message", aliases=["pm"])
@@ -153,4 +153,4 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         else:
             embed.description = t.pin_messages_now_disabled
             await send_to_changelog(ctx.guild, t.log_pin_messages_now_disabled)
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
