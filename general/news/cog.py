@@ -33,7 +33,7 @@ class NewsCog(Cog, name="News"):
             raise UserInputError
 
     @news.group(name="auth", aliases=["a"])
-    @NewsPermission.manage.check
+    @NewsPermission.read.check
     async def news_auth(self, ctx: Context):
         """
         manage authorized users and channels
@@ -73,6 +73,7 @@ class NewsCog(Cog, name="News"):
         await send_long_embed(ctx, embed)
 
     @news_auth.command(name="add", aliases=["a", "+"])
+    @NewsPermission.write.check
     async def news_auth_add(self, ctx: Context, user: Member, channel: TextChannel, notification_role: Optional[Role]):
         """
         authorize a new user to send news to a specific channel
@@ -91,6 +92,7 @@ class NewsCog(Cog, name="News"):
         await send_to_changelog(ctx.guild, t.log_news_authorized(user.mention, channel.mention))
 
     @news_auth.command(name="remove", aliases=["del", "r", "d", "-"])
+    @NewsPermission.write.check
     async def news_auth_remove(self, ctx: Context, user: Member, channel: TextChannel):
         """
         remove user authorization

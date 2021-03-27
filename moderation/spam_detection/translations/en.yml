@@ -1,5 +1,6 @@
 permissions:
-  manage: manage spam detection
+  read: read spam detection configuration
+  write: write spam detection configuration
 
 spam_detection: Spam Detection
 max_x_hops:

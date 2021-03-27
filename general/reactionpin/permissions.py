@@ -10,4 +10,5 @@ class ReactionPinPermission(BasePermission):
         return t.reactionpin.permissions[self.name]
 
     pin = auto()
-    manage = auto()
+    read = auto()
+    write = auto()

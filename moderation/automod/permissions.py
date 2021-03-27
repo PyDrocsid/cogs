@@ -9,5 +9,7 @@ class AutoModPermission(BasePermission):
     def description(self) -> str:
         return t.automod.permissions[self.name]
 
-    manage_autokick = auto()
-    manage_instantkick = auto()
+    autokick_read = auto()
+    autokick_write = auto()
+    instantkick_read = auto()
+    instantkick_write = auto()

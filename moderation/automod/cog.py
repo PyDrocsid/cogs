@@ -116,7 +116,7 @@ class AutoModCog(Cog, name="AutoMod"):
             self.cancel_task(member)
 
     @commands.group(aliases=["ak"])
-    @AutoModPermission.manage_autokick.check
+    @AutoModPermission.autokick_read.check
     @guild_only()
     async def autokick(self, ctx: Context):
         """
@@ -145,6 +145,7 @@ class AutoModCog(Cog, name="AutoMod"):
         await reply(ctx, embed=embed)
 
     @autokick.command(name="mode", aliases=["m"])
+    @AutoModPermission.autokick_write.check
     async def autokick_mode(self, ctx: Context, mode: str):
         """
         configure autokick mode
@@ -165,6 +166,7 @@ class AutoModCog(Cog, name="AutoMod"):
         await send_to_changelog(ctx.guild, t.autokick_mode_configured[mode])
 
     @autokick.command(name="delay", aliases=["d"])
+    @AutoModPermission.autokick_write.check
     async def autokick_delay(self, ctx: Context, seconds: int):
         """
         configure autokick delay (in seconds)
@@ -179,6 +181,7 @@ class AutoModCog(Cog, name="AutoMod"):
         await send_to_changelog(ctx.guild, t.log_autokick_delay_configured(cnt=seconds))
 
     @autokick.command(name="role", aliases=["r"])
+    @AutoModPermission.autokick_write.check
     async def autokick_role(self, ctx: Context, *, role: Role):
         """
         configure autokick role
@@ -190,7 +193,7 @@ class AutoModCog(Cog, name="AutoMod"):
         await send_to_changelog(ctx.guild, t.log_autokick_role_configured(role.mention, role.id))
 
     @commands.group(aliases=["ik"])
-    @AutoModPermission.manage_instantkick.check
+    @AutoModPermission.instantkick_read.check
     @guild_only()
     async def instantkick(self, ctx: Context):
         """
@@ -216,6 +219,7 @@ class AutoModCog(Cog, name="AutoMod"):
         await reply(ctx, embed=embed)
 
     @instantkick.command(name="disable", aliases=["d", "off"])
+    @AutoModPermission.instantkick_write.check
     async def instantkick_disable(self, ctx: Context):
         """
         disable instantkick
@@ -227,6 +231,7 @@ class AutoModCog(Cog, name="AutoMod"):
         await send_to_changelog(ctx.guild, t.instantkick_set_disabled)
 
     @instantkick.command(name="role", aliases=["r"])
+    @AutoModPermission.instantkick_write.check
     async def instantkick_role(self, ctx: Context, *, role: Role):
         """
         configure instantkick role

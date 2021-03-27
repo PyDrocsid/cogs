@@ -53,6 +53,7 @@ class RolesCog(Cog, name="Roles"):
         super().__init__()
 
         def set_role(role_name: str, assignable: bool):
+            @RolesPermission.config_write.check
             async def inner(ctx: Context, *, role: Role):
                 await configure_role(ctx, role_name, role, assignable)
 
@@ -74,10 +75,10 @@ class RolesCog(Cog, name="Roles"):
             raise UserInputError
 
     @roles.group(name="config", aliases=["conf", "c", "set", "s"])
-    @RolesPermission.config.check
+    @RolesPermission.config_read.check
     async def roles_config(self, ctx: Context):
         """
-        configure roles
+        role configuration
         """
 
         if len(ctx.message.content.lstrip(ctx.prefix).split()) > 2:
@@ -93,7 +94,7 @@ class RolesCog(Cog, name="Roles"):
         await reply(ctx, embed=embed)
 
     @roles.group(name="auth")
-    @RolesPermission.auth.check
+    @RolesPermission.auth_read.check
     async def roles_auth(self, ctx: Context):
         """
         configure role assignment authorizations
@@ -134,6 +135,7 @@ class RolesCog(Cog, name="Roles"):
         await reply(ctx, embed=embed)
 
     @roles_auth.command(name="add", aliases=["a", "+"])
+    @RolesPermission.auth_write.check
     async def roles_auth_add(self, ctx: Context, source: Union[Member, Role], target: Role):
         """
         add a new role assignment authorization
@@ -147,6 +149,7 @@ class RolesCog(Cog, name="Roles"):
         await send_to_changelog(ctx.guild, t.log_role_auth_created(source, target))
 
     @roles_auth.command(name="remove", aliases=["r", "del", "d", "-"])
+    @RolesPermission.auth_write.check
     async def roles_auth_remove(self, ctx: Context, source: Union[Member, Role], target: Role):
         """
         remove a role assignment authorization

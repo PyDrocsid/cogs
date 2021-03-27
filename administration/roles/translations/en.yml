@@ -1,6 +1,8 @@
 permissions:
-  config: configure roles
-  auth: manage role assignment permissions
+  config_read: read role configuration
+  config_write: write role configuration
+  auth_read: read role assignment permissions
+  auth_write: write role assignment permissions
   list_members: list role members
 
 roles: Roles

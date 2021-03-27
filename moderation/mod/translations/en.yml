@@ -4,6 +4,7 @@ permissions:
   kick: kick a user
   ban: ban a user
   view_stats: view other user's statistics
+  view_userlog: view other user's log
   init_join_log: initialize join log
 
 log_field:

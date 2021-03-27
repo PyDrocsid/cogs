@@ -62,6 +62,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         self.user_hops.clear()
 
     @commands.group(aliases=["spam", "sd"])
+    @SpamDetectionPermission.read.check
     @guild_only()
     async def spam_detection(self, ctx: Context):
         """
@@ -83,6 +84,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         await reply(ctx, embed=embed)
 
     @spam_detection.command(name="hops", aliases=["h"])
+    @SpamDetectionPermission.write.check
     async def spam_detection_hops(self, ctx: Context, amount: int):
         """
         Changes the number of maximum channel hops per minute allowed before an alert is issued

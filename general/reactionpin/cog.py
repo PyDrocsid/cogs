@@ -77,7 +77,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
             raise StopEventHandling
 
     @commands.group(aliases=["rp"])
-    @ReactionPinPermission.manage.check
+    @ReactionPinPermission.read.check
     @guild_only()
     async def reactionpin(self, ctx: Context):
         """
@@ -112,6 +112,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         await reply(ctx, embed=embed)
 
     @reactionpin.command(name="add", aliases=["a", "+"])
+    @ReactionPinPermission.write.check
     async def reactionpin_add(self, ctx: Context, channel: TextChannel):
         """
         add channel to whitelist
@@ -126,6 +127,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         await send_to_changelog(ctx.guild, t.log_channel_whitelisted_rp(channel.mention))
 
     @reactionpin.command(name="remove", aliases=["del", "r", "d", "-"])
+    @ReactionPinPermission.write.check
     async def reactionpin_remove(self, ctx: Context, channel: TextChannel):
         """
         remove channel from whitelist
@@ -140,6 +142,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         await send_to_changelog(ctx.guild, t.log_channel_removed_rp(channel.mention))
 
     @reactionpin.command(name="pin_message", aliases=["pm"])
+    @ReactionPinPermission.write.check
     async def reactionpin_pin_message(self, ctx: Context, enabled: bool):
         """
         enable/disable "pinned a message" notification

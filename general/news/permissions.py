@@ -9,4 +9,5 @@ class NewsPermission(BasePermission):
     def description(self) -> str:
         return t.news.permissions[self.name]
 
-    manage = auto()
+    read = auto()
+    write = auto()

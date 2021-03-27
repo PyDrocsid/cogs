@@ -9,4 +9,5 @@ class LoggingPermission(BasePermission):
     def description(self) -> str:
         return t.logging.permissions[self.name]
 
-    manage = auto()
+    read = auto()
+    write = auto()

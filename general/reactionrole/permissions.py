@@ -9,4 +9,5 @@ class ReactionRolePermission(BasePermission):
     def description(self) -> str:
         return t.reactionrole.permissions[self.name]
 
-    manage = auto()
+    read = auto()
+    write = auto()

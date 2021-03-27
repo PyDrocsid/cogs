@@ -123,7 +123,7 @@ class RedditCog(Cog, name="Reddit"):
             self.reddit_loop.restart()
 
     @commands.group()
-    @RedditPermission.manage.check
+    @RedditPermission.read.check
     @guild_only()
     async def reddit(self, ctx: Context):
         """
@@ -156,6 +156,7 @@ class RedditCog(Cog, name="Reddit"):
         await reply(ctx, embed=embed)
 
     @reddit.command(name="add", aliases=["a", "+"])
+    @RedditPermission.write.check
     async def reddit_add(self, ctx: Context, subreddit: str, channel: TextChannel):
         """
         create a link between a subreddit and a channel
@@ -176,6 +177,7 @@ class RedditCog(Cog, name="Reddit"):
         await send_to_changelog(ctx.guild, t.log_reddit_link_created(subreddit, channel.mention))
 
     @reddit.command(name="remove", aliases=["r", "del", "d", "-"])
+    @RedditPermission.write.check
     async def reddit_remove(self, ctx: Context, subreddit: str, channel: TextChannel):
         """
         remove a reddit link
@@ -192,6 +194,7 @@ class RedditCog(Cog, name="Reddit"):
         await send_to_changelog(ctx.guild, t.log_reddit_link_removed(subreddit, channel.mention))
 
     @reddit.command(name="interval", aliases=["int", "i"])
+    @RedditPermission.write.check
     async def reddit_interval(self, ctx: Context, hours: int):
         """
         change lookup interval (in hours)
@@ -207,6 +210,7 @@ class RedditCog(Cog, name="Reddit"):
         await send_to_changelog(ctx.guild, t.log_reddit_interval_set(cnt=hours))
 
     @reddit.command(name="limit", aliases=["lim"])
+    @RedditPermission.write.check
     async def reddit_limit(self, ctx: Context, limit: int):
         """
         change limit of posts to be sent concurrently
@@ -221,6 +225,7 @@ class RedditCog(Cog, name="Reddit"):
         await send_to_changelog(ctx.guild, t.log_reddit_limit_set(limit))
 
     @reddit.command(name="trigger", aliases=["t"])
+    @RedditPermission.trigger.check
     async def reddit_trigger(self, ctx: Context):
         """
         pull hot posts now and reset the timer

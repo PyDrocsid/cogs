@@ -306,7 +306,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             raise UserInputError
 
     @voice.group(name="dynamic", aliases=["dyn", "d"])
-    @VoiceChannelPermission.manage_dyn.check
+    @VoiceChannelPermission.dyn_read.check
     async def voice_dynamic(self, ctx: Context):
         """
         manage dynamic voice channels
@@ -340,6 +340,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await send_long_embed(ctx, embed)
 
     @voice_dynamic.command(name="add", aliases=["a", "+"])
+    @VoiceChannelPermission.dyn_write.check
     async def voice_dynamic_add(self, ctx: Context, visibility: str, *, voice_channel: VoiceChannel):
         """
         create a new dynamic voice channel group
@@ -362,6 +363,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await send_to_changelog(ctx.guild, t.log_dyn_group_created(name))
 
     @voice_dynamic.command(name="remove", aliases=["del", "d", "r", "-"])
+    @VoiceChannelPermission.dyn_write.check
     async def voice_dynamic_remove(self, ctx: Context, *, voice_channel: VoiceChannel):
         """
         remove a dynamic voice channel group
@@ -585,7 +587,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await reply(ctx, embed=embed)
 
     @voice.group(name="link", aliases=["l"])
-    @VoiceChannelPermission.manage_link.check
+    @VoiceChannelPermission.link_read.check
     async def voice_link(self, ctx: Context):
         """
         manage links between voice channels and roles
@@ -619,6 +621,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await send_long_embed(ctx, embed)
 
     @voice_link.command(name="add", aliases=["a", "+"])
+    @VoiceChannelPermission.link_write.check
     async def voice_link_add(self, ctx: Context, channel: VoiceChannel, *, role: Role):
         """
         link a voice channel with a role
@@ -655,6 +658,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await send_to_changelog(ctx.guild, t.log_link_created(channel, role))
 
     @voice_link.command(name="remove", aliases=["del", "r", "d", "-"])
+    @VoiceChannelPermission.link_write.check
     async def voice_link_remove(self, ctx: Context, channel: VoiceChannel, *, role: Role):
         """
         delete the link between a voice channel and a role

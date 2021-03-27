@@ -10,5 +10,7 @@ class VoiceChannelPermission(BasePermission):
         return t.voice_channel.permissions[self.name]
 
     private_owner = auto()
-    manage_dyn = auto()
-    manage_link = auto()
+    dyn_read = auto()
+    dyn_write = auto()
+    link_read = auto()
+    link_write = auto()

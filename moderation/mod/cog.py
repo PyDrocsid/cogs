@@ -497,6 +497,7 @@ class ModCog(Cog, name="Mod Tools"):
         self,
         ctx: Context,
         user: Optional[Union[User, int]],
+        permission: ModPermission,
     ) -> Tuple[Union[User, int], int, bool]:
         arg_passed = len(ctx.message.content.strip(await get_prefix()).split()) >= 2
         if user is None:
@@ -514,7 +515,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_id = user if isinstance(user, int) else user.id
 
-        if user_id != ctx.author.id and not await ModPermission.view_stats.check_permissions(ctx.author):
+        if user_id != ctx.author.id and not await permission.check_permissions(ctx.author):
             raise CommandError(t.stats_not_allowed)
 
         return user, user_id, arg_passed
@@ -525,7 +526,7 @@ class ModCog(Cog, name="Mod Tools"):
         show statistics about a user
         """
 
-        user, user_id, arg_passed = await self.get_stats_user(ctx, user)
+        user, user_id, arg_passed = await self.get_stats_user(ctx, user, ModPermission.view_stats)
         await update_join_date(self.bot.guilds[0], user_id)
 
         embed = Embed(title=t.stats, color=Colors.stats)
@@ -583,7 +584,7 @@ class ModCog(Cog, name="Mod Tools"):
         show moderation log of a user
         """
 
-        user, user_id, arg_passed = await self.get_stats_user(ctx, user)
+        user, user_id, arg_passed = await self.get_stats_user(ctx, user, ModPermission.view_userlog)
         await update_join_date(self.bot.guilds[0], user_id)
 
         out: List[Tuple[datetime, str]] = [(snowflake_time(user_id), t.ulog_created)]

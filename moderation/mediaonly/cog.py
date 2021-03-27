@@ -59,7 +59,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
         raise StopEventHandling
 
     @commands.group(aliases=["mo"])
-    @MediaOnlyPermission.manage.check
+    @MediaOnlyPermission.read.check
     @guild_only()
     async def mediaonly(self, ctx: Context):
         """
@@ -93,6 +93,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
             await reply(ctx, embed=embed)
 
     @mediaonly.command(name="add", aliases=["a", "+"])
+    @MediaOnlyPermission.write.check
     async def mediaonly_add(self, ctx: Context, channel: TextChannel):
         """
         add a media only channel
@@ -113,6 +114,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
         await send_to_changelog(ctx.guild, t.log_channel_now_media_only(channel.mention))
 
     @mediaonly.command(name="remove", aliases=["del", "r", "d", "-"])
+    @MediaOnlyPermission.write.check
     async def mediaonly_remove(self, ctx: Context, channel: TextChannel):
         """
         remove a media only channel

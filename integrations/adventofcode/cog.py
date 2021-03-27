@@ -367,7 +367,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @aoc.group(name="link", aliases=["l"])
-    @AdventOfCodePermission.link.check
+    @AdventOfCodePermission.link_read.check
     async def aoc_link(self, ctx: Context):
         """
         manage links between discord members and aoc users on the private leaderboard
@@ -403,6 +403,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await send_long_embed(ctx, embed)
 
     @aoc_link.command(name="add", aliases=["a", "+"])
+    @AdventOfCodePermission.link_write.check
     async def aoc_link_add(self, ctx: Context, member: Member, *, aoc_user: str):
         """
         add a new link
@@ -419,6 +420,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await reply(ctx, t.link_created)
 
     @aoc_link.command(name="remove", aliases=["r", "del", "d", "-"])
+    @AdventOfCodePermission.link_write.check
     async def aoc_link_remove(self, ctx: Context, *, member: Union[Member, str]):
         """
         remove a link
@@ -437,7 +439,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await reply(ctx, t.link_removed)
 
     @aoc.group(name="role", aliases=["r"])
-    @AdventOfCodePermission.role.check
+    @AdventOfCodePermission.role_read.check
     @guild_only()
     async def aoc_role(self, ctx: Context):
         """
@@ -468,6 +470,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await send_long_embed(ctx, embed)
 
     @aoc_role.command(name="set", aliases=["s", "="])
+    @AdventOfCodePermission.role_write.check
     async def aoc_role_set(self, ctx: Context, role: Role):
         """
         configure aoc role
@@ -486,6 +489,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await send_to_changelog(ctx.guild, t.log_role_set(role.name, role.id))
 
     @aoc_role.command(name="disable", aliases=["d", "off"])
+    @AdventOfCodePermission.role_write.check
     async def aoc_role_disable(self, ctx: Context):
         """
         disable aoc role
@@ -503,6 +507,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await send_to_changelog(ctx.guild, t.role_disabled)
 
     @aoc_role.command(name="rank", aliases=["r"])
+    @AdventOfCodePermission.role_write.check
     async def aoc_role_rank(self, ctx: Context, rank: int):
         """
         set the minimum rank users need to get the role

@@ -1,7 +1,9 @@
 permissions:
   clear: clear aoc leaderboard cache
-  link: link discord members to aoc users
-  role: manage aoc role
+  link_read: read aoc links
+  link_write: write aoc links
+  role_read: read aoc role configuration
+  role_write: write aoc role configuration
 
 join_title: How to Join the Private Leaderboard
 join_instructions: |

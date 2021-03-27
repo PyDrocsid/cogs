@@ -1,5 +1,6 @@
 permissions:
-  manage: manage reactionrole
+  read: read reactionrole configuration
+  write: write reactionrole configuration
 
 reactionrole: ReactionRole
 no_reactionrole_links: No ReactionRole links have been created yet.

@@ -1,6 +1,7 @@
 permissions:
   bypass: bypass mediaonly checks
-  manage: manage mediaonly
+  read: read mediaonly configuration
+  write: write mediaonly configuration
 
 mediaonly: Mediaonly
 deleted_nomedia: >

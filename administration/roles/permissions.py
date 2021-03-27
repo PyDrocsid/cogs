@@ -9,6 +9,8 @@ class RolesPermission(BasePermission):
     def description(self) -> str:
         return t.roles.permissions[self.name]
 
-    config = auto()
-    auth = auto()
+    config_read = auto()
+    config_write = auto()
+    auth_read = auto()
+    auth_write = auto()
     list_members = auto()

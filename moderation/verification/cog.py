@@ -75,7 +75,7 @@ class VerificationCog(Cog, name="Verification"):
         await reply(ctx, embed=embed)
 
     @commands.group(aliases=["vf"])
-    @VerificationPermission.manage.check
+    @VerificationPermission.read.check
     @guild_only()
     async def verification(self, ctx: Context):
         """
@@ -126,6 +126,7 @@ class VerificationCog(Cog, name="Verification"):
         await reply(ctx, embed=embed)
 
     @verification.command(name="add", aliases=["a", "+"])
+    @VerificationPermission.write.check
     async def verification_add(self, ctx: Context, role: Role, reverse: bool = False):
         """
         add verification role
@@ -154,6 +155,7 @@ class VerificationCog(Cog, name="Verification"):
             await send_to_changelog(ctx.guild, t.log_verification_role_added(role.name, role.id))
 
     @verification.command(name="remove", aliases=["r", "-"])
+    @VerificationPermission.write.check
     async def verification_remove(self, ctx: Context, *, role: Role):
         """
         remove verification role
@@ -172,6 +174,7 @@ class VerificationCog(Cog, name="Verification"):
         await send_to_changelog(ctx.guild, t.log_verification_role_removed(role.name, role.id))
 
     @verification.command(name="password", aliases=["p"])
+    @VerificationPermission.write.check
     async def verification_password(self, ctx: Context, *, password: str):
         """
         configure verification password
@@ -190,6 +193,7 @@ class VerificationCog(Cog, name="Verification"):
         await send_to_changelog(ctx.guild, t.log_verification_password_configured(password))
 
     @verification.command(name="delay", aliases=["d"])
+    @VerificationPermission.write.check
     async def verification_delay(self, ctx: Context, seconds: int):
         """
         configure verification delay

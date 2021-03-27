@@ -10,5 +10,7 @@ class AdventOfCodePermission(BasePermission):
         return t.adventofcode.permissions[self.name]
 
     clear = auto()
-    link = auto()
-    role = auto()
+    link_read = auto()
+    link_write = auto()
+    role_read = auto()
+    role_write = auto()

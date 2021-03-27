@@ -203,7 +203,7 @@ class LoggingCog(Cog, name="Logging"):
         await delete_channel.send(embed=embed)
 
     @commands.group(aliases=["log"])
-    @LoggingPermission.manage.check
+    @LoggingPermission.read.check
     @guild_only()
     async def logging(self, ctx: Context):
         """
@@ -253,6 +253,7 @@ class LoggingCog(Cog, name="Logging"):
         await reply(ctx, embed=embed)
 
     @logging.command(name="maxage", aliases=["ma"])
+    @LoggingPermission.write.check
     async def logging_maxage(self, ctx: Context, days: int):
         """
         configure period after which old log entries should be deleted
@@ -274,6 +275,7 @@ class LoggingCog(Cog, name="Logging"):
         await reply(ctx, embed=embed)
 
     @logging.group(name="edit", aliases=["e"])
+    @LoggingPermission.write.check
     async def logging_edit(self, ctx: Context):
         """
         change settings for edit event logging
@@ -326,6 +328,7 @@ class LoggingCog(Cog, name="Logging"):
         await send_to_changelog(ctx.guild, t.log_edit_disabled)
 
     @logging.group(name="delete", aliases=["d"])
+    @LoggingPermission.write.check
     async def logging_delete(self, ctx: Context):
         """
         change settings for delete event logging
@@ -364,6 +367,7 @@ class LoggingCog(Cog, name="Logging"):
         await send_to_changelog(ctx.guild, t.log_delete_disabled)
 
     @logging.group(name="alert", aliases=["al", "a"])
+    @LoggingPermission.write.check
     async def logging_alert(self, ctx: Context):
         """
         change settings for internal alert channel
@@ -402,6 +406,7 @@ class LoggingCog(Cog, name="Logging"):
         await reply(ctx, embed=embed)
 
     @logging.group(name="changelog", aliases=["cl", "c", "change"])
+    @LoggingPermission.write.check
     async def logging_changelog(self, ctx: Context):
         """
         change settings for internal changelog
@@ -466,6 +471,7 @@ class LoggingCog(Cog, name="Logging"):
         await send_long_embed(ctx, embed)
 
     @logging_exclude.command(name="add", aliases=["a", "+"])
+    @LoggingPermission.write.check
     async def logging_exclude_add(self, ctx: Context, channel: TextChannel):
         """
         exclude a channel from logging
@@ -480,6 +486,7 @@ class LoggingCog(Cog, name="Logging"):
         await send_to_changelog(ctx.guild, t.log_excluded(channel.mention))
 
     @logging_exclude.command(name="remove", aliases=["r", "del", "d", "-"])
+    @LoggingPermission.write.check
     async def logging_exclude_remove(self, ctx: Context, channel: TextChannel):
         """
         remove a channel from exclude list

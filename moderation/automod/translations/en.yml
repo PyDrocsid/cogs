@@ -1,6 +1,8 @@
 permissions:
-  manage_autokick: manage autokick
-  manage_instantkick: manage instantkick
+  autokick_read: read autokick configuration
+  autokick_write: write autokick configuration
+  instantkick_read: read instantkick configuration
+  instantkick_write: write instantkick configuration
 
 # autokick
 autokick: AutoKick

@@ -9,4 +9,6 @@ class RedditPermission(BasePermission):
     def description(self) -> str:
         return t.reddit.permissions[self.name]
 
-    manage = auto()
+    read = auto()
+    write = auto()
+    trigger = auto()

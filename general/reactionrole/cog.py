@@ -67,7 +67,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
             raise StopEventHandling
 
     @commands.group(aliases=["rr"])
-    @ReactionRolePermission.manage.check
+    @ReactionRolePermission.read.check
     @guild_only()
     async def reactionrole(self, ctx: Context):
         """
@@ -158,6 +158,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         await send_long_embed(ctx, embed)
 
     @reactionrole.command(name="add", aliases=["a", "+"])
+    @ReactionRolePermission.write.check
     async def reactionrole_add(self, ctx: Context, msg: Message, emoji: EmojiConverter, role: Role, auto_remove: bool):
         """
         add a new reactionrole link
@@ -182,6 +183,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         await send_to_changelog(ctx.guild, t.log_rr_link_created(emoji, role.id, msg.jump_url, msg.channel.mention))
 
     @reactionrole.command(name="remove", aliases=["r", "del", "d", "-"])
+    @ReactionRolePermission.write.check
     async def reactionrole_remove(self, ctx: Context, msg: Message, emoji: EmojiConverter):
         """
         remove a reactionrole link

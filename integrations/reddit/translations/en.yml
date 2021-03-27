@@ -1,5 +1,7 @@
 permissions:
-  manage: manage reddit integration
+  read: read reddit integration configuration
+  write: write reddit integration configuration
+  trigger: manually pull hot posts and reset timer
 
 reddit: Reddit
 interval: Interval

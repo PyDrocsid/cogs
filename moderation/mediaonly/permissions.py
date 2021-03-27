@@ -10,4 +10,5 @@ class MediaOnlyPermission(BasePermission):
         return t.mediaonly.permissions[self.name]
 
     bypass = auto()
-    manage = auto()
+    read = auto()
+    write = auto()
