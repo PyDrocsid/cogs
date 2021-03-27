@@ -9,7 +9,7 @@ from urllib3.exceptions import LocationParseError
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.logger import get_logger
@@ -33,18 +33,18 @@ class AllowedServerConverter(Converter):
             invite: Invite = await ctx.bot.fetch_invite(argument)
             if invite.guild is None:
                 raise CommandError(t.invalid_invite)
-            row = await db_thread(db.get, AllowedInvite, invite.guild.id)
+            row = await db.get(AllowedInvite, guild_id=invite.guild.id)
             if row is not None:
                 return row
         except (NotFound, HTTPException):
             pass
 
         if argument.isnumeric():
-            row = await db_thread(db.get, AllowedInvite, int(argument))
+            row = await db.get(AllowedInvite, guild_id=int(argument))
             if row is not None:
                 return row
 
-        for row in await db_thread(db.all, AllowedInvite):  # type: AllowedInvite
+        async for row in await db.stream(select(AllowedInvite)):  # type: AllowedInvite
             if row.guild_name.lower().strip() == argument.lower().strip() or row.code == argument:
                 return row
 
@@ -77,7 +77,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
     @get_ulog_entries.subscribe
     async def handle_get_ulog_entries(self, user_id: int):
         out = []
-        for log in await db_thread(db.all, InviteLog, applicant=user_id):  # type: InviteLog
+        async for log in await db.stream(filter_by(InviteLog, applicant=user_id)):  # type: InviteLog
             if log.approved:
                 out.append((log.timestamp, t.ulog_invite_approved(f"<@{log.mod}>", log.guild_name)))
             else:
@@ -108,7 +108,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             if invite.guild == message.guild:
                 legal_invite = True
                 continue
-            if await db_thread(db.get, AllowedInvite, invite.guild.id) is None:
+            if await db.get(AllowedInvite, guild_id=invite.guild.id) is None:
                 forbidden.append(f"`{invite.code}` ({invite.guild.name})")
             else:
                 legal_invite = True
@@ -177,8 +177,10 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         """
 
         out = []
-        for row in sorted(await db_thread(db.all, AllowedInvite), key=lambda a: a.guild_name):
+        async for row in await db.stream(select(AllowedInvite)):
             out.append(f":small_orange_diamond: {row.guild_name} ({row.guild_id})")
+        out.sort()
+
         embed = Embed(title=t.allowed_servers_title, colour=Colors.error)
         embed.description = t.allowed_servers_description
         if out:
@@ -225,11 +227,11 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             raise CommandError(t.invalid_invite)
 
         guild: Guild = invite.guild
-        if await db_thread(db.get, AllowedInvite, guild.id) is not None:
+        if await db.get(AllowedInvite, guild_id=guild.id) is not None:
             raise CommandError(t.server_already_whitelisted)
 
-        await db_thread(AllowedInvite.create, guild.id, invite.code, guild.name, applicant.id, ctx.author.id)
-        await db_thread(InviteLog.create, guild.id, guild.name, applicant.id, ctx.author.id, True)
+        await AllowedInvite.create(guild.id, invite.code, guild.name, applicant.id, ctx.author.id)
+        await InviteLog.create(guild.id, guild.name, applicant.id, ctx.author.id, True)
         embed = Embed(title=t.invites, description=t.server_whitelisted, color=Colors.Invites)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_server_whitelisted(guild.name))
@@ -244,14 +246,14 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             raise CommandError(t.invalid_invite)
 
         guild: Guild = invite.guild
-        row: Optional[AllowedInvite] = await db_thread(db.get, AllowedInvite, guild.id)
+        row: Optional[AllowedInvite] = await db.get(AllowedInvite, guild_id=guild.id)
         if row is None:
             raise CommandError(t.server_not_whitelisted)
 
         if not await InvitesPermission.manage.check_permissions(ctx.author) and ctx.author.id != row.applicant:
             raise CommandError(tg.not_allowed)
 
-        await db_thread(AllowedInvite.update, guild.id, invite.code, guild.name)
+        await AllowedInvite.update(guild.id, invite.code, guild.name)
         embed = Embed(
             title=t.invites,
             description=t.invite_updated(guild.name),
@@ -268,8 +270,8 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         """
 
         server: AllowedInvite
-        await db_thread(db.delete, server)
-        await db_thread(InviteLog.create, server.guild_id, server.guild_name, server.applicant, ctx.author.id, False)
+        await db.delete(server)
+        await InviteLog.create(server.guild_id, server.guild_name, server.applicant, ctx.author.id, False)
         embed = Embed(title=t.invites, description=t.server_removed, color=Colors.Invites)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_server_removed(server.guild_name))

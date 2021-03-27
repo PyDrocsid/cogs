@@ -9,7 +9,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select, filter_by, db_wrapper
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
@@ -95,23 +95,24 @@ class RedditCog(Cog, name="Reddit"):
         await self.start_loop(interval)
 
     @tasks.loop()
+    @db_wrapper
     async def reddit_loop(self):
         await self.pull_hot_posts()
 
     async def pull_hot_posts(self):
         logger.info("pulling hot reddit posts")
         limit = await RedditSettings.limit.get()
-        for reddit_channel in await db_thread(db.all, RedditChannel):  # type: RedditChannel
+        async for reddit_channel in await db.stream(select(RedditChannel)):  # type: RedditChannel
             text_channel: Optional[TextChannel] = self.bot.get_channel(reddit_channel.channel)
             if text_channel is None:
-                await db_thread(db.delete, reddit_channel)
+                await db.delete(reddit_channel)
                 continue
 
             for post in fetch_reddit_posts(reddit_channel.subreddit, limit):
-                if await db_thread(RedditPost.post, post["id"]):
+                if await RedditPost.post(post["id"]):
                     await text_channel.send(embed=create_embed(post))
 
-        await db_thread(RedditPost.clean)
+        await RedditPost.clean()
 
     async def start_loop(self, interval):
         self.reddit_loop.cancel()
@@ -143,10 +144,10 @@ class RedditCog(Cog, name="Reddit"):
         embed.add_field(name=t.limit, value=str(limit))
 
         out = []
-        for reddit_channel in await db_thread(db.all, RedditChannel):  # type: RedditChannel
+        async for reddit_channel in await db.stream(select(RedditChannel)):  # type: RedditChannel
             text_channel: Optional[TextChannel] = self.bot.get_channel(reddit_channel.channel)
             if text_channel is None:
-                await db_thread(db.delete, reddit_channel)
+                await db.delete(reddit_channel)
             else:
                 sub = reddit_channel.subreddit
                 out.append(f":small_orange_diamond: [r/{sub}](https://reddit.com/r/{sub}) -> {text_channel.mention}")
@@ -166,10 +167,10 @@ class RedditCog(Cog, name="Reddit"):
             raise CommandError(t.reddit_link_not_created_permission)
 
         subreddit = get_subreddit_name(subreddit)
-        if await db_thread(db.first, RedditChannel, subreddit=subreddit, channel=channel.id) is not None:
+        if await db.exists(filter_by(RedditChannel, subreddit=subreddit, channel=channel.id)):
             raise CommandError(t.reddit_link_already_exists)
 
-        await db_thread(RedditChannel.create, subreddit, channel.id)
+        await RedditChannel.create(subreddit, channel.id)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_link_created)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_link_created(subreddit, channel.mention))
@@ -181,16 +182,11 @@ class RedditCog(Cog, name="Reddit"):
         """
 
         subreddit = get_subreddit_name(subreddit)
-        link: Optional[RedditChannel] = await db_thread(
-            db.first,
-            RedditChannel,
-            subreddit=subreddit,
-            channel=channel.id,
-        )
+        link: Optional[RedditChannel] = await db.get(RedditChannel, subreddit=subreddit, channel=channel.id)
         if link is None:
             raise CommandError(t.reddit_link_not_found)
 
-        await db_thread(db.delete, link)
+        await db.delete(link)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_link_removed)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_link_removed(subreddit, channel.mention))

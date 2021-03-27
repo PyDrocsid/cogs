@@ -10,7 +10,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Context, UserInputError, CommandError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select, db_wrapper
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed, reply
@@ -99,7 +99,7 @@ class AOCConfig:
 
     @classmethod
     async def find_member(cls, member: Union[User, Member]) -> tuple[Optional[dict], Optional[AOCLink]]:
-        if link := await db_thread(db.get, AOCLink, member.id):
+        if link := await db.get(AOCLink, discord_id=member.id):
             return await cls.get_member(link.aoc_id), link
 
         if isinstance(member, Member) and member.nick:
@@ -200,6 +200,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             self.aoc_loop.restart()
 
     @tasks.loop(minutes=1)
+    @db_wrapper
     async def aoc_loop(self):
         await AOCConfig.get_leaderboard()
 
@@ -212,7 +213,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
         new_members: set[Member] = set()
         for member in list(leaderboard["members"].values())[:rank]:
-            if link := await db_thread(db.first, AOCLink, aoc_id=member["id"]):
+            if link := await db.get(AOCLink, aoc_id=member["id"]):
                 if member := guild.get_member(link.discord_id):
                     new_members.add(member)
         old_members: set[Member] = set(role.members)
@@ -227,7 +228,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         if not aoc_member:
             return None, None, None
 
-        if link := await db_thread(db.first, AOCLink, aoc_id=aoc_member["id"]):
+        if link := await db.get(AOCLink, aoc_id=aoc_member["id"]):
             if member := self.bot.get_user(link.discord_id):
                 return aoc_member, member, link
         return aoc_member, None, None
@@ -243,7 +244,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         if link:
             return aoc_member, member, link
 
-        if link := await db_thread(db.first, AOCLink, aoc_id=aoc_member["id"]):
+        if link := await db.get(AOCLink, aoc_id=aoc_member["id"]):
             if not ignore_link:
                 return None, None, None
 
@@ -380,7 +381,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         embed = Embed(title=t.links, colour=Colors.AdventOfCode)
         leaderboard = await AOCConfig.get_leaderboard()
         out = []
-        for link in await db_thread(db.all, AOCLink):  # type: AOCLink
+        async for link in await db.stream(select(AOCLink)):  # type: AOCLink
             if link.aoc_id not in leaderboard["members"]:
                 continue
             if not (user := self.bot.get_user(link.discord_id)):
@@ -411,10 +412,10 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         if not aoc_member:
             raise CommandError(tg.user_not_found)
 
-        if await db_thread(db.get, AOCLink, member.id) or await db_thread(db.first, AOCLink, aoc_id=aoc_member["id"]):
+        if await db.get(AOCLink, discord_id=member.id) or await db.get(AOCLink, aoc_id=aoc_member["id"]):
             raise CommandError(t.link_already_exists)
 
-        await db_thread(AOCLink.create, member.id, aoc_member["id"])
+        await AOCLink.create(member.id, aoc_member["id"])
         await reply(ctx, t.link_created)
 
     @aoc_link.command(name="remove", aliases=["r", "del", "d", "-"])
@@ -424,15 +425,15 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         """
 
         if isinstance(member, Member):
-            link = await db_thread(db.get, AOCLink, member.id)
+            link = await db.get(AOCLink, discord_id=member.id)
         else:
             aoc_member = await AOCConfig.get_member(member)
-            link = aoc_member and await db_thread(db.first, AOCLink, aoc_id=aoc_member["id"])
+            link = aoc_member and await db.get(AOCLink, aoc_id=aoc_member["id"])
 
         if not link:
             raise CommandError(t.link_not_found)
 
-        await db_thread(db.delete, link)
+        await db.delete(link)
         await reply(ctx, t.link_removed)
 
     @aoc.group(name="role", aliases=["r"])
@@ -522,14 +523,14 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         publish a github repository containing solutions for the current advent of code round
         """
 
-        if not await db_thread(db.get, AOCLink, ctx.author.id):
+        if not await db.get(AOCLink, discord_id=ctx.author.id):
             raise CommandError(t.not_verified)
 
         url: Optional[str] = get_github_repo(url)
         if not url or len(url) > 128:
             raise CommandError(t.invalid_url)
 
-        await db_thread(AOCLink.publish, ctx.author.id, url)
+        await AOCLink.publish(ctx.author.id, url)
         await reply(ctx, t.published)
 
     @aoc.command(name="unpublish")
@@ -538,13 +539,13 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         unpublish a previously published repository
         """
 
-        link: Optional[AOCLink] = await db_thread(db.get, AOCLink, ctx.author.id)
+        link: Optional[AOCLink] = await db.get(AOCLink, discord_id=ctx.author.id)
         if not link:
             raise CommandError(t.not_verified)
         if not link.solutions:
             raise CommandError(t.not_published)
 
-        await db_thread(AOCLink.unpublish, ctx.author.id)
+        await AOCLink.unpublish(ctx.author.id)
         await reply(ctx, t.unpublished)
 
     @aoc.command(name="solutions", aliases=["repos"])
@@ -556,7 +557,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         embed = Embed(title=t.solutions, colour=Colors.AdventOfCode)
         members = (await AOCConfig.get_leaderboard())["members"]
         out = []
-        for link in await db_thread(db.all, AOCLink):  # type: AOCLink
+        async for link in await db.stream(select(AOCLink)):  # type: AOCLink
             if not link.solutions or link.aoc_id not in members:
                 continue
 

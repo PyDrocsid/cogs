@@ -9,7 +9,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Greedy
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select, filter_by
 from PyDrocsid.logger import get_logger
 from PyDrocsid.multilock import MultiLock
 from PyDrocsid.settings import RoleSettings
@@ -31,17 +31,16 @@ logger = get_logger(__name__)
 async def gather_roles(guild: Guild, channel_id: int) -> List[Role]:
     return [
         role
-        for link in await db_thread(db.all, RoleVoiceLink, voice_channel=channel_id)
+        async for link in await db.stream(select(RoleVoiceLink).filter_by(voice_channel=channel_id))
         if (role := guild.get_role(link.role)) is not None
     ]
 
 
 async def get_group_channel(channel: VoiceChannel) -> Tuple[Optional[DynamicVoiceGroup], Optional[DynamicVoiceChannel]]:
-    dyn_channel: DynamicVoiceChannel = await db_thread(db.first, DynamicVoiceChannel, channel_id=channel.id)
-    if dyn_channel is not None:
-        group = await db_thread(db.get, DynamicVoiceGroup, dyn_channel.group_id)
-    else:
-        group = await db_thread(db.first, DynamicVoiceGroup, channel_id=channel.id)
+    dyn_channel: DynamicVoiceChannel = await db.first(select(DynamicVoiceChannel).filter_by(channel_id=channel.id))
+
+    channel_id = dyn_channel.group_id if dyn_channel is not None else channel.id
+    group = await db.first(select(DynamicVoiceGroup).filter_by(channel_id=channel_id))
 
     return group, dyn_channel
 
@@ -73,7 +72,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         guild: Guild = self.bot.guilds[0]
         logger.info(t.updating_voice_roles)
         linked_roles: Dict[Role, Set[VoiceChannel]] = {}
-        for link in await db_thread(db.all, RoleVoiceLink):
+        async for link in await db.stream(select(RoleVoiceLink)):
             role = guild.get_role(link.role)
             voice = guild.get_channel(link.voice_channel)
             if role is None or voice is None:
@@ -81,10 +80,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
             linked_roles.setdefault(role, set()).add(voice)
 
-            group: Optional[DynamicVoiceGroup] = await db_thread(db.first, DynamicVoiceGroup, channel_id=voice.id)
+            group: Optional[DynamicVoiceGroup] = await db.get(DynamicVoiceGroup, channel_id=voice.id)
             if group is None:
                 continue
-            for dyn_channel in await db_thread(db.all, DynamicVoiceChannel, group_id=group.id):
+            async for dyn_channel in await db.stream(select(DynamicVoiceChannel).filter_by(group_id=group.id)):
                 channel: Optional[VoiceChannel] = guild.get_channel(dyn_channel.channel_id)
                 if channel is not None:
                     linked_roles[role].add(channel)
@@ -100,7 +99,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 if member not in members:
                     await member.remove_roles(role)
 
-        for group in await db_thread(db.all, DynamicVoiceGroup):
+        async for group in await db.stream(select(DynamicVoiceGroup)):
             channel: Optional[VoiceChannel] = guild.get_channel(group.channel_id)
             if channel is None:
                 continue
@@ -110,13 +109,13 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 async with self.group_lock[group.id if group is not None else None]:
                     await self.member_join(member, channel, group, dyn_channel)
 
-            for dyn_channel in await db_thread(db.all, DynamicVoiceChannel, group_id=group.id):
+            async for dyn_channel in await db.stream(select(DynamicVoiceChannel).filter_by(group_id=group.id)):
                 channel: Optional[VoiceChannel] = guild.get_channel(dyn_channel.channel_id)
                 if channel is not None and all(member.bot for member in channel.members):
                     await channel.delete()
                     if (text_channel := self.bot.get_channel(dyn_channel.text_chat_id)) is not None:
                         await text_channel.delete()
-                    await db_thread(db.delete, dyn_channel)
+                    await db.delete(dyn_channel)
             await self.update_dynamic_voice_group(group)
 
         logger.info(t.voice_init_done)
@@ -130,10 +129,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             raise CommandError(t.not_in_private_voice)
 
         channel: VoiceChannel = member.voice.channel
-        dyn_channel: DynamicVoiceChannel = await db_thread(db.first, DynamicVoiceChannel, channel_id=channel.id)
+        dyn_channel: DynamicVoiceChannel = await db.get(DynamicVoiceChannel, channel_id=channel.id)
         if dyn_channel is None:
             raise CommandError(t.not_in_private_voice)
-        group: DynamicVoiceGroup = await db_thread(db.get, DynamicVoiceGroup, dyn_channel.group_id)
+        group: DynamicVoiceGroup = await db.get(DynamicVoiceGroup, id=dyn_channel.group_id)
         if group is None or group.public:
             raise CommandError(t.not_in_private_voice)
 
@@ -178,7 +177,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             return
 
         guild: Guild = channel.guild
-        number = len(await db_thread(db.all, DynamicVoiceChannel, group_id=group.id)) + 1
+        number = await db.count(filter_by(DynamicVoiceChannel, group_id=group.id)) + 1
         chan: VoiceChannel = await channel.clone(name=group.name + " " + str(number))
         category: Union[CategoryChannel, Guild] = channel.category or guild
         overwrites = {
@@ -200,7 +199,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await text_chat.delete()
             return
         else:
-            await db_thread(DynamicVoiceChannel.create, chan.id, group.id, text_chat.id, member.id)
+            await DynamicVoiceChannel.create(chan.id, group.id, text_chat.id, member.id)
         await self.update_dynamic_voice_group(group)
         if not group.public:
             await self.send_voice_msg(
@@ -240,7 +239,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         members: List[Member] = [member for member in channel.members if not member.bot]
         if not group.public and member.id == dyn_channel.owner and len(members) > 0:
             new_owner: Member = random.choice(members)  # noqa: S311
-            await db_thread(DynamicVoiceChannel.change_owner, dyn_channel.channel_id, new_owner.id)
+            await DynamicVoiceChannel.change_owner(dyn_channel.channel_id, new_owner.id)
             if text_chat is not None:
                 await self.send_voice_msg(
                     text_chat,
@@ -255,7 +254,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await channel.delete()
         if text_chat is not None:
             await text_chat.delete()
-        await db_thread(db.delete, dyn_channel)
+        await db.delete(dyn_channel)
         await self.update_dynamic_voice_group(group)
 
     async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
@@ -276,17 +275,17 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     async def update_dynamic_voice_group(self, group: DynamicVoiceGroup):
         base_channel: Optional[VoiceChannel] = self.bot.get_channel(group.channel_id)
         if base_channel is None:
-            await db_thread(db.delete, group)
+            await db.delete(group)
             return
 
         channels = []
-        for dyn_channel in await db_thread(db.all, DynamicVoiceChannel, group_id=group.id):
+        async for dyn_channel in await db.stream(filter_by(DynamicVoiceChannel, group_id=group.id)):
             channel: Optional[VoiceChannel] = self.bot.get_channel(dyn_channel.channel_id)
             text_chat: Optional[TextChannel] = self.bot.get_channel(dyn_channel.text_chat_id)
             if channel is not None and text_chat is not None:
                 channels.append((channel, text_chat))
             else:
-                await db_thread(db.delete, dyn_channel)
+                await db.delete(dyn_channel)
 
         channels.sort(key=lambda c: c[0].position)
 
@@ -323,11 +322,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         """
 
         out = []
-        for group in await db_thread(db.all, DynamicVoiceGroup):
-            cnt = len(await db_thread(db.all, DynamicVoiceChannel, group_id=group.id))
+        async for group in await db.stream(select(DynamicVoiceGroup)):
+            cnt = await db.count(filter_by(DynamicVoiceChannel, group_id=group.id))
             channel: Optional[VoiceChannel] = ctx.guild.get_channel(group.channel_id)
             if channel is None:
-                await db_thread(db.delete, group)
+                await db.delete(group)
                 continue
             e = ":globe_with_meridians:" if group.public else ":lock:"
             out.append(t.group_list_entry(e, group.name, cnt))
@@ -350,13 +349,13 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             raise CommandError(t.error_visibility)
         public = visibility.lower() == "public"
 
-        if await db_thread(db.get, DynamicVoiceChannel, voice_channel.id) is not None:
+        if await db.get(DynamicVoiceChannel, channel_id=voice_channel.id) is not None:
             raise CommandError(t.dyn_group_already_exists)
-        if await db_thread(db.first, DynamicVoiceGroup, channel_id=voice_channel.id) is not None:
+        if await db.get(DynamicVoiceGroup, channel_id=voice_channel.id) is not None:
             raise CommandError(t.dyn_group_already_exists)
 
         name: str = re.match(r"^(.*?) ?\d*$", voice_channel.name).group(1) or voice_channel.name
-        await db_thread(DynamicVoiceGroup.create, name, voice_channel.id, public)
+        await DynamicVoiceGroup.create(name, voice_channel.id, public)
         await voice_channel.edit(name=f"New {name}")
         embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.dyn_group_created)
         await reply(ctx, embed=embed)
@@ -368,15 +367,15 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         remove a dynamic voice channel group
         """
 
-        group: DynamicVoiceGroup = await db_thread(db.first, DynamicVoiceGroup, channel_id=voice_channel.id)
+        group: DynamicVoiceGroup = await db.get(DynamicVoiceGroup, channel_id=voice_channel.id)
         if group is None:
             raise CommandError(t.dyn_group_not_found)
 
-        await db_thread(db.delete, group)
-        for dync in await db_thread(db.all, DynamicVoiceChannel, group_id=group.id):
+        await db.delete(group)
+        async for dync in await db.stream(filter_by(DynamicVoiceChannel, group_id=group.id)):
             channel: Optional[VoiceChannel] = self.bot.get_channel(dync.channel_id)
             text_channel: Optional[TextChannel] = self.bot.get_channel(dync.text_chat_id)
-            await db_thread(db.delete, dync)
+            await db.delete(dync)
             if channel is not None:
                 await channel.delete()
             if text_channel is not None:
@@ -403,14 +402,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 raise CommandError(tg.permission_denied)
             channel = member.voice.channel
 
-        dyn_channel: Optional[DynamicVoiceChannel] = await db_thread(
-            db.first,
-            DynamicVoiceChannel,
-            channel_id=channel.id,
-        )
+        dyn_channel: Optional[DynamicVoiceChannel] = await db.get(DynamicVoiceChannel, channel_id=channel.id)
         if not dyn_channel:
             raise CommandError(t.dyn_group_not_found)
-        group: DynamicVoiceGroup = await db_thread(db.get, DynamicVoiceGroup, dyn_channel.group_id)
+        group: DynamicVoiceGroup = await db.get(DynamicVoiceGroup, id=dyn_channel.group_id)
 
         if not channel.permissions_for(ctx.author).connect:
             raise CommandError(tg.permission_denied)
@@ -453,7 +448,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         """
 
         group, dyn_channel, voice_channel, text_channel = await self.get_dynamic_voice_channel(ctx.author, True)
-        await db_thread(db.delete, dyn_channel)
+        await db.delete(dyn_channel)
 
         roles = await gather_roles(voice_channel.guild, group.channel_id)
         for member in voice_channel.members:
@@ -573,7 +568,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if member.bot:
             raise CommandError(t.bot_no_owner_transfer)
 
-        await db_thread(DynamicVoiceChannel.change_owner, dyn_channel.channel_id, member.id)
+        await DynamicVoiceChannel.change_owner(dyn_channel.channel_id, member.id)
         if text_channel is not None:
             await self.send_voice_msg(
                 text_channel,
@@ -607,11 +602,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         out = []
         guild: Guild = ctx.guild
-        for link in await db_thread(db.all, RoleVoiceLink):
+        async for link in await db.stream(select(RoleVoiceLink)):
             role: Optional[Role] = guild.get_role(link.role)
             voice: Optional[VoiceChannel] = guild.get_channel(link.voice_channel)
             if role is None or voice is None:
-                await db_thread(db.delete, link)
+                await db.delete(link)
             else:
                 out.append(f"`{voice}` (`{voice.id}`) -> <@&{role.id}> (`{role.id}`)")
 
@@ -629,9 +624,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         link a voice channel with a role
         """
 
-        if await db_thread(db.get, DynamicVoiceChannel, channel.id) is not None:
+        if await db.get(DynamicVoiceChannel, channel_id=channel.id) is not None:
             raise CommandError(t.link_on_dynamic_channel_not_created)
-        if await db_thread(db.first, RoleVoiceLink, role=role.id, voice_channel=channel.id) is not None:
+        if await db.get(RoleVoiceLink, role=role.id, voice_channel=channel.id) is not None:
             raise CommandError(t.link_already_exists)
 
         if role >= ctx.me.top_role:
@@ -639,13 +634,13 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if role.managed:
             raise CommandError(t.link_not_created_managed_role(role))
 
-        await db_thread(RoleVoiceLink.create, role.id, channel.id)
+        await RoleVoiceLink.create(role.id, channel.id)
         for member in channel.members:
             await member.add_roles(role)
 
-        group: Optional[DynamicVoiceGroup] = await db_thread(db.first, DynamicVoiceGroup, channel_id=channel.id)
+        group: Optional[DynamicVoiceGroup] = await db.get(DynamicVoiceGroup, channel_id=channel.id)
         if group is not None:
-            for dyn_channel in await db_thread(db.all, DynamicVoiceChannel, group_id=group.id):
+            async for dyn_channel in await db.stream(filter_by(DynamicVoiceChannel, group_id=group.id)):
                 dchannel: Optional[VoiceChannel] = self.bot.get_channel(dyn_channel.channel_id)
                 if dchannel is not None:
                     for member in dchannel.members:
@@ -665,16 +660,16 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         delete the link between a voice channel and a role
         """
 
-        if (link := await db_thread(db.first, RoleVoiceLink, role=role.id, voice_channel=channel.id)) is None:
+        if (link := await db.get(RoleVoiceLink, role=role.id, voice_channel=channel.id)) is None:
             raise CommandError(t.link_not_found)
 
-        await db_thread(db.delete, link)
+        await db.delete(link)
         for member in channel.members:
             await member.remove_roles(role)
 
-        group: Optional[DynamicVoiceGroup] = await db_thread(db.first, DynamicVoiceGroup, channel_id=channel.id)
+        group: Optional[DynamicVoiceGroup] = await db.get(DynamicVoiceGroup, channel_id=channel.id)
         if group is not None:
-            for dyn_channel in await db_thread(db.all, DynamicVoiceChannel, group_id=group.id):
+            async for dyn_channel in await db.stream(filter_by(DynamicVoiceChannel, group_id=group.id)):
                 dchannel: Optional[VoiceChannel] = self.bot.get_channel(dyn_channel.channel_id)
                 if dchannel is not None:
                     for member in dchannel.members:

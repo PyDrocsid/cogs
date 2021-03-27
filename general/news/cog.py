@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed, read_normal_message, attachment_to_file, Color, reply
 from .colors import Colors
@@ -50,17 +50,17 @@ class NewsCog(Cog, name="News"):
 
         out = []
         guild: Guild = ctx.guild
-        for authorization in await db_thread(db.all, NewsAuthorization):
+        async for authorization in await db.stream(select(NewsAuthorization)):
             text_channel: Optional[TextChannel] = guild.get_channel(authorization.channel_id)
             member: Optional[Member] = guild.get_member(authorization.user_id)
             if text_channel is None or member is None:
-                await db_thread(db.delete, authorization)
+                await db.delete(authorization)
                 continue
             line = f":small_orange_diamond: {member.mention} -> {text_channel.mention}"
             if authorization.notification_role_id is not None:
                 role: Optional[Role] = guild.get_role(authorization.notification_role_id)
                 if role is None:
-                    await db_thread(db.delete, authorization)
+                    await db.delete(authorization)
                     continue
                 line += f" ({role.mention})"
             out.append(line)
@@ -78,14 +78,14 @@ class NewsCog(Cog, name="News"):
         authorize a new user to send news to a specific channel
         """
 
-        if await db_thread(db.first, NewsAuthorization, user_id=user.id, channel_id=channel.id) is not None:
+        if await db.exists(select(NewsAuthorization).filter_by(user_id=user.id, channel_id=channel.id)):
             raise CommandError(t.news_already_authorized)
         if not channel.permissions_for(channel.guild.me).send_messages:
             raise CommandError(t.news_not_added_no_permissions)
 
         role_id = notification_role.id if notification_role is not None else None
 
-        await db_thread(NewsAuthorization.create, user.id, channel.id, role_id)
+        await NewsAuthorization.create(user.id, channel.id, role_id)
         embed = Embed(title=t.news, colour=Colors.News, description=t.news_authorized)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_news_authorized(user.mention, channel.mention))
@@ -96,16 +96,13 @@ class NewsCog(Cog, name="News"):
         remove user authorization
         """
 
-        authorization: Optional[NewsAuthorization] = await db_thread(
-            db.first,
-            NewsAuthorization,
-            user_id=user.id,
-            channel_id=channel.id,
+        authorization: Optional[NewsAuthorization] = await db.first(
+            select(NewsAuthorization).filter_by(user_id=user.id, channel_id=channel.id),
         )
         if authorization is None:
             raise CommandError(t.news_not_authorized)
 
-        await db_thread(db.delete, authorization)
+        await db.delete(authorization)
         embed = Embed(title=t.news, colour=Colors.News, description=t.news_unauthorized)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_news_unauthorized(user.mention, channel.mention))
@@ -123,11 +120,8 @@ class NewsCog(Cog, name="News"):
         send a news message
         """
 
-        authorization: Optional[NewsAuthorization] = await db_thread(
-            db.first,
-            NewsAuthorization,
-            user_id=ctx.author.id,
-            channel_id=channel.id,
+        authorization: Optional[NewsAuthorization] = await db.first(
+            select(NewsAuthorization).filter_by(user_id=ctx.author.id, channel_id=channel.id),
         )
         if authorization is None:
             raise CommandError(t.news_you_are_not_authorized)

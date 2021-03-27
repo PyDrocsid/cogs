@@ -10,7 +10,7 @@ class BTPRole(db.Base):
     role_id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
 
     @staticmethod
-    def create(role_id: int) -> "BTPRole":
+    async def create(role_id: int) -> "BTPRole":
         row = BTPRole(role_id=role_id)
-        db.add(row)
+        await db.add(row)
         return row

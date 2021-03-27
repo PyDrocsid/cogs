@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Union
 
@@ -16,7 +18,7 @@ class AllowedInvite(db.Base):
     created_at: Union[Column, datetime] = Column(DateTime)
 
     @staticmethod
-    def create(guild_id: int, code: str, guild_name: str, applicant: int, approver: int) -> "AllowedInvite":
+    async def create(guild_id: int, code: str, guild_name: str, applicant: int, approver: int) -> AllowedInvite:
         row = AllowedInvite(
             guild_id=guild_id,
             code=code,
@@ -25,12 +27,12 @@ class AllowedInvite(db.Base):
             approver=approver,
             created_at=datetime.utcnow(),
         )
-        db.add(row)
+        await db.add(row)
         return row
 
     @staticmethod
-    def update(guild_id: int, code: str, guild_name: str):
-        row: AllowedInvite = db.get(AllowedInvite, guild_id)
+    async def update(guild_id: int, code: str, guild_name: str):
+        row: AllowedInvite = await db.get(AllowedInvite, guild_id=guild_id)
         row.code = code
         row.guild_name = guild_name
 
@@ -47,7 +49,7 @@ class InviteLog(db.Base):
     approved: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    def create(guild_id: int, guild_name: str, applicant: int, mod: int, approved: bool) -> "InviteLog":
+    async def create(guild_id: int, guild_name: str, applicant: int, mod: int, approved: bool) -> InviteLog:
         row = InviteLog(
             guild_id=guild_id,
             guild_name=guild_name,
@@ -56,5 +58,5 @@ class InviteLog(db.Base):
             timestamp=datetime.utcnow(),
             approved=approved,
         )
-        db.add(row)
+        await db.add(row)
         return row

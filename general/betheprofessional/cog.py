@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
 from .colors import Colors
@@ -48,9 +48,9 @@ async def parse_topics(guild: Guild, topics: str, author: Member) -> List[Role]:
 
 async def list_topics(guild: Guild) -> List[Role]:
     roles: List[Role] = []
-    for btp_role in await db_thread(db.all, BTPRole):
+    async for btp_role in await db.stream(select(BTPRole)):
         if (role := guild.get_role(btp_role.role_id)) is None:
-            await db_thread(db.delete, btp_role)
+            await db.delete(btp_role)
         else:
             roles.append(role)
     return roles
@@ -70,14 +70,14 @@ async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
                 break
         else:
             raise CommandError(t.topic_not_registered(topic))
-        if (btp_role := await db_thread(db.get, BTPRole, role.id)) is None:
+        if (btp_role := await db.first(select(BTPRole).filter_by(role_id=role.id))) is None:
             raise CommandError(t.topic_not_registered(topic))
 
         roles.append(role)
         btp_roles.append(btp_role)
 
     for role, btp_role in zip(roles, btp_roles):
-        await db_thread(db.delete, btp_role)
+        await db.delete(btp_role)
         if delete_roles:
             await role.delete()
 
@@ -179,7 +179,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 to_be_created.append(topic)
                 continue
 
-            if await db_thread(db.get, BTPRole, role.id) is not None:
+            if await db.exists(select(BTPRole).filter_by(role_id=role.id)):
                 raise CommandError(t.topic_already_registered(topic))
             if role >= ctx.me.top_role:
                 raise CommandError(t.topic_not_registered_too_high(role, ctx.me.top_role))
@@ -191,7 +191,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             roles.append(await guild.create_role(name=name, mentionable=True))
 
         for role in roles:
-            await db_thread(BTPRole.create, role.id)
+            await BTPRole.create(role.id)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_registered(cnt=len(roles))

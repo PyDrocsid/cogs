@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import re
 from typing import Union, Optional
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, select
 from sqlalchemy import Column, BigInteger, String, Boolean
 
 
@@ -27,7 +29,7 @@ class ReactionRole(db.Base):
     auto_remove: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    def create(channel_id: int, message_id: int, emoji: str, role_id: int, auto_remove: bool) -> "ReactionRole":
+    async def create(channel_id: int, message_id: int, emoji: str, role_id: int, auto_remove: bool) -> ReactionRole:
         row = ReactionRole(
             channel_id=channel_id,
             message_id=message_id,
@@ -35,12 +37,14 @@ class ReactionRole(db.Base):
             role_id=role_id,
             auto_remove=auto_remove,
         )
-        db.add(row)
+        await db.add(row)
         return row
 
     @staticmethod
-    def get(channel_id: int, message_id: int, emoji: str) -> Optional["ReactionRole"]:
-        return db.first(ReactionRole, channel_id=channel_id, message_id=message_id, emoji_hex=encode(emoji))
+    async def get(channel_id: int, message_id: int, emoji: str) -> Optional[ReactionRole]:
+        return await db.first(
+            select(ReactionRole).filter_by(channel_id=channel_id, message_id=message_id, emoji_hex=encode(emoji)),
+        )
 
     @property
     def emoji(self):

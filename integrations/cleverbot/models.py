@@ -10,7 +10,7 @@ class CleverBotChannel(db.Base):
     channel: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
 
     @staticmethod
-    def create(channel: int) -> "CleverBotChannel":
+    async def create(channel: int) -> "CleverBotChannel":
         row = CleverBotChannel(channel=channel)
-        db.add(row)
+        await db.add(row)
         return row

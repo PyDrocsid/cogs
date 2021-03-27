@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Union
 
 from PyDrocsid.database import db
@@ -11,7 +13,7 @@ class VerificationRole(db.Base):
     reverse: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    def create(role_id: int, reverse: bool) -> "VerificationRole":
+    async def create(role_id: int, reverse: bool) -> VerificationRole:
         row = VerificationRole(role_id=role_id, reverse=reverse)
-        db.add(row)
+        await db.add(row)
         return row

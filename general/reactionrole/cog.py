@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select
 from PyDrocsid.emoji_converter import EmojiConverter
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
@@ -22,7 +22,7 @@ t = t.reactionrole
 
 
 async def get_role(message: Message, emoji: PartialEmoji, add: bool) -> Optional[Tuple[Role, bool]]:
-    link: Optional[ReactionRole] = await db_thread(ReactionRole.get, message.channel.id, message.id, str(emoji))
+    link: Optional[ReactionRole] = await ReactionRole.get(message.channel.id, message.id, str(emoji))
     if link is None:
         return None
     if link.auto_remove and not add:
@@ -30,7 +30,7 @@ async def get_role(message: Message, emoji: PartialEmoji, add: bool) -> Optional
 
     role: Optional[Role] = message.guild.get_role(link.role_id)
     if role is None:
-        await db_thread(db.delete, link)
+        await db.delete(link)
         return None
 
     return role, link.auto_remove
@@ -82,10 +82,10 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole)
         channels: Dict[TextChannel, Dict[Message, Set[str]]] = {}
         message_cache: Dict[Tuple[int, int], Message] = {}
-        for link in await db_thread(db.all, ReactionRole):  # type: ReactionRole
+        async for link in await db.stream(select(ReactionRole)):  # type: ReactionRole
             channel: Optional[TextChannel] = ctx.guild.get_channel(link.channel_id)
             if channel is None:
-                await db_thread(db.delete, link)
+                await db.delete(link)
                 continue
 
             key = link.channel_id, link.message_id
@@ -93,12 +93,12 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
                 try:
                     message_cache[key] = await channel.fetch_message(link.message_id)
                 except HTTPException:
-                    await db_thread(db.delete, link)
+                    await db.delete(link)
                     continue
             msg = message_cache[key]
 
             if ctx.guild.get_role(link.role_id) is None:
-                await db_thread(db.delete, link)
+                await db.delete(link)
                 continue
 
             channels.setdefault(channel, {}).setdefault(msg, set())
@@ -126,26 +126,22 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole)
         out = []
-        for link in await db_thread(
-            db.all,
-            ReactionRole,
-            channel_id=msg.channel.id,
-            message_id=msg.id,
-        ):  # type: ReactionRole
+        link: ReactionRole
+        async for link in await db.stream(select(ReactionRole).filter_by(channel_id=msg.channel.id, message_id=msg.id)):
             channel: Optional[TextChannel] = ctx.guild.get_channel(link.channel_id)
             if channel is None:
-                await db_thread(db.delete, link)
+                await db.delete(link)
                 continue
 
             try:
                 await channel.fetch_message(link.message_id)
             except HTTPException:
-                await db_thread(db.delete, link)
+                await db.delete(link)
                 continue
 
             role: Optional[Role] = ctx.guild.get_role(link.role_id)
             if role is None:
-                await db_thread(db.delete, link)
+                await db.delete(link)
                 continue
 
             if link.auto_remove:
@@ -169,7 +165,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
         emoji: PartialEmoji
 
-        if await db_thread(ReactionRole.get, msg.channel.id, msg.id, str(emoji)) is not None:
+        if await ReactionRole.get(msg.channel.id, msg.id, str(emoji)):
             raise CommandError(t.rr_link_already_exists)
         if not msg.channel.permissions_for(msg.guild.me).add_reactions:
             raise CommandError(t.rr_link_not_created_no_permissions)
@@ -179,7 +175,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         if role.managed or role.is_default():
             raise CommandError(t.link_not_created_managed_role(role))
 
-        await db_thread(ReactionRole.create, msg.channel.id, msg.id, str(emoji), role.id, auto_remove)
+        await ReactionRole.create(msg.channel.id, msg.id, str(emoji), role.id, auto_remove)
         await msg.add_reaction(emoji)
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole, description=t.rr_link_created)
         await reply(ctx, embed=embed)
@@ -193,10 +189,10 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
         emoji: PartialEmoji
 
-        if (link := await db_thread(ReactionRole.get, msg.channel.id, msg.id, str(emoji))) is None:
+        if not (link := await ReactionRole.get(msg.channel.id, msg.id, str(emoji))):
             raise CommandError(t.rr_link_not_found)
 
-        await db_thread(db.delete, link)
+        await db.delete(link)
         for reaction in msg.reactions:
             if str(emoji) == str(reaction.emoji):
                 await reaction.clear()

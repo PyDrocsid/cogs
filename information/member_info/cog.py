@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from dateutil.relativedelta import relativedelta
 from discord import Member, Embed
@@ -6,7 +7,7 @@ from discord.ext import commands
 from discord.ext.commands import Context, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, filter_by
 from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
@@ -36,20 +37,19 @@ class MemberInfoCog(Cog, name="Member Information"):
 
     @classmethod
     async def get_relevant_join(cls, member: Member) -> datetime:
-        last_auto_kick = await db_thread(
-            lambda: db.query(Kick, member=member.id, mod=None).order_by(Kick.timestamp.desc()).first(),
+        last_auto_kick: Optional[Kick] = await db.first(
+            filter_by(Kick, member=member.id, mod=None).order_by(Kick.timestamp.desc()),
         )
+
+        relevant_join: Optional[Join]
         if last_auto_kick:
-            relevant_join = await db_thread(
-                lambda: db.query(Join, member=member.id)
+            relevant_join = await db.first(
+                filter_by(Join, member=member.id)
                 .filter(Join.timestamp > last_auto_kick.timestamp)
-                .order_by(Join.timestamp.asc())
-                .first(),
+                .order_by(Join.timestamp.asc()),
             )
         else:
-            relevant_join = await db_thread(
-                lambda: db.query(Join, member=member.id).order_by(Join.timestamp.asc()).first(),
-            )
+            relevant_join = await db.first(filter_by(Join, member=member.id).order_by(Join.timestamp.asc()))
 
         if relevant_join is None:
             relevant_join = member.joined_at

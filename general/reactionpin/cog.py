@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import Context, guild_only, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
@@ -33,7 +33,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
             return
 
         access: bool = await ReactionPinPermission.pin.check_permissions(member)
-        if not (await db_thread(db.get, ReactionPinChannel, message.channel.id) is not None or access):
+        if not (await db.exists(select(ReactionPinChannel).filter_by(channel=message.channel.id)) or access):
             return
 
         blocked_role = await RoleSettings.get("mute")
@@ -57,7 +57,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
             return
 
         access: bool = await ReactionPinPermission.pin.check_permissions(member)
-        is_reactionpin_channel = await db_thread(db.get, ReactionPinChannel, message.channel.id) is not None
+        is_reactionpin_channel = await db.exists(select(ReactionPinChannel).filter_by(channel=message.channel.id))
         if message.pinned and (access or (is_reactionpin_channel and member == message.author)):
             await message.unpin()
             raise StopEventHandling
@@ -98,7 +98,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
 
         out = []
         guild: Guild = ctx.guild
-        for channel in await db_thread(db.all, ReactionPinChannel):
+        async for channel in await db.stream(select(ReactionPinChannel)):
             text_channel: Optional[TextChannel] = guild.get_channel(channel.channel)
             if text_channel is None:
                 continue
@@ -117,10 +117,10 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         add channel to whitelist
         """
 
-        if await db_thread(db.get, ReactionPinChannel, channel.id) is not None:
+        if await db.exists(select(ReactionPinChannel).filter_by(channel=channel.id)):
             raise CommandError(t.channel_already_whitelisted)
 
-        await db_thread(ReactionPinChannel.create, channel.id)
+        await ReactionPinChannel.create(channel.id)
         embed = Embed(title=t.reactionpin, colour=Colors.ReactionPin, description=t.channel_whitelisted)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_whitelisted_rp(channel.mention))
@@ -131,13 +131,13 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         remove channel from whitelist
         """
 
-        if (row := await db_thread(db.get, ReactionPinChannel, channel.id)) is None:
+        if not (row := await db.first(select(ReactionPinChannel).filter_by(channel=channel.id))):
             raise CommandError(t.channel_not_whitelisted)
 
-        await db_thread(db.delete, row)
+        await db.delete(row)
         embed = Embed(title=t.reactionpin, colour=Colors.ReactionPin, description=t.channel_removed)
         await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.f_log_channel_removed_rp(channel.mention))
+        await send_to_changelog(ctx.guild, t.log_channel_removed_rp(channel.mention))
 
     @reactionpin.command(name="pin_message", aliases=["pm"])
     async def reactionpin_pin_message(self, ctx: Context, enabled: bool):

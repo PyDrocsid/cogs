@@ -1,3 +1,4 @@
+import asyncio
 import re
 from datetime import datetime, timedelta
 from typing import Optional, Union, List, Tuple
@@ -8,7 +9,7 @@ from discord.ext.commands import guild_only, Context, CommandError, Converter, B
 from discord.utils import snowflake_time
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
@@ -47,7 +48,7 @@ async def get_mute_role(guild: Guild) -> Role:
 async def update_join_date(guild: Guild, user_id: int):
     member: Optional[Member] = guild.get_member(user_id)
     if member is not None:
-        await db_thread(Join.update, member.id, str(member), member.joined_at)
+        await Join.update(member.id, str(member), member.joined_at)
 
 
 async def send_to_changelog_mod(
@@ -97,7 +98,7 @@ class ModCog(Cog, name="Mod Tools"):
         guild: Guild = self.bot.guilds[0]
         mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
         if mute_role is not None:
-            for mute in await db_thread(db.all, Mute, active=True):
+            async for mute in await db.stream(filter_by(Mute, active=True)):
                 member: Optional[Member] = guild.get_member(mute.member)
                 if member is not None:
                     await member.add_roles(mute_role)
@@ -108,12 +109,13 @@ class ModCog(Cog, name="Mod Tools"):
             self.mod_loop.restart()
 
     @tasks.loop(minutes=30)
+    @db_wrapper
     async def mod_loop(self):
         guild: Guild = self.bot.guilds[0]
 
-        for ban in await db_thread(db.all, Ban, active=True):
+        async for ban in await db.stream(filter_by(Ban, active=True)):
             if ban.days != -1 and datetime.utcnow() >= ban.timestamp + timedelta(days=ban.days):
-                await db_thread(Ban.deactivate, ban.id)
+                await Ban.deactivate(ban.id)
 
                 try:
                     await guild.unban(user := await self.bot.fetch_user(ban.member))
@@ -133,7 +135,7 @@ class ModCog(Cog, name="Mod Tools"):
         if mute_role is None:
             return
 
-        for mute in await db_thread(db.all, Mute, active=True):
+        async for mute in await db.stream(filter_by(Mute, active=True)):
             if mute.days != -1 and datetime.utcnow() >= mute.timestamp + timedelta(days=mute.days):
                 if member := guild.get_member(mute.member):
                     await member.remove_roles(mute_role)
@@ -148,32 +150,32 @@ class ModCog(Cog, name="Mod Tools"):
                     member,
                     t.log_unmuted_expired,
                 )
-                await db_thread(Mute.deactivate, mute.id)
+                await Mute.deactivate(mute.id)
 
     @log_auto_kick.subscribe
     async def handle_log_auto_kick(self, member: Member):
-        await db_thread(Kick.create, member.id, str(member), None, None)
+        await Kick.create(member.id, str(member), None, None)
 
     async def on_member_join(self, member: Member):
-        await db_thread(Join.create, member.id, str(member))
+        await Join.create(member.id, str(member))
         mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
             return
 
-        if await db_thread(db.first, Mute, active=True, member=member.id) is not None:
+        if await db.exists(filter_by(Mute, active=True, member=member.id)):
             await member.add_roles(mute_role)
 
     async def on_member_remove(self, member: Member):
-        await db_thread(Leave.create, member.id, str(member))
+        await Leave.create(member.id, str(member))
 
     async def on_member_nick_update(self, before: Member, after: Member):
-        await db_thread(UsernameUpdate.create, before.id, before.nick, after.nick, True)
+        await UsernameUpdate.create(before.id, before.nick, after.nick, True)
 
     async def on_user_update(self, before: User, after: User):
         if str(before) == str(after):
             return
 
-        await db_thread(UsernameUpdate.create, before.id, str(before), str(after), False)
+        await UsernameUpdate.create(before.id, str(before), str(after), False)
 
     @commands.command()
     @guild_only()
@@ -185,7 +187,7 @@ class ModCog(Cog, name="Mod Tools"):
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
 
-        await db_thread(Report.create, member.id, str(member), ctx.author.id, reason)
+        await Report.create(member.id, str(member), ctx.author.id, reason)
         embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
         await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, member, reason)
@@ -215,7 +217,7 @@ class ModCog(Cog, name="Mod Tools"):
         except (Forbidden, HTTPException):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
-        await db_thread(Warn.create, member.id, str(member), ctx.author.id, reason)
+        await Warn.create(member.id, str(member), ctx.author.id, reason)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, member, reason)
 
@@ -256,7 +258,7 @@ class ModCog(Cog, name="Mod Tools"):
             await user.add_roles(mute_role)
             await user.move_to(None)
 
-        active_mutes: List[Mute] = await db_thread(db.all, Mute, active=True, member=user.id)
+        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
         for mute in active_mutes:
             if mute.days == -1:
                 raise CommandError(t.already_muted)
@@ -266,13 +268,13 @@ class ModCog(Cog, name="Mod Tools"):
                 raise CommandError(t.already_muted)
 
         for mute in active_mutes:
-            await db_thread(Mute.upgrade, mute.id, ctx.author.id)
+            await Mute.upgrade(mute.id, ctx.author.id)
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
 
         if days is not None:
-            await db_thread(Mute.create, user.id, str(user), ctx.author.id, days, reason, bool(active_mutes))
+            await Mute.create(user.id, str(user), ctx.author.id, days, reason, bool(active_mutes))
             user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, reason, cnt=days)
             await send_to_changelog_mod(
                 ctx.guild,
@@ -284,7 +286,7 @@ class ModCog(Cog, name="Mod Tools"):
                 duration=t.log_field.days(cnt=days),
             )
         else:
-            await db_thread(Mute.create, user.id, str(user), ctx.author.id, -1, reason, bool(active_mutes))
+            await Mute.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_mutes))
             user_embed.description = t.muted_inf(ctx.author.mention, ctx.guild.name, reason)
             await send_to_changelog_mod(
                 ctx.guild,
@@ -323,8 +325,8 @@ class ModCog(Cog, name="Mod Tools"):
             was_muted = True
             await user.remove_roles(mute_role)
 
-        for mute in await db_thread(db.all, Mute, active=True, member=user.id):
-            await db_thread(Mute.deactivate, mute.id, ctx.author.id, reason)
+        async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
+            await Mute.deactivate(mute.id, ctx.author.id, reason)
             was_muted = True
         if not was_muted:
             raise CommandError(t.not_muted)
@@ -353,7 +355,7 @@ class ModCog(Cog, name="Mod Tools"):
         if member.top_role >= ctx.guild.me.top_role or member.id == ctx.guild.owner_id:
             raise CommandError(t.cannot_kick)
 
-        await db_thread(Kick.create, member.id, str(member), ctx.author.id, reason)
+        await Kick.create(member.id, str(member), ctx.author.id, reason)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason)
 
         user_embed = Embed(
@@ -407,7 +409,7 @@ class ModCog(Cog, name="Mod Tools"):
         if isinstance(user, Member) and (user.top_role >= ctx.guild.me.top_role or user.id == ctx.guild.owner_id):
             raise CommandError(t.cannot_ban)
 
-        active_bans: List[Ban] = await db_thread(db.all, Ban, active=True, member=user.id)
+        active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=user.id))
         for ban in active_bans:
             if ban.days == -1:
                 raise CommandError(t.already_banned)
@@ -417,15 +419,15 @@ class ModCog(Cog, name="Mod Tools"):
                 raise CommandError(t.already_banned)
 
         for ban in active_bans:
-            await db_thread(Ban.upgrade, ban.id, ctx.author.id)
-        for mute in await db_thread(db.all, Mute, active=True, member=user.id):
-            await db_thread(Mute.upgrade, mute.id, ctx.author.id)
+            await Ban.upgrade(ban.id, ctx.author.id)
+        async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
+            await Mute.upgrade(mute.id, ctx.author.id)
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
 
         if ban_days is not None:
-            await db_thread(Ban.create, user.id, str(user), ctx.author.id, ban_days, reason, bool(active_bans))
+            await Ban.create(user.id, str(user), ctx.author.id, ban_days, reason, bool(active_bans))
             user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, reason, cnt=ban_days)
             await send_to_changelog_mod(
                 ctx.guild,
@@ -437,7 +439,7 @@ class ModCog(Cog, name="Mod Tools"):
                 duration=t.log_field.days(ban_days),
             )
         else:
-            await db_thread(Ban.create, user.id, str(user), ctx.author.id, -1, reason, bool(active_bans))
+            await Ban.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_bans))
             user_embed.description = t.banned_inf(ctx.author.mention, ctx.guild.name, reason)
             await send_to_changelog_mod(
                 ctx.guild,
@@ -481,9 +483,9 @@ class ModCog(Cog, name="Mod Tools"):
         except HTTPException:
             was_banned = False
 
-        for ban in await db_thread(db.all, Ban, active=True, member=user.id):
+        async for ban in await db.stream(filter_by(Ban, active=True, member=user.id)):
             was_banned = True
-            await db_thread(Ban.deactivate, ban.id, ctx.author.id, reason)
+            await Ban.deactivate(ban.id, ctx.author.id, reason)
         if not was_banned:
             raise CommandError(t.not_banned)
 
@@ -534,10 +536,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         async def count(cls):
             if cls is Report:
-                active = await db_thread(db.count, cls, reporter=user_id)
+                active = await db.count(filter_by(cls, reporter=user_id))
             else:
-                active = await db_thread(db.count, cls, mod=user_id)
-            passive = await db_thread(db.count, cls, member=user_id)
+                active = await db.count(filter_by(cls, mod=user_id))
+            passive = await db.count(filter_by(cls, member=user_id))
             return t.active_passive(active, passive)
 
         embed.add_field(name=t.reported_cnt, value=await count(Report))
@@ -546,14 +548,14 @@ class ModCog(Cog, name="Mod Tools"):
         embed.add_field(name=t.kicked_cnt, value=await count(Kick))
         embed.add_field(name=t.banned_cnt, value=await count(Ban))
 
-        if (ban := await db_thread(db.first, Ban, member=user_id, active=True)) is not None:
+        if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
             if ban.days != -1:
                 expiry_date: datetime = ban.timestamp + timedelta(days=ban.days)
                 days_left = (expiry_date - datetime.utcnow()).days + 1
                 status = t.status_banned_days(cnt=ban.days, left=days_left)
             else:
                 status = t.status_banned
-        elif (mute := await db_thread(db.first, Mute, member=user_id, active=True)) is not None:
+        elif (mute := await db.get(Mute, member=user_id, active=True)) is not None:
             if mute.days != -1:
                 expiry_date: datetime = mute.timestamp + timedelta(days=mute.days)
                 days_left = (expiry_date - datetime.utcnow()).days + 1
@@ -585,11 +587,11 @@ class ModCog(Cog, name="Mod Tools"):
         await update_join_date(self.bot.guilds[0], user_id)
 
         out: List[Tuple[datetime, str]] = [(snowflake_time(user_id), t.ulog_created)]
-        for join in await db_thread(db.all, Join, member=user_id):
+        async for join in await db.stream(filter_by(Join, member=user_id)):
             out.append((join.timestamp, t.ulog_joined))
-        for leave in await db_thread(db.all, Leave, member=user_id):
+        async for leave in await db.stream(filter_by(Leave, member=user_id)):
             out.append((leave.timestamp, t.ulog_left))
-        for username_update in await db_thread(db.all, UsernameUpdate, member=user_id):
+        async for username_update in await db.stream(filter_by(UsernameUpdate, member=user_id)):
             if not username_update.nick:
                 msg = t.ulog_username_updated(username_update.member_name, username_update.new_name)
             elif username_update.member_name is None:
@@ -599,11 +601,11 @@ class ModCog(Cog, name="Mod Tools"):
             else:
                 msg = t.ulog_nick_updated(username_update.member_name, username_update.new_name)
             out.append((username_update.timestamp, msg))
-        for report in await db_thread(db.all, Report, member=user_id):
+        async for report in await db.stream(filter_by(Report, member=user_id)):
             out.append((report.timestamp, t.ulog_reported(f"<@{report.reporter}>", report.reason)))
-        for warn in await db_thread(db.all, Warn, member=user_id):
+        async for warn in await db.stream(filter_by(Warn, member=user_id)):
             out.append((warn.timestamp, t.ulog_warned(f"<@{warn.mod}>", warn.reason)))
-        for mute in await db_thread(db.all, Mute, member=user_id):
+        async for mute in await db.stream(filter_by(Mute, member=user_id)):
             text = [t.ulog_muted, t.ulog_muted_inf][mute.days == -1][mute.is_upgrade].format
             if mute.days == -1:
                 out.append((mute.timestamp, text(f"<@{mute.mod}>", mute.reason)))
@@ -619,12 +621,12 @@ class ModCog(Cog, name="Mod Tools"):
                             t.ulog_unmuted(f"<@{mute.unmute_mod}>", mute.unmute_reason),
                         ),
                     )
-        for kick in await db_thread(db.all, Kick, member=user_id):
+        async for kick in await db.stream(filter_by(Kick, member=user_id)):
             if kick.mod is not None:
                 out.append((kick.timestamp, t.ulog_kicked(f"<@{kick.mod}>", kick.reason)))
             else:
                 out.append((kick.timestamp, t.ulog_autokicked))
-        for ban in await db_thread(db.all, Ban, member=user_id):
+        async for ban in await db.stream(filter_by(Ban, member=user_id)):
             text = [t.ulog_banned, t.ulog_banned_inf][ban.days == -1][ban.is_upgrade].format
             if ban.days == -1:
                 out.append((ban.timestamp, text(f"<@{ban.mod}>", ban.reason)))
@@ -677,16 +679,14 @@ class ModCog(Cog, name="Mod Tools"):
 
         guild: Guild = ctx.guild
 
-        def init():
-            for member in guild.members:  # type: Member
-                Join.update(member.id, str(member), member.joined_at)
-
         embed = Embed(
             title=t.init_join_log,
             description=t.filling_join_log(cnt=len(guild.members)),
             color=Colors.ModTools,
         )
         await reply(ctx, embed=embed)
-        await db_thread(init)
+
+        await asyncio.gather(*[Join.update(member.id, str(member), member.joined_at) for member in guild.members])
+
         embed.description = t.join_log_filled
         await reply(ctx, embed=embed)

@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 from typing import Union
 
-from PyDrocsid.database import db
 from sqlalchemy import Column, String, BigInteger, DateTime
+
+from PyDrocsid.database import db, delete, filter_by
 
 
 class RedditChannel(db.Base):
@@ -12,9 +15,9 @@ class RedditChannel(db.Base):
     channel: Union[Column, int] = Column(BigInteger, primary_key=True)
 
     @staticmethod
-    def create(subreddit: str, channel: int) -> "RedditChannel":
+    async def create(subreddit: str, channel: int) -> RedditChannel:
         row = RedditChannel(subreddit=subreddit, channel=channel)
-        db.add(row)
+        await db.add(row)
         return row
 
 
@@ -25,19 +28,20 @@ class RedditPost(db.Base):
     timestamp: Union[Column, datetime] = Column(DateTime)
 
     @staticmethod
-    def create(post_id: str) -> "RedditPost":
+    async def create(post_id: str) -> RedditPost:
         row = RedditPost(post_id=post_id, timestamp=datetime.utcnow())
-        db.add(row)
+        await db.add(row)
         return row
 
     @staticmethod
-    def clean():
+    async def clean():
         drop_before_timestamp = datetime.utcnow() - timedelta(weeks=1)
-        db.query(RedditPost).filter(RedditPost.timestamp < drop_before_timestamp).delete()
+        await db.exec(delete(RedditPost).filter(RedditPost.timestamp < drop_before_timestamp))
 
     @staticmethod
-    def post(post_id: str) -> bool:
-        if db.get(RedditPost, post_id) is not None:
+    async def post(post_id: str) -> bool:
+        if await db.exists(filter_by(RedditPost, post_id=post_id)):
             return False
-        RedditPost.create(post_id)
+
+        await RedditPost.create(post_id)
         return True

@@ -12,7 +12,7 @@ class NewsAuthorization(db.Base):
     notification_role_id: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
-    def create(user_id: int, channel_id: int, notification_role_id: Optional[int]) -> "NewsAuthorization":
+    async def create(user_id: int, channel_id: int, notification_role_id: Optional[int]) -> "NewsAuthorization":
         row = NewsAuthorization(user_id=user_id, channel_id=channel_id, notification_role_id=notification_role_id)
-        db.add(row)
+        await db.add(row)
         return row

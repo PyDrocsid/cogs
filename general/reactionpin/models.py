@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Union
 
 from PyDrocsid.database import db
@@ -10,7 +12,7 @@ class ReactionPinChannel(db.Base):
     channel: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
 
     @staticmethod
-    def create(channel: int) -> "ReactionPinChannel":
+    async def create(channel: int) -> ReactionPinChannel:
         row = ReactionPinChannel(channel=channel)
-        db.add(row)
+        await db.add(row)
         return row

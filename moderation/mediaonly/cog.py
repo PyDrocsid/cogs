@@ -8,7 +8,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 from requests import RequestException
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed, reply
@@ -31,7 +31,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
             return
         if await MediaOnlyPermission.bypass.check_permissions(message.author):
             return
-        if await db_thread(db.get, MediaOnlyChannel, message.channel.id) is None:
+        if await db.get(MediaOnlyChannel, channel=message.channel.id) is None:
             return
 
         urls = [(att.url,) for att in message.attachments]
@@ -73,12 +73,12 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
 
         guild: Guild = ctx.guild
         out = []
-        for channel in await db_thread(db.all, MediaOnlyChannel):
+        async for channel in await db.stream(select(MediaOnlyChannel)):
             text_channel: Optional[TextChannel] = guild.get_channel(channel.channel)
             if text_channel is not None:
                 out.append(f":small_orange_diamond: {text_channel.mention}")
             else:
-                await db_thread(db.delete, channel)
+                await db.delete(channel)
         embed = Embed(title=t.media_only_channels_header, colour=Colors.error)
         if out:
             embed.colour = Colors.MediaOnly
@@ -94,12 +94,12 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
         add a media only channel
         """
 
-        if await db_thread(db.get, MediaOnlyChannel, channel.id) is not None:
+        if await db.get(MediaOnlyChannel, channel=channel.id) is not None:
             raise CommandError(t.channel_already_media_only)
         if not channel.permissions_for(channel.guild.me).manage_messages:
             raise CommandError(t.media_only_not_changed_no_permissions)
 
-        await db_thread(MediaOnlyChannel.create, channel.id)
+        await MediaOnlyChannel.create(channel.id)
         embed = Embed(
             title=t.media_only_channels_header,
             description=t.channel_now_media_only,
@@ -114,10 +114,10 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
         remove a media only channel
         """
 
-        if (row := await db_thread(db.get, MediaOnlyChannel, channel.id)) is None:
+        if (row := await db.get(MediaOnlyChannel, channel=channel.id)) is None:
             raise CommandError(t.channel_not_media_only)
 
-        await db_thread(db.delete, row)
+        await db.delete(row)
         embed = Embed(
             title=t.media_only_channels_header,
             description=t.channel_not_media_only_anymore,

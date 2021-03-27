@@ -1,7 +1,8 @@
-from typing import Union, List
+from typing import Union
 
-from PyDrocsid.database import db
 from sqlalchemy import Column, BigInteger
+
+from PyDrocsid.database import db, filter_by, select, delete
 
 
 class LogExclude(db.Base):
@@ -10,17 +11,17 @@ class LogExclude(db.Base):
     channel_id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
 
     @staticmethod
-    def add(channel_id: int):
-        db.add(LogExclude(channel_id=channel_id))
+    async def add(channel_id: int):
+        await db.add(LogExclude(channel_id=channel_id))
 
     @staticmethod
-    def exists(channel_id: int) -> bool:
-        return db.get(LogExclude, channel_id) is not None
+    async def exists(channel_id: int) -> bool:
+        return await db.exists(filter_by(LogExclude, channel_id=channel_id))
 
     @staticmethod
-    def all() -> List[int]:
-        return [le.channel_id for le in db.query(LogExclude)]
+    async def all() -> list[int]:
+        return [le.channel_id async for le in await db.stream(select(LogExclude))]
 
     @staticmethod
-    def remove(channel_id: int):
-        db.delete(db.get(LogExclude, channel_id))
+    async def remove(channel_id: int):
+        await db.exec(delete(LogExclude).filter_by(channel_id=channel_id))

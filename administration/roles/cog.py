@@ -6,7 +6,7 @@ from discord.ext.commands import CommandError, Context, guild_only, UserInputErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor, Config
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
@@ -36,7 +36,13 @@ async def configure_role(ctx: Context, role_name: str, role: Role, check_assigna
 
 async def is_authorized(author: Member, target_role: Role) -> bool:
     roles = {role.id for role in author.roles} | {author.id}
-    return any(auth.source in roles for auth in await db_thread(RoleAuth.all, target=target_role.id))
+
+    auth: RoleAuth
+    async for auth in await db.stream(select(RoleAuth).filter_by(target=target_role.id)):
+        if auth.source in roles:
+            return True
+
+    return False
 
 
 class RolesCog(Cog, name="Roles"):
@@ -101,11 +107,12 @@ class RolesCog(Cog, name="Roles"):
         embed = Embed(title=t.role_auth, colour=Colors.Roles)
         members: Dict[Member, List[Role]] = {}
         roles: Dict[Role, List[Role]] = {}
-        for auth in await db_thread(RoleAuth.all):  # type: RoleAuth
+        auth: RoleAuth
+        async for auth in await db.stream(select(RoleAuth)):
             source: Optional[Union[Member, Role]] = ctx.guild.get_member(auth.source) or ctx.guild.get_role(auth.source)
             target: Optional[Role] = ctx.guild.get_role(auth.target)
             if source is None or target is None:
-                await db_thread(db.delete, auth)
+                await db.delete(auth)
             else:
                 [members, roles][isinstance(source, Role)].setdefault(source, []).append(target)
         if not members and not roles:
@@ -132,10 +139,10 @@ class RolesCog(Cog, name="Roles"):
         add a new role assignment authorization
         """
 
-        if await db_thread(RoleAuth.check, source.id, target.id):
+        if await RoleAuth.check(source.id, target.id):
             raise CommandError(t.role_auth_already_exists)
 
-        await db_thread(RoleAuth.add, source.id, target.id)
+        await RoleAuth.add(source.id, target.id)
         await reply(ctx, t.role_auth_created)
         await send_to_changelog(ctx.guild, t.log_role_auth_created(source, target))
 
@@ -145,10 +152,10 @@ class RolesCog(Cog, name="Roles"):
         remove a role assignment authorization
         """
 
-        if not await db_thread(RoleAuth.check, source.id, target.id):
+        if not (auth := await db.first(select(RoleAuth).filter_by(source=source.id, target=target.id))):
             raise CommandError(t.role_auth_not_found)
 
-        await db_thread(RoleAuth.remove, source.id, target.id)
+        await db.delete(auth)
         await reply(ctx, t.role_auth_removed)
         await send_to_changelog(ctx.guild, t.log_role_auth_removed(source, target))
 

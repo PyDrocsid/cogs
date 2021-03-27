@@ -6,7 +6,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread
+from PyDrocsid.database import db_wrapper
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
 from cogs.library.contributor import Contributor
@@ -81,6 +81,7 @@ class LoggingCog(Cog, name="Logging"):
             self.cleanup_loop.restart()
 
     @tasks.loop(minutes=30)
+    @db_wrapper
     async def cleanup_loop(self):
         days: int = await LoggingSettings.maxage.get()
         if days == -1:
@@ -109,7 +110,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
-        if await db_thread(LogExclude.exists, after.channel.id):
+        if await LogExclude.exists(after.channel.id):
             return
 
         embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=datetime.utcnow())
@@ -128,7 +129,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
-        if await db_thread(LogExclude.exists, message.channel.id):
+        if await LogExclude.exists(message.channel.id):
             return
 
         embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=datetime.utcnow())
@@ -149,7 +150,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if await is_logging_channel(message.channel):
             return
-        if await db_thread(LogExclude.exists, message.channel.id):
+        if await LogExclude.exists(message.channel.id):
             return
 
         embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=datetime.utcnow())
@@ -176,7 +177,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
-        if await db_thread(LogExclude.exists, event.channel_id):
+        if await LogExclude.exists(event.channel_id):
             return
 
         embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=datetime.utcnow())
@@ -439,10 +440,10 @@ class LoggingCog(Cog, name="Logging"):
 
         embed = Embed(title=t.excluded_channels, colour=Colors.Logging)
         out = []
-        for channel_id in await db_thread(LogExclude.all):
+        for channel_id in await LogExclude.all():
             channel: Optional[TextChannel] = self.bot.get_channel(channel_id)
             if channel is None:
-                await db_thread(LogExclude.remove, channel_id)
+                await LogExclude.remove(channel_id)
             else:
                 out.append(f":small_blue_diamond: {channel.mention}")
         if not out:
@@ -458,10 +459,10 @@ class LoggingCog(Cog, name="Logging"):
         exclude a channel from logging
         """
 
-        if await db_thread(LogExclude.exists, channel.id):
+        if await LogExclude.exists(channel.id):
             raise CommandError(t.already_excluded)
 
-        await db_thread(LogExclude.add, channel.id)
+        await LogExclude.add(channel.id)
         embed = Embed(title=t.excluded_channels, description=t.excluded, colour=Colors.Logging)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_excluded(channel.mention))
@@ -472,10 +473,10 @@ class LoggingCog(Cog, name="Logging"):
         remove a channel from exclude list
         """
 
-        if not await db_thread(LogExclude.exists, channel.id):
+        if not await LogExclude.exists(channel.id):
             raise CommandError(t.not_excluded)
 
-        await db_thread(LogExclude.remove, channel.id)
+        await LogExclude.remove(channel.id)
         embed = Embed(title=t.excluded_channels, description=t.unexcluded, colour=Colors.Logging)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_unexcluded(channel.mention))

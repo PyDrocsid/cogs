@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.ext.commands import Context, CommandError, CheckFailure, check, guild_only, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db_thread, db
+from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
 from cogs.library.contributor import Contributor
@@ -52,7 +52,7 @@ class VerificationCog(Cog, name="Verification"):
         add: List[Role] = []
         remove: List[Role] = []
         fail = False
-        for vrole in await db_thread(db.all, VerificationRole):  # type: VerificationRole
+        async for vrole in await db.stream(select(VerificationRole)):  # type: VerificationRole
             role: Optional[Role] = guild.get_role(vrole.role_id)
             if role is None:
                 continue
@@ -91,10 +91,10 @@ class VerificationCog(Cog, name="Verification"):
 
         normal: List[Role] = []
         reverse: List[Role] = []
-        for vrole in await db_thread(db.all, VerificationRole):  # type: VerificationRole
+        async for vrole in await db.stream(select(VerificationRole)):  # type: VerificationRole
             role: Optional[Role] = ctx.guild.get_role(vrole.role_id)
             if role is None:
-                await db_thread(db.delete, vrole)
+                await db.delete(vrole)
             else:
                 [normal, reverse][vrole.reverse].append(role)
 
@@ -138,10 +138,10 @@ class VerificationCog(Cog, name="Verification"):
         if role.managed:
             raise CommandError(t.role_not_set_managed_role(role))
 
-        if await db_thread(db.get, VerificationRole, role.id) is not None:
+        if await db.get(VerificationRole, role_id=role.id) is not None:
             raise CommandError(t.verification_role_already_set)
 
-        await db_thread(VerificationRole.create, role.id, reverse)
+        await VerificationRole.create(role.id, reverse)
         embed = Embed(
             title=t.verification,
             description=t.verification_role_added,
@@ -159,10 +159,10 @@ class VerificationCog(Cog, name="Verification"):
         remove verification role
         """
 
-        if (row := await db_thread(db.get, VerificationRole, role.id)) is None:
+        if (row := await db.get(VerificationRole, role_id=role.id)) is None:
             raise CommandError(t.verification_role_not_set)
 
-        await db_thread(db.delete, row)
+        await db.delete(row)
         embed = Embed(
             title=t.verification,
             description=t.verification_role_removed,
