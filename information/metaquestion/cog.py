@@ -10,6 +10,7 @@ from PyDrocsid.util import check_wastebasket
 from .colors import Colors
 from .permissions import MetaQuestionPermission
 from cogs.library.contributor import Contributor
+from ...pubsub import can_respond_on_reaction
 
 tg = t.g
 t = t.metaquestion
@@ -41,7 +42,8 @@ class MetaQuestionCog(Cog, name="Metafragen"):
             return
 
         if emoji.name == "metaquestion":
-            if message.author.bot or not message.channel.permissions_for(member).send_messages:
+            can_send = not message.author.bot and message.channel.permissions_for(member).send_messages
+            if not can_send or not all(await can_respond_on_reaction(message.channel)):
                 try:
                     await message.remove_reaction(emoji, member)
                 except Forbidden:
@@ -74,8 +76,10 @@ class MetaQuestionCog(Cog, name="Metafragen"):
         display information about meta questions
         """
 
-        message: Message = await ctx.send(embed=make_embed(ctx.author))
-        await message.add_reaction(name_to_emoji["wastebasket"])
+        if all(await can_respond_on_reaction(ctx.channel)):
+            message: Message = await ctx.send(embed=make_embed(ctx.author))
+            await message.add_reaction(name_to_emoji["wastebasket"])
+
         try:
             await ctx.message.delete()
         except (Forbidden, NotFound, HTTPException):

@@ -10,7 +10,7 @@ from PyDrocsid.database import db_wrapper
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
 from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog, send_alert
+from cogs.library.pubsub import send_to_changelog, send_alert, can_respond_on_reaction
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission
@@ -73,6 +73,18 @@ class LoggingCog(Cog, name="Logging"):
     @send_alert.subscribe
     async def handle_send_alert(self, guild: Guild, message: Union[str, Embed]):
         await send_to_channel(guild, LoggingSettings.alert_channel, message)
+
+    @can_respond_on_reaction.subscribe
+    async def handle_can_respond_on_reaction(self, channel: TextChannel) -> bool:
+        for setting in [
+            LoggingSettings.edit_channel,
+            LoggingSettings.delete_channel,
+            LoggingSettings.alert_channel,
+            LoggingSettings.changelog_channel,
+        ]:
+            if await setting.get() == channel.id:
+                return False
+        return True
 
     async def on_ready(self):
         try:

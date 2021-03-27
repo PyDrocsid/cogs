@@ -8,7 +8,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 from requests import RequestException
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.database import db, select
+from PyDrocsid.database import db, select, filter_by
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed, reply
@@ -16,7 +16,7 @@ from .colors import Colors
 from .models import MediaOnlyChannel
 from .permissions import MediaOnlyPermission
 from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
+from cogs.library.pubsub import send_to_changelog, can_respond_on_reaction
 
 tg = t.g
 t = t.mediaonly
@@ -25,6 +25,10 @@ t = t.mediaonly
 class MediaOnlyCog(Cog, name="MediaOnly"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
     PERMISSIONS = MediaOnlyPermission
+
+    @can_respond_on_reaction.subscribe
+    async def handle_can_respond_on_reaction(self, channel: TextChannel) -> bool:
+        return not await db.exists(filter_by(MediaOnlyChannel, channel=channel.id))
 
     async def on_message(self, message: Message):
         if message.guild is None or message.author.bot:
