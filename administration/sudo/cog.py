@@ -9,6 +9,7 @@ from PyDrocsid.config import Config
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import call_event_handlers
 from PyDrocsid.permission import permission_override
+from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from .permissions import SudoPermission
 from cogs.library.contributor import Contributor
@@ -49,6 +50,12 @@ class SudoCog(Cog, name="Sudo"):
 
         permission_override.set(Config.PERMISSION_LEVELS.max())
         await self.bot.process_commands(message)
+
+    @commands.command()
+    @SudoPermission.clear_cache.check
+    async def clear_cache(self, ctx: Context):
+        await redis.flushall()
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @commands.command()
     @SudoPermission.reload.check

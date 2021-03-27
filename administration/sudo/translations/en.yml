@@ -1,4 +1,5 @@
 permissions:
+  clear_cache: clear redis cache
   reload: reload the bot
   stop: stop the bot
   kill: kill the bot
