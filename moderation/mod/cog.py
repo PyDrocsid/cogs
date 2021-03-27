@@ -1,13 +1,22 @@
-import asyncio
 import re
+import time
 from datetime import datetime, timedelta
 from typing import Optional, Union, List, Tuple
 
 from discord import Role, Guild, Member, Forbidden, HTTPException, User, Embed, NotFound, Message
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, Converter, BadArgument, UserInputError
+from discord.ext.commands import (
+    guild_only,
+    Context,
+    CommandError,
+    Converter,
+    BadArgument,
+    UserInputError,
+    max_concurrency,
+)
 from discord.utils import snowflake_time
 
+from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.emojis import name_to_emoji
@@ -15,11 +24,11 @@ from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import get_prefix, reply
 from PyDrocsid.util import is_teamler, send_long_embed
+from cogs.library.contributor import Contributor
+from cogs.library.pubsub import send_to_changelog, log_auto_kick, get_ulog_entries
 from .colors import Colors
 from .models import Join, Mute, Ban, Leave, UsernameUpdate, Report, Warn, Kick
 from .permissions import ModPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog, log_auto_kick, get_ulog_entries
 
 tg = t.g
 t = t.mod
@@ -672,6 +681,7 @@ class ModCog(Cog, name="Mod Tools"):
 
     @commands.command()
     @ModPermission.init_join_log.check
+    @max_concurrency(1)
     @guild_only()
     async def init_join_log(self, ctx: Context):
         """
@@ -687,7 +697,9 @@ class ModCog(Cog, name="Mod Tools"):
         )
         await reply(ctx, embed=embed)
 
-        await asyncio.gather(*[Join.update(member.id, str(member), member.joined_at) for member in guild.members])
+        ts = time.time()
+        await semaphore_gather(50, *[Join.update(m.id, str(m), m.joined_at) for m in guild.members])
 
         embed.description = t.join_log_filled
+        embed.set_footer(text=f"{time.time() - ts:.2f} s")
         await reply(ctx, embed=embed)

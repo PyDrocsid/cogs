@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Union, Optional
 
-from PyDrocsid.database import db, filter_by
 from sqlalchemy import Column, Integer, BigInteger, DateTime, Text, Boolean
+
+from PyDrocsid.database import db, filter_by, db_wrapper
 
 
 class Join(db.Base):
@@ -21,12 +22,12 @@ class Join(db.Base):
         return row
 
     @staticmethod
+    @db_wrapper
     async def update(member: int, member_name: str, joined_at: datetime):
-        async for join in await db.stream(filter_by(Join, member=member)):
-            if join.timestamp >= joined_at - timedelta(minutes=1):
-                break
-        else:
-            await Join.create(member, member_name, joined_at)
+        if await db.exists(filter_by(Join, member=member).filter(Join.timestamp >= joined_at - timedelta(minutes=1))):
+            return
+
+        await Join.create(member, member_name, joined_at)
 
 
 class Leave(db.Base):
