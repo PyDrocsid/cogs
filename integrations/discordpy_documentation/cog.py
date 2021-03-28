@@ -28,7 +28,7 @@ import io
 import os
 import re
 import zlib
-from typing import Dict, Iterable, Optional, Callable
+from typing import Iterable, Optional, Callable
 
 import aiohttp
 import discord
@@ -37,14 +37,19 @@ from discord.ext import commands
 from discord.ext.commands import Context
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.environment import CACHE_TTL
+from PyDrocsid.logger import get_logger
 from PyDrocsid.permission import BasePermission
+from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
 from .colors import Colors
-from cogs.library.contributor import Contributor
+from ...contributor import Contributor
 
 tg = t.g
 t = t.discordpy_documentation
+
+logger = get_logger(__name__)
 
 
 def finder(text: str, collection: Iterable, *, key: Optional[Callable[..., str]] = None):
@@ -149,6 +154,73 @@ def parse_object_inv(stream: SphinxObjectFileReader, url: str):
     return result
 
 
+async def build_rtfm_lookup_table(key: str, page: str) -> dict[str, str]:
+    async with aiohttp.ClientSession() as session:
+        resp = await session.get(page + "/objects.inv")
+        if resp.status != 200:
+            logger.warning(f"Documentation for {key} ({page}) could not be loaded ({resp.status})")
+            return {}
+
+        stream = SphinxObjectFileReader(await resp.read())
+        return parse_object_inv(stream, page)
+
+
+async def get_lookup_table(ctx: Context, name: str, url: str) -> dict[str, str]:
+    if table := await redis.hgetall(key := f"pydoc:name={name}"):
+        return table
+
+    await ctx.trigger_typing()
+    logger.debug(f"loading documentation for {name} ({url})")
+    table = await build_rtfm_lookup_table(name, url)
+    if table:
+        logger.debug(f"documentation for {name} ({url}) has been loaded")
+
+    await redis.hmset_dict(key, table)
+    await redis.expire(key, CACHE_TTL)
+    return table
+
+
+async def do_rtfm(ctx: Context, key: str, obj: Optional[str]):
+    page_types = {"discord.py": "https://discordpy.readthedocs.io/en/latest", "python": "https://docs.python.org/3"}
+
+    if obj is None:
+        embed = Embed(
+            title=t.documentation(key.capitalize()),
+            description=page_types[key],
+            colour=Colors.DiscordPy,
+        )
+        return await reply(ctx, embed=embed)
+
+    obj = re.sub(r"^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
+
+    if key.startswith("discord.py"):
+        # point the abc.Messageable types properly:
+        q = obj.lower()
+        for name in dir(discord.abc.Messageable):
+            if name[0] == "_":
+                continue
+            if q == name:
+                obj = f"abc.Messageable.{name}"
+                break
+
+    table = await get_lookup_table(ctx, key, page_types[key])
+
+    matches = finder(obj, table.items(), key=lambda x: x[0])[:10]
+
+    if not matches:
+        embed = Embed(
+            title=t.documentation(key.capitalize()),
+            description=t.no_results,
+            colour=Colors.error,
+        )
+        return await reply(ctx, embed=embed)
+
+    e = discord.Embed(colour=Colors.DiscordPy, title=t.documentation(key.capitalize()))
+    e.description = "\n".join(f"[`{key}`]({url})" for key, url in matches)
+    e.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
+    await reply(ctx, embed=e)
+
+
 class DiscordpyDocumentationCog(Cog, name="Discordpy Documentation"):
     """
     Cog to have fancy discordpy doc embeds
@@ -159,73 +231,13 @@ class DiscordpyDocumentationCog(Cog, name="Discordpy Documentation"):
     CONTRIBUTORS = [Contributor.pohlium, Contributor.Defelo, Contributor.wolflu]
     PERMISSIONS = BasePermission
 
-    def __init__(self):
-        super().__init__()
-
-        self._cache = {}
-
-    async def build_rtfm_lookup_table(self, page_types: Dict[str, str]):
-        cache = {}
-        for key, page in page_types.items():
-            async with aiohttp.ClientSession() as session:
-                resp = await session.get(page + "/objects.inv")
-                if resp.status != 200:
-                    return
-                stream = SphinxObjectFileReader(await resp.read())
-                cache[key] = parse_object_inv(stream, page)
-        self._cache = cache
-
-    async def do_rtfm(self, ctx: Context, key: str, obj: Optional[str]):
-        page_types = {"discord.py": "https://discordpy.readthedocs.io/en/latest", "python": "https://docs.python.org/3"}
-
-        if obj is None:
-            embed = Embed(
-                title=t.documentation(key.capitalize()),
-                description=page_types[key],
-                colour=Colors.DiscordPy,
-            )
-            return await reply(ctx, embed=embed)
-
-        if not self._cache:
-            await ctx.trigger_typing()
-            await self.build_rtfm_lookup_table(page_types)
-
-        obj = re.sub(r"^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
-
-        if key.startswith("discord.py"):
-            # point the abc.Messageable types properly:
-            q = obj.lower()
-            for name in dir(discord.abc.Messageable):
-                if name[0] == "_":
-                    continue
-                if q == name:
-                    obj = f"abc.Messageable.{name}"
-                    break
-
-        cache = list(self._cache[key].items())
-
-        matches = finder(obj, cache, key=lambda t: t[0])[:10]
-
-        if not matches:
-            embed = Embed(
-                title=t.documentation(key.capitalize()),
-                description=t.no_results,
-                colour=Colors.error,
-            )
-            return await reply(ctx, embed=embed)
-
-        e = discord.Embed(colour=Colors.DiscordPy, title=t.documentation(key.capitalize()))
-        e.description = "\n".join(f"[`{key}`]({url})" for key, url in matches)
-        e.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
-        await reply(ctx, embed=e)
-
     @commands.command(aliases=["dpy"])
     async def dpy_docs(self, ctx: Context, *, obj: str = None):
         """
         search the official discord.py documentation
         """
 
-        await self.do_rtfm(ctx, "discord.py", obj)
+        await do_rtfm(ctx, "discord.py", obj)
 
     @commands.command(aliases=["py"])
     async def py_docs(self, ctx: Context, *, obj: str = None):
@@ -233,4 +245,4 @@ class DiscordpyDocumentationCog(Cog, name="Discordpy Documentation"):
         search the official python documentation
         """
 
-        await self.do_rtfm(ctx, "python", obj)
+        await do_rtfm(ctx, "python", obj)
