@@ -18,8 +18,8 @@ from PyDrocsid.util import get_prefix, send_long_embed, reply
 from .colors import Colors
 from .models import InviteLog, AllowedInvite
 from .permissions import InvitesPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog, get_ulog_entries
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog, get_ulog_entries, send_alert
 
 tg = t.g
 t = t.invites
@@ -124,7 +124,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             )
             await message.channel.send(content=author.mention, embed=embed, delete_after=30)
             if can_delete:
-                await send_to_changelog(
+                await send_alert(
                     message.guild,
                     t.log_illegal_invite(
                         f"{author.mention} (`@{author}`, {author.id})",
@@ -133,7 +133,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
                     ),
                 )
             else:
-                await send_to_changelog(
+                await send_alert(
                     message.guild,
                     t.log_illegal_invite_not_deleted(
                         f"{author.mention} (`@{author}`, {author.id})",

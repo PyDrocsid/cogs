@@ -12,11 +12,11 @@ from PyDrocsid.database import db, filter_by
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed, reply
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog, can_respond_on_reaction
 from .colors import Colors
 from .models import MediaOnlyChannel
 from .permissions import MediaOnlyPermission
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog, can_respond_on_reaction, send_alert
 
 tg = t.g
 t = t.mediaonly
@@ -55,7 +55,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
         await message.delete()
         embed = Embed(title=t.mediaonly, description=t.deleted_nomedia, colour=Colors.error)
         await channel.send(content=message.author.mention, embed=embed, delete_after=30)
-        await send_to_changelog(message.guild, t.log_deleted_nomedia(message.author.mention, message.channel.mention))
+        await send_alert(message.guild, t.log_deleted_nomedia(message.author.mention, message.channel.mention))
         raise StopEventHandling
 
     @commands.group(aliases=["mo"])
