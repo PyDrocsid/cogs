@@ -49,9 +49,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.Florian, Contributor.wolflu, Contributor.TNT2k]
     PERMISSIONS = VoiceChannelPermission
 
-    def __init__(self):
+    def __init__(self, team_roles: list[str]):
         super().__init__()
 
+        self.team_roles: list[str] = team_roles
         self.channel_lock = MultiLock()
         self.group_lock = MultiLock()
 
@@ -184,8 +185,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             guild.default_role: PermissionOverwrite(read_messages=False, connect=False),
             guild.me: PermissionOverwrite(read_messages=True, connect=True),
         }
-        if (team_role := guild.get_role(await RoleSettings.get("team"))) is not None:
-            overwrites[team_role] = PermissionOverwrite(read_messages=True, connect=True)
+        for role_name in self.team_roles:
+            if (team_role := guild.get_role(await RoleSettings.get(role_name))) is not None:
+                overwrites[team_role] = PermissionOverwrite(read_messages=True, connect=True)
         text_chat: TextChannel = await category.create_text_channel(chan.name, overwrites=overwrites)
 
         await text_chat.set_permissions(member, read_messages=True)

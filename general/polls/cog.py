@@ -69,22 +69,32 @@ class PollsCog(Cog, name="Polls"):
     CONTRIBUTORS = [Contributor.MaxiHuHe04, Contributor.Defelo, Contributor.TNT2k, Contributor.wolflu]
     PERMISSIONS = PollsPermission
 
+    def __init__(self, team_roles: list[str]):
+        self.team_roles: list[str] = team_roles
+
     async def get_reacted_teamlers(self, message: Optional[Message] = None) -> str:
         guild: Guild = self.bot.guilds[0]
 
-        if (team_role := guild.get_role(await RoleSettings.get("team"))) is None:
-            return t.team_role_not_set
+        teamlers: set[Member] = set()
+        for role_name in self.team_roles:
+            if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
+                continue
 
-        teamlers = {member for member in team_role.members if not member.bot}
+            teamlers.update(member for member in team_role.members if not member.bot)
+
         if message:
             for reaction in message.reactions:
                 if reaction.me:
                     teamlers.difference_update(await reaction.users().flatten())
 
+        teamlers: list[Member] = list(teamlers)
         if not teamlers:
             return t.teampoll_all_voted
 
+        teamlers.sort(key=lambda m: str(m).lower())
+
         *teamlers, last = (x.mention for x in teamlers)
+        teamlers: list[str]
         return t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers))
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
