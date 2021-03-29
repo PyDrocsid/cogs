@@ -1,4 +1,5 @@
 from .automod import AutoModCog
+from .autorole import AutoRoleCog
 from .invites import InvitesCog
 from .logging import LoggingCog
 from .mediaonly import MediaOnlyCog

@@ -1,0 +1,14 @@
+permissions:
+  read: read autorole configuration
+  write: write autorole configuration
+
+autorole: AutoRole
+no_autorole: No roles have been configured yet.
+ar_already_set: Role already set.
+ar_added: AutoRole has been added successfully.
+log_ar_added: AutoRole `@{}` has been added successfully.
+ar_not_set: Role not set.
+ar_removed: AutoRole has been removed successfully.
+log_ar_removed: AutoRole `@{}` has been removed successfully.
+role_not_added_too_high: Role could not be added because `@{}` is higher than `@{}`.
+role_not_added_managed_role: Role could not be added because `@{}` cannot be assigned manually.
