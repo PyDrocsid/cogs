@@ -14,6 +14,7 @@ rr_link_not_found: Such a link does not exist.
 rr_link_removed: "Link has been removed successfully. :white_check_mark:"
 log_rr_link_removed: "**ReactionRole link** for {} -> <@&{}> has been **deleted** on [this message]({}) in {}"
 rr_link: "{} -> {}"
-rr_link_auto_remove: "{} -> {} (auto remove)"
+auto_remove: auto remove
+reverse: reverse
 link_not_created_too_high: Link could not be created because <@&{}> is higher than <@&{}>.
 link_not_created_managed_role: Link could not be created because <@&{}> cannot be assigned manually.

@@ -26,15 +26,24 @@ class ReactionRole(db.Base):
     message_id: Union[Column, int] = Column(BigInteger, primary_key=True)
     emoji_hex: Union[Column, str] = Column(String(64), primary_key=True)
     role_id: Union[Column, int] = Column(BigInteger)
+    reverse: Union[Column, bool] = Column(Boolean)
     auto_remove: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    async def create(channel_id: int, message_id: int, emoji: str, role_id: int, auto_remove: bool) -> ReactionRole:
+    async def create(
+        channel_id: int,
+        message_id: int,
+        emoji: str,
+        role_id: int,
+        reverse: bool,
+        auto_remove: bool,
+    ) -> ReactionRole:
         row = ReactionRole(
             channel_id=channel_id,
             message_id=message_id,
             emoji_hex=encode(emoji),
             role_id=role_id,
+            reverse=reverse,
             auto_remove=auto_remove,
         )
         await db.add(row)
