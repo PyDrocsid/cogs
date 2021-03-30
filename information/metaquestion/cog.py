@@ -9,7 +9,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import check_wastebasket
 from .colors import Colors
 from .permissions import MetaQuestionPermission
-from cogs.library.contributor import Contributor
+from ...contributor import Contributor
 from ...pubsub import can_respond_on_reaction
 
 tg = t.g
@@ -35,7 +35,6 @@ def make_embed(requested_by: Member) -> Embed:
 
 class MetaQuestionCog(Cog, name="Metafragen"):
     CONTRIBUTORS = [Contributor.Defelo]
-    PERMISSIONS = MetaQuestionPermission
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
         if message.guild is None or member == self.bot.user:

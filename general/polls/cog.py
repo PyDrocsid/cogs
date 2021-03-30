@@ -13,9 +13,9 @@ from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler, check_wastebasket
-from cogs.library.contributor import Contributor
 from .colors import Colors
 from .permissions import PollsPermission
+from ...contributor import Contributor
 
 tg = t.g
 t = t.polls
@@ -67,7 +67,6 @@ async def send_poll(ctx: Context, args: str, field: Optional[Tuple[str, str]] = 
 
 class PollsCog(Cog, name="Polls"):
     CONTRIBUTORS = [Contributor.MaxiHuHe04, Contributor.Defelo, Contributor.TNT2k, Contributor.wolflu]
-    PERMISSIONS = PollsPermission
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles

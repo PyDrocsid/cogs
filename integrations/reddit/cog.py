@@ -13,12 +13,12 @@ from PyDrocsid.database import db, select, filter_by, db_wrapper
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import RedditPost, RedditChannel
 from .permissions import RedditPermission
 from .settings import RedditSettings
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.reddit
@@ -88,7 +88,6 @@ def create_embed(post: dict) -> Embed:
 
 class RedditCog(Cog, name="Reddit"):
     CONTRIBUTORS = [Contributor.Scriptim, Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = RedditPermission
 
     async def on_ready(self):
         interval = await RedditSettings.interval.get()

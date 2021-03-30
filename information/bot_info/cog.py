@@ -19,7 +19,6 @@ t = t.bot_info
 
 class BotInfoCog(Cog, name="Bot Information"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.ce_phox]
-    PERMISSIONS = InfoPermission
 
     def __init__(self, *, info_icon: Optional[str] = None):
         super().__init__()

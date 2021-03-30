@@ -9,8 +9,8 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import set_prefix, reply
 from .colors import Colors
 from .permissions import SettingsPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.settings
@@ -18,7 +18,6 @@ t = t.settings
 
 class SettingsCog(Cog, name="Settings"):
     CONTRIBUTORS = [Contributor.Defelo]
-    PERMISSIONS = SettingsPermission
 
     @commands.command(name="prefix")
     @SettingsPermission.change_prefix.check

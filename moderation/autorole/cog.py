@@ -19,7 +19,6 @@ t = t.autorole
 
 class AutoRoleCog(Cog, name="AutoRole"):
     CONTRIBUTORS = [Contributor.Defelo]
-    PERMISSIONS = AutoRolePermission
 
     async def on_member_join(self, member: Member):
         await member.add_roles(*filter(lambda r: r, map(member.guild.get_role, await AutoRole.all())))

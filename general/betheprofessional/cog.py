@@ -12,8 +12,8 @@ from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
 from .colors import Colors
 from .models import BTPRole
 from .permissions import BeTheProfessionalPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.betheprofessional
@@ -92,7 +92,6 @@ async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
 
 class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.MaxiHuHe04, Contributor.AdriBloober]
-    PERMISSIONS = BeTheProfessionalPermission
 
     @commands.command(name="?")
     @guild_only()

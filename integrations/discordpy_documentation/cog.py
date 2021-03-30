@@ -39,7 +39,6 @@ from discord.ext.commands import Context
 from PyDrocsid.cog import Cog
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.logger import get_logger
-from PyDrocsid.permission import BasePermission
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
@@ -229,7 +228,6 @@ class DiscordpyDocumentationCog(Cog, name="Discordpy Documentation"):
     """
 
     CONTRIBUTORS = [Contributor.pohlium, Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = BasePermission
 
     @commands.command(aliases=["dpy"])
     async def dpy_docs(self, ctx: Context, *, obj: str = None):

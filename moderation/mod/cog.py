@@ -24,11 +24,11 @@ from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import get_prefix, reply
 from PyDrocsid.util import is_teamler, send_long_embed
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog, log_auto_kick, get_ulog_entries
 from .colors import Colors
 from .models import Join, Mute, Ban, Leave, UsernameUpdate, Report, Warn, Kick
 from .permissions import ModPermission
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog, log_auto_kick, get_ulog_entries
 
 tg = t.g
 t = t.mod
@@ -101,7 +101,6 @@ async def send_to_changelog_mod(
 
 class ModCog(Cog, name="Mod Tools"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Florian]
-    PERMISSIONS = ModPermission
 
     async def on_ready(self):
         guild: Guild = self.bot.guilds[0]

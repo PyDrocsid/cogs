@@ -12,8 +12,8 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed, reply
 from .colors import Colors
 from .permissions import PermissionsPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.permissions
@@ -60,7 +60,6 @@ class PermissionLevelConverter(Converter):
 
 class PermissionsCog(Cog, name="Permissions"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = PermissionsPermission
 
     @commands.group(aliases=["perm", "p"])
     @guild_only()

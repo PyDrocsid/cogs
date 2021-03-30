@@ -16,11 +16,11 @@ from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import get_prefix, reply
 from PyDrocsid.util import send_long_embed, is_teamler
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import DynamicVoiceChannel, DynamicVoiceGroup, RoleVoiceLink
 from .permissions import VoiceChannelPermission
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.voice_channel
@@ -47,7 +47,6 @@ async def get_group_channel(channel: VoiceChannel) -> Tuple[Optional[DynamicVoic
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.Florian, Contributor.wolflu, Contributor.TNT2k]
-    PERMISSIONS = VoiceChannelPermission
 
     def __init__(self, team_roles: list[str]):
         super().__init__()

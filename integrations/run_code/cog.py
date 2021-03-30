@@ -8,11 +8,10 @@ from sentry_sdk import capture_exception
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.material_colors import MaterialColors
-from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed
-from cogs.library.contributor import Contributor
 from .api import Emkc, EmkcAPIException
+from ...contributor import Contributor
 
 tg = t.g
 t = t.run_code
@@ -25,6 +24,8 @@ LANGUAGES = [
     "haskell", "java", "jelly", "julia", "kotlin", "lisp", "lua", "nasm", "nasm64", "nim", "node", "osabie",
     "paradoc", "perl", "php", "python2", "python3", "ruby", "rust", "swift", "typescript", "zig",
 ]
+
+
 # fmt: on
 
 
@@ -35,7 +36,6 @@ def supported_languages_docs(f):
 
 class RunCodeCog(Cog, name="Run Code"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
-    PERMISSIONS = BasePermission
 
     @commands.command(usage=t.run_usage)
     @supported_languages_docs

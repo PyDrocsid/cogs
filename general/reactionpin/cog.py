@@ -11,12 +11,12 @@ from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import make_error, reply
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import ReactionPinChannel
 from .permissions import ReactionPinPermission
 from .settings import ReactionPinSettings
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.reactionpin
@@ -26,7 +26,6 @@ EMOJI = name_to_emoji["pushpin"]
 
 class ReactionPinCog(Cog, name="ReactionPin"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = ReactionPinPermission
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
         if str(emoji) != EMOJI or member.bot or message.guild is None:

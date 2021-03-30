@@ -6,7 +6,6 @@ from discord.ext.commands import Command, Group, CommandError, Context
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor
-from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import can_run_command, send_long_embed
 from .colors import Colors
@@ -73,7 +72,6 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
 
 class HelpCog(Cog, name="Help"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.ce_phox]
-    PERMISSIONS = BasePermission
 
     @commands.command()
     async def help(self, ctx: Context, *, cog_or_command: Optional[str]):

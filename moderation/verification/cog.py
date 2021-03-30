@@ -9,12 +9,12 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import VerificationRole
 from .permissions import VerificationPermission
 from .settings import VerificationSettings
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.verification
@@ -30,7 +30,6 @@ async def private_only(ctx: Context):
 
 class VerificationCog(Cog, name="Verification"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = VerificationPermission
 
     @commands.command()
     @private_only

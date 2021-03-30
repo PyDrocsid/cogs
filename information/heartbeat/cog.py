@@ -7,10 +7,9 @@ from discord.ext import tasks
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
-from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_editable_log
-from cogs.library.contributor import Contributor
+from ...contributor import Contributor
 
 tg = t.g
 t = t.heartbeat
@@ -18,7 +17,6 @@ t = t.heartbeat
 
 class HeartbeatCog(Cog, name="Heartbeat"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = BasePermission
 
     def __init__(self):
         super().__init__()

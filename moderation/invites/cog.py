@@ -72,7 +72,6 @@ def get_discord_invite(url) -> Optional[str]:
 
 class InvitesCog(Cog, name="Allowed Discord Invites"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.TNT2k, Contributor.Florian]
-    PERMISSIONS = InvitesPermission
 
     @get_ulog_entries.subscribe
     async def handle_get_ulog_entries(self, user_id: int):

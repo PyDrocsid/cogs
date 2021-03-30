@@ -38,7 +38,6 @@ async def get_role(message: Message, emoji: PartialEmoji) -> tuple[Optional[Role
 
 class ReactionRoleCog(Cog, name="ReactionRole"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = ReactionRolePermission
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
         if member.bot or message.guild is None:

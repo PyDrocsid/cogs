@@ -14,8 +14,8 @@ from .api import CleverBot
 from .colors import Colors
 from .models import CleverBotChannel
 from .permissions import CleverBotPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.cleverbot
@@ -23,7 +23,6 @@ t = t.cleverbot
 
 class CleverBotCog(Cog, name="CleverBot"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = CleverBotPermission
 
     def __init__(self):
         super().__init__()

@@ -17,9 +17,9 @@ from PyDrocsid.util import send_long_embed, reply
 from .colors import Colors
 from .models import AOCLink
 from .permissions import AdventOfCodePermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
 from .settings import AdventOfCodeSettings
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.adventofcode
@@ -181,7 +181,6 @@ def parse_github_url(url: str) -> tuple[str, str]:
 
 class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
     CONTRIBUTORS = [Contributor.Defelo]
-    PERMISSIONS = AdventOfCodePermission
 
     def __init__(self):
         super().__init__()

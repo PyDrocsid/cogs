@@ -12,7 +12,7 @@ from PyDrocsid.permission import permission_override
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from .permissions import SudoPermission
-from cogs.library.contributor import Contributor
+from ...contributor import Contributor
 
 tg = t.g
 t = t.sudo
@@ -28,7 +28,6 @@ def is_sudoer(ctx: Context) -> bool:
 
 class SudoCog(Cog, name="Sudo"):
     CONTRIBUTORS = [Contributor.Defelo]
-    PERMISSIONS = SudoPermission
 
     def __init__(self):
         super().__init__()

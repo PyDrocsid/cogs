@@ -8,7 +8,6 @@ from discord.ext.commands import Context, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db, filter_by
-from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
 from ...contributor import Contributor
@@ -32,7 +31,6 @@ def date_diff_to_str(date1: datetime, date2: datetime):
 
 class MemberInfoCog(Cog, name="Member Information"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
-    PERMISSIONS = BasePermission
     DEPENDENCIES = [ModCog]
 
     @classmethod

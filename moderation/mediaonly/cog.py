@@ -24,7 +24,6 @@ t = t.mediaonly
 
 class MediaOnlyCog(Cog, name="MediaOnly"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = MediaOnlyPermission
 
     @can_respond_on_reaction.subscribe
     async def handle_can_respond_on_reaction(self, channel: TextChannel) -> bool:

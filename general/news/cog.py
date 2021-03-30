@@ -11,8 +11,8 @@ from PyDrocsid.util import send_long_embed, read_normal_message, attachment_to_f
 from .colors import Colors
 from .models import NewsAuthorization
 from .permissions import NewsPermission
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.news
@@ -20,7 +20,6 @@ t = t.news
 
 class NewsCog(Cog, name="News"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = NewsPermission
 
     @commands.group()
     @guild_only()

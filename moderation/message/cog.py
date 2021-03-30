@@ -1,7 +1,6 @@
-from http.client import HTTPException
 from typing import Optional
 
-from discord import TextChannel, Message, Forbidden, Permissions, Embed, Member, File
+from discord import TextChannel, Message, HTTPException, Forbidden, Permissions, Embed, Member, File
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
@@ -11,7 +10,7 @@ from PyDrocsid.util import Color, reply
 from PyDrocsid.util import read_normal_message, read_complete_message
 from .colors import Colors
 from .permissions import MessagePermission
-from cogs.library.contributor import Contributor
+from ...contributor import Contributor
 
 tg = t.g
 t = t.message
@@ -19,7 +18,6 @@ t = t.message
 
 class MessageCog(Cog, name="Message Commands"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = MessagePermission
 
     async def get_message_cancel(self, channel: TextChannel, member: Member) -> tuple[Optional[str], list[File]]:
         content, files = await read_normal_message(self.bot, channel, member)

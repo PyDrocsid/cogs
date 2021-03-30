@@ -9,12 +9,12 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_wrapper
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog, send_alert, can_respond_on_reaction
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission
 from .settings import LoggingSettings
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction
 
 tg = t.g
 t = t.logging
@@ -61,7 +61,6 @@ async def is_logging_channel(channel: TextChannel) -> bool:
 
 class LoggingCog(Cog, name="Logging"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = LoggingPermission
 
     async def get_logging_channel(self, setting: LoggingSettings) -> Optional[TextChannel]:
         return self.bot.get_channel(await setting.get())

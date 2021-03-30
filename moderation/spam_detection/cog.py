@@ -9,10 +9,10 @@ from PyDrocsid.config import Contributor
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
-from cogs.library.moderation.spam_detection.colors import Colors
-from cogs.library.moderation.spam_detection.permissions import SpamDetectionPermission
-from cogs.library.moderation.spam_detection.settings import SpamDetectionSettings
-from cogs.library.pubsub import send_to_changelog, send_alert
+from .colors import Colors
+from .permissions import SpamDetectionPermission
+from .settings import SpamDetectionSettings
+from ...pubsub import send_to_changelog, send_alert
 
 tg = t.g
 t = t.spam_detection
@@ -20,7 +20,6 @@ t = t.spam_detection
 
 class SpamDetectionCog(Cog, name="Spam Detection"):
     CONTRIBUTORS = [Contributor.ce_phox, Contributor.Defelo]
-    PERMISSIONS = SpamDetectionPermission
 
     async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
         """

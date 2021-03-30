@@ -9,11 +9,11 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply
-from cogs.library.contributor import Contributor
-from cogs.library.pubsub import send_to_changelog, log_auto_kick
 from .colors import Colors
 from .permissions import AutoModPermission
 from .settings import AutoModSettings, AutoKickMode
+from ...contributor import Contributor
+from ...pubsub import send_to_changelog, log_auto_kick
 
 tg = t.g
 t = t.automod
@@ -55,7 +55,6 @@ async def kick_delay(member: Member, delay: int, role: Role, reverse: bool):
 
 class AutoModCog(Cog, name="AutoMod"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
-    PERMISSIONS = AutoModPermission
 
     def __init__(self):
         super().__init__()

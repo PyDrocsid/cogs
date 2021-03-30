@@ -11,10 +11,10 @@ from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed, reply
-from cogs.library.pubsub import send_to_changelog
 from .colors import Colors
 from .models import RoleAuth
 from .permissions import RolesPermission
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.roles
@@ -47,7 +47,6 @@ async def is_authorized(author: Member, target_role: Role) -> bool:
 
 class RolesCog(Cog, name="Roles"):
     CONTRIBUTORS = [Contributor.Defelo]
-    PERMISSIONS = RolesPermission
 
     def __init__(self):
         super().__init__()

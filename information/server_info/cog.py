@@ -5,7 +5,6 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed
 from .colors import Colors
@@ -17,7 +16,6 @@ t = t.server_info
 
 class ServerInfoCog(Cog, name="Server Information"):
     CONTRIBUTORS = [Contributor.Defelo]
-    PERMISSIONS = BasePermission
 
     async def get_users(self, guild: Guild) -> list[tuple[str, list[Member]]]:
         return []

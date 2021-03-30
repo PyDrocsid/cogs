@@ -6,11 +6,10 @@ from discord.ext.commands import Context
 from discord.utils import snowflake_time
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import measure_latency, reply
-from cogs.library.contributor import Contributor
 from .colors import Colors
+from ...contributor import Contributor
 
 tg = t.g
 t = t.utils
@@ -18,7 +17,6 @@ t = t.utils
 
 class UtilsCog(Cog, name="Utils"):
     CONTRIBUTORS = [Contributor.Defelo]
-    PERMISSIONS = BasePermission
 
     @commands.command()
     async def ping(self, ctx: Context):
