@@ -87,7 +87,7 @@ def create_embed(post: dict) -> Embed:
 
 
 class RedditCog(Cog, name="Reddit"):
-    CONTRIBUTORS = [Contributor.Scriptim, Contributor.Defelo, Contributor.wolflu]
+    CONTRIBUTORS = [Contributor.Scriptim, Contributor.Defelo, Contributor.wolflu, Contributor.Anorak]
 
     async def on_ready(self):
         interval = await RedditSettings.interval.get()
