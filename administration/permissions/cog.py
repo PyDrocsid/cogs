@@ -6,8 +6,8 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, Converter, BadArgument, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.config import Config
-from PyDrocsid.permission import BasePermissionLevel
+from PyDrocsid.config import Config, get_subclasses_in_enabled_packages
+from PyDrocsid.permission import BasePermissionLevel, BasePermission
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_long_embed, reply
 from .colors import Colors
@@ -19,10 +19,18 @@ tg = t.g
 t = t.permissions
 
 
+def get_permissions() -> list[BasePermission]:
+    permissions: list[BasePermission] = []
+    for cls in get_subclasses_in_enabled_packages(BasePermission):
+        permissions += list(cls)
+    return permissions
+
+
 async def list_permissions(ctx: Context, title: str, min_level: BasePermissionLevel):
     out = {}
-    levels = await asyncio.gather(*[permission.resolve() for permission in Config.PERMISSIONS])
-    for permission, level in zip(Config.PERMISSIONS, levels):
+    permissions: list[BasePermission] = get_permissions()
+    levels = await asyncio.gather(*[permission.resolve() for permission in permissions])
+    for permission, level in zip(permissions, levels):
         if min_level.level >= level.level:
             out.setdefault((level.level, level.description), []).append(
                 f"`{permission.fullname}` - {permission.description}",
@@ -94,7 +102,7 @@ class PermissionsCog(Cog, name="Permissions"):
         """
 
         level: BasePermissionLevel
-        for permission in Config.PERMISSIONS:
+        for permission in get_permissions():
             if permission.fullname.lower() == permission_name.lower():
                 break
         else:
