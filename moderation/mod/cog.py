@@ -1,5 +1,4 @@
 import re
-import time
 from datetime import datetime, timedelta
 from typing import Optional, Union, List, Tuple
 
@@ -11,24 +10,25 @@ from discord.ext.commands import (
     CommandError,
     Converter,
     BadArgument,
-    UserInputError,
-    max_concurrency,
 )
-from discord.utils import snowflake_time
 
-from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db, filter_by, db_wrapper
-from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import get_prefix, reply
-from PyDrocsid.util import is_teamler, send_long_embed
+from PyDrocsid.util import is_teamler, reply
 from .colors import Colors
-from .models import Join, Mute, Ban, Leave, UsernameUpdate, Report, Warn, Kick
+from .models import Mute, Ban, Report, Warn, Kick
 from .permissions import ModPermission
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, log_auto_kick, get_ulog_entries
+from ...pubsub import (
+    send_to_changelog,
+    log_auto_kick,
+    get_userlog_entries,
+    get_user_info_entries,
+    get_user_status_entries,
+    revoke_verification,
+)
 
 tg = t.g
 t = t.mod
@@ -52,12 +52,6 @@ async def get_mute_role(guild: Guild) -> Role:
     if mute_role is None:
         raise CommandError(t.mute_role_not_set)
     return mute_role
-
-
-async def update_join_date(guild: Guild, user_id: int):
-    member: Optional[Member] = guild.get_member(user_id)
-    if member is not None:
-        await Join.update(member.id, str(member), member.joined_at)
 
 
 async def send_to_changelog_mod(
@@ -164,26 +158,113 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_log_auto_kick(self, member: Member):
         await Kick.create(member.id, str(member), None, None)
 
+    @get_user_info_entries.subscribe
+    async def handle_get_user_stats_entries(self, user_id: int) -> list[tuple[str, str]]:
+        out: list[tuple[str, str]] = []
+
+        async def count(cls):
+            if cls is Report:
+                active = await db.count(filter_by(cls, reporter=user_id))
+            else:
+                active = await db.count(filter_by(cls, mod=user_id))
+            passive = await db.count(filter_by(cls, member=user_id))
+            return t.active_passive(active, passive)
+
+        out.append((t.reported_cnt, await count(Report)))
+        out.append((t.warned_cnt, await count(Warn)))
+        out.append((t.muted_cnt, await count(Mute)))
+        out.append((t.kicked_cnt, await count(Kick)))
+        out.append((t.banned_cnt, await count(Ban)))
+
+        return out
+
+    @get_user_status_entries.subscribe
+    async def handle_get_user_status_entries(self, user_id: int) -> list[tuple[str, str]]:
+        status = t.none
+        if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
+            if ban.days != -1:
+                expiry_date: datetime = ban.timestamp + timedelta(days=ban.days)
+                days_left = (expiry_date - datetime.utcnow()).days + 1
+                status = t.status_banned_days(cnt=ban.days, left=days_left)
+            else:
+                status = t.status_banned
+        elif (mute := await db.get(Mute, member=user_id, active=True)) is not None:
+            if mute.days != -1:
+                expiry_date: datetime = mute.timestamp + timedelta(days=mute.days)
+                days_left = (expiry_date - datetime.utcnow()).days + 1
+                status = t.status_muted_days(cnt=mute.days, left=days_left)
+            else:
+                status = t.status_muted
+        return [(t.active_sanctions, status)]
+
+    @get_userlog_entries.subscribe
+    async def handle_get_userlog_entries(self, user_id: int) -> list[tuple[datetime, str]]:
+        out: list[tuple[datetime, str]] = []
+
+        report: Report
+        async for report in await db.stream(filter_by(Report, member=user_id)):
+            out.append((report.timestamp, t.ulog.reported(f"<@{report.reporter}>", report.reason)))
+
+        warn: Warn
+        async for warn in await db.stream(filter_by(Warn, member=user_id)):
+            out.append((warn.timestamp, t.ulog.warned(f"<@{warn.mod}>", warn.reason)))
+
+        mute: Mute
+        async for mute in await db.stream(filter_by(Mute, member=user_id)):
+            text = t.ulog.muted.upgrade if mute.is_upgrade else t.ulog.muted.first
+
+            if mute.days == -1:
+                out.append((mute.timestamp, text.inf(f"<@{mute.mod}>", mute.reason)))
+            else:
+                out.append((mute.timestamp, text.temp(f"<@{mute.mod}>", mute.days, mute.reason)))
+
+            if not mute.active and not mute.upgraded:
+                if mute.unmute_mod is None:
+                    out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
+                else:
+                    out.append(
+                        (
+                            mute.deactivation_timestamp,
+                            t.ulog.unmuted(f"<@{mute.unmute_mod}>", mute.unmute_reason),
+                        ),
+                    )
+
+        kick: Kick
+        async for kick in await db.stream(filter_by(Kick, member=user_id)):
+            if kick.mod is not None:
+                out.append((kick.timestamp, t.ulog.kicked(f"<@{kick.mod}>", kick.reason)))
+            else:
+                out.append((kick.timestamp, t.ulog.autokicked))
+
+        ban: Ban
+        async for ban in await db.stream(filter_by(Ban, member=user_id)):
+            text = t.ulog.banned.upgrade if ban.is_upgrade else t.ulog.banned.first
+
+            if ban.days == -1:
+                out.append((ban.timestamp, text.inf(f"<@{ban.mod}>", ban.reason)))
+            else:
+                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", ban.days, ban.reason)))
+
+            if not ban.active and not ban.upgraded:
+                if ban.unban_mod is None:
+                    out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
+                else:
+                    out.append(
+                        (
+                            ban.deactivation_timestamp,
+                            t.ulog.unbanned(f"<@{ban.unban_mod}>", ban.unban_reason),
+                        ),
+                    )
+
+        return out
+
     async def on_member_join(self, member: Member):
-        await Join.create(member.id, str(member))
         mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
             return
 
         if await db.exists(filter_by(Mute, active=True, member=member.id)):
             await member.add_roles(mute_role)
-
-    async def on_member_remove(self, member: Member):
-        await Leave.create(member.id, str(member))
-
-    async def on_member_nick_update(self, before: Member, after: Member):
-        await UsernameUpdate.create(before.id, before.nick, after.nick, True)
-
-    async def on_user_update(self, before: User, after: User):
-        if str(before) == str(after):
-            return
-
-        await UsernameUpdate.create(before.id, str(before), str(after), False)
 
     @commands.command()
     @guild_only()
@@ -380,6 +461,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
 
         await member.kick(reason=reason)
+        await revoke_verification(member)
 
         await reply(ctx, embed=server_embed)
 
@@ -466,6 +548,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
 
         await ctx.guild.ban(user, delete_message_days=delete_days, reason=reason)
+        await revoke_verification(user)
 
         await reply(ctx, embed=server_embed)
 
@@ -500,205 +583,3 @@ class ModCog(Cog, name="Mod Tools"):
         embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
         await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unban, t.log_unbanned, user, reason)
-
-    async def get_stats_user(
-        self,
-        ctx: Context,
-        user: Optional[Union[User, int]],
-        permission: ModPermission,
-    ) -> Tuple[Union[User, int], int, bool]:
-        arg_passed = len(ctx.message.content.strip(await get_prefix()).split()) >= 2
-        if user is None:
-            if arg_passed:
-                raise UserInputError
-            user = ctx.author
-
-        if isinstance(user, int):
-            if not 0 <= user < (1 << 63):
-                raise UserInputError
-            try:
-                user = await self.bot.fetch_user(user)
-            except NotFound:
-                pass
-
-        user_id = user if isinstance(user, int) else user.id
-
-        if user_id != ctx.author.id and not await permission.check_permissions(ctx.author):
-            raise CommandError(t.stats_not_allowed)
-
-        return user, user_id, arg_passed
-
-    @commands.command()
-    async def stats(self, ctx: Context, user: Optional[Union[User, int]] = None):
-        """
-        show statistics about a user
-        """
-
-        user, user_id, arg_passed = await self.get_stats_user(ctx, user, ModPermission.view_stats)
-        await update_join_date(self.bot.guilds[0], user_id)
-
-        embed = Embed(title=t.stats, color=Colors.stats)
-        if isinstance(user, int):
-            embed.set_author(name=str(user))
-        else:
-            embed.set_author(name=f"{user} ({user_id})", icon_url=user.avatar_url)
-
-        async def count(cls):
-            if cls is Report:
-                active = await db.count(filter_by(cls, reporter=user_id))
-            else:
-                active = await db.count(filter_by(cls, mod=user_id))
-            passive = await db.count(filter_by(cls, member=user_id))
-            return t.active_passive(active, passive)
-
-        embed.add_field(name=t.reported_cnt, value=await count(Report))
-        embed.add_field(name=t.warned_cnt, value=await count(Warn))
-        embed.add_field(name=t.muted_cnt, value=await count(Mute))
-        embed.add_field(name=t.kicked_cnt, value=await count(Kick))
-        embed.add_field(name=t.banned_cnt, value=await count(Ban))
-
-        if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
-            if ban.days != -1:
-                expiry_date: datetime = ban.timestamp + timedelta(days=ban.days)
-                days_left = (expiry_date - datetime.utcnow()).days + 1
-                status = t.status_banned_days(cnt=ban.days, left=days_left)
-            else:
-                status = t.status_banned
-        elif (mute := await db.get(Mute, member=user_id, active=True)) is not None:
-            if mute.days != -1:
-                expiry_date: datetime = mute.timestamp + timedelta(days=mute.days)
-                days_left = (expiry_date - datetime.utcnow()).days + 1
-                status = t.status_muted_days(cnt=mute.days, left=days_left)
-            else:
-                status = t.status_muted
-        elif (member := self.bot.guilds[0].get_member(user_id)) is not None:
-            status = t.member_since(member.joined_at.strftime("%d.%m.%Y %H:%M:%S"))
-        else:
-            status = t.not_a_member
-        embed.add_field(name=tg.status, value=status, inline=False)
-
-        if arg_passed:
-            await reply(ctx, embed=embed)
-        else:
-            try:
-                await ctx.author.send(embed=embed)
-            except (Forbidden, HTTPException):
-                raise CommandError(t.could_not_send_dm)
-            await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
-    @commands.command(aliases=["userlog", "ulog", "uinfo", "userinfo"])
-    async def userlogs(self, ctx: Context, user: Optional[Union[User, int]] = None):
-        """
-        show moderation log of a user
-        """
-
-        user, user_id, arg_passed = await self.get_stats_user(ctx, user, ModPermission.view_userlog)
-        await update_join_date(self.bot.guilds[0], user_id)
-
-        out: List[Tuple[datetime, str]] = [(snowflake_time(user_id), t.ulog_created)]
-        async for join in await db.stream(filter_by(Join, member=user_id)):
-            out.append((join.timestamp, t.ulog_joined))
-        async for leave in await db.stream(filter_by(Leave, member=user_id)):
-            out.append((leave.timestamp, t.ulog_left))
-        async for username_update in await db.stream(filter_by(UsernameUpdate, member=user_id)):
-            if not username_update.nick:
-                msg = t.ulog_username_updated(username_update.member_name, username_update.new_name)
-            elif username_update.member_name is None:
-                msg = t.ulog_nick_set(username_update.new_name)
-            elif username_update.new_name is None:
-                msg = t.ulog_nick_cleared(username_update.member_name)
-            else:
-                msg = t.ulog_nick_updated(username_update.member_name, username_update.new_name)
-            out.append((username_update.timestamp, msg))
-        async for report in await db.stream(filter_by(Report, member=user_id)):
-            out.append((report.timestamp, t.ulog_reported(f"<@{report.reporter}>", report.reason)))
-        async for warn in await db.stream(filter_by(Warn, member=user_id)):
-            out.append((warn.timestamp, t.ulog_warned(f"<@{warn.mod}>", warn.reason)))
-        async for mute in await db.stream(filter_by(Mute, member=user_id)):
-            text = [t.ulog_muted, t.ulog_muted_inf][mute.days == -1][mute.is_upgrade].format
-            if mute.days == -1:
-                out.append((mute.timestamp, text(f"<@{mute.mod}>", mute.reason)))
-            else:
-                out.append((mute.timestamp, text(f"<@{mute.mod}>", mute.days, mute.reason)))
-            if not mute.active and not mute.upgraded:
-                if mute.unmute_mod is None:
-                    out.append((mute.deactivation_timestamp, t.ulog_unmuted_expired))
-                else:
-                    out.append(
-                        (
-                            mute.deactivation_timestamp,
-                            t.ulog_unmuted(f"<@{mute.unmute_mod}>", mute.unmute_reason),
-                        ),
-                    )
-        async for kick in await db.stream(filter_by(Kick, member=user_id)):
-            if kick.mod is not None:
-                out.append((kick.timestamp, t.ulog_kicked(f"<@{kick.mod}>", kick.reason)))
-            else:
-                out.append((kick.timestamp, t.ulog_autokicked))
-        async for ban in await db.stream(filter_by(Ban, member=user_id)):
-            text = [t.ulog_banned, t.ulog_banned_inf][ban.days == -1][ban.is_upgrade].format
-            if ban.days == -1:
-                out.append((ban.timestamp, text(f"<@{ban.mod}>", ban.reason)))
-            else:
-                out.append((ban.timestamp, text(f"<@{ban.mod}>", ban.days, ban.reason)))
-            if not ban.active and not ban.upgraded:
-                if ban.unban_mod is None:
-                    out.append((ban.deactivation_timestamp, t.ulog_unbanned_expired))
-                else:
-                    out.append(
-                        (
-                            ban.deactivation_timestamp,
-                            t.ulog_unbanned(f"<@{ban.unban_mod}>", ban.unban_reason),
-                        ),
-                    )
-
-        responses = await get_ulog_entries(user_id)
-        for response in responses:
-            out += response
-
-        out.sort()
-        embed = Embed(title=t.userlogs, color=Colors.userlog)
-        if isinstance(user, int):
-            embed.set_author(name=str(user))
-        else:
-            embed.set_author(name=f"{user} ({user_id})", icon_url=user.avatar_url)
-        for row in out:
-            name = row[0].strftime("%d.%m.%Y %H:%M:%S")
-            value = row[1]
-            embed.add_field(name=name, value=value, inline=False)
-
-        embed.set_footer(text=t.utc_note)
-
-        if arg_passed:
-            await send_long_embed(ctx, embed)
-        else:
-            try:
-                await send_long_embed(ctx.author, embed)
-            except (Forbidden, HTTPException):
-                raise CommandError(t.could_not_send_dm)
-            await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
-    @commands.command()
-    @ModPermission.init_join_log.check
-    @max_concurrency(1)
-    @guild_only()
-    async def init_join_log(self, ctx: Context):
-        """
-        create a join log entry for each server member
-        """
-
-        guild: Guild = ctx.guild
-
-        embed = Embed(
-            title=t.init_join_log,
-            description=t.filling_join_log(cnt=len(guild.members)),
-            color=Colors.ModTools,
-        )
-        await reply(ctx, embed=embed)
-
-        ts = time.time()
-        await semaphore_gather(50, *[Join.update(m.id, str(m), m.joined_at) for m in guild.members])
-
-        embed.description = t.join_log_filled
-        embed.set_footer(text=f"{time.time() - ts:.2f} s")
-        await reply(ctx, embed=embed)

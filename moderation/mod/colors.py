@@ -11,6 +11,3 @@ class Colors(MaterialColors):
     kick = MaterialColors.orange[700]
     ban = MaterialColors.red[500]
     unban = MaterialColors.green["a700"]
-
-    stats = MaterialColors.green
-    userlog = MaterialColors.green["a400"]

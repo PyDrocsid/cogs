@@ -1,0 +1,44 @@
+permissions:
+  view_stats: view other user's statistics
+  view_userlog: view other user's log
+  init_join_log: initialize join log
+
+not_allowed: You are not allowed to access this information.
+
+could_not_send_dm: Message could not be sent. Please enable direct messages from this server!
+userinfo: User Information
+userlogs: User Logs
+membership: Membership
+utc_note: Timestamps in UTC
+member_since: ":clock2: Member since {} (UTC)"
+not_a_member: ":x: User is not a member of this server."
+
+ulog:
+  created: ":sparkles: **Created** this account."
+  joined: ":tada: **Joined** this server."
+  left: ":door: **Left** this server."
+  nick:
+    set: ":label: **Nickname set** to `{}`"
+    updated: ":label: **Nickname changed** from `{}` to `{}`"
+    cleared: ":label: **Nickname** `{}` **cleared**"
+  username_updated: ":label: **Username changed** from `{}` to `{}`"
+  verification:
+    accepted: ":green_circle: **Completed verification**"
+    revoked: ":red_circle: **Revoked verification**"
+
+init_join_log: Join Log Initialization
+filling_join_log:
+  one: ":hourglass_flowing_sand: Creating join log entries for {cnt} member. This may take a while."
+  many: ":hourglass_flowing_sand: Creating join log entries for {cnt} members. This may take a while."
+join_log_filled: "Join log has been initialized successfully. :white_check_mark:"
+
+joined_days: "joined less than a week ago"
+joined_weeks:
+  one: "joined {cnt} week ago"
+  many: "joined {cnt} weeks ago"
+joined_months:
+  one: "joined {cnt} month ago"
+  many: "joined {cnt} months ago"
+joined_years:
+  one: "joined {cnt} year ago"
+  many: "joined {cnt} years ago"

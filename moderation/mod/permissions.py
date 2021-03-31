@@ -13,6 +13,3 @@ class ModPermission(BasePermission):
     mute = auto()
     kick = auto()
     ban = auto()
-    view_stats = auto()
-    view_userlog = auto()
-    init_join_log = auto()

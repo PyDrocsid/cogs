@@ -19,7 +19,7 @@ from .colors import Colors
 from .models import InviteLog, AllowedInvite
 from .permissions import InvitesPermission
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, get_ulog_entries, send_alert
+from ...pubsub import send_to_changelog, get_userlog_entries, send_alert
 
 tg = t.g
 t = t.invites
@@ -73,7 +73,7 @@ def get_discord_invite(url) -> Optional[str]:
 class InvitesCog(Cog, name="Allowed Discord Invites"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.TNT2k, Contributor.Florian]
 
-    @get_ulog_entries.subscribe
+    @get_userlog_entries.subscribe
     async def handle_get_ulog_entries(self, user_id: int):
         out = []
         async for log in await db.stream(filter_by(InviteLog, applicant=user_id)):  # type: InviteLog

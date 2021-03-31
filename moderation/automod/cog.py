@@ -13,7 +13,7 @@ from .colors import Colors
 from .permissions import AutoModPermission
 from .settings import AutoModSettings, AutoKickMode
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, log_auto_kick
+from ...pubsub import send_to_changelog, log_auto_kick, revoke_verification
 
 tg = t.g
 t = t.automod
@@ -41,6 +41,7 @@ async def kick(member: Member) -> bool:
     pending_kicks.add(member.id)
     await member.kick(reason=t.log_autokicked)
     await log_auto_kick(member)
+    await revoke_verification(member)
     return True
 
 
