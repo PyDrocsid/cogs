@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional, Set, Union
+from typing import Optional, Union
 
 from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild
 from discord.ext import commands, tasks
@@ -7,6 +7,8 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_wrapper
+from PyDrocsid.environment import CACHE_TTL
+from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
 from .colors import Colors
@@ -14,21 +16,10 @@ from .models import LogExclude
 from .permissions import LoggingPermission
 from .settings import LoggingSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction
+from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction, ignore_message_edit
 
 tg = t.g
 t = t.logging
-
-ignored_messages: Set[int] = set()
-
-
-def ignore(message: Message):
-    ignored_messages.add(message.id)
-
-
-async def delete_nolog(message: Message, delay: Optional[int] = None):
-    ignore(message)
-    await message.delete(delay=delay)
 
 
 def add_field(embed: Embed, name: str, text: str):
@@ -85,6 +76,10 @@ class LoggingCog(Cog, name="Logging"):
                 return False
         return True
 
+    @ignore_message_edit.subscribe
+    async def handle_ignore_message_edit(self, message: Message):
+        await redis.setex(f"ignore_message_edit:{message.channel.id}:{message.id}", CACHE_TTL, 1)
+
     async def on_ready(self):
         try:
             self.cleanup_loop.start()
@@ -113,8 +108,7 @@ class LoggingCog(Cog, name="Logging"):
     async def on_message_edit(self, before: Message, after: Message):
         if before.guild is None:
             return
-        if before.id in ignored_messages:
-            ignored_messages.remove(before.id)
+        if await redis.delete(f"ignore_message_edit:{before.channel.id}:{before.id}"):
             return
         mindiff: int = await LoggingSettings.edit_mindiff.get()
         if calculate_edit_distance(before.content, after.content) < mindiff:
@@ -135,8 +129,7 @@ class LoggingCog(Cog, name="Logging"):
     async def on_raw_message_edit(self, channel: TextChannel, message: Message):
         if message.guild is None:
             return
-        if message.id in ignored_messages:
-            ignored_messages.remove(message.id)
+        if await redis.delete(f"ignore_message_edit:{channel.id}:{message.id}"):
             return
         if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
@@ -153,9 +146,6 @@ class LoggingCog(Cog, name="Logging"):
 
     async def on_message_delete(self, message: Message):
         if message.guild is None:
-            return
-        if message.id in ignored_messages:
-            ignored_messages.remove(message.id)
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
@@ -182,9 +172,6 @@ class LoggingCog(Cog, name="Logging"):
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
-            return
-        if event.message_id in ignored_messages:
-            ignored_messages.remove(event.message_id)
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
