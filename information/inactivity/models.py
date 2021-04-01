@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Union
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, db_wrapper
 from sqlalchemy import Column, BigInteger, DateTime
 
 
@@ -20,9 +20,10 @@ class Activity(db.Base):
         return row
 
     @staticmethod
+    @db_wrapper
     async def update(object_id: int, timestamp: datetime) -> Activity:
         if not (row := await db.get(Activity, id=object_id)):
             row = await Activity.create(object_id, timestamp)
-        else:
-            row.last_message = timestamp
+        elif timestamp > row.timestamp:
+            row.timestamp = timestamp
         return row

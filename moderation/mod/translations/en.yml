@@ -78,7 +78,7 @@ kicked_cnt: ":x:  Kicked"
 banned_cnt: ":no_entry:  Banned"
 active_passive: "active: `{}`\npassive: `{}`"
 
-active_sanctions: Active Sanctions
+active_sanctions: Active Punishments
 none: None
 status_banned: ":no_entry: User is banned from this server."
 status_banned_days:

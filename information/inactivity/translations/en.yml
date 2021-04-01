@@ -4,7 +4,9 @@ permissions:
   scan: scan all channels for latest message of each user
 
 scanning: "Scanning..."
-scanning_channel: "Scanning {} ({} / {})..."
+scanning_channel:
+  one: "Scanning {cnt} channel ({} / {} done):"
+  many: "Scanning {cnt} channels ({} / {} done):"
 scan_complete:
   one: "Scanned {cnt} channel."
   many: "Scanned {cnt} channels."

@@ -10,7 +10,7 @@ from discord.utils import snowflake_time
 
 from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
-from PyDrocsid.config import Contributor
+from PyDrocsid.config import Contributor, Config
 from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
@@ -74,6 +74,9 @@ class UserInfoCog(Cog, name="User Information"):
 
     async def on_member_join(self, member: Member):
         await Join.create(member.id, str(member))
+
+        if "verified" not in Config.ROLES or not Config.ROLES["verified"][1]:
+            return
 
         last_verification: Optional[Verification] = await db.first(
             filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
