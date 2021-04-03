@@ -9,3 +9,5 @@ class LoggingSettings(Settings):
     delete_channel = -1
     alert_channel = -1
     changelog_channel = -1
+    member_join_channel = -1
+    member_leave_channel = -1

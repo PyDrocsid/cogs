@@ -12,6 +12,9 @@ message_deleted: Message Deleted
 attachments: Attachments
 message_id: Message ID
 
+member_joined_server: "{} ({}) just joined the server!"
+member_left_server: "**{}** just left the server!"
+
 logging_channels_header: "Logging channels:"
 msg_edit_on: "message edit: {} (minimum distance: {})"
 msg_edit_off: "message edit: *disabled*"
@@ -31,13 +34,19 @@ log_edit_updated: "**Logs** for **message edit** events will now be **sent** to 
 log_edit_disabled: "**Logging** for **message edit** events has been **disabled**. :white_check_mark:"
 
 log_delete_updated: "**Logs** for **message delete** events will now be **sent** to {}. :white_check_mark:"
-log_delete_disabled: "**Logging** for **message** delete events has been **disabled**. :white_check_mark:"
+log_delete_disabled: "**Logging** for **message delete** events has been **disabled**. :white_check_mark:"
 
 log_alert_updated: "**Alert channel** is now {}. :white_check_mark:"
 log_alert_disabled: "**Alert channel** has been **disabled**. :white_check_mark:"
 
 log_changelog_updated: "**Changelog channel** is now {}. :white_check_mark:"
 log_changelog_disabled: "**Changelog channel** has been **disabled**. :white_check_mark:"
+
+log_member_join_updated: "**Logs** for **member join** events will now be **sent** to {}. :white_check_mark:"
+log_member_join_disabled: "**Logging** for **member join** events has been **disabled**. :white_check_mark:"
+
+log_member_leave_updated: "**Logs** for **member leave** events will now be **sent** to {}. :white_check_mark:"
+log_member_leave_disabled: "**Logging** for **member leave** events has been **disabled**. :white_check_mark:"
 
 maxage_disabled: Automatic deletion of old log entries is disabled.
 maxage_enabled:
@@ -53,6 +62,8 @@ msg_edit: ":pencil: Message Edit Channel"
 msg_delete: ":wastebasket: Message Delete Channel"
 alert_channel: ":warning: Alert Channel"
 changelog: ":clipboard: Changelog Channel"
+member_join: ":tada: Member Join Channel"
+member_leave: ":door: Member Leave Channel"
 logging_disabled: ":x: Logging disabled"
 mindiff: ":straight_ruler: Minimum Edit Distance"
 maxage: ":clock3: Maximum Age"

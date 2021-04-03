@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional, Union
 
-from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild
+from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
@@ -71,6 +71,8 @@ class LoggingCog(Cog, name="Logging"):
             LoggingSettings.delete_channel,
             LoggingSettings.alert_channel,
             LoggingSettings.changelog_channel,
+            LoggingSettings.member_join_channel,
+            LoggingSettings.member_leave_channel,
         ]:
             if await setting.get() == channel.id:
                 return False
@@ -188,6 +190,18 @@ class LoggingCog(Cog, name="Logging"):
             embed.add_field(name=t.message_id, value=event.message_id, inline=False)
         await delete_channel.send(embed=embed)
 
+    async def on_member_join(self, member: Member):
+        if (log_channel := await self.get_logging_channel(LoggingSettings.member_join_channel)) is None:
+            return
+
+        await log_channel.send(t.member_joined_server(member.mention, member))
+
+    async def on_member_remove(self, member: Member):
+        if (log_channel := await self.get_logging_channel(LoggingSettings.member_leave_channel)) is None:
+            return
+
+        await log_channel.send(t.member_left_server(member))
+
     @commands.group(aliases=["log"])
     @LoggingPermission.read.check
     @guild_only()
@@ -205,6 +219,10 @@ class LoggingCog(Cog, name="Logging"):
         delete_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.delete_channel)
         alert_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.alert_channel)
         changelog_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.changelog_channel)
+        member_join_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.member_join_channel)
+        member_leave_channel: Optional[TextChannel] = await self.get_logging_channel(
+            LoggingSettings.member_leave_channel,
+        )
         maxage: int = await LoggingSettings.maxage.get()
 
         embed = Embed(title=t.logging, color=Colors.Logging)
@@ -214,27 +232,40 @@ class LoggingCog(Cog, name="Logging"):
         else:
             embed.add_field(name=t.maxage, value=tg.disabled, inline=False)
 
+        embed.add_field(
+            name=t.msg_edit,
+            value=edit_channel.mention if edit_channel else t.logging_disabled,
+            inline=False,
+        )
         if edit_channel is not None:
             mindiff: int = await LoggingSettings.edit_mindiff.get()
-            embed.add_field(name=t.msg_edit, value=edit_channel.mention, inline=True)
             embed.add_field(name=t.mindiff, value=str(mindiff), inline=True)
-        else:
-            embed.add_field(name=t.msg_edit, value=t.logging_disabled, inline=False)
 
-        if delete_channel is not None:
-            embed.add_field(name=t.msg_delete, value=delete_channel.mention, inline=False)
-        else:
-            embed.add_field(name=t.msg_delete, value=t.logging_disabled, inline=False)
-
-        if alert_channel is not None:
-            embed.add_field(name=t.alert_channel, value=alert_channel.mention, inline=False)
-        else:
-            embed.add_field(name=t.alert_channel, value=tg.disabled, inline=False)
-
-        if changelog_channel is not None:
-            embed.add_field(name=t.changelog, value=changelog_channel.mention, inline=False)
-        else:
-            embed.add_field(name=t.changelog, value=tg.disabled, inline=False)
+        embed.add_field(
+            name=t.msg_delete,
+            value=delete_channel.mention if delete_channel else t.logging_disabled,
+            inline=False,
+        )
+        embed.add_field(
+            name=t.alert_channel,
+            value=alert_channel.mention if alert_channel else tg.disabled,
+            inline=False,
+        )
+        embed.add_field(
+            name=t.changelog,
+            value=changelog_channel.mention if changelog_channel else tg.disabled,
+            inline=False,
+        )
+        embed.add_field(
+            name=t.member_join,
+            value=member_join_channel.mention if member_join_channel else tg.disabled,
+            inline=False,
+        )
+        embed.add_field(
+            name=t.member_leave,
+            value=member_leave_channel.mention if member_leave_channel else tg.disabled,
+            inline=False,
+        )
 
         await reply(ctx, embed=embed)
 
@@ -428,6 +459,84 @@ class LoggingCog(Cog, name="Logging"):
         await send_to_changelog(ctx.guild, t.log_changelog_disabled)
         await LoggingSettings.changelog_channel.reset()
         embed = Embed(title=t.logging, description=t.log_changelog_disabled, color=Colors.Logging)
+        await reply(ctx, embed=embed)
+
+    @logging.group(name="member_join", aliases=["memberjoin", "join", "mj"])
+    @LoggingPermission.write.check
+    async def logging_member_join(self, ctx: Context):
+        """
+        change settings for member join logging
+        """
+
+        if ctx.invoked_subcommand is None:
+            raise UserInputError
+
+    @logging_member_join.command(name="channel", aliases=["ch", "c"])
+    async def logging_member_join_channel(self, ctx: Context, channel: TextChannel):
+        """
+        change member join logging channel
+        """
+
+        if not channel.permissions_for(channel.guild.me).send_messages:
+            raise CommandError(t.log_not_changed_no_permissions)
+
+        await LoggingSettings.member_join_channel.set(channel.id)
+        embed = Embed(
+            title=t.logging,
+            description=t.log_member_join_updated(channel.mention),
+            color=Colors.Logging,
+        )
+        await reply(ctx, embed=embed)
+        await send_to_changelog(ctx.guild, t.log_member_join_updated(channel.mention))
+
+    @logging_member_join.command(name="disable", aliases=["d"])
+    async def logging_member_join_disable(self, ctx: Context):
+        """
+        disable logging of member join events
+        """
+
+        await send_to_changelog(ctx.guild, t.log_member_join_disabled)
+        await LoggingSettings.member_join_channel.reset()
+        embed = Embed(title=t.logging, description=t.log_member_join_disabled, color=Colors.Logging)
+        await reply(ctx, embed=embed)
+
+    @logging.group(name="member_leave", aliases=["memberleave", "leave", "ml"])
+    @LoggingPermission.write.check
+    async def logging_member_leave(self, ctx: Context):
+        """
+        change settings for member leave logging
+        """
+
+        if ctx.invoked_subcommand is None:
+            raise UserInputError
+
+    @logging_member_leave.command(name="channel", aliases=["ch", "c"])
+    async def logging_member_leave_channel(self, ctx: Context, channel: TextChannel):
+        """
+        change member leave logging channel
+        """
+
+        if not channel.permissions_for(channel.guild.me).send_messages:
+            raise CommandError(t.log_not_changed_no_permissions)
+
+        await LoggingSettings.member_leave_channel.set(channel.id)
+        embed = Embed(
+            title=t.logging,
+            description=t.log_member_leave_updated(channel.mention),
+            color=Colors.Logging,
+        )
+        await reply(ctx, embed=embed)
+        await send_to_changelog(ctx.guild, t.log_member_leave_updated(channel.mention))
+
+    @logging_member_leave.command(name="disable", aliases=["d"])
+    async def logging_member_leave_disable(self, ctx: Context):
+        """
+        disable logging of member leave events
+        """
+
+        await send_to_changelog(ctx.guild, t.log_member_leave_disabled)
+        await LoggingSettings.member_leave_channel.reset()
+        embed = Embed(title=t.logging, description=t.log_member_leave_disabled, color=Colors.Logging)
         await reply(ctx, embed=embed)
 
     @logging.group(name="exclude", aliases=["x", "ignore", "i"])
