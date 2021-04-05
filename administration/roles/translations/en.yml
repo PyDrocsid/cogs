@@ -9,8 +9,6 @@ roles: Roles
 role_not_set: ":x: Role not set."
 role_set: "Role has been set successfully. :white_check_mark:"
 log_role_set: "**{} role** has been **set to** {} ({})"
-role_not_set_too_high: Role could not be set because `@{}` is higher than `@{}`.
-role_not_set_managed_role: Role could not be set because `@{}` cannot be assigned manually.
 
 role_auth: Role Assignment Authorizations
 no_role_auth: No role assignment authorizations have been created yet.

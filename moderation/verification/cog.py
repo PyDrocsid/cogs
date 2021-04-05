@@ -8,7 +8,7 @@ from discord.ext.commands import Context, CommandError, CheckFailure, check, gui
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply
+from PyDrocsid.util import reply, check_role_assignable
 from .colors import Colors
 from .models import VerificationRole
 from .permissions import VerificationPermission
@@ -133,10 +133,7 @@ class VerificationCog(Cog, name="Verification"):
         the `verify` command will fail if the user does not have the role.
         """
 
-        if role >= ctx.me.top_role:
-            raise CommandError(t.role_not_set_too_high(role, ctx.me.top_role))
-        if role.managed:
-            raise CommandError(t.role_not_set_managed_role(role))
+        check_role_assignable(role)
 
         if await db.get(VerificationRole, role_id=role.id) is not None:
             raise CommandError(t.verification_role_already_set)

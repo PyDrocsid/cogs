@@ -10,7 +10,7 @@ from PyDrocsid.emoji_converter import EmojiConverter
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply
+from PyDrocsid.util import send_long_embed, reply, check_role_assignable
 from .colors import Colors
 from .models import ReactionRole
 from .permissions import ReactionRolePermission
@@ -201,10 +201,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         if not msg.channel.permissions_for(msg.guild.me).add_reactions:
             raise CommandError(t.rr_link_not_created_no_permissions)
 
-        if role >= ctx.me.top_role:
-            raise CommandError(t.link_not_created_too_high(role, ctx.me.top_role))
-        if role.managed or role.is_default():
-            raise CommandError(t.link_not_created_managed_role(role))
+        check_role_assignable(role)
 
         await ReactionRole.create(msg.channel.id, msg.id, str(emoji), role.id, reverse, auto_remove)
         await msg.add_reaction(emoji)

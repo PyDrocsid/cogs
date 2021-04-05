@@ -14,7 +14,7 @@ from PyDrocsid.logger import get_logger
 from PyDrocsid.multilock import MultiLock
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import get_prefix, reply
+from PyDrocsid.util import get_prefix, reply, check_role_assignable
 from PyDrocsid.util import send_long_embed, is_teamler
 from .colors import Colors
 from .models import DynamicVoiceChannel, DynamicVoiceGroup, RoleVoiceLink
@@ -633,10 +633,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if await db.get(RoleVoiceLink, role=role.id, voice_channel=channel.id) is not None:
             raise CommandError(t.link_already_exists)
 
-        if role >= ctx.me.top_role:
-            raise CommandError(t.link_not_created_too_high(role, ctx.me.top_role))
-        if role.managed:
-            raise CommandError(t.link_not_created_managed_role(role))
+        check_role_assignable(role)
 
         await RoleVoiceLink.create(role.id, channel.id)
         for member in channel.members:

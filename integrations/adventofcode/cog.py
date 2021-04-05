@@ -13,7 +13,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.database import db, select, db_wrapper
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply
+from PyDrocsid.util import send_long_embed, reply, check_role_assignable
 from .colors import Colors
 from .models import AOCLink
 from .permissions import AdventOfCodePermission
@@ -450,7 +450,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
                 raise UserInputError
             return
 
-        embed = Embed(title=t.role)
+        embed = Embed(title=tg.role)
 
         role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get())
         rank: int = await AdventOfCodeSettings.rank.get()
@@ -470,10 +470,12 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
     @aoc_role.command(name="set", aliases=["s", "="])
     @AdventOfCodePermission.role_write.check
-    async def aoc_role_set(self, ctx: Context, role: Role):
+    async def aoc_role_set(self, ctx: Context, *, role: Role):
         """
         configure aoc role
         """
+
+        check_role_assignable(role)
 
         old_role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get())
 

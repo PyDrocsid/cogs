@@ -7,7 +7,7 @@ from discord.ext.commands import guild_only, Context, UserInputError, CommandErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply
+from PyDrocsid.util import reply, check_role_assignable
 from .colors import Colors
 from .models import AutoRole
 from .permissions import AutoRolePermission
@@ -61,10 +61,7 @@ class AutoRoleCog(Cog, name="AutoRole"):
         if await AutoRole.exists(role.id):
             raise CommandError(t.ar_already_set)
 
-        if role >= ctx.me.top_role:
-            raise CommandError(t.role_not_added_too_high(role, ctx.me.top_role))
-        if role.managed:
-            raise CommandError(t.role_not_added_managed_role(role))
+        check_role_assignable(role)
 
         await AutoRole.add(role.id)
         await reply(ctx, t.ar_added)

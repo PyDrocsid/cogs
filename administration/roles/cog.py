@@ -10,7 +10,7 @@ from PyDrocsid.database import db, select
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply
+from PyDrocsid.util import send_long_embed, reply, check_role_assignable
 from .colors import Colors
 from .models import RoleAuth
 from .permissions import RolesPermission
@@ -22,10 +22,8 @@ t = t.roles
 
 async def configure_role(ctx: Context, role_name: str, role: Role, check_assignable: bool = False):
     if check_assignable:
-        if role >= ctx.me.top_role:
-            raise CommandError(t.role_not_set_too_high(role, ctx.me.top_role))
-        if role.managed:
-            raise CommandError(t.role_not_set_managed_role(role))
+        check_role_assignable(role)
+
     await RoleSettings.set(role_name, role.id)
     await reply(ctx, t.role_set)
     await send_to_changelog(
@@ -143,6 +141,8 @@ class RolesCog(Cog, name="Roles"):
         if await RoleAuth.check(source.id, target.id):
             raise CommandError(t.role_auth_already_exists)
 
+        check_role_assignable(target)
+
         await RoleAuth.add(source.id, target.id)
         await reply(ctx, t.role_auth_created)
         await send_to_changelog(ctx.guild, t.log_role_auth_created(source, target))
@@ -170,6 +170,8 @@ class RolesCog(Cog, name="Roles"):
         if not await is_authorized(ctx.author, role):
             raise CommandError(t.role_not_authorized)
 
+        check_role_assignable(role)
+
         await member.add_roles(role)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
@@ -181,6 +183,8 @@ class RolesCog(Cog, name="Roles"):
 
         if not await is_authorized(ctx.author, role):
             raise CommandError(t.role_not_authorized)
+
+        check_role_assignable(role)
 
         await member.remove_roles(role)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])

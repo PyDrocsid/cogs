@@ -8,7 +8,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
+from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply, check_role_assignable
 from .colors import Colors
 from .models import BTPRole
 from .permissions import BeTheProfessionalPermission
@@ -77,9 +77,10 @@ async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
         btp_roles.append(btp_role)
 
     for role, btp_role in zip(roles, btp_roles):
-        await db.delete(btp_role)
         if delete_roles:
+            check_role_assignable(role)
             await role.delete()
+        await db.delete(btp_role)
 
     embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
     embed.description = t.topics_unregistered(cnt=len(roles))
@@ -122,6 +123,9 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         member: Member = ctx.author
         roles: List[Role] = [r for r in await parse_topics(ctx.guild, topics, ctx.author) if r not in member.roles]
 
+        for role in roles:
+            check_role_assignable(role)
+
         await member.add_roles(*roles)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
@@ -144,6 +148,9 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         else:
             roles: List[Role] = await parse_topics(ctx.guild, topics, ctx.author)
         roles = [r for r in roles if r in member.roles]
+
+        for role in roles:
+            check_role_assignable(role)
 
         await member.remove_roles(*roles)
 
@@ -169,7 +176,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         roles: List[Role] = []
         for topic in names:
             if any(c not in valid_chars for c in topic):
-                raise CommandError(t.f_topic_invalid_chars(topic))
+                raise CommandError(t.topic_invalid_chars(topic))
 
             for role in guild.roles:
                 if role.name.lower() == topic.lower():
@@ -180,10 +187,9 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
 
             if await db.exists(select(BTPRole).filter_by(role_id=role.id)):
                 raise CommandError(t.topic_already_registered(topic))
-            if role >= ctx.me.top_role:
-                raise CommandError(t.topic_not_registered_too_high(role, ctx.me.top_role))
-            if role.managed:
-                raise CommandError(t.topic_not_registered_managed_role(role))
+
+            check_role_assignable(role)
+
             roles.append(role)
 
         for name in to_be_created:
