@@ -167,7 +167,13 @@ class ModCog(Cog, name="Mod Tools"):
                 active = await db.count(filter_by(cls, reporter=user_id))
             else:
                 active = await db.count(filter_by(cls, mod=user_id))
+
             passive = await db.count(filter_by(cls, member=user_id))
+
+            if cls is Kick:
+                if auto_kicks := await db.count(filter_by(cls, member=user_id, mod=None)):
+                    return t.active_passive(active, passive - auto_kicks) + "\n" + t.autokicks(cnt=auto_kicks)
+
             return t.active_passive(active, passive)
 
         out.append((t.reported_cnt, await count(Report)))
