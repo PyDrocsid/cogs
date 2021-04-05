@@ -22,7 +22,7 @@ class SettingsCog(Cog, name="Settings"):
     @commands.command(name="prefix")
     @SettingsPermission.change_prefix.check
     @guild_only()
-    async def change_prefix(self, ctx: Context, new_prefix: str):
+    async def change_prefix(self, ctx: Context, *, new_prefix: str):
         """
         change the bot prefix
         """
@@ -30,7 +30,7 @@ class SettingsCog(Cog, name="Settings"):
         if not 0 < len(new_prefix) <= 16:
             raise CommandError(t.invalid_prefix_length)
 
-        valid_chars = set(string.ascii_letters + string.digits + string.punctuation)
+        valid_chars = set(string.ascii_letters + string.digits + string.punctuation) - {"`"}
         if any(c not in valid_chars for c in new_prefix):
             raise CommandError(t.prefix_invalid_chars)
 
