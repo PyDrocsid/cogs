@@ -167,6 +167,9 @@ class RolesCog(Cog, name="Roles"):
         assign a role to a member
         """
 
+        if role in member.roles:
+            raise CommandError(t.role_already_assigned)
+
         if not await is_authorized(ctx.author, role):
             raise CommandError(t.role_not_authorized)
 
@@ -180,6 +183,9 @@ class RolesCog(Cog, name="Roles"):
         """
         remove a role from a member
         """
+
+        if role not in member.roles:
+            raise CommandError(t.role_not_assigned)
 
         if not await is_authorized(ctx.author, role):
             raise CommandError(t.role_not_authorized)

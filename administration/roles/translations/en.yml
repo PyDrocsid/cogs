@@ -25,3 +25,5 @@ member_list: Member List
 member_list_cnt: Member List ({})
 member_list_line: ":small_orange_diamond: {} ({})"
 no_members: No member was found with this role.
+role_already_assigned: Role has already been assigned to this member.
+role_not_assigned: Role has not yet been assigned to this member.
