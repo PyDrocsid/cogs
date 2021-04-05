@@ -2,7 +2,7 @@ from typing import Optional
 
 from discord import Embed
 from discord.ext import commands
-from discord.ext.commands import Context
+from discord.ext.commands import Context, CommandError
 from discord.utils import snowflake_time
 
 from PyDrocsid.cog import Cog
@@ -36,4 +36,10 @@ class UtilsCog(Cog, name="Utils"):
         display snowflake timestamp
         """
 
-        await reply(ctx, snowflake_time(arg).strftime("%d.%m.%Y %H:%M:%S"))
+        if arg < 0:
+            raise CommandError(t.invalid_snowflake)
+
+        try:
+            await reply(ctx, snowflake_time(arg).strftime("%d.%m.%Y %H:%M:%S"))
+        except (OverflowError, ValueError):
+            raise CommandError(t.invalid_snowflake)

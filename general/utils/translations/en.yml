@@ -1,2 +1,3 @@
 pong: Pong!
 pong_latency: ":hourglass: {:.0f} ms"
+invalid_snowflake: Invalid snowflake!
