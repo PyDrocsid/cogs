@@ -168,7 +168,7 @@ class LoggingCog(Cog, name="Logging"):
                     if size < 1000:
                         break
                     size /= 1000
-                out.append(f"{attachment.filename} ({size:.1f} {_unit})")
+                out.append(f"[{attachment.filename}]({attachment.url}) ({size:.1f} {_unit})")
             embed.add_field(name=t.attachments, value="\n".join(out), inline=False)
         await delete_channel.send(embed=embed)
 
