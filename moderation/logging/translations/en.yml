@@ -15,39 +15,69 @@ message_id: Message ID
 member_joined_server: "{} ({}) just joined the server!"
 member_left_server: "**{}** just left the server!"
 
-logging_channels_header: "Logging channels:"
-msg_edit_on: "message edit: {} (minimum distance: {})"
-msg_edit_off: "message edit: *disabled*"
-msg_delete_on: "message delete: {}"
-msg_delete_off: "message delete: *disabled*"
-changelog_on: "changelog: {}"
-changelog_off: "changelog: *disabled*"
-
 log_not_changed_no_permissions: >
   Logging channel could not be changed because I don't have `send_messages` permission there.
 
-min_diff_gt_zero: Minimum distance must be greater than zero.
-edit_mindiff_updated: >
-  Message edit events will now only be logged if the edit distance is at least {}. :white_check_mark:
-log_mindiff_updated: "**Minimum edit distance** has been **set** to {}."
-log_edit_updated: "**Logs** for **message edit** events will now be **sent** to {}. :white_check_mark:"
-log_edit_disabled: "**Logging** for **message edit** events has been **disabled**. :white_check_mark:"
+logging: Logging
 
-log_delete_updated: "**Logs** for **message delete** events will now be **sent** to {}. :white_check_mark:"
-log_delete_disabled: "**Logging** for **message delete** events has been **disabled**. :white_check_mark:"
+channels:
+  edit:
+    name: ":pencil: Message Edit Channel"
+    manage_description: change settings for edit event logging
+    set_description: change logging channel for edit events
+    disable_description: disable edit event logging
+    updated: "**Logs** for **message edit** events will now be **sent** to {}. :white_check_mark:"
+    disabled: "**Logging** for **message edit** events has been **disabled**. :white_check_mark:"
+    mindist:
+      name: ":straight_ruler: Minimum Edit Distance"
+      set_description: >
+        change the minimum edit distance between the old and new content of the message to be logged
+      gt_zero: Minimum distance must be greater than zero.
+      updated: >
+        Message edit events will now only be logged if the edit distance is at least {}. :white_check_mark:
+      log_updated: "**Minimum edit distance** has been **set** to {}."
 
-log_alert_updated: "**Alert channel** is now {}. :white_check_mark:"
-log_alert_disabled: "**Alert channel** has been **disabled**. :white_check_mark:"
+  delete:
+    name: ":wastebasket: Message Delete Channel"
+    manage_description: change settings for delete event logging
+    set_description: change logging channel for delete events
+    disable_description: disable delete event logging
+    updated: "**Logs** for **message delete** events will now be **sent** to {}. :white_check_mark:"
+    disabled: "**Logging** for **message delete** events has been **disabled**. :white_check_mark:"
 
-log_changelog_updated: "**Changelog channel** is now {}. :white_check_mark:"
-log_changelog_disabled: "**Changelog channel** has been **disabled**. :white_check_mark:"
+  alert:
+    name: ":warning: Alert Channel"
+    manage_description: change settings for internal alert channel
+    set_description: change alert channel
+    disable_description: disable alert channel
+    updated: "**Alert channel** is now {}. :white_check_mark:"
+    disabled: "**Alert channel** has been **disabled**. :white_check_mark:"
 
-log_member_join_updated: "**Logs** for **member join** events will now be **sent** to {}. :white_check_mark:"
-log_member_join_disabled: "**Logging** for **member join** events has been **disabled**. :white_check_mark:"
+  changelog:
+    name: ":clipboard: Changelog Channel"
+    manage_description: change settings for internal changelog
+    set_description: change changelog channel
+    disable_description: disable changelog channel
+    updated: "**Changelog channel** is now {}. :white_check_mark:"
+    disabled: "**Changelog channel** has been **disabled**. :white_check_mark:"
 
-log_member_leave_updated: "**Logs** for **member leave** events will now be **sent** to {}. :white_check_mark:"
-log_member_leave_disabled: "**Logging** for **member leave** events has been **disabled**. :white_check_mark:"
+  member_join:
+    name: ":tada: Member Join Channel"
+    manage_description: change settings for member join logging
+    set_description: change member join logging channel
+    disable_description: disable logging of member join events
+    updated: "**Logs** for **member join** events will now be **sent** to {}. :white_check_mark:"
+    disabled: "**Logging** for **member join** events has been **disabled**. :white_check_mark:"
 
+  member_leave:
+    name: ":door: Member Leave Channel"
+    manage_description: change settings for member leave logging
+    set_description: change member leave logging channel
+    disable_description: disable logging of member leave events
+    updated: "**Logs** for **member leave** events will now be **sent** to {}. :white_check_mark:"
+    disabled: "**Logging** for **member leave** events has been **disabled**. :white_check_mark:"
+
+maxage: ":clock3: Maximum Age"
 maxage_disabled: Automatic deletion of old log entries is disabled.
 maxage_enabled:
   one: Log entries older than {cnt} day will be deleted automatically.
@@ -56,17 +86,6 @@ maxage_set:
   one: "**Maximum age** of log entries has been **set** to {cnt} day. :white_check_mark:"
   many: "**Maximum age** of log entries has been **set** to {cnt} days. :white_check_mark:"
 maxage_set_disabled: "**Automatic deletion** of old log entries has been **disabled**. :white_check_mark:"
-
-logging: Logging
-msg_edit: ":pencil: Message Edit Channel"
-msg_delete: ":wastebasket: Message Delete Channel"
-alert_channel: ":warning: Alert Channel"
-changelog: ":clipboard: Changelog Channel"
-member_join: ":tada: Member Join Channel"
-member_leave: ":door: Member Leave Channel"
-logging_disabled: ":x: Logging disabled"
-mindiff: ":straight_ruler: Minimum Edit Distance"
-maxage: ":clock3: Maximum Age"
 
 already_excluded: Channel is already excluded from logging.
 excluded: "Channel has been excluded from logging. :white_check_mark:"

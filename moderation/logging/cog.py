@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Group, Command
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db_wrapper
@@ -48,6 +48,57 @@ async def is_logging_channel(channel: TextChannel) -> bool:
             return True
 
     return False
+
+
+def docs(text: str):
+    def deco(f):
+        f.__doc__ = text
+        return f
+
+    return deco
+
+
+channels: list[str] = []
+
+
+def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command, Command]:
+    channels.append(name)
+
+    @group.group(name=name, aliases=list(aliases))
+    @LoggingPermission.write.check
+    @docs(getattr(t.channels, name).manage_description)
+    async def logging_channel(_, ctx: Context):
+        if ctx.invoked_subcommand is None:
+            raise UserInputError
+
+    @logging_channel.command(name="channel", aliases=["ch", "c"])
+    @docs(getattr(t.channels, name).set_description)
+    async def set_channel(ctx: Context, *, channel: TextChannel):
+        if not channel.permissions_for(channel.guild.me).send_messages:
+            raise CommandError(t.log_not_changed_no_permissions)
+
+        await getattr(LoggingSettings, f"{name}_channel").set(channel.id)
+        embed = Embed(
+            title=t.logging,
+            description=(text := getattr(t.channels, name).updated(channel.mention)),
+            color=Colors.Logging,
+        )
+        await reply(ctx, embed=embed)
+        await send_to_changelog(ctx.guild, text)
+
+    @logging_channel.command(name="disable", aliases=["d"])
+    @docs(getattr(t.channels, name).disable_description)
+    async def disable_channel(ctx: Context):
+        await getattr(LoggingSettings, f"{name}_channel").reset()
+        embed = Embed(
+            title=t.logging,
+            description=(text := getattr(t.channels, name).disabled),
+            color=Colors.Logging,
+        )
+        await reply(ctx, embed=embed)
+        await send_to_changelog(ctx.guild, text)
+
+    return logging_channel, set_channel, disable_channel
 
 
 class LoggingCog(Cog, name="Logging"):
@@ -215,57 +266,25 @@ class LoggingCog(Cog, name="Logging"):
                 raise UserInputError
             return
 
-        edit_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.edit_channel)
-        delete_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.delete_channel)
-        alert_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.alert_channel)
-        changelog_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.changelog_channel)
-        member_join_channel: Optional[TextChannel] = await self.get_logging_channel(LoggingSettings.member_join_channel)
-        member_leave_channel: Optional[TextChannel] = await self.get_logging_channel(
-            LoggingSettings.member_leave_channel,
-        )
-        maxage: int = await LoggingSettings.maxage.get()
-
         embed = Embed(title=t.logging, color=Colors.Logging)
 
+        maxage: int = await LoggingSettings.maxage.get()
         if maxage != -1:
             embed.add_field(name=t.maxage, value=tg.x_days(cnt=maxage), inline=False)
         else:
             embed.add_field(name=t.maxage, value=tg.disabled, inline=False)
 
-        embed.add_field(
-            name=t.msg_edit,
-            value=edit_channel.mention if edit_channel else t.logging_disabled,
-            inline=False,
-        )
-        if edit_channel is not None:
-            mindiff: int = await LoggingSettings.edit_mindiff.get()
-            embed.add_field(name=t.mindiff, value=str(mindiff), inline=True)
+        for name in channels:
+            channel: Optional[TextChannel] = await self.get_logging_channel(getattr(LoggingSettings, f"{name}_channel"))
+            embed.add_field(
+                name=getattr(t.channels, name).name,
+                value=channel.mention if channel else tg.disabled,
+                inline=name == "edit",
+            )
 
-        embed.add_field(
-            name=t.msg_delete,
-            value=delete_channel.mention if delete_channel else t.logging_disabled,
-            inline=False,
-        )
-        embed.add_field(
-            name=t.alert_channel,
-            value=alert_channel.mention if alert_channel else tg.disabled,
-            inline=False,
-        )
-        embed.add_field(
-            name=t.changelog,
-            value=changelog_channel.mention if changelog_channel else tg.disabled,
-            inline=False,
-        )
-        embed.add_field(
-            name=t.member_join,
-            value=member_join_channel.mention if member_join_channel else tg.disabled,
-            inline=False,
-        )
-        embed.add_field(
-            name=t.member_leave,
-            value=member_leave_channel.mention if member_leave_channel else tg.disabled,
-            inline=False,
-        )
+            if name == "edit" and channel is not None:
+                mindist: int = await LoggingSettings.edit_mindiff.get()
+                embed.add_field(name=t.channels.edit.mindist.name, value=str(mindist), inline=True)
 
         await reply(ctx, embed=embed)
 
@@ -291,253 +310,23 @@ class LoggingCog(Cog, name="Logging"):
 
         await reply(ctx, embed=embed)
 
-    @logging.group(name="edit", aliases=["e"])
-    @LoggingPermission.write.check
-    async def logging_edit(self, ctx: Context):
-        """
-        change settings for edit event logging
-        """
-
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
+    logging_edit, *_ = add_channel(logging, "edit", "e")
+    logging_delete, *_ = add_channel(logging, "delete", "d")
+    logging_alert, *_ = add_channel(logging, "alert", "al", "a")
+    logging_changelog, *_ = add_channel(logging, "changelog", "change", "cl", "c")
+    logging_member_join, *_ = add_channel(logging, "member_join", "memberjoin", "join", "mj")
+    logging_member_leave, *_ = add_channel(logging, "member_leave", "memberleave", "leave", "ml")
 
     @logging_edit.command(name="mindist", aliases=["md"])
+    @docs(t.channels.edit.mindist.set_description)
     async def logging_edit_mindist(self, ctx: Context, mindist: int):
-        """
-        change the minimum edit distance between the old and new content of the message to be logged
-        """
-
         if mindist <= 0:
-            raise CommandError(t.min_diff_gt_zero)
+            raise CommandError(t.channels.edit.mindist.gt_zero)
 
         await LoggingSettings.edit_mindiff.set(mindist)
-        embed = Embed(title=t.logging, description=t.edit_mindiff_updated(mindist), color=Colors.Logging)
+        embed = Embed(title=t.logging, description=t.channels.edit.mindist.updated(mindist), color=Colors.Logging)
         await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_mindiff_updated(mindist))
-
-    @logging_edit.command(name="channel", aliases=["ch", "c"])
-    async def logging_edit_channel(self, ctx: Context, channel: TextChannel):
-        """
-        change logging channel for edit events
-        """
-
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.log_not_changed_no_permissions)
-
-        await LoggingSettings.edit_channel.set(channel.id)
-        embed = Embed(
-            title=t.logging,
-            description=t.log_edit_updated(channel.mention),
-            color=Colors.Logging,
-        )
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_edit_updated(channel.mention))
-
-    @logging_edit.command(name="disable", aliases=["d"])
-    async def logging_edit_disable(self, ctx: Context):
-        """
-        disable edit event logging
-        """
-
-        await LoggingSettings.edit_channel.reset()
-        embed = Embed(title=t.logging, description=t.log_edit_disabled, color=Colors.Logging)
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_edit_disabled)
-
-    @logging.group(name="delete", aliases=["d"])
-    @LoggingPermission.write.check
-    async def logging_delete(self, ctx: Context):
-        """
-        change settings for delete event logging
-        """
-
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
-
-    @logging_delete.command(name="channel", aliases=["ch", "c"])
-    async def logging_delete_channel(self, ctx: Context, channel: TextChannel):
-        """
-        change logging channel for delete events
-        """
-
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.log_not_changed_no_permissions)
-
-        await LoggingSettings.delete_channel.set(channel.id)
-        embed = Embed(
-            title=t.logging,
-            description=t.log_delete_updated(channel.mention),
-            color=Colors.Logging,
-        )
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_delete_updated(channel.mention))
-
-    @logging_delete.command(name="disable", aliases=["d"])
-    async def logging_delete_disable(self, ctx: Context):
-        """
-        disable delete event logging
-        """
-
-        await LoggingSettings.delete_channel.reset()
-        embed = Embed(title=t.logging, description=t.log_delete_disabled, color=Colors.Logging)
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_delete_disabled)
-
-    @logging.group(name="alert", aliases=["al", "a"])
-    @LoggingPermission.write.check
-    async def logging_alert(self, ctx: Context):
-        """
-        change settings for internal alert channel
-        """
-
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
-
-    @logging_alert.command(name="channel", aliases=["ch", "c"])
-    async def logging_alert_channel(self, ctx: Context, channel: TextChannel):
-        """
-        change alert channel
-        """
-
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.log_not_changed_no_permissions)
-
-        await LoggingSettings.alert_channel.set(channel.id)
-        embed = Embed(
-            title=t.logging,
-            description=t.log_alert_updated(channel.mention),
-            color=Colors.Logging,
-        )
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_alert_updated(channel.mention))
-
-    @logging_alert.command(name="disable", aliases=["d"])
-    async def logging_alert_disable(self, ctx: Context):
-        """
-        disable alert channel
-        """
-
-        await send_to_changelog(ctx.guild, t.log_alert_disabled)
-        await LoggingSettings.alert_channel.reset()
-        embed = Embed(title=t.logging, description=t.log_alert_disabled, color=Colors.Logging)
-        await reply(ctx, embed=embed)
-
-    @logging.group(name="changelog", aliases=["cl", "c", "change"])
-    @LoggingPermission.write.check
-    async def logging_changelog(self, ctx: Context):
-        """
-        change settings for internal changelog
-        """
-
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
-
-    @logging_changelog.command(name="channel", aliases=["ch", "c"])
-    async def logging_changelog_channel(self, ctx: Context, channel: TextChannel):
-        """
-        change changelog channel
-        """
-
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.log_not_changed_no_permissions)
-
-        await LoggingSettings.changelog_channel.set(channel.id)
-        embed = Embed(
-            title=t.logging,
-            description=t.log_changelog_updated(channel.mention),
-            color=Colors.Logging,
-        )
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_changelog_updated(channel.mention))
-
-    @logging_changelog.command(name="disable", aliases=["d"])
-    async def logging_changelog_disable(self, ctx: Context):
-        """
-        disable changelog
-        """
-
-        await send_to_changelog(ctx.guild, t.log_changelog_disabled)
-        await LoggingSettings.changelog_channel.reset()
-        embed = Embed(title=t.logging, description=t.log_changelog_disabled, color=Colors.Logging)
-        await reply(ctx, embed=embed)
-
-    @logging.group(name="member_join", aliases=["memberjoin", "join", "mj"])
-    @LoggingPermission.write.check
-    async def logging_member_join(self, ctx: Context):
-        """
-        change settings for member join logging
-        """
-
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
-
-    @logging_member_join.command(name="channel", aliases=["ch", "c"])
-    async def logging_member_join_channel(self, ctx: Context, channel: TextChannel):
-        """
-        change member join logging channel
-        """
-
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.log_not_changed_no_permissions)
-
-        await LoggingSettings.member_join_channel.set(channel.id)
-        embed = Embed(
-            title=t.logging,
-            description=t.log_member_join_updated(channel.mention),
-            color=Colors.Logging,
-        )
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_member_join_updated(channel.mention))
-
-    @logging_member_join.command(name="disable", aliases=["d"])
-    async def logging_member_join_disable(self, ctx: Context):
-        """
-        disable logging of member join events
-        """
-
-        await send_to_changelog(ctx.guild, t.log_member_join_disabled)
-        await LoggingSettings.member_join_channel.reset()
-        embed = Embed(title=t.logging, description=t.log_member_join_disabled, color=Colors.Logging)
-        await reply(ctx, embed=embed)
-
-    @logging.group(name="member_leave", aliases=["memberleave", "leave", "ml"])
-    @LoggingPermission.write.check
-    async def logging_member_leave(self, ctx: Context):
-        """
-        change settings for member leave logging
-        """
-
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
-
-    @logging_member_leave.command(name="channel", aliases=["ch", "c"])
-    async def logging_member_leave_channel(self, ctx: Context, channel: TextChannel):
-        """
-        change member leave logging channel
-        """
-
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.log_not_changed_no_permissions)
-
-        await LoggingSettings.member_leave_channel.set(channel.id)
-        embed = Embed(
-            title=t.logging,
-            description=t.log_member_leave_updated(channel.mention),
-            color=Colors.Logging,
-        )
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, t.log_member_leave_updated(channel.mention))
-
-    @logging_member_leave.command(name="disable", aliases=["d"])
-    async def logging_member_leave_disable(self, ctx: Context):
-        """
-        disable logging of member leave events
-        """
-
-        await send_to_changelog(ctx.guild, t.log_member_leave_disabled)
-        await LoggingSettings.member_leave_channel.reset()
-        embed = Embed(title=t.logging, description=t.log_member_leave_disabled, color=Colors.Logging)
-        await reply(ctx, embed=embed)
+        await send_to_changelog(ctx.guild, t.channels.edit.mindist.log_updated(mindist))
 
     @logging.group(name="exclude", aliases=["x", "ignore", "i"])
     async def logging_exclude(self, ctx: Context):
