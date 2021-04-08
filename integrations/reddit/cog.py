@@ -1,4 +1,3 @@
-import html
 from datetime import datetime
 from typing import Optional, List
 
@@ -28,21 +27,24 @@ logger = get_logger(__name__)
 
 def exists_subreddit(subreddit: str) -> bool:
     return requests.head(
-        f"https://www.reddit.com/r/{subreddit}/hot.json",
+        # raw_json=1 as parameter to get unicode characters instead of html escape sequences
+        f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1",
         headers={"User-agent": f"MorpheusHelper/{Config.VERSION}"},
     ).ok
 
 
 def get_subreddit_name(subreddit: str) -> str:
     return requests.get(
-        f"https://www.reddit.com/r/{subreddit}/about.json",
+        # raw_json=1 as parameter to get unicode characters instead of html escape sequences
+        f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
         headers={"User-agent": f"MorpheusHelper/{Config.VERSION}"},
     ).json()["data"]["display_name"]
 
 
 def fetch_reddit_posts(subreddit: str, limit: int) -> List[dict]:
     response = requests.get(
-        f"https://www.reddit.com/r/{subreddit}/hot.json",
+        # raw_json=1 as parameter to get unicode characters instead of html escape sequences
+        f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1",
         headers={"User-agent": f"MorpheusHelper/{Config.VERSION}"},
         params={"limit": str(limit)},
     )
@@ -59,7 +61,7 @@ def fetch_reddit_posts(subreddit: str, limit: int) -> List[dict]:
                 {
                     "id": post["data"]["id"],
                     "author": post["data"]["author"],
-                    "title": html.unescape(post["data"]["title"]),  # parse html special characters
+                    "title": post["data"]["title"],
                     "created_utc": post["data"]["created_utc"],
                     "score": post["data"]["score"],
                     "num_comments": post["data"]["num_comments"],
