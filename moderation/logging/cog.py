@@ -10,7 +10,7 @@ from PyDrocsid.database import db_wrapper
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply
+from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply, docs
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission
@@ -48,14 +48,6 @@ async def is_logging_channel(channel: TextChannel) -> bool:
             return True
 
     return False
-
-
-def docs(text: str):
-    def deco(f):
-        f.__doc__ = text
-        return f
-
-    return deco
 
 
 channels: list[str] = []

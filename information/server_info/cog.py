@@ -6,7 +6,7 @@ from discord.ext.commands import guild_only, Context, UserInputError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed
+from PyDrocsid.util import send_long_embed, docs
 from .colors import Colors
 from ...contributor import Contributor
 
@@ -25,11 +25,8 @@ class ServerInfoCog(Cog, name="Server Information"):
 
     @commands.group()
     @guild_only()
+    @docs(t.commands.server)
     async def server(self, ctx: Context):
-        """
-        displays information about this discord server
-        """
-
         if ctx.subcommand_passed is not None:
             if ctx.invoked_subcommand is None:
                 raise UserInputError
@@ -57,11 +54,8 @@ class ServerInfoCog(Cog, name="Server Information"):
         await send_long_embed(ctx, embed)
 
     @server.command(name="bots")
+    @docs(t.commands.bots)
     async def server_bots(self, ctx: Context):
-        """
-        list all bots on the server
-        """
-
         guild: Guild = ctx.guild
         online: List[Member] = []
         offline: List[Member] = []

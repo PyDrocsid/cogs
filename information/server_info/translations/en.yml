@@ -1,3 +1,7 @@
+commands:
+  server: displays information about this discord server
+  bots: list all bots on the server
+
 info_description: Information about this Discord Server
 creation_date: Creation Date
 cnt_members:
