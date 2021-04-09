@@ -118,3 +118,6 @@ ulog:
       inf: ":no_entry: **Ban upgraded** to permanent by {} because of `{}`"
   unbanned: ":white_check_mark: **Unbanned** by {} because of `{}`"
   unbanned_expired: ":white_check_mark: **Unbanned** because the ban time has expired."
+
+team_role_ping: "Teamrole Ping"
+message: ":newspaper: Message"

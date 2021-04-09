@@ -27,7 +27,7 @@ from ...pubsub import (
     get_userlog_entries,
     get_user_info_entries,
     get_user_status_entries,
-    revoke_verification,
+    revoke_verification, send_alert,
 )
 
 tg = t.g
@@ -271,6 +271,28 @@ class ModCog(Cog, name="Mod Tools"):
 
         if await db.exists(filter_by(Mute, active=True, member=member.id)):
             await member.add_roles(mute_role)
+
+    async def on_message(self, message: Message):
+        """
+        Searches for a team role ping in a sent message
+        """
+        team_role_id: int = await RoleSettings.get("team")
+        if team_role_id == -1:
+            return
+
+        team_role = message.guild.get_role(team_role_id)
+        if team_role not in message.role_mentions:
+            return
+
+        embed = Embed(title=t.team_role_ping, color=Colors.teamrole_ping, timestamp=message.created_at)
+        embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+        embed.add_field(name=t.log_field.member, value=message.author.mention)
+        embed.add_field(
+            name=t.log_field.channel,
+            value=t.jump_url(message.channel.mention, message.jump_url)
+        )
+        embed.add_field(name=t.message, value=message.content, inline=False)
+        await send_alert(guild=message.guild, message=embed)
 
     @commands.command()
     @guild_only()
