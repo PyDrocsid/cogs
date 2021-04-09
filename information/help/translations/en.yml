@@ -1,3 +1,6 @@
+commands:
+  help: shows this message
+
 cog_or_command_not_found: This cog or command does not exist.
 description: Description
 subcommands: Subcommands
