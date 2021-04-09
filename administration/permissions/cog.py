@@ -22,7 +22,7 @@ t = t.permissions
 def get_permissions() -> list[BasePermission]:
     permissions: list[BasePermission] = []
     for cls in get_subclasses_in_enabled_packages(BasePermission):
-        permissions += list(cls)
+        permissions += [x for x in cls if not hasattr(x, "_disabled")]
     return permissions
 
 
