@@ -333,7 +333,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.warned_response, colour=Colors.ModTools)
         server_embed.set_author(
             name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
         try:
             await user.send(embed=user_embed)
@@ -384,7 +384,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.muted_response, colour=Colors.ModTools)
         server_embed.set_author(
             name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
 
         if days is not None:
@@ -448,7 +448,7 @@ class ModCog(Cog, name="Mod Tools"):
         embed = Embed(title=t.unmuted_response, colour=Colors.ModTools)
         embed.set_author(
             name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
         await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unmute, t.log_unmuted, user, reason)
@@ -484,7 +484,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.kicked_response, colour=Colors.ModTools)
         server_embed.set_author(
             name=member.display_name,
-            icon_url=member.avatar_url_as(format=("gif" if member.is_avatar_animated() else "png"))
+            icon_url=member.avatar_url_as(format=("gif" if member.is_avatar_animated() else "png")),
         )
 
         try:
@@ -550,7 +550,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.banned_response, colour=Colors.ModTools)
         embed.set_author(
             name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
 
         if ban_days is not None:
@@ -620,7 +620,7 @@ class ModCog(Cog, name="Mod Tools"):
         embed = Embed(title=t.unbanned_response, colour=Colors.ModTools)
         embed.set_author(
             name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
         await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unban, t.log_unbanned, user, reason)
