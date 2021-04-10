@@ -548,7 +548,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.banned_response, colour=Colors.ModTools)
-        embed.set_author(
+        server_embed.set_author(
             name=user.display_name,
             icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
