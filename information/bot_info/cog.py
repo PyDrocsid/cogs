@@ -8,7 +8,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
 from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, get_prefix, reply
+from PyDrocsid.util import send_long_embed, get_prefix, reply, docs
 from .colors import Colors
 from .permissions import InfoPermission
 from ...contributor import Contributor
@@ -105,11 +105,8 @@ class BotInfoCog(Cog, name="Bot Information"):
         return embed
 
     @commands.command(aliases=["gh"])
+    @docs(t.commands.github)
     async def github(self, ctx: Context):
-        """
-        return the github link
-        """
-
         if not self.repo_description:
             self.repo_description = await get_repo_description(Config.REPO_OWNER, Config.REPO_NAME)
 
@@ -124,37 +121,25 @@ class BotInfoCog(Cog, name="Bot Information"):
         await reply(ctx, embed=embed)
 
     @commands.command()
+    @docs(t.commands.version)
     async def version(self, ctx: Context):
-        """
-        show version
-        """
-
         embed = Embed(title=f"{Config.NAME} v{Config.VERSION}", colour=Colors.version)
         await reply(ctx, embed=embed)
 
     @commands.command(aliases=["infos", "about"])
+    @docs(t.commands.info)
     async def info(self, ctx: Context):
-        """
-        show information about the bot
-        """
-
         await send_long_embed(ctx, await self.build_info_embed(False))
 
     @commands.command(aliases=["admininfos"])
     @InfoPermission.admininfo.check
+    @docs(t.commands.admininfo)
     async def admininfo(self, ctx: Context):
-        """
-        show information about the bot (admin view)
-        """
-
         await send_long_embed(ctx, await self.build_info_embed(True))
 
     @commands.command(aliases=["contri", "con"])
+    @docs(t.commands.contributors)
     async def contributors(self, ctx: Context):
-        """
-        show list of contributors
-        """
-
         if not self.github_users:
             await self.load_github_users()
 

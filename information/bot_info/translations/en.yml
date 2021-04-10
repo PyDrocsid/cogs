@@ -1,6 +1,13 @@
 permissions:
   admininfo: view admininfo
 
+commands:
+  github: return the github link
+  version: show version
+  info: show information about the bot
+  admininfo: show information about the bot (admin view)
+  contributors: show list of contributors
+
 features_title: Features
 author_title: Author
 contributors_title: Contributors

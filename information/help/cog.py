@@ -7,7 +7,7 @@ from discord.ext.commands import Command, Group, CommandError, Context
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor
 from PyDrocsid.translations import t
-from PyDrocsid.util import can_run_command, send_long_embed
+from PyDrocsid.util import can_run_command, send_long_embed, docs
 from .colors import Colors
 
 tg = t.g
@@ -74,9 +74,6 @@ class HelpCog(Cog, name="Help"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.ce_phox]
 
     @commands.command()
+    @docs(t.commands.help)
     async def help(self, ctx: Context, *, cog_or_command: Optional[str]):
-        """
-        Shows this Message
-        """
-
         await send_help(ctx, cog_or_command)
