@@ -22,13 +22,13 @@ invalid_duration_inf: Invalid duration. Try `inf` instead.
 
 report: ":speech_balloon: Report"
 cannot_report: This member cannot be reported.
-reported_response: "User reported. :white_check_mark:"
+reported_response: "User reported successfully :white_check_mark:"
 log_reported: ":speech_balloon: Member reported"
 
 warn: ":warning: Warn"
 cannot_warn: This member cannot be warned.
 warned: "{} just warned you on {}:```\n{}\n```"
-warned_response: "User warned. :white_check_mark:"
+warned_response: "User warned successfully :white_check_mark:"
 log_warned: ":warning: Member warned"
 
 mute: ":mute: Mute"
@@ -40,16 +40,16 @@ muted:
   one: "{} just muted you on {} for {cnt} day:```\n{}\n```"
   many: "{} just muted you on {} for {cnt} days:```\n{}\n```"
 muted_inf: "{} just muted you on {}:```\n{}\n```"
-muted_response: "User muted. :white_check_mark:"
+muted_response: "User muted successfully :white_check_mark:"
 log_muted: ":mute: Member muted"
 log_unmuted_expired: "Unmuted automatically because the mute time for this user has expired."
-unmuted_response: "User unmuted. :white_check_mark:"
+unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
 
 kick: ":x: Kick"
 kicked: "{} just kicked you from {}:```\n{}\n```"
-kicked_response: "User kicked. :white_check_mark:"
+kicked_response: "User kicked successfully :white_check_mark:"
 log_kicked: ":x: Member kicked"
 cannot_kick: This member cannot be kicked.
 cannot_kick_permissions: User could not be kicked because I don't have `kick_members` permission on this server.
@@ -63,7 +63,7 @@ banned:
   one: "{} just banned you from {} for {cnt} day:```\n{}\n```"
   many: "{} just banned you from {} for {cnt} days:```\n{}\n```"
 banned_inf: "{} just banned you from {}:```\n{}\n```"
-banned_response: "User banned. :white_check_mark:"
+banned_response: "User banned successfully :white_check_mark:"
 log_banned: ":no_entry: Member Banned"
 log_unbanned_expired: "Unbanned automatically because the ban time for this user has expired."
 not_banned: This member is not banned.
