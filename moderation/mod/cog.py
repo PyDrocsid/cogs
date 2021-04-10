@@ -304,7 +304,7 @@ class ModCog(Cog, name="Mod Tools"):
         embed = Embed(title=t.reported_response, colour=Colors.ModTools)
         embed.set_author(
             name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
         await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, user, reason)
