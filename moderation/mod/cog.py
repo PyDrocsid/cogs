@@ -302,8 +302,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         await Report.create(user.id, str(user), ctx.author.id, reason)
         embed = Embed(title=t.reported_response, colour=Colors.ModTools)
-        embed.set_author(name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")))
+        embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+        )
         await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, user, reason)
 
@@ -329,8 +331,10 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.ModTools,
         )
         server_embed = Embed(title=t.warned_response, colour=Colors.ModTools)
-        server_embed.set_author(name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")))
+        server_embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+        )
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
@@ -378,8 +382,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.muted_response, colour=Colors.ModTools)
-        server_embed.set_author(name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")))
+        server_embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+        )
 
         if days is not None:
             await Mute.create(user.id, str(user), ctx.author.id, days, reason, bool(active_mutes))
@@ -440,8 +446,10 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.not_muted)
 
         embed = Embed(title=t.unmuted_response, colour=Colors.ModTools)
-        embed.set_author(name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")))
+        embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+        )
         await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unmute, t.log_unmuted, user, reason)
 
@@ -474,8 +482,10 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.ModTools,
         )
         server_embed = Embed(title=t.kicked_response, colour=Colors.ModTools)
-        server_embed.set_author(name=member.display_name,
-            icon_url=member.avatar_url_as(format=("gif" if member.is_avatar_animated() else "png")))
+        server_embed.set_author(
+            name=member.display_name,
+            icon_url=member.avatar_url_as(format=("gif" if member.is_avatar_animated() else "png"))
+        )
 
         try:
             await member.send(embed=user_embed)
@@ -538,8 +548,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.banned_response, colour=Colors.ModTools)
-        embed.set_author(name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")))
+        embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+        )
 
         if ban_days is not None:
             await Ban.create(user.id, str(user), ctx.author.id, ban_days, reason, bool(active_bans))
@@ -606,7 +618,9 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.not_banned)
 
         embed = Embed(title=t.unbanned_response, colour=Colors.ModTools)
-        embed.set_author(name=user.display_name,
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")))
+        embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png"))
+        )
         await reply(ctx, embed=embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unban, t.log_unbanned, user, reason)
