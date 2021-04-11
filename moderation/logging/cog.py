@@ -248,11 +248,8 @@ class LoggingCog(Cog, name="Logging"):
     @commands.group(aliases=["log"])
     @LoggingPermission.read.check
     @guild_only()
+    @docs(t.commands.logging)
     async def logging(self, ctx: Context):
-        """
-        view and change logging settings
-        """
-
         if ctx.subcommand_passed is not None:
             if ctx.invoked_subcommand is None:
                 raise UserInputError
@@ -282,12 +279,8 @@ class LoggingCog(Cog, name="Logging"):
 
     @logging.command(name="maxage", aliases=["ma"])
     @LoggingPermission.write.check
+    @docs(t.commands.maxage)
     async def logging_maxage(self, ctx: Context, days: int):
-        """
-        configure period after which old log entries should be deleted
-        set to -1 to disable
-        """
-
         if days != -1 and not 0 < days < (1 << 31):
             raise CommandError(tg.invalid_duration)
 
@@ -321,11 +314,8 @@ class LoggingCog(Cog, name="Logging"):
         await send_to_changelog(ctx.guild, t.channels.edit.mindist.log_updated(mindist))
 
     @logging.group(name="exclude", aliases=["x", "ignore", "i"])
+    @docs(t.commands.exclude)
     async def logging_exclude(self, ctx: Context):
-        """
-        manage excluded channels
-        """
-
         if len(ctx.message.content.lstrip(ctx.prefix).split()) > 2:
             if ctx.invoked_subcommand is None:
                 raise UserInputError
@@ -348,11 +338,8 @@ class LoggingCog(Cog, name="Logging"):
 
     @logging_exclude.command(name="add", aliases=["a", "+"])
     @LoggingPermission.write.check
+    @docs(t.commands.exclude_add)
     async def logging_exclude_add(self, ctx: Context, channel: TextChannel):
-        """
-        exclude a channel from logging
-        """
-
         if await LogExclude.exists(channel.id):
             raise CommandError(t.already_excluded)
 
@@ -363,11 +350,8 @@ class LoggingCog(Cog, name="Logging"):
 
     @logging_exclude.command(name="remove", aliases=["r", "del", "d", "-"])
     @LoggingPermission.write.check
+    @docs(t.commands.exclude_remove)
     async def logging_exclude_remove(self, ctx: Context, channel: TextChannel):
-        """
-        remove a channel from exclude list
-        """
-
         if not await LogExclude.exists(channel.id):
             raise CommandError(t.not_excluded)
 
