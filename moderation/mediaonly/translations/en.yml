@@ -3,7 +3,13 @@ permissions:
   read: read mediaonly configuration
   write: write mediaonly configuration
 
-mediaonly: Mediaonly
+commands:
+  mediaonly: manage media only channels
+  list: list media only channels
+  add: add a media only channel
+  remove: remove a media only channel
+
+mediaonly: MediaOnly
 deleted_nomedia: >
   Only pictures are allowed in this channel.
   For conversations please use the channels designated for this purpose.
