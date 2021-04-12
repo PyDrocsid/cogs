@@ -2,6 +2,15 @@ permissions:
   read: read logging configuration
   write: write logging configuration
 
+commands:
+  logging: view and change logging settings
+  maxage: |
+    configure period after which old log entries should be deleted
+    set to -1 to disable
+  exclude: manage excluded channels
+  exclude_add: exclude a channel from logging
+  exclude_remove: remove a channel from exclude list
+
 message_edited: Message Edited
 channel: Channel
 author: Author
