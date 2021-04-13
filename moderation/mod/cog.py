@@ -47,6 +47,12 @@ class DurationConverter(Converter):
         return days
 
 
+class ModCommandError(CommandError):
+    def __init__(self, user: Union[Member, User], message=None, *args):
+        super().__init__(message, *args)
+        self.user = user
+
+
 async def get_mute_role(guild: Guild) -> Role:
     mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
     if mute_role is None:
@@ -272,50 +278,6 @@ class ModCog(Cog, name="Mod Tools"):
         if await db.exists(filter_by(Mute, active=True, member=member.id)):
             await member.add_roles(mute_role)
 
-    @commands.command()
-    @guild_only()
-    async def report(self, ctx: Context, member: Member, *, reason: str):
-        """
-        report a member
-        """
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
-        await Report.create(member.id, str(member), ctx.author.id, reason)
-        embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
-        await reply(ctx, embed=embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, member, reason)
-
-    @commands.command()
-    @ModPermission.warn.check
-    @guild_only()
-    async def warn(self, ctx: Context, member: Member, *, reason: str):
-        """
-        warn a member
-        """
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
-        if member == self.bot.user:
-            raise CommandError(t.cannot_warn)
-
-        user_embed = Embed(
-            title=t.warn,
-            description=t.warned(ctx.author.mention, ctx.guild.name, reason),
-            colour=Colors.ModTools,
-        )
-        server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
-        try:
-            await member.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
-            server_embed.colour = Colors.error
-        await Warn.create(member.id, str(member), ctx.author.id, reason)
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, member, reason)
-
     async def get_user(self, guild: Guild, user: Union[Member, User, int]) -> Union[Member, User]:
         if isinstance(user, Member):
             return user
@@ -330,11 +292,70 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(tg.user_not_found)
 
     @commands.command()
+    @guild_only()
+    async def report(self, ctx: Context, user: Union[Member, User, int], *, reason: str):
+        """
+        report a user
+        """
+
+        user: Union[Member, User] = await self.get_user(ctx.guild, user)
+
+        if user == self.bot.user:
+            raise ModCommandError(user, t.cannot_report)
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        await Report.create(user.id, str(user), ctx.author.id, reason)
+        server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
+        server_embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
+        )
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, user, reason)
+
+    @commands.command()
+    @ModPermission.warn.check
+    @guild_only()
+    async def warn(self, ctx: Context, user: Union[Member, User, id], *, reason: str):
+        """
+        warn a user
+        """
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        user: Union[Member, User] = await self.get_user(ctx.guild, user)
+
+        if user == self.bot.user:
+            raise ModCommandError(user, t.cannot_warn)
+
+        user_embed = Embed(
+            title=t.warn,
+            description=t.warned(ctx.author.mention, ctx.guild.name, reason),
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
+        server_embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
+        )
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.colour = Colors.error
+        await Warn.create(user.id, str(user), ctx.author.id, reason)
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason)
+
+    @commands.command()
     @ModPermission.mute.check
     @guild_only()
     async def mute(self, ctx: Context, user: Union[Member, User, int], days: DurationConverter, *, reason: str):
         """
-        mute a member
+        mute a user
         set days to `inf` for a permanent mute
         """
 
@@ -347,7 +368,7 @@ class ModCog(Cog, name="Mod Tools"):
         user: Union[Member, User] = await self.get_user(ctx.guild, user)
 
         if user == self.bot.user or await is_teamler(user):
-            raise CommandError(t.cannot_mute)
+            raise ModCommandError(user, t.cannot_mute)
 
         if isinstance(user, Member):
             await user.add_roles(mute_role)
@@ -367,6 +388,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
+        server_embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
+        )
 
         if days is not None:
             await Mute.create(user.id, str(user), ctx.author.id, days, reason, bool(active_mutes))
@@ -406,7 +431,7 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     async def unmute(self, ctx: Context, user: Union[Member, User, int], *, reason: str):
         """
-        unmute a member
+        unmute a user
         """
 
         if len(reason) > 900:
@@ -426,8 +451,12 @@ class ModCog(Cog, name="Mod Tools"):
         if not was_muted:
             raise CommandError(t.not_muted)
 
-        embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
-        await reply(ctx, embed=embed)
+        server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
+        server_embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
+        )
+        await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unmute, t.log_unmuted, user, reason)
 
     @commands.command()
@@ -442,13 +471,13 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.reason_too_long)
 
         if member == self.bot.user or await is_teamler(member):
-            raise CommandError(t.cannot_kick)
+            raise ModCommandError(member, t.cannot_kick)
 
         if not ctx.guild.me.guild_permissions.kick_members:
             raise CommandError(t.cannot_kick_permissions)
 
         if member.top_role >= ctx.guild.me.top_role or member.id == ctx.guild.owner_id:
-            raise CommandError(t.cannot_kick)
+            raise ModCommandError(member, t.cannot_kick)
 
         await Kick.create(member.id, str(member), ctx.author.id, reason)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason)
@@ -459,6 +488,10 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.ModTools,
         )
         server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)
+        server_embed.set_author(
+            name=member.display_name,
+            icon_url=member.avatar_url_as(format=("gif" if member.is_avatar_animated() else "png")),
+        )
 
         try:
             await member.send(embed=user_embed)
@@ -501,9 +534,9 @@ class ModCog(Cog, name="Mod Tools"):
         user: Union[Member, User] = await self.get_user(ctx.guild, user)
 
         if user == self.bot.user or await is_teamler(user):
-            raise CommandError(t.cannot_ban)
+            raise ModCommandError(user, t.cannot_ban)
         if isinstance(user, Member) and (user.top_role >= ctx.guild.me.top_role or user.id == ctx.guild.owner_id):
-            raise CommandError(t.cannot_ban)
+            raise ModCommandError(user, t.cannot_ban)
 
         active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=user.id))
         for ban in active_bans:
@@ -521,6 +554,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
+        server_embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
+        )
 
         if ban_days is not None:
             await Ban.create(user.id, str(user), ctx.author.id, ban_days, reason, bool(active_bans))
@@ -561,7 +598,7 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.ban.check
     @guild_only()
-    async def unban(self, ctx: Context, user: Union[User, int], *, reason: str):
+    async def unban(self, ctx: Context, user: Union[Member, User, int], *, reason: str):
         """
         unban a user
         """
@@ -586,6 +623,10 @@ class ModCog(Cog, name="Mod Tools"):
         if not was_banned:
             raise CommandError(t.not_banned)
 
-        embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
-        await reply(ctx, embed=embed)
+        server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
+        server_embed.set_author(
+            name=user.display_name,
+            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
+        )
+        await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unban, t.log_unbanned, user, reason)
