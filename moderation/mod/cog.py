@@ -50,7 +50,7 @@ class DurationConverter(Converter):
 class ModCommandError(CommandError):
     def __init__(self, user: Union[Member, User], message=None, *args):
         super().__init__(message, *args)
-        this.user = user
+        self.user = user
 
 
 async def get_mute_role(guild: Guild) -> Role:
