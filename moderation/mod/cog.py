@@ -298,13 +298,13 @@ class ModCog(Cog, name="Mod Tools"):
         report a user
         """
 
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
         user: Union[Member, User] = await self.get_user(ctx.guild, user)
 
         if user == self.bot.user:
             raise ModCommandError(user, t.cannot_report)
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
 
         await Report.create(user.id, str(user), ctx.author.id, reason)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
@@ -377,11 +377,11 @@ class ModCog(Cog, name="Mod Tools"):
         active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
         for mute in active_mutes:
             if mute.days == -1:
-                raise CommandError(t.already_muted)
+                raise ModCommandError(user, t.already_muted)
 
             ts = mute.timestamp + timedelta(days=mute.days)
             if days is not None and datetime.utcnow() + timedelta(days=days) <= ts:
-                raise CommandError(t.already_muted)
+                raise ModCommandError(user, t.already_muted)
 
         for mute in active_mutes:
             await Mute.upgrade(mute.id, ctx.author.id)
@@ -449,7 +449,7 @@ class ModCog(Cog, name="Mod Tools"):
             await Mute.deactivate(mute.id, ctx.author.id, reason)
             was_muted = True
         if not was_muted:
-            raise CommandError(t.not_muted)
+            raise ModCommandError(user, t.not_muted)
 
         server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
         server_embed.set_author(
@@ -541,11 +541,11 @@ class ModCog(Cog, name="Mod Tools"):
         active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=user.id))
         for ban in active_bans:
             if ban.days == -1:
-                raise CommandError(t.already_banned)
+                raise ModCommandError(user, t.already_banned)
 
             ts = ban.timestamp + timedelta(days=ban.days)
             if ban_days is not None and datetime.utcnow() + timedelta(days=ban_days) <= ts:
-                raise CommandError(t.already_banned)
+                raise ModCommandError(user, t.already_banned)
 
         for ban in active_bans:
             await Ban.upgrade(ban.id, ctx.author.id)
@@ -621,7 +621,7 @@ class ModCog(Cog, name="Mod Tools"):
             was_banned = True
             await Ban.deactivate(ban.id, ctx.author.id, reason)
         if not was_banned:
-            raise CommandError(t.not_banned)
+            raise ModCommandError(user, t.not_banned)
 
         server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
         server_embed.set_author(
