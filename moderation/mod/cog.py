@@ -309,7 +309,7 @@ class ModCog(Cog, name="Mod Tools"):
         await Report.create(user.id, str(user), ctx.author.id, reason)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
         server_embed.set_author(
-            name=user.display_name,
+            name=str(user),
             icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
         await reply(ctx, embed=server_embed)
@@ -338,7 +338,7 @@ class ModCog(Cog, name="Mod Tools"):
         )
         server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
         server_embed.set_author(
-            name=user.display_name,
+            name=str(user),
             icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
         try:
@@ -389,7 +389,7 @@ class ModCog(Cog, name="Mod Tools"):
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
         server_embed.set_author(
-            name=user.display_name,
+            name=str(user),
             icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
 
@@ -453,7 +453,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
         server_embed.set_author(
-            name=user.display_name,
+            name=str(user),
             icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
         await reply(ctx, embed=server_embed)
@@ -489,7 +489,7 @@ class ModCog(Cog, name="Mod Tools"):
         )
         server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)
         server_embed.set_author(
-            name=member.display_name,
+            name=str(member),
             icon_url=member.avatar_url_as(format=("gif" if member.is_avatar_animated() else "png")),
         )
 
@@ -555,7 +555,7 @@ class ModCog(Cog, name="Mod Tools"):
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
         server_embed.set_author(
-            name=user.display_name,
+            name=str(user),
             icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
 
@@ -625,7 +625,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
         server_embed.set_author(
-            name=user.display_name,
+            name=str(user),
             icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
         )
         await reply(ctx, embed=server_embed)
