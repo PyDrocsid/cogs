@@ -98,10 +98,14 @@ ulog:
 
   muted:
     first:
-      temp: ":mute: **Muted** by {} for {} days because of `{}`"
+      temp:
+        one: ":mute: **Muted** by {} for {cnt} day because of `{}`"
+        many: ":mute: **Muted** by {} for {cnt} days because of `{}`"
       inf: ":mute: **Muted** permanently by {} because of `{}`"
     upgrade:
-      temp: ":mute: **Mute upgraded** by {} to {} days because of `{}`"
+      temp:
+        one: ":mute: **Mute upgraded** by {} to {cnt} day because of `{}`"
+        many: ":mute: **Mute upgraded** by {} to {cnt} days because of `{}`"
       inf: ":mute: **Mute upgraded** to permanent by {} because of `{}`"
   unmuted: ":loud_sound: **Unmuted** by {} because of `{}`"
   unmuted_expired: ":loud_sound: **Unmuted** because the mute time has expired."
@@ -111,10 +115,14 @@ ulog:
 
   banned:
     first:
-      temp: ":no_entry: **Banned** by {} for {} days because of `{}`"
+      temp:
+        one: ":no_entry: **Banned** by {} for {cnt} day because of `{}`"
+        many: ":no_entry: **Banned** by {} for {cnt} days because of `{}`"
       inf: ":no_entry: **Banned** permanently by {} because of `{}`"
     upgrade:
-      temp: ":no_entry: **Ban upgraded** by {} to {} days because of `{}`"
+      temp:
+        one: ":no_entry: **Ban upgraded** by {} to {cnt} day because of `{}`"
+        many: ":no_entry: **Ban upgraded** by {} to {cnt} days because of `{}`"
       inf: ":no_entry: **Ban upgraded** to permanent by {} because of `{}`"
   unbanned: ":white_check_mark: **Unbanned** by {} because of `{}`"
   unbanned_expired: ":white_check_mark: **Unbanned** because the ban time has expired."

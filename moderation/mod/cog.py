@@ -228,7 +228,7 @@ class ModCog(Cog, name="Mod Tools"):
             if mute.days == -1:
                 out.append((mute.timestamp, text.inf(f"<@{mute.mod}>", mute.reason)))
             else:
-                out.append((mute.timestamp, text.temp(f"<@{mute.mod}>", mute.days, mute.reason)))
+                out.append((mute.timestamp, text.temp(f"<@{mute.mod}>", mute.reason, cnt=mute.days)))
 
             if not mute.active and not mute.upgraded:
                 if mute.unmute_mod is None:
@@ -255,7 +255,7 @@ class ModCog(Cog, name="Mod Tools"):
             if ban.days == -1:
                 out.append((ban.timestamp, text.inf(f"<@{ban.mod}>", ban.reason)))
             else:
-                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", ban.days, ban.reason)))
+                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", ban.reason, cnt=mute.days)))
 
             if not ban.active and not ban.upgraded:
                 if ban.unban_mod is None:
