@@ -276,16 +276,25 @@ class ModCog(Cog, name="Mod Tools"):
         """
         Searches for a team role ping in a sent message
         """
-        team_role_id: int = await RoleSettings.get("team")
-        if team_role_id == -1:
-            return
+        team_role_ids = filter(
+            lambda r: r != -1,
+            [
+                await RoleSettings.get("team"),
+                await RoleSettings.get("admin"),
+                await RoleSettings.get("mod"),
+                await RoleSettings.get("supp")
+            ]
+        )
 
-        team_role = message.guild.get_role(team_role_id)
-        if team_role not in message.role_mentions:
+        team_roles = set([message.guild.get_role(role_id) for role_id in team_role_ids])
+        mentions = set(message.role_mentions)
+        team_mentions = team_roles.intersection(mentions)
+        if len(team_mentions) == 0:
             return
 
         embed = Embed(title=t.team_role_ping, color=Colors.teamrole_ping, timestamp=message.created_at)
         embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+        embed.add_field(name=t.pinged_roles, value=",\n".join(map(lambda m: m.mention, team_mentions)))
         embed.add_field(name=t.log_field.member, value=message.author.mention)
         embed.add_field(
             name=t.log_field.channel,
