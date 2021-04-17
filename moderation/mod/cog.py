@@ -265,6 +265,11 @@ class ModCog(Cog, name="Mod Tools"):
         return out
 
     async def on_member_join(self, member: Member):
+        if not re.match(r"^[a-zA-Z0-9 ./<>?;:\"'`!@#$%^&*()\[\]{}_+=|\\-]+$", member.display_name):
+            embed = Embed(title=t.illegal_user_name, color=Colors.warn)
+            embed.add_field(name=t.log_field.member, value=member.mention)
+            await send_alert(guild=member.guild, message=embed)
+
         mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
             return
