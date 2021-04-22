@@ -1,3 +1,4 @@
+from PyDrocsid.emojis import name_to_emoji
 from discord import Member, Embed
 
 from PyDrocsid.database import db, filter_by
@@ -29,14 +30,17 @@ class UserNoteCog(Cog, name="User notes"):
     async def add_user_note(self, ctx: Context, member: Member, *, message: str):
         await UserNote.create(
             member=member.id,
+            applicant=member.mention,
             message=message
         )
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="remove")
     async def remove_user_note(self, ctx: Context, message_id: str):
         user_notes = await db.get(UserNote, message_id=message_id)
         if user_notes:
             await db.delete(user_notes)
+            await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="show")
     async def show_user_note(self, ctx: Context, member: Member):
@@ -46,4 +50,5 @@ class UserNoteCog(Cog, name="User notes"):
             embed.add_field(name=t.id, value=note.message_id, inline=True) embed.add_field(name=t.id, value=note.message_id, inline=True)
             embed.add_field(name=t.message, value=note.message, inline=True)
             embed.add_field(name=t.timestamp, value=note.timestamp.strftime("%d.%m.%Y %H:%M:%S"), inline=True)
+            embed.add_field(name=t.applicant, value=note.applicant, inline=True)
         await ctx.send(embed=embed)
