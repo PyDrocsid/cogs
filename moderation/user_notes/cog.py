@@ -47,7 +47,7 @@ class UserNoteCog(Cog, name="User notes"):
         user_notes = await db.all(filter_by(UserNote, member=member.id))
         embed = Embed(title=t.user_info)
         for note in user_notes:
-            embed.add_field(name=t.id, value=note.message_id, inline=True) embed.add_field(name=t.id, value=note.message_id, inline=True)
+            embed.add_field(name=t.id, value=note.message_id, inline=True)
             embed.add_field(name=t.message, value=note.message, inline=True)
             embed.add_field(name=t.timestamp, value=note.timestamp.strftime("%d.%m.%Y %H:%M:%S"), inline=True)
             embed.add_field(name=t.applicant, value=note.applicant, inline=True)
