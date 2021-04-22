@@ -33,8 +33,8 @@ class UserNoteCog(Cog, name="User notes"):
         )
 
     @user_note.command(name="remove")
-    async def remove_user_note(self, ctx: Context, id: int):
-        user_notes = await db.get(UserNote, id=id)
+    async def remove_user_note(self, ctx: Context, message_id: str):
+        user_notes = await db.get(UserNote, message_id=message_id)
         if user_notes:
             await db.delete(user_notes)
 
@@ -43,7 +43,7 @@ class UserNoteCog(Cog, name="User notes"):
         user_notes = await db.all(filter_by(UserNote, member=member.id))
         embed = Embed(title=t.user_info)
         for note in user_notes:
-            embed.add_field(name=t.id, value=note.id, inline=True)
+            embed.add_field(name=t.id, value=note.message_id, inline=True) embed.add_field(name=t.id, value=note.message_id, inline=True)
             embed.add_field(name=t.message, value=note.message, inline=True)
             embed.add_field(name=t.timestamp, value=note.timestamp.strftime("%d.%m.%Y %H:%M:%S"), inline=True)
         await ctx.send(embed=embed)
