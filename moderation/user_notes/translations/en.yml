@@ -1,4 +1,5 @@
 user_info: "User infos"
-id: "id"
+id: "message_id"
 message: "message"
 timestamp: "timestamp"
+applicant: "applicant"
