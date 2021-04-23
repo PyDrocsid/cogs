@@ -8,8 +8,10 @@ from discord.ext import commands
 from discord.ext.commands import Context, UserInputError
 
 from PyDrocsid.cog import Cog
+from cogs.library.moderation.mod.permissions import ModPermission
 from cogs.library.moderation.user_notes.models import UserNote
 from PyDrocsid.translations import t
+from cogs.library.moderation.user_notes.permissions import UserNotePermissions
 
 t = t.user_notes
 
@@ -27,6 +29,7 @@ class UserNoteCog(Cog, name="User notes"):
             raise UserInputError
 
     @user_note.command(name="add")
+    @UserNotePermissions.mange_user_notes.check
     async def add_user_note(self, ctx: Context, member: Member, *, message: str):
         await UserNote.create(
             member=member.id,
@@ -36,6 +39,7 @@ class UserNoteCog(Cog, name="User notes"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="remove")
+    @UserNotePermissions.mange_user_notes.check
     async def remove_user_note(self, ctx: Context, message_id: str):
         user_notes = await db.get(UserNote, message_id=message_id)
         if user_notes:
@@ -43,6 +47,7 @@ class UserNoteCog(Cog, name="User notes"):
             await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="show")
+    @UserNotePermissions.mange_user_notes.check
     async def show_user_note(self, ctx: Context, member: Member):
         user_notes = await db.all(filter_by(UserNote, member=member.id))
         embed = Embed(title=t.user_info)
