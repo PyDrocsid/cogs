@@ -34,7 +34,7 @@ class UserNoteCog(Cog, name="User notes"):
         await UserNote.create(
             member=member.id,
             applicant=member.mention,
-            message=message
+            message=message,
         )
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 

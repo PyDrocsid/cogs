@@ -23,7 +23,7 @@ class UserNote(db.Base):
             member=member,
             message=message,
             applicant=applicant,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
         await db.add(row)
         return row
