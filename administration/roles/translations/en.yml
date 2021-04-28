@@ -5,7 +5,18 @@ permissions:
   auth_write: write role assignment permissions
   list_members: list role members
 
+commands:
+  roles: manage roles
+  roles_config: role configuration
+  roles_auth: configure role assignment authorizations
+  roles_auth_add: add a new role assignment authorization
+  roles_auth_remove: remove a role assignment authorization
+  roles_add: assign a role to a member
+  roles_remove: remove a role from a member
+  roles_list: list all members with a specific role
+
 roles: Roles
+configure_role: configure {} role
 role_not_set: ":x: Role not set."
 role_set: "Role has been set successfully. :white_check_mark:"
 log_role_set: "**{} role** has been **set to** {} ({})"

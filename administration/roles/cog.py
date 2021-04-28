@@ -10,7 +10,7 @@ from PyDrocsid.database import db, select
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply, check_role_assignable
+from PyDrocsid.util import send_long_embed, reply, check_role_assignable, docs
 from .colors import Colors
 from .models import RoleAuth
 from .permissions import RolesPermission
@@ -57,27 +57,21 @@ class RolesCog(Cog, name="Roles"):
             return inner
 
         for name, (title, check_assignable) in Config.ROLES.items():
-            self.roles_config.command(name=name, help=f"configure {title.lower()} role")(
+            self.roles_config.command(name=name, help=t.configure_role(title.lower()))(
                 set_role(name, check_assignable),
             )
 
     @commands.group(aliases=["r"])
     @guild_only()
+    @docs(t.commands.roles)
     async def roles(self, ctx: Context):
-        """
-        manage roles
-        """
-
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
     @roles.group(name="config", aliases=["conf", "c", "set", "s"])
     @RolesPermission.config_read.check
+    @docs(t.commands.roles_config)
     async def roles_config(self, ctx: Context):
-        """
-        role configuration
-        """
-
         if len(ctx.message.content.lstrip(ctx.prefix).split()) > 2:
             if ctx.invoked_subcommand is None:
                 raise UserInputError
@@ -92,11 +86,8 @@ class RolesCog(Cog, name="Roles"):
 
     @roles.group(name="auth")
     @RolesPermission.auth_read.check
+    @docs(t.commands.roles_auth)
     async def roles_auth(self, ctx: Context):
-        """
-        configure role assignment authorizations
-        """
-
         if len(ctx.message.content.lstrip(ctx.prefix).split()) > 2:
             if ctx.invoked_subcommand is None:
                 raise UserInputError
@@ -133,11 +124,8 @@ class RolesCog(Cog, name="Roles"):
 
     @roles_auth.command(name="add", aliases=["a", "+"])
     @RolesPermission.auth_write.check
+    @docs(t.commands.roles_auth_add)
     async def roles_auth_add(self, ctx: Context, source: Union[Member, Role], target: Role):
-        """
-        add a new role assignment authorization
-        """
-
         if await RoleAuth.check(source.id, target.id):
             raise CommandError(t.role_auth_already_exists)
 
@@ -149,11 +137,8 @@ class RolesCog(Cog, name="Roles"):
 
     @roles_auth.command(name="remove", aliases=["r", "del", "d", "-"])
     @RolesPermission.auth_write.check
+    @docs(t.commands.roles_auth_remove)
     async def roles_auth_remove(self, ctx: Context, source: Union[Member, Role], target: Role):
-        """
-        remove a role assignment authorization
-        """
-
         if not (auth := await db.first(select(RoleAuth).filter_by(source=source.id, target=target.id))):
             raise CommandError(t.role_auth_not_found)
 
@@ -162,11 +147,8 @@ class RolesCog(Cog, name="Roles"):
         await send_to_changelog(ctx.guild, t.log_role_auth_removed(source, target))
 
     @roles.command(name="add", aliases=["a", "+"])
+    @docs(t.commands.roles_add)
     async def roles_add(self, ctx: Context, member: Member, *, role: Role):
-        """
-        assign a role to a member
-        """
-
         if role in member.roles:
             raise CommandError(t.role_already_assigned)
 
@@ -179,11 +161,8 @@ class RolesCog(Cog, name="Roles"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @roles.command(name="remove", aliases=["r", "del", "d", "-"])
+    @docs(t.commands.roles_remove)
     async def roles_remove(self, ctx: Context, member: Member, *, role: Role):
-        """
-        remove a role from a member
-        """
-
         if role not in member.roles:
             raise CommandError(t.role_not_assigned)
 
@@ -197,11 +176,8 @@ class RolesCog(Cog, name="Roles"):
 
     @roles.command(name="list", aliases=["l", "?"])
     @RolesPermission.list_members.check
+    @docs(t.commands.roles_list)
     async def roles_list(self, ctx: Context, *, role: Role):
-        """
-        list all members with a specific role
-        """
-
         out = [t.member_list_line(member.mention, f"@{member}") for member in role.members]
         if out:
             embed = Embed(title=t.member_list_cnt(len(out)), colour=0x256BE6, description="\n".join(out))
