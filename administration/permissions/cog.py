@@ -9,7 +9,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config, get_subclasses_in_enabled_packages
 from PyDrocsid.permission import BasePermissionLevel, BasePermission
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply
+from PyDrocsid.util import send_long_embed, reply, docs
 from .colors import Colors
 from .permissions import PermissionsPermission
 from ...contributor import Contributor
@@ -63,21 +63,15 @@ class PermissionsCog(Cog, name="Permissions"):
 
     @commands.group(aliases=["perm", "p"])
     @guild_only()
+    @docs(t.commands.permissions)
     async def permissions(self, ctx: Context):
-        """
-        manage bot permissions
-        """
-
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
     @permissions.command(name="list", aliases=["show", "l", "?"])
     @PermissionsPermission.view_all.check
+    @docs(t.commands.permissions_list)
     async def permissions_list(self, ctx: Context, min_level: Optional[PermissionLevelConverter]):
-        """
-        list all permissions
-        """
-
         if min_level is None:
             min_level = Config.DEFAULT_PERMISSION_LEVEL
 
@@ -85,21 +79,15 @@ class PermissionsCog(Cog, name="Permissions"):
 
     @permissions.command(name="my", aliases=["m", "own", "o"])
     @PermissionsPermission.view_own.check
+    @docs(t.commands.permissions_my)
     async def permissions_my(self, ctx: Context):
-        """
-        list all permissions granted to the user
-        """
-
         min_level: BasePermissionLevel = await Config.PERMISSION_LEVELS.get_permission_level(ctx.author)
         await list_permissions(ctx, t.my_permissions_title, min_level)
 
     @permissions.command(name="set", aliases=["s", "="])
     @PermissionsPermission.manage.check
+    @docs(t.commands.permissions_set)
     async def permissions_set(self, ctx: Context, permission_name: str, level: PermissionLevelConverter):
-        """
-        configure bot permissions
-        """
-
         level: BasePermissionLevel
         for permission in get_permissions():
             if permission.fullname.lower() == permission_name.lower():

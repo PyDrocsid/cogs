@@ -3,6 +3,12 @@ permissions:
   view_all: view all permissions
   manage: manage permissions
 
+commands:
+  permissions: manage bot permissions
+  permissions_list: list all permissions
+  permissions_my: list all permissions granted to the user
+  permissions_set: configure bot permissions
+
 no_permissions: No priviliges granted.
 invalid_permission_level: Invalid permission level.
 invalid_permission: Invalid permission.
