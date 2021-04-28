@@ -4,4 +4,5 @@ message: "message"
 timestamp: "timestamp"
 applicant: "applicant"
 permissions:
-  mange_user_notes: "manage user notes "
+  read: "show user notes"
+  write: "create and delete user notes"
