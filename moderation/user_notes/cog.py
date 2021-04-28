@@ -29,7 +29,7 @@ class UserNoteCog(Cog, name="User notes"):
             raise UserInputError
 
     @user_note.command(name="add")
-    @UserNotePermissions.mange_user_notes.check
+    @UserNotePermissions.write.check
     async def add_user_note(self, ctx: Context, member: Member, *, message: str):
         await UserNote.create(
             member=member.id,
@@ -39,7 +39,7 @@ class UserNoteCog(Cog, name="User notes"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="remove")
-    @UserNotePermissions.mange_user_notes.check
+    @UserNotePermissions.write.check
     async def remove_user_note(self, ctx: Context, message_id: str):
         user_notes = await db.get(UserNote, message_id=message_id)
         if user_notes:
@@ -47,7 +47,7 @@ class UserNoteCog(Cog, name="User notes"):
             await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="show")
-    @UserNotePermissions.mange_user_notes.check
+    @UserNotePermissions.read.check
     async def show_user_note(self, ctx: Context, member: Member):
         user_notes = await db.all(filter_by(UserNote, member=member.id))
         embed = Embed(title=t.user_info)

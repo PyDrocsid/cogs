@@ -9,4 +9,5 @@ class UserNotePermissions(BasePermission):
     def description(self) -> str:
         return t.user_notes.permissions[self.name]
 
-    mange_user_notes = auto()
+    read = auto()
+    write = auto()
