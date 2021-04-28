@@ -6,7 +6,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.translations import t
-from PyDrocsid.util import Color, reply
+from PyDrocsid.util import Color, reply, docs
 from PyDrocsid.util import read_normal_message, read_complete_message
 from .colors import Colors
 from .permissions import MessagePermission
@@ -31,20 +31,14 @@ class MessageCog(Cog, name="Message Commands"):
     @commands.group()
     @MessagePermission.send.check
     @guild_only()
+    @docs(t.commands.send)
     async def send(self, ctx: Context):
-        """
-        send messages as the bot
-        """
-
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
     @send.command(name="text", aliases=["t"])
+    @docs(t.commands.send_text)
     async def send_text(self, ctx: Context, channel: TextChannel):
-        """
-        send a normal message
-        """
-
         if not channel.permissions_for(channel.guild.me).send_messages:
             raise CommandError(t.could_not_send_message)
 
@@ -68,11 +62,8 @@ class MessageCog(Cog, name="Message Commands"):
             await reply(ctx, embed=embed)
 
     @send.command(name="embed", aliases=["e"])
+    @docs(t.commands.send_embed)
     async def send_embed(self, ctx: Context, channel: TextChannel, color: Optional[Color] = None):
-        """
-        send an embed
-        """
-
         permissions: Permissions = channel.permissions_for(channel.guild.me)
         if not permissions.send_messages:
             raise CommandError(t.could_not_send_message)
@@ -115,11 +106,8 @@ class MessageCog(Cog, name="Message Commands"):
             await reply(ctx, embed=embed)
 
     @send.command(name="copy", aliases=["c"])
+    @docs(t.commands.send_copy)
     async def send_copy(self, ctx: Context, channel: TextChannel, message: Message):
-        """
-        copy a message (specify message link)
-        """
-
         content, files, embed = await read_complete_message(message)
         try:
             await channel.send(content=content, embed=embed, files=files)
@@ -132,20 +120,14 @@ class MessageCog(Cog, name="Message Commands"):
     @commands.group()
     @MessagePermission.edit.check
     @guild_only()
+    @docs(t.commands.edit)
     async def edit(self, ctx: Context):
-        """
-        edit messages sent by the bot
-        """
-
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
     @edit.command(name="text", aliases=["t"])
+    @docs(t.commands.edit_text)
     async def edit_text(self, ctx: Context, message: Message):
-        """
-        edit a normal message (specify message link)
-        """
-
         if message.author != self.bot.user:
             raise CommandError(t.could_not_edit)
 
@@ -168,11 +150,8 @@ class MessageCog(Cog, name="Message Commands"):
         await reply(ctx, embed=embed)
 
     @edit.command(name="embed", aliases=["e"])
+    @docs(t.commands.edit_embed)
     async def edit_embed(self, ctx: Context, message: Message, color: Optional[Color] = None):
-        """
-        edit an embed (specify message link)
-        """
-
         if message.author != self.bot.user:
             raise CommandError(t.could_not_edit)
 
@@ -206,11 +185,8 @@ class MessageCog(Cog, name="Message Commands"):
         await reply(ctx, embed=embed)
 
     @edit.command(name="copy", aliases=["c"])
+    @docs(t.commands.edit_copy)
     async def edit_copy(self, ctx: Context, message: Message, source: Message):
-        """
-        copy a message into another message (specify message links)
-        """
-
         if message.author != self.bot.user:
             raise CommandError(t.could_not_edit)
 
@@ -224,11 +200,8 @@ class MessageCog(Cog, name="Message Commands"):
     @commands.command()
     @MessagePermission.delete.check
     @guild_only()
+    @docs(t.commands.delete)
     async def delete(self, ctx: Context, message: Message):
-        """
-        delete a message (specify message link)
-        """
-
         if message.guild is None:
             raise CommandError(t.cannot_delete_dm)
 

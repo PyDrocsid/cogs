@@ -3,6 +3,17 @@ permissions:
   edit: edit messages sent by the bot
   delete: delete a message
 
+commands:
+  send: send messages as the bot
+  send_text: send a normal message
+  send_embed: send an embed
+  send_copy: copy a message (specify message link)
+  edit: edit messages sent by the bot
+  edit_text: edit a normal message (specify message link)
+  edit_embed: edit an embed (specify message link)
+  edit_copy: copy a message into another message (specify message links)
+  delete: delete a message (specify message link)
+
 messages: Messages
 send_embed_title: "Send me the title of the embed! Send {} to cancel."
 send_embed_content: "Ok, now send me the content of the embed! Send {} to cancel."
