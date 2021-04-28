@@ -2,6 +2,12 @@ permissions:
   read: read reactionrole configuration
   write: write reactionrole configuration
 
+commands:
+  reactionrole: manage reactionrole
+  reactionrole_list: list configured reactionrole links for a specific message
+  reactionrole_add: add a new reactionrole link
+  reactionrole_remove: remove a reactionrole link
+
 reactionrole: ReactionRole
 no_reactionrole_links: No ReactionRole links have been created yet.
 no_reactionrole_links_for_msg: No ReactionRole links have been created yet for this message.
@@ -16,5 +22,3 @@ log_rr_link_removed: "**ReactionRole link** for {} -> <@&{}> has been **deleted*
 rr_link: "{} -> {}"
 auto_remove: auto remove
 reverse: reverse
-link_not_created_too_high: Link could not be created because <@&{}> is higher than <@&{}>.
-link_not_created_managed_role: Link could not be created because <@&{}> cannot be assigned manually.

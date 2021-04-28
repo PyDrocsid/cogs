@@ -10,7 +10,7 @@ from PyDrocsid.emoji_converter import EmojiConverter
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply, check_role_assignable
+from PyDrocsid.util import send_long_embed, reply, check_role_assignable, docs
 from .colors import Colors
 from .models import ReactionRole
 from .permissions import ReactionRolePermission
@@ -93,11 +93,8 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
     @commands.group(aliases=["rr"])
     @ReactionRolePermission.read.check
     @guild_only()
+    @docs(t.commands.reactionrole)
     async def reactionrole(self, ctx: Context):
-        """
-        manage reactionrole
-        """
-
         if ctx.subcommand_passed is not None:
             if ctx.invoked_subcommand is None:
                 raise UserInputError
@@ -143,11 +140,8 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         await send_long_embed(ctx, embed)
 
     @reactionrole.command(name="list", aliases=["l", "?"])
+    @docs(t.commands.reactionrole_list)
     async def reactionrole_list(self, ctx: Context, msg: Message):
-        """
-        list configured reactionrole links for a specific message
-        """
-
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole)
         out = []
         link: ReactionRole
@@ -181,6 +175,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
     @reactionrole.command(name="add", aliases=["a", "+"])
     @ReactionRolePermission.write.check
+    @docs(t.commands.reactionrole_add)
     async def reactionrole_add(
         self,
         ctx: Context,
@@ -190,10 +185,6 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         reverse: bool,
         auto_remove: bool,
     ):
-        """
-        add a new reactionrole link
-        """
-
         emoji: PartialEmoji
 
         if await ReactionRole.get(msg.channel.id, msg.id, str(emoji)):
@@ -211,11 +202,8 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
     @reactionrole.command(name="remove", aliases=["r", "del", "d", "-"])
     @ReactionRolePermission.write.check
+    @docs(t.commands.reactionrole_remove)
     async def reactionrole_remove(self, ctx: Context, msg: Message, emoji: EmojiConverter):
-        """
-        remove a reactionrole link
-        """
-
         emoji: PartialEmoji
 
         if not (link := await ReactionRole.get(msg.channel.id, msg.id, str(emoji))):
