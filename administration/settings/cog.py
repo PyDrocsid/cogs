@@ -6,7 +6,7 @@ from discord.ext.commands import guild_only, Context, CommandError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.translations import t
-from PyDrocsid.util import set_prefix, reply
+from PyDrocsid.util import set_prefix, reply, docs
 from .colors import Colors
 from .permissions import SettingsPermission
 from ...contributor import Contributor
@@ -22,11 +22,8 @@ class SettingsCog(Cog, name="Settings"):
     @commands.command(name="prefix")
     @SettingsPermission.change_prefix.check
     @guild_only()
+    @docs(t.commands.change_prefix)
     async def change_prefix(self, ctx: Context, *, new_prefix: str):
-        """
-        change the bot prefix
-        """
-
         if not 0 < len(new_prefix) <= 16:
             raise CommandError(t.invalid_prefix_length)
 
