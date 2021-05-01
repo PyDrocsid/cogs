@@ -33,7 +33,7 @@ class UserNoteCog(Cog, name="User notes"):
     async def add_user_note(self, ctx: Context, member: Member, *, message: str):
         await UserNote.create(
             member=member.id,
-            applicant=member.mention,
+            applicant=ctx.author.mention,
             message=message,
         )
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
