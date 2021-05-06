@@ -255,7 +255,7 @@ class ModCog(Cog, name="Mod Tools"):
             if ban.days == -1:
                 out.append((ban.timestamp, text.inf(f"<@{ban.mod}>", ban.reason)))
             else:
-                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", ban.reason, cnt=mute.days)))
+                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", ban.reason, cnt=ban.days)))
 
             if not ban.active and not ban.upgraded:
                 if ban.unban_mod is None:
