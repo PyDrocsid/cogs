@@ -23,7 +23,6 @@ from ...pubsub import (
     get_userlog_entries,
     get_user_info_entries,
     get_user_status_entries,
-    get_last_auto_kick,
     revoke_verification,
 )
 
@@ -264,19 +263,11 @@ class UserInfoCog(Cog, name="User Information"):
             if await RoleSettings.get("verified") not in {role.id for role in member.roles}:
                 return
 
-            last_auto_kick: Optional[datetime] = next(iter(await get_last_auto_kick(member.id)), None)
+            relevant_join: Optional[Join] = await db.first(
+                filter_by(Join, member=member.id).order_by(Join.timestamp.asc()),
+            )
 
-            relevant_join: Optional[Join]
-            if last_auto_kick:
-                relevant_join = await db.first(
-                    filter_by(Join, member=member.id)
-                    .filter(Join.timestamp > last_auto_kick)
-                    .order_by(Join.timestamp.asc()),
-                )
-            else:
-                relevant_join = await db.first(filter_by(Join, member=member.id).order_by(Join.timestamp.asc()))
-
-            if relevant_join is None:
+            if not relevant_join:
                 return
 
             await db.add(
