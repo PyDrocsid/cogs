@@ -120,7 +120,7 @@ class BotInfoCog(Cog, name="Bot Information"):
         embed.set_thumbnail(url=Config.REPO_ICON)
         await reply(ctx, embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=["v"])
     @docs(t.commands.version)
     async def version(self, ctx: Context):
         embed = Embed(title=f"{Config.NAME} v{Config.VERSION}", colour=Colors.version)
