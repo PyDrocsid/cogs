@@ -38,8 +38,8 @@ async def send_poll(ctx: Context, args: str, field: Optional[Tuple[str, str]] = 
 
     if not options:
         raise CommandError(t.missing_options)
-    if len(options) > MAX_OPTIONS:
-        raise CommandError(t.too_many_options(MAX_OPTIONS))
+    if len(options) > MAX_OPTIONS - allow_delete:
+        raise CommandError(t.too_many_options(MAX_OPTIONS - allow_delete))
 
     options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
 
