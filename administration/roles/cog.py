@@ -128,6 +128,8 @@ class RolesCog(Cog, name="Roles"):
     async def roles_auth_add(self, ctx: Context, source: Union[Member, Role], target: Role):
         if await RoleAuth.check(source.id, target.id):
             raise CommandError(t.role_auth_already_exists)
+        if isinstance(source, Member) and source.bot:
+            raise CommandError(t.no_auth_for_bots)
 
         check_role_assignable(target)
 
