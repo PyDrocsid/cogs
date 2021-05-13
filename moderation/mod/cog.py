@@ -305,6 +305,8 @@ class ModCog(Cog, name="Mod Tools"):
 
         if user == self.bot.user:
             raise ModCommandError(user, t.cannot_report)
+        if user == ctx.author:
+            raise ModCommandError(user, t.no_self_report)
 
         await Report.create(user.id, str(user), ctx.author.id, reason)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
