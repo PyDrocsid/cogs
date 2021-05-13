@@ -96,7 +96,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
 
     @commands.command(name="?")
     @guild_only()
-    async def list_roles(self, ctx: Context):
+    async def list_topics(self, ctx: Context):
         """
         list all registered topics
         """
@@ -115,7 +115,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
 
     @commands.command(name="+")
     @guild_only()
-    async def add_role(self, ctx: Context, *, topics: str):
+    async def assign_topics(self, ctx: Context, *, topics: str):
         """
         add one or more topics (comma separated) you are interested in
         """
@@ -137,7 +137,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
 
     @commands.command(name="-")
     @guild_only()
-    async def remove_roles(self, ctx: Context, *, topics: str):
+    async def unassign_topics(self, ctx: Context, *, topics: str):
         """
         remove one or more topics (use * to remove all topics)
         """
@@ -161,7 +161,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     @commands.command(name="*")
     @BeTheProfessionalPermission.manage.check
     @guild_only()
-    async def register_role(self, ctx: Context, *, topics: str):
+    async def register_topics(self, ctx: Context, *, topics: str):
         """
         register one or more new topics
         """
@@ -209,7 +209,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     @commands.command(name="/")
     @BeTheProfessionalPermission.manage.check
     @guild_only()
-    async def delete_roles(self, ctx: Context, *, topics: str):
+    async def delete_topics(self, ctx: Context, *, topics: str):
         """
         delete one or more topics
         """
@@ -219,7 +219,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     @commands.command(name="%")
     @BeTheProfessionalPermission.manage.check
     @guild_only()
-    async def unregister_roles(self, ctx: Context, *, topics: str):
+    async def unregister_topics(self, ctx: Context, *, topics: str):
         """
         unregister one or more topics without deleting the roles
         """
