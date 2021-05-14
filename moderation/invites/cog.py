@@ -185,7 +185,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         if out:
             embed.colour = Colors.Invites
             embed.description += "\n".join(out)
-            await send_long_embed(ctx, embed)
+            await send_long_embed(ctx, embed, paginate=True)
         else:
             embed.description = t.no_server_allowed
             await reply(ctx, embed=embed)

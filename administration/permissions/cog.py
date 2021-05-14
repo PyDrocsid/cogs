@@ -46,7 +46,7 @@ async def list_permissions(ctx: Context, title: str, min_level: BasePermissionLe
     for (_, name), lines in sorted(out.items(), reverse=True):
         embed.add_field(name=name, value="\n".join(sorted(lines)), inline=False)
 
-    await send_long_embed(ctx, embed)
+    await send_long_embed(ctx, embed, paginate=True)
 
 
 class PermissionLevelConverter(Converter):

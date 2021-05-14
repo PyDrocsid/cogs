@@ -167,7 +167,7 @@ class InactivityCog(Cog, name="Inactivity"):
         else:
             embed.description = t.no_inactive_users
             embed.colour = 0x03AD28
-        await send_long_embed(ctx, embed)
+        await send_long_embed(ctx, embed, paginate=True)
 
     @commands.command(aliases=["indur"])
     @InactivityPermission.read.check

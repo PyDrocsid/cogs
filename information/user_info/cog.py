@@ -211,7 +211,7 @@ class UserInfoCog(Cog, name="User Information"):
         embed.set_footer(text=t.utc_note)
 
         if arg_passed:
-            await send_long_embed(ctx, embed)
+            await send_long_embed(ctx, embed, paginate=True)
         else:
             try:
                 await send_long_embed(ctx.author, embed)
