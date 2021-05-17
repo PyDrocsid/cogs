@@ -75,9 +75,8 @@ class MetaQuestionCog(Cog, name="Metafragen"):
         display information about meta questions
         """
 
-        if all(await can_respond_on_reaction(ctx.channel)):
-            message: Message = await ctx.send(embed=make_embed(ctx.author))
-            await message.add_reaction(name_to_emoji["wastebasket"])
+        message: Message = await ctx.send(embed=make_embed(ctx.author))
+        await message.add_reaction(name_to_emoji["wastebasket"])
 
         try:
             await ctx.message.delete()
