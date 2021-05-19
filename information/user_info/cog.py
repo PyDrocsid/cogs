@@ -162,6 +162,8 @@ class UserInfoCog(Cog, name="User Information"):
         show moderation log of a user
         """
 
+        guild: Guild = self.bot.guilds[0]
+
         user, user_id, arg_passed = await get_user(ctx, user, UserInfoPermission.view_userlog)
 
         out: list[tuple[datetime, str]] = [(snowflake_time(user_id), t.ulog.created)]
@@ -186,12 +188,13 @@ class UserInfoCog(Cog, name="User Information"):
                 msg = t.ulog.nick.updated(username_update.member_name, username_update.new_name)
             out.append((username_update.timestamp, msg))
 
-        verification: Verification
-        async for verification in await db.stream(filter_by(Verification, member=user_id)):
-            if verification.accepted:
-                out.append((verification.timestamp, t.ulog.verification.accepted))
-            else:
-                out.append((verification.timestamp, t.ulog.verification.revoked))
+        if await RoleSettings.get("verified") in {role.id for role in guild.roles}:
+            verification: Verification
+            async for verification in await db.stream(filter_by(Verification, member=user_id)):
+                if verification.accepted:
+                    out.append((verification.timestamp, t.ulog.verification.accepted))
+                else:
+                    out.append((verification.timestamp, t.ulog.verification.revoked))
 
         responses = await get_userlog_entries(user_id)
         for response in responses:
@@ -260,9 +263,6 @@ class UserInfoCog(Cog, name="User Information"):
         async def update(member):
             await Join.update(member.id, str(member), member.joined_at)
 
-            if await RoleSettings.get("verified") not in {role.id for role in member.roles}:
-                return
-
             relevant_join: Optional[Join] = await db.first(
                 filter_by(Join, member=member.id).order_by(Join.timestamp.asc()),
             )
@@ -270,12 +270,16 @@ class UserInfoCog(Cog, name="User Information"):
             if not relevant_join:
                 return
 
+            timestamp = relevant_join.timestamp + timedelta(seconds=10)
+            if await db.exists(filter_by(Verification, member=member.id, accepted=True, timestamp=timestamp)):
+                return
+
             await db.add(
                 Verification(
                     member=member.id,
                     member_name=str(member),
                     accepted=True,
-                    timestamp=relevant_join.timestamp + timedelta(seconds=10),
+                    timestamp=timestamp,
                 ),
             )
 

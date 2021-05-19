@@ -571,7 +571,7 @@ class ModCog(Cog, name="Mod Tools"):
                 t.log_banned,
                 user,
                 reason,
-                duration=t.log_field.days(ban_days),
+                duration=t.log_field.days(cnt=ban_days),
             )
         else:
             await Ban.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_bans))
