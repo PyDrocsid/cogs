@@ -8,9 +8,13 @@ from wikipedia.exceptions import WikipediaException, DisambiguationError, PageEr
 import wikipedia
 from .colors import Colors
 
+
 def make_embed(title: str, content: str, color, requested_by: Member) -> Embed:
     embed = Embed(title=title, description=content, color=color)
-    embed.set_footer(text=f"Requested by {requested_by} ({requested_by.id})", icon_url=requested_by.avatar_url)
+    embed.set_footer(
+        text=f"Requested by {requested_by} ({requested_by.id})",
+        icon_url=requested_by.avatar_url,
+    )
     return embed
 
 
@@ -21,7 +25,6 @@ class WikipediaCog(Cog, name="Wikipedia"):
     def __init__(self):
         super().__init__()
 
-
     @commands.command(usage="<topic>", aliases=["wiki"])
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def wikipedia(self, ctx: Context, *, title: str):
@@ -31,23 +34,46 @@ class WikipediaCog(Cog, name="Wikipedia"):
 
         try:
             summary = await run_in_thread(wikipedia.summary, title)
-            await ctx.send(embed=make_embed(title=title, content=summary, color=Colors.Wiki,
-                                            requested_by=ctx.author))
+            await ctx.send(
+                embed=make_embed(
+                    title=title,
+                    content=summary,
+                    color=Colors.Wiki,
+                    requested_by=ctx.author,
+                )
+            )
 
         # this error occurs when the topic searched for has not been found, but there are suggestions
         except DisambiguationError as not_found_err:
-            await ctx.send(embed=make_embed(title=f"{title} was not found!", content=str(not_found_err),
-                                            color=Colors.Wiki, requested_by=ctx.author))
+            await ctx.send(
+                embed=make_embed(
+                    title=f"{title} was not found!",
+                    content=str(not_found_err),
+                    color=Colors.Wiki,
+                    requested_by=ctx.author,
+                )
+            )
 
         # this error occurs when the topic searched has not been found and there are no suggestions
         except PageError as not_not_found_error:
-            await ctx.send(embed=make_embed(title=title, content=str(not_not_found_error), color=Colors.Wiki,
-                                            requested_by=ctx.author))
+            await ctx.send(
+                embed=make_embed(
+                    title=title,
+                    content=str(not_not_found_error),
+                    color=Colors.Wiki,
+                    requested_by=ctx.author,
+                )
+            )
 
         # WikipediaException is the base exception of all exceptions of the wikipedia module
         # if an error occurs that has not been caught above
         # it may mean that wikipedia hasn't responded correctly or not at all
         except WikipediaException:
             await ctx.send(
-                embed=make_embed(title=title, content="Wikipedia is not available currently! Try again later.",
-                                 color=Colors.Wiki, requested_by=ctx.author))
+                embed=make_embed(
+                    title=title,
+                    content="Wikipedia is not available currently! Try again later.",
+                    color=Colors.Wiki,
+                    requested_by=ctx.author,
+                )
+            )
