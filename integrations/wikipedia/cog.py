@@ -22,7 +22,7 @@ class WikipediaCog(Cog, name="Wikipedia"):
         super().__init__()
 
 
-    @commands.command(usage=".wiki <topic>", aliases=["wiki"])
+    @commands.command(usage="<topic>", aliases=["wiki"])
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def wikipedia(self, ctx: Context, *, title: str):
         """
