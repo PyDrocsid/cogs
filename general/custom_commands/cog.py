@@ -69,8 +69,12 @@ def create_custom_command(name: str, data: dict):
 class CustomCommandsCog(Cog, name="Custom Commands"):
     CONTRIBUTORS = [Contributor.Defelo]
 
-    def __init__(self, commands_file: str):
-        with open(commands_file) as file:
-            cmds = yaml.safe_load(file)
+    def __init__(self, *command_files: str):
+        cmds = {}
+        for command_file in command_files:
+            with open(command_file) as file:
+                cmds |= yaml.safe_load(file)
 
-        self.__cog_commands__ = tuple(create_custom_command(name, data) for name, data in cmds.items())
+        self.__cog_commands__ = tuple(
+            create_custom_command(name, data) for name, data in cmds.items() if not data.get("disabled", False)
+        )
