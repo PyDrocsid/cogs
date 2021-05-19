@@ -1,5 +1,5 @@
 permissions:
-  view_stats: view other user's statistics
+  view_userinfo: view other user's information
   view_userlog: view other user's log
   init_join_log: initialize join log
 
