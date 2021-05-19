@@ -41,7 +41,7 @@ class WikipediaCog(Cog, name="Wikipedia"):
                     content=str(err),
                     color=Colors.Wiki,
                     requested_by=ctx.author,
-                )
+                ),
             )
 
         # this error occurs when the topic searched has not been found and there are no suggestions
@@ -52,7 +52,7 @@ class WikipediaCog(Cog, name="Wikipedia"):
                     content=str(err),
                     color=Colors.Wiki,
                     requested_by=ctx.author,
-                )
+                ),
             )
 
         # WikipediaException is the base exception of all exceptions of the wikipedia module
@@ -65,16 +65,13 @@ class WikipediaCog(Cog, name="Wikipedia"):
                     content="Wikipedia is not available currently! Try again later.",
                     color=Colors.Wiki,
                     requested_by=ctx.author,
-                )
+                ),
             )
 
         else:
-            await send_long_embed(
-                ctx.channel,
-                embed=make_embed(
+            await send_long_embed(ctx.channel, embed=make_embed(
                     title=title,
                     content=summary,
                     color=Colors.Wiki,
                     requested_by=ctx.author,
-                ),
-            )
+                ),)
