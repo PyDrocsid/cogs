@@ -1,26 +1,28 @@
 from discord import Member
 from discord.embeds import Embed
 from discord.ext import commands
-from discord.ext.commands import Cog, Bot
+from PyDrocsid.cog import Cog
 from discord.ext.commands.context import Context
 from PyDrocsid.async_thread import run_in_thread
-from PyDrocsid.translations import translations
 from wikipedia.exceptions import WikipediaException, DisambiguationError, PageError
 import wikipedia
 from .colors import Colors
 
 def make_embed(title: str, content: str, color, requested_by: Member) -> Embed:
     embed = Embed(title=title, description=content, color=color)
-    embed.set_footer(text=translations.f_requested_by(requested_by, requested_by.id), icon_url=requested_by.avatar_url)
+    embed.set_footer(text=f"Requested by {requested_by} ({requested_by.id})", icon_url=requested_by.avatar_url)
     return embed
 
 
 # Note: wikipedia allows bots, but only bots that are responsible (not going too fast).
 class WikipediaCog(Cog, name="Wikipedia"):
-    def __init__(self, bot: Bot):
-        self.bot = bot
+    CONTRIBUTORS = []
 
-    @commands.command(aliases=["wiki", "summary", "wk", "sum"])
+    def __init__(self):
+        super().__init__()
+
+
+    @commands.command(usage=".wiki <topic>", aliases=["wiki"])
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def wikipedia(self, ctx: Context, *, title: str):
         """
