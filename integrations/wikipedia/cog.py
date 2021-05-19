@@ -4,6 +4,7 @@ from discord.ext import commands
 from PyDrocsid.cog import Cog
 from discord.ext.commands.context import Context
 from PyDrocsid.async_thread import run_in_thread
+from PyDrocsid.util import send_long_embed
 from wikipedia.exceptions import WikipediaException, DisambiguationError, PageError
 import wikipedia
 from .colors import Colors
@@ -22,9 +23,6 @@ def make_embed(title: str, content: str, color, requested_by: Member) -> Embed:
 class WikipediaCog(Cog, name="Wikipedia"):
     CONTRIBUTORS = []
 
-    def __init__(self):
-        super().__init__()
-
     @commands.command(usage="<topic>", aliases=["wiki"])
     @commands.cooldown(5, 10, commands.BucketType.user)
     async def wikipedia(self, ctx: Context, *, title: str):
@@ -34,32 +32,24 @@ class WikipediaCog(Cog, name="Wikipedia"):
 
         try:
             summary = await run_in_thread(wikipedia.summary, title)
-            await ctx.send(
-                embed=make_embed(
-                    title=title,
-                    content=summary,
-                    color=Colors.Wiki,
-                    requested_by=ctx.author,
-                )
-            )
 
         # this error occurs when the topic searched for has not been found, but there are suggestions
-        except DisambiguationError as not_found_err:
+        except DisambiguationError as err:
             await ctx.send(
                 embed=make_embed(
                     title=f"{title} was not found!",
-                    content=str(not_found_err),
+                    content=str(err),
                     color=Colors.Wiki,
                     requested_by=ctx.author,
                 )
             )
 
         # this error occurs when the topic searched has not been found and there are no suggestions
-        except PageError as not_not_found_error:
+        except PageError as err:
             await ctx.send(
                 embed=make_embed(
                     title=title,
-                    content=str(not_not_found_error),
+                    content=str(err),
                     color=Colors.Wiki,
                     requested_by=ctx.author,
                 )
@@ -76,4 +66,15 @@ class WikipediaCog(Cog, name="Wikipedia"):
                     color=Colors.Wiki,
                     requested_by=ctx.author,
                 )
+            )
+
+        else:
+            await send_long_embed(
+                ctx.channel,
+                embed=make_embed(
+                    title=title,
+                    content=summary,
+                    color=Colors.Wiki,
+                    requested_by=ctx.author,
+                ),
             )
