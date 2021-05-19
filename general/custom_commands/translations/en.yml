@@ -1,0 +1,2 @@
+could_not_send_message: Message could not be sent because I don't have `send_messages` permission in {}.
+could_not_send_embed: Message could not be sent because I don't have `embed_links` permission in {}.
