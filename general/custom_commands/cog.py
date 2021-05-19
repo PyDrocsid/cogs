@@ -2,13 +2,14 @@ from io import BytesIO
 from pathlib import Path
 
 import yaml
+from PyDrocsid.permission import BasePermissionLevel
 from discord import Embed, File, TextChannel, Permissions
 from discord.ext import commands
 from discord.ext.commands import Context, CommandError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command_edit import link_response
-from PyDrocsid.config import Contributor
+from PyDrocsid.config import Contributor, Config
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from PyDrocsid.util import reply, docs
@@ -53,8 +54,13 @@ def create_custom_command(name: str, data: dict):
         await send_message(ctx, channel)
 
     command = with_channel_parameter if data.get("channel_parameter", False) else without_channel_parameter
-    if description := data.get("description", ""):
+    if description := data.get("description"):
         command = docs(description)(command)
+
+    if permission_level_name := data.get("permission_level"):
+        permission_level: BasePermissionLevel = Config.PERMISSION_LEVELS[permission_level_name.upper()]
+        command = permission_level.check(command)
+
     command = commands.command(name=name, aliases=data.get("aliases", []))(command)
 
     return command
