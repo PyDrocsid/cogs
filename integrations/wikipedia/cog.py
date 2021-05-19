@@ -74,4 +74,4 @@ class WikipediaCog(Cog, name="Wikipedia"):
                     content=summary,
                     color=Colors.Wiki,
                     requested_by=ctx.author,
-                ),)
+                ))
