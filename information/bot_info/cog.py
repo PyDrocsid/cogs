@@ -31,7 +31,7 @@ class BotInfoCog(Cog, name="Bot Information"):
         self.current_status = 0
 
     async def load_github_users(self):
-        self.github_users = await get_users([c for _, c in Config.CONTRIBUTORS]) or {}
+        self.github_users = await get_users([c for _, c in Config.CONTRIBUTORS if c]) or {}
 
     def format_contributor(self, contributor: Contributor, long: bool = False) -> Optional[str]:
         discord_id, github_id = contributor
