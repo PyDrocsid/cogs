@@ -110,3 +110,16 @@ class PermissionsCog(Cog, name="Permissions"):
         )
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_permission_set(*description))
+
+    @permissions.command(name="permission_levels", aliases=["pl"])
+    @PermissionsPermission.view_all.check
+    @docs(t.commands.permissions_permission_levels)
+    async def permissions_permission_levels(self, ctx: Context):
+        embed = Embed(title=t.permission_levels, color=Colors.Permissions)
+
+        for level in Config.PERMISSION_LEVELS:  # type: BasePermissionLevel
+            description = t.aliases(", ".join(f"`{alias}`" for alias in level.aliases))
+            description += "\n" + t.level(level.level)
+            embed.add_field(name=level.description, value=description, inline=False)
+
+        await send_long_embed(ctx, embed, paginate=True)
