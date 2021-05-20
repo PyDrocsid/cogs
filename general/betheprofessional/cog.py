@@ -6,9 +6,11 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.database import db, select
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply, check_role_assignable
+from PyDrocsid.util import calculate_edit_distance, check_role_assignable
 from .colors import Colors
 from .models import BTPRole
 from .permissions import BeTheProfessionalPermission

@@ -6,8 +6,9 @@ from discord.ext.commands import Context, CommandError
 from discord.utils import snowflake_time
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.translations import t
-from PyDrocsid.util import measure_latency, reply
+from PyDrocsid.util import measure_latency
 from .colors import Colors
 from ...contributor import Contributor
 

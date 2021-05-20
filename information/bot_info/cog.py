@@ -5,10 +5,12 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Context
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Config
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
+from PyDrocsid.prefix import get_prefix
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, get_prefix, reply, docs
 from .colors import Colors
 from .permissions import InfoPermission
 from ...contributor import Contributor

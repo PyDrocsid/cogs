@@ -6,10 +6,11 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, Converter, BadArgument, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Config, get_subclasses_in_enabled_packages
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.permission import BasePermissionLevel, BasePermission
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply, docs
 from .colors import Colors
 from .permissions import PermissionsPermission
 from ...contributor import Contributor

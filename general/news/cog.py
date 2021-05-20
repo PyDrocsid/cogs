@@ -5,9 +5,12 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
+from PyDrocsid.converter import Color
 from PyDrocsid.database import db, select
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, read_normal_message, attachment_to_file, Color, reply
+from PyDrocsid.util import read_normal_message, attachment_to_file
 from .colors import Colors
 from .models import NewsAuthorization
 from .permissions import NewsPermission

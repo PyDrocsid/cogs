@@ -7,11 +7,11 @@ from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.config import Config
 from PyDrocsid.database import db, select, filter_by, db_wrapper
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply
 from .colors import Colors
 from .models import RedditPost, RedditChannel
 from .permissions import RedditPermission

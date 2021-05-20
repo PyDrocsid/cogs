@@ -37,11 +37,11 @@ from discord.ext import commands
 from discord.ext.commands import Context
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.logger import get_logger
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply
 from .colors import Colors
 from ...contributor import Contributor
 
