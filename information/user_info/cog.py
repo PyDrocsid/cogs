@@ -125,7 +125,7 @@ class UserInfoCog(Cog, name="User Information"):
         show information about a user
         """
 
-        user, user_id, arg_passed = await get_user(ctx, user, UserInfoPermission.view_stats)
+        user, user_id, arg_passed = await get_user(ctx, user, UserInfoPermission.view_userinfo)
 
         embed = Embed(title=t.userinfo, color=Colors.stats)
         if isinstance(user, int):
