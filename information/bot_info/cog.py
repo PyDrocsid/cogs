@@ -158,5 +158,18 @@ class BotInfoCog(Cog, name="Bot Information"):
             ),
         )
 
+    @commands.command()
+    @docs(t.commands.cogs)
+    async def cogs(self, ctx: Context):
+        description = []
+        for name, cog in sorted(self.bot.cogs.items()):
+            description.append(f":small_orange_diamond: {name} (`{cog.__class__.__name__}`)")
+
+        await send_long_embed(
+            ctx,
+            Embed(title=t.enabled_cogs, color=Colors.info, description="\n".join(description)),
+            paginate=True,
+        )
+
     async def on_bot_ping(self, message: Message):
         await reply(message, embed=await self.build_info_embed(False))

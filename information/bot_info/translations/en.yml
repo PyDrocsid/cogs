@@ -7,6 +7,7 @@ commands:
   info: show information about the bot
   admininfo: show information about the bot (admin view)
   contributors: show list of contributors
+  cogs: show list of enabled cogs
 
 features_title: Features
 author_title: Author
@@ -27,3 +28,5 @@ features:
 admin_features:
   - Admin Feature
 bugs_features: Please [create an issue]({repo}/issues/new) in the GitHub repository.
+
+enabled_cogs: Enabled Cogs
