@@ -17,10 +17,8 @@ class UserNoteCog(Cog, name="User notes"):
     CONTRIBUTORS = [Contributor.Florian]
 
     @commands.group()
+    @docs(t.user_notes)
     async def user_note(self, ctx: Context):
-        """
-        mange notes for users
-        """
 
         if ctx.invoked_subcommand is None:
             raise UserInputError

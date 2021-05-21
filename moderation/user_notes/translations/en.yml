@@ -3,6 +3,7 @@ id: "message_id"
 message: "message"
 timestamp: "Timestamp"
 author: "author"
+user_notes: "mange notes for users"
 permissions:
   read: "show user notes"
   write: "create and delete user notes"
