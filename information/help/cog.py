@@ -5,9 +5,10 @@ from discord.ext import commands
 from discord.ext.commands import Command, Group, CommandError, Context
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import can_run_command, docs
+from PyDrocsid.command import can_run_command, docs, get_optional_permissions
 from PyDrocsid.config import Contributor
 from PyDrocsid.embeds import send_long_embed
+from PyDrocsid.permission import BasePermission, BasePermissionLevel
 from PyDrocsid.translations import t
 from .colors import Colors
 
@@ -67,6 +68,42 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
 
     if isinstance(command, Group):
         await add_commands(t.subcommands, command.commands)
+
+    permissions: list[str] = []
+    permission_levels: list[BasePermissionLevel] = []
+
+    cmds = []
+    cmd = command
+    while cmd:
+        cmds.append(cmd)
+        cmd = cmd.parent
+
+    for cmd in reversed(cmds):
+        for check in cmd.checks:
+            permission: Union[BasePermission, BasePermissionLevel, None] = getattr(check, "level", None)
+            if isinstance(permission, BasePermission):
+                permissions.append(permission.fullname)
+            elif isinstance(permission, BasePermissionLevel):
+                permission_levels.append(permission)
+
+    if permissions:
+        embed.add_field(
+            name=t.required_permissions,
+            value="\n".join(f":small_orange_diamond: `{p}`" for p in permissions),
+        )
+    if permission_levels:
+        permission_level: BasePermissionLevel = max(permission_levels, key=lambda pl: pl.level)
+        embed.add_field(
+            name=t.required_permission_level,
+            value=f":small_orange_diamond: **{permission_level.description}**",
+        )
+
+    optional_permissions: list[str] = [permission.fullname for permission in get_optional_permissions(command)]
+    if optional_permissions:
+        embed.add_field(
+            name=t.optional_permissions,
+            value="\n".join(f":small_blue_diamond: `{p}`" for p in optional_permissions),
+        )
 
     return await send_long_embed(ctx, embed)
 

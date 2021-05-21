@@ -21,3 +21,4 @@ my_permissions_title: My Permissions
 permission_levels: Permission Levels
 aliases: "Aliases: {}"
 level: "Level: `{}`"
+granted_by: "Granted by:"
