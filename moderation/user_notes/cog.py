@@ -4,6 +4,7 @@ from discord.ext.commands import Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor
+from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, filter_by
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
@@ -28,7 +29,7 @@ class UserNoteCog(Cog, name="User notes"):
 
     @user_note.command(name="add")
     @UserNotePermissions.write.check
-    async def add_user_note(self, ctx: Context, member: Member, *, message: str):
+    async def add_user_note(self, ctx: Context, member: UserMemberConverter, *, message: str):
         await UserNote.create(
             member=member.id,
             author=ctx.author.mention,
@@ -45,7 +46,7 @@ class UserNoteCog(Cog, name="User notes"):
             await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="show")
-    async def show_user_note(self, ctx: Context, member: Member):
+    async def show_user_note(self, ctx: Context, member: UserMemberConverter):
         user_notes = await db.all(filter_by(UserNote, member=member.id))
         embed = Embed(title=t.user_info)
         for note in user_notes:
