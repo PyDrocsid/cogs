@@ -9,13 +9,15 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Greedy
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.database import db, select, filter_by
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.logger import get_logger
 from PyDrocsid.multilock import MultiLock
+from PyDrocsid.prefix import get_prefix
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import get_prefix, reply, check_role_assignable
-from PyDrocsid.util import send_long_embed, is_teamler
+from PyDrocsid.util import check_role_assignable, is_teamler
 from .colors import Colors
 from .models import DynamicVoiceChannel, DynamicVoiceGroup, RoleVoiceLink
 from .permissions import VoiceChannelPermission

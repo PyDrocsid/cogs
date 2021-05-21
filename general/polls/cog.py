@@ -38,8 +38,8 @@ async def send_poll(ctx: Context, args: str, field: Optional[Tuple[str, str]] = 
 
     if not options:
         raise CommandError(t.missing_options)
-    if len(options) > MAX_OPTIONS:
-        raise CommandError(t.too_many_options(MAX_OPTIONS))
+    if len(options) > MAX_OPTIONS - allow_delete:
+        raise CommandError(t.too_many_options(MAX_OPTIONS - allow_delete))
 
     options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
 
@@ -177,6 +177,22 @@ class PollsCog(Cog, name="Polls"):
         if message.channel.permissions_for(ctx.author).add_reactions:
             await message.add_reaction(name_to_emoji["thumbsup"])
             await message.add_reaction(name_to_emoji["thumbsdown"])
+
+    @commands.command(aliases=["tyn"])
+    @guild_only()
+    async def team_yesno(self, ctx: Context, *, text: str):
+        """
+        Starts a yes/no poll and shows, which teamler has not voted yet.
+        """
+
+        embed = Embed(description=text, color=Colors.Polls, timestamp=datetime.utcnow())
+        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+
+        embed.add_field(name=tg.status, value=await self.get_reacted_teamlers(), inline=False)
+
+        message: Message = await ctx.send(embed=embed)
+        await message.add_reaction(name_to_emoji["+1"])
+        await message.add_reaction(name_to_emoji["-1"])
 
 
 class PollOption:

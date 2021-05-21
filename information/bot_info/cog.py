@@ -5,10 +5,12 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Context
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Config
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
+from PyDrocsid.prefix import get_prefix
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, get_prefix, reply, docs
 from .colors import Colors
 from .permissions import InfoPermission
 from ...contributor import Contributor
@@ -29,7 +31,7 @@ class BotInfoCog(Cog, name="Bot Information"):
         self.current_status = 0
 
     async def load_github_users(self):
-        self.github_users = await get_users([c for _, c in Config.CONTRIBUTORS]) or {}
+        self.github_users = await get_users([c for _, c in Config.CONTRIBUTORS if c]) or {}
 
     def format_contributor(self, contributor: Contributor, long: bool = False) -> Optional[str]:
         discord_id, github_id = contributor
@@ -120,7 +122,7 @@ class BotInfoCog(Cog, name="Bot Information"):
         embed.set_thumbnail(url=Config.REPO_ICON)
         await reply(ctx, embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=["v"])
     @docs(t.commands.version)
     async def version(self, ctx: Context):
         embed = Embed(title=f"{Config.NAME} v{Config.VERSION}", colour=Colors.version)
@@ -154,6 +156,19 @@ class BotInfoCog(Cog, name="Bot Information"):
                     if (f := self.format_contributor(c, long=True)) and (c != Config.AUTHOR or not cnt)
                 ),
             ),
+        )
+
+    @commands.command()
+    @docs(t.commands.cogs)
+    async def cogs(self, ctx: Context):
+        description = []
+        for name, cog in sorted(self.bot.cogs.items()):
+            description.append(f":small_orange_diamond: {name} (`{cog.__class__.__name__}`)")
+
+        await send_long_embed(
+            ctx,
+            Embed(title=t.enabled_cogs, color=Colors.info, description="\n".join(description)),
+            paginate=True,
         )
 
     async def on_bot_ping(self, message: Message):

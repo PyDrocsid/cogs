@@ -5,9 +5,10 @@ from discord.ext import commands
 from discord.ext.commands import Command, Group, CommandError, Context
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import can_run_command, docs
 from PyDrocsid.config import Contributor
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from PyDrocsid.util import can_run_command, send_long_embed, docs
 from .colors import Colors
 
 tg = t.g
@@ -35,7 +36,7 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
 
         embed.add_field(name="** **", value=t.help_usage(ctx.prefix), inline=False)
 
-        return await send_long_embed(ctx, embed)
+        return await send_long_embed(ctx, embed, paginate=True, max_fields=8)
 
     if isinstance(command_name, str):
         cog: Optional[Cog] = ctx.bot.get_cog(command_name)

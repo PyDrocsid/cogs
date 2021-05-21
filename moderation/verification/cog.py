@@ -6,9 +6,10 @@ from discord.ext import commands
 from discord.ext.commands import Context, CommandError, CheckFailure, check, guild_only, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply, check_role_assignable
+from PyDrocsid.util import check_role_assignable
 from .colors import Colors
 from .models import VerificationRole
 from .permissions import VerificationPermission
