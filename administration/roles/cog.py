@@ -5,12 +5,14 @@ from discord.ext import commands
 from discord.ext.commands import CommandError, Context, guild_only, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Contributor, Config
 from PyDrocsid.database import db, select
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply, check_role_assignable, docs
+from PyDrocsid.util import check_role_assignable
 from .colors import Colors
 from .models import RoleAuth
 from .permissions import RolesPermission
@@ -128,6 +130,8 @@ class RolesCog(Cog, name="Roles"):
     async def roles_auth_add(self, ctx: Context, source: Union[Member, Role], target: Role):
         if await RoleAuth.check(source.id, target.id):
             raise CommandError(t.role_auth_already_exists)
+        if isinstance(source, Member) and source.bot:
+            raise CommandError(t.no_auth_for_bots)
 
         check_role_assignable(target)
 
@@ -183,4 +187,4 @@ class RolesCog(Cog, name="Roles"):
             embed = Embed(title=t.member_list_cnt(len(out)), colour=0x256BE6, description="\n".join(out))
         else:
             embed = Embed(title=t.member_list, colour=0xCF0606, description=t.no_members)
-        await send_long_embed(ctx, embed)
+        await send_long_embed(ctx, embed, paginate=True)

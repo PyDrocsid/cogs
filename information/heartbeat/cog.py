@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from typing import Optional
 
@@ -7,6 +6,7 @@ from discord.ext import tasks
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
+from PyDrocsid.environment import OWNER_ID
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_editable_log
 from ...contributor import Contributor
@@ -24,10 +24,7 @@ class HeartbeatCog(Cog, name="Heartbeat"):
         self.initialized = False
 
     def get_owner(self) -> Optional[User]:
-        owner_id = os.getenv("OWNER_ID")
-        if owner_id and owner_id.isnumeric():
-            return self.bot.get_user(int(owner_id))
-        return None
+        return self.bot.get_user(OWNER_ID)
 
     @tasks.loop(seconds=20)
     async def status_loop(self):

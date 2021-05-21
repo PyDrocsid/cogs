@@ -10,12 +10,13 @@ from discord.utils import snowflake_time
 
 from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor, Config
 from PyDrocsid.database import db, filter_by, db_wrapper
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply, send_long_embed
 from .colors import Colors
 from .models import Join, Leave, UsernameUpdate, Verification
 from .permissions import UserInfoPermission
@@ -23,7 +24,6 @@ from ...pubsub import (
     get_userlog_entries,
     get_user_info_entries,
     get_user_status_entries,
-    get_last_auto_kick,
     revoke_verification,
 )
 
@@ -126,7 +126,7 @@ class UserInfoCog(Cog, name="User Information"):
         show information about a user
         """
 
-        user, user_id, arg_passed = await get_user(ctx, user, UserInfoPermission.view_stats)
+        user, user_id, arg_passed = await get_user(ctx, user, UserInfoPermission.view_userinfo)
 
         embed = Embed(title=t.userinfo, color=Colors.stats)
         if isinstance(user, int):
@@ -163,6 +163,8 @@ class UserInfoCog(Cog, name="User Information"):
         show moderation log of a user
         """
 
+        guild: Guild = self.bot.guilds[0]
+
         user, user_id, arg_passed = await get_user(ctx, user, UserInfoPermission.view_userlog)
 
         out: list[tuple[datetime, str]] = [(snowflake_time(user_id), t.ulog.created)]
@@ -187,12 +189,13 @@ class UserInfoCog(Cog, name="User Information"):
                 msg = t.ulog.nick.updated(username_update.member_name, username_update.new_name)
             out.append((username_update.timestamp, msg))
 
-        verification: Verification
-        async for verification in await db.stream(filter_by(Verification, member=user_id)):
-            if verification.accepted:
-                out.append((verification.timestamp, t.ulog.verification.accepted))
-            else:
-                out.append((verification.timestamp, t.ulog.verification.revoked))
+        if await RoleSettings.get("verified") in {role.id for role in guild.roles}:
+            verification: Verification
+            async for verification in await db.stream(filter_by(Verification, member=user_id)):
+                if verification.accepted:
+                    out.append((verification.timestamp, t.ulog.verification.accepted))
+                else:
+                    out.append((verification.timestamp, t.ulog.verification.revoked))
 
         responses = await get_userlog_entries(user_id)
         for response in responses:
@@ -212,7 +215,7 @@ class UserInfoCog(Cog, name="User Information"):
         embed.set_footer(text=t.utc_note)
 
         if arg_passed:
-            await send_long_embed(ctx, embed)
+            await send_long_embed(ctx, embed, paginate=True)
         else:
             try:
                 await send_long_embed(ctx.author, embed)
@@ -261,22 +264,15 @@ class UserInfoCog(Cog, name="User Information"):
         async def update(member):
             await Join.update(member.id, str(member), member.joined_at)
 
-            if await RoleSettings.get("verified") not in {role.id for role in member.roles}:
+            relevant_join: Optional[Join] = await db.first(
+                filter_by(Join, member=member.id).order_by(Join.timestamp.asc()),
+            )
+
+            if not relevant_join:
                 return
 
-            last_auto_kick: Optional[datetime] = next(iter(await get_last_auto_kick(member.id)), None)
-
-            relevant_join: Optional[Join]
-            if last_auto_kick:
-                relevant_join = await db.first(
-                    filter_by(Join, member=member.id)
-                    .filter(Join.timestamp > last_auto_kick)
-                    .order_by(Join.timestamp.asc()),
-                )
-            else:
-                relevant_join = await db.first(filter_by(Join, member=member.id).order_by(Join.timestamp.asc()))
-
-            if relevant_join is None:
+            timestamp = relevant_join.timestamp + timedelta(seconds=10)
+            if await db.exists(filter_by(Verification, member=member.id, accepted=True, timestamp=timestamp)):
                 return
 
             await db.add(
@@ -284,7 +280,7 @@ class UserInfoCog(Cog, name="User Information"):
                     member=member.id,
                     member_name=str(member),
                     accepted=True,
-                    timestamp=relevant_join.timestamp + timedelta(seconds=10),
+                    timestamp=timestamp,
                 ),
             )
 

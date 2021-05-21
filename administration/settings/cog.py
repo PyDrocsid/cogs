@@ -5,8 +5,9 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply, docs
+from PyDrocsid.prefix import set_prefix
 from PyDrocsid.translations import t
-from PyDrocsid.util import set_prefix, reply, docs
 from .colors import Colors
 from .permissions import SettingsPermission
 from ...contributor import Contributor

@@ -7,7 +7,8 @@ from discord.ext.commands import guild_only, Context, UserInputError, CommandErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply, check_role_assignable
+from PyDrocsid.util import check_role_assignable
+from PyDrocsid.command import reply
 from .colors import Colors
 from .models import AutoRole
 from .permissions import AutoRolePermission

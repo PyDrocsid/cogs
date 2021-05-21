@@ -25,6 +25,7 @@ role_auth: Role Assignment Authorizations
 no_role_auth: No role assignment authorizations have been created yet.
 role_auths: Role Authorizations
 user_auths: User Authorizations
+no_auth_for_bots: You cannot authorize bots to assign roles.
 role_auth_already_exists: Role assignment authorization already exists.
 role_auth_created: Role assignment authorization has been created successfully.
 log_role_auth_created: Role assignment authorization `@{}` -> `@{}` has been created.

@@ -7,8 +7,8 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply
 from .colors import Colors
 from .permissions import AutoModPermission
 from .settings import AutoModSettings, AutoKickMode

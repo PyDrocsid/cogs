@@ -7,9 +7,10 @@ from discord.ext import commands
 from discord.ext.commands import Context, guild_only, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.database import db, select
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply
 from .api import CleverBot
 from .colors import Colors
 from .models import CleverBotChannel

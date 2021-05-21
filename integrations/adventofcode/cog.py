@@ -10,10 +10,12 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Context, UserInputError, CommandError, guild_only
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.database import db, select, db_wrapper
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply, check_role_assignable
+from PyDrocsid.util import check_role_assignable
 from .colors import Colors
 from .models import AOCLink
 from .permissions import AdventOfCodePermission

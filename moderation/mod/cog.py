@@ -13,10 +13,12 @@ from discord.ext.commands import (
 )
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
+from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import is_teamler, reply
+from PyDrocsid.util import is_teamler
 from .colors import Colors
 from .models import Mute, Ban, Report, Warn, Kick
 from .permissions import ModPermission
@@ -255,7 +257,7 @@ class ModCog(Cog, name="Mod Tools"):
             if ban.days == -1:
                 out.append((ban.timestamp, text.inf(f"<@{ban.mod}>", ban.reason)))
             else:
-                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", ban.reason, cnt=mute.days)))
+                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", ban.reason, cnt=ban.days)))
 
             if not ban.active and not ban.upgraded:
                 if ban.unban_mod is None:
@@ -278,55 +280,41 @@ class ModCog(Cog, name="Mod Tools"):
         if await db.exists(filter_by(Mute, active=True, member=member.id)):
             await member.add_roles(mute_role)
 
-    async def get_user(self, guild: Guild, user: Union[Member, User, int]) -> Union[Member, User]:
-        if isinstance(user, Member):
-            return user
-        if isinstance(user, User):
-            return guild.get_member(user.id) or user
-
-        if member := guild.get_member(user):
-            return member
-        try:
-            return await self.bot.fetch_user(user)
-        except (NotFound, HTTPException):
-            raise CommandError(tg.user_not_found)
-
     @commands.command()
     @guild_only()
-    async def report(self, ctx: Context, user: Union[Member, User, int], *, reason: str):
+    async def report(self, ctx: Context, user: UserMemberConverter, *, reason: str):
         """
         report a user
         """
 
+        user: Union[Member, User]
+
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
 
-        user: Union[Member, User] = await self.get_user(ctx.guild, user)
-
         if user == self.bot.user:
             raise ModCommandError(user, t.cannot_report)
+        if user == ctx.author:
+            raise ModCommandError(user, t.no_self_report)
 
         await Report.create(user.id, str(user), ctx.author.id, reason)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
-        server_embed.set_author(
-            name=str(user),
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
-        )
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, user, reason)
 
     @commands.command()
     @ModPermission.warn.check
     @guild_only()
-    async def warn(self, ctx: Context, user: Union[Member, User, id], *, reason: str):
+    async def warn(self, ctx: Context, user: UserMemberConverter, *, reason: str):
         """
         warn a user
         """
 
+        user: Union[Member, User]
+
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
-
-        user: Union[Member, User] = await self.get_user(ctx.guild, user)
 
         if user == self.bot.user:
             raise ModCommandError(user, t.cannot_warn)
@@ -337,10 +325,7 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.ModTools,
         )
         server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
-        server_embed.set_author(
-            name=str(user),
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
-        )
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
@@ -353,11 +338,13 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
-    async def mute(self, ctx: Context, user: Union[Member, User, int], days: DurationConverter, *, reason: str):
+    async def mute(self, ctx: Context, user: UserMemberConverter, days: DurationConverter, *, reason: str):
         """
         mute a user
         set days to `inf` for a permanent mute
         """
+
+        user: Union[Member, User]
 
         days: Optional[int]
 
@@ -365,7 +352,6 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.reason_too_long)
 
         mute_role: Role = await get_mute_role(ctx.guild)
-        user: Union[Member, User] = await self.get_user(ctx.guild, user)
 
         if user == self.bot.user or await is_teamler(user):
             raise ModCommandError(user, t.cannot_mute)
@@ -388,10 +374,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
-        server_embed.set_author(
-            name=str(user),
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
-        )
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if days is not None:
             await Mute.create(user.id, str(user), ctx.author.id, days, reason, bool(active_mutes))
@@ -429,16 +412,17 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
-    async def unmute(self, ctx: Context, user: Union[Member, User, int], *, reason: str):
+    async def unmute(self, ctx: Context, user: UserMemberConverter, *, reason: str):
         """
         unmute a user
         """
+
+        user: Union[Member, User]
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
 
         mute_role: Role = await get_mute_role(ctx.guild)
-        user: Union[Member, User] = await self.get_user(ctx.guild, user)
 
         was_muted = False
         if isinstance(user, Member) and mute_role in user.roles:
@@ -452,10 +436,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise ModCommandError(user, t.not_muted)
 
         server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
-        server_embed.set_author(
-            name=str(user),
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
-        )
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unmute, t.log_unmuted, user, reason)
 
@@ -510,7 +491,7 @@ class ModCog(Cog, name="Mod Tools"):
     async def ban(
         self,
         ctx: Context,
-        user: Union[Member, User, int],
+        user: UserMemberConverter,
         ban_days: DurationConverter,
         delete_days: int,
         *,
@@ -522,6 +503,7 @@ class ModCog(Cog, name="Mod Tools"):
         """
 
         ban_days: Optional[int]
+        user: Union[Member, User]
 
         if not ctx.guild.me.guild_permissions.ban_members:
             raise CommandError(t.cannot_ban_permissions)
@@ -530,8 +512,6 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.reason_too_long)
         if not 0 <= delete_days <= 7:
             raise CommandError(tg.invalid_duration)
-
-        user: Union[Member, User] = await self.get_user(ctx.guild, user)
 
         if user == self.bot.user or await is_teamler(user):
             raise ModCommandError(user, t.cannot_ban)
@@ -554,10 +534,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
-        server_embed.set_author(
-            name=str(user),
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
-        )
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if ban_days is not None:
             await Ban.create(user.id, str(user), ctx.author.id, ban_days, reason, bool(active_bans))
@@ -569,7 +546,7 @@ class ModCog(Cog, name="Mod Tools"):
                 t.log_banned,
                 user,
                 reason,
-                duration=t.log_field.days(ban_days),
+                duration=t.log_field.days(cnt=ban_days),
             )
         else:
             await Ban.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_bans))
@@ -598,18 +575,18 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.ban.check
     @guild_only()
-    async def unban(self, ctx: Context, user: Union[Member, User, int], *, reason: str):
+    async def unban(self, ctx: Context, user: UserMemberConverter, *, reason: str):
         """
         unban a user
         """
+
+        user: Union[Member, User]
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
 
         if not ctx.guild.me.guild_permissions.ban_members:
             raise CommandError(t.cannot_unban_permissions)
-
-        user: Union[Member, User] = await self.get_user(ctx.guild, user)
 
         was_banned = True
         try:
@@ -624,9 +601,6 @@ class ModCog(Cog, name="Mod Tools"):
             raise ModCommandError(user, t.not_banned)
 
         server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
-        server_embed.set_author(
-            name=str(user),
-            icon_url=user.avatar_url_as(format=("gif" if user.is_avatar_animated() else "png")),
-        )
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unban, t.log_unbanned, user, reason)

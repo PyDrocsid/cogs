@@ -22,6 +22,7 @@ invalid_duration_inf: Invalid duration. Try `inf` instead.
 
 report: ":speech_balloon: Report"
 cannot_report: This member cannot be reported.
+no_self_report: You cannot report yourself.
 reported_response: "User reported successfully :white_check_mark:"
 log_reported: ":speech_balloon: Member reported"
 

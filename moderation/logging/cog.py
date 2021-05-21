@@ -6,11 +6,13 @@ from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Group, Command
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply, docs
 from PyDrocsid.database import db_wrapper
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance, send_long_embed, reply, docs
+from PyDrocsid.util import calculate_edit_distance
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission

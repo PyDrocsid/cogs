@@ -5,8 +5,9 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import docs
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, docs
 from .colors import Colors
 from ...contributor import Contributor
 

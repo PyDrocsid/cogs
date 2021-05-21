@@ -5,10 +5,10 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply
 from .colors import Colors
 from .models import RoleNotification
 from .permissions import RoleNotificationsPermission

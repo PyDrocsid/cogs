@@ -8,6 +8,7 @@ commands:
   permissions_list: list all permissions
   permissions_my: list all permissions granted to the user
   permissions_set: configure bot permissions
+  permissions_permission_levels: list all permission levels
 
 no_permissions: No priviliges granted.
 invalid_permission_level: Invalid permission level.
@@ -17,3 +18,6 @@ permission_set: "Permission `{}` has been granted to `>= {}` :white_check_mark:"
 log_permission_set: "**Permission** `{}` has been **granted** to `>= {}` :white_check_mark:"
 permissions_title: Permissions
 my_permissions_title: My Permissions
+permission_levels: Permission Levels
+aliases: "Aliases: {}"
+level: "Level: `{}`"
