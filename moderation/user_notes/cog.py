@@ -21,7 +21,7 @@ class UserNoteCog(Cog, name="User notes"):
     @commands.group()
     @guild_only()
     @UserNotePermissions.read.check
-    @docs(t.user_notes)
+    @docs(t.description)
     async def user_note(self, ctx: Context):
 
         if ctx.invoked_subcommand is None:
@@ -48,7 +48,7 @@ class UserNoteCog(Cog, name="User notes"):
     @user_note.command(name="show")
     async def show_user_note(self, ctx: Context, member: UserMemberConverter):
         user_notes = await db.all(filter_by(UserNote, member=member.id))
-        embed = Embed(title=t.user_info)
+        embed = Embed(title=t.user_notes)
         for note in user_notes:
             embed.add_field(name=t.id, value=note.message_id, inline=True)
             embed.add_field(name=t.message, value=note.message, inline=True)

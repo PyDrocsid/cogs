@@ -1,9 +1,9 @@
-user_info: "User infos"
-id: "message_id"
-message: "message"
+user_notes: "User Notes"
+id: "Message ID"
+message: "Message"
 timestamp: "Timestamp"
 author: "author"
-user_notes: "mange notes for users"
+description: "mange notes for users"
 permissions:
   read: "show user notes"
   write: "create and delete user notes"
