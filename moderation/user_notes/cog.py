@@ -9,6 +9,7 @@ from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from cogs.library.moderation.user_notes.models import UserNote
 from cogs.library.moderation.user_notes.permissions import UserNotePermissions
+from library.PyDrocsid.command import docs
 
 t = t.user_notes
 
@@ -18,6 +19,7 @@ class UserNoteCog(Cog, name="User notes"):
 
     @commands.group()
     @guild_only()
+    @UserNotePermissions.read.check
     @docs(t.user_notes)
     async def user_note(self, ctx: Context):
 
