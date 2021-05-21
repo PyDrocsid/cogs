@@ -10,7 +10,7 @@ from discord.utils import snowflake_time
 
 from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply
+from PyDrocsid.command import reply, optional_permissions
 from PyDrocsid.config import Contributor, Config
 from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.embeds import send_long_embed
@@ -121,6 +121,7 @@ class UserInfoCog(Cog, name="User Information"):
         await Verification.create(member.id, str(member), False)
 
     @commands.command(aliases=["user", "uinfo", "userstats"])
+    @optional_permissions(UserInfoPermission.view_userinfo)
     async def userinfo(self, ctx: Context, user: Optional[Union[User, int]] = None):
         """
         show information about a user
@@ -158,6 +159,7 @@ class UserInfoCog(Cog, name="User Information"):
             await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @commands.command(aliases=["userlog", "ulog"])
+    @optional_permissions(UserInfoPermission.view_userlog)
     async def userlogs(self, ctx: Context, user: Optional[Union[User, int]] = None):
         """
         show moderation log of a user
