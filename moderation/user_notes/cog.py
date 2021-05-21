@@ -17,6 +17,7 @@ class UserNoteCog(Cog, name="User notes"):
     CONTRIBUTORS = [Contributor.Florian]
 
     @commands.group()
+    @guild_only()
     @docs(t.user_notes)
     async def user_note(self, ctx: Context):
 
