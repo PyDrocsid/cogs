@@ -2,17 +2,17 @@ from io import BytesIO
 from pathlib import Path
 
 import yaml
-from PyDrocsid.permission import BasePermissionLevel
 from discord import Embed, File, TextChannel, Permissions
 from discord.ext import commands
 from discord.ext.commands import Context, CommandError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply, docs
 from PyDrocsid.command_edit import link_response
 from PyDrocsid.config import Contributor, Config
 from PyDrocsid.emojis import name_to_emoji
+from PyDrocsid.permission import BasePermissionLevel
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply, docs
 
 tg = t.g
 t = t.custom_commands

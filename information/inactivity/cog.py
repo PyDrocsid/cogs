@@ -8,10 +8,11 @@ from discord.ext.commands import guild_only, Context, CommandError, max_concurre
 
 from PyDrocsid.async_thread import semaphore_gather, run_as_task
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, db_wrapper
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply
 from .models import Activity
 from .permissions import InactivityPermission
 from .settings import InactivitySettings

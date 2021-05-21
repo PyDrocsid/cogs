@@ -5,12 +5,14 @@ from discord.ext import commands
 from discord.ext.commands import CommandError, Context, guild_only, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Contributor, Config
 from PyDrocsid.database import db, select
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed, reply, check_role_assignable, docs
+from PyDrocsid.util import check_role_assignable
 from .colors import Colors
 from .models import RoleAuth
 from .permissions import RolesPermission

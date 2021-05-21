@@ -5,12 +5,12 @@ from discord.ext import commands
 from discord.ext.commands import Context, guild_only, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import make_error, reply
 from PyDrocsid.database import db, select
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import make_error, reply
 from .colors import Colors
 from .models import ReactionPinChannel
 from .permissions import ReactionPinPermission

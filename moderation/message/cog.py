@@ -5,8 +5,9 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import docs, reply
+from PyDrocsid.converter import Color
 from PyDrocsid.translations import t
-from PyDrocsid.util import Color, reply, docs
 from PyDrocsid.util import read_normal_message, read_complete_message
 from .colors import Colors
 from .permissions import MessagePermission

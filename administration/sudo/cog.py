@@ -7,6 +7,7 @@ from discord.ext.commands import check, Context, CheckFailure
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
 from PyDrocsid.emojis import name_to_emoji
+from PyDrocsid.environment import OWNER_ID
 from PyDrocsid.events import call_event_handlers
 from PyDrocsid.permission import permission_override
 from PyDrocsid.redis import redis
@@ -20,22 +21,26 @@ t = t.sudo
 
 @check
 def is_sudoer(ctx: Context) -> bool:
-    if ctx.author.id != 370876111992913922:
+    if ctx.author.id != OWNER_ID:
         raise CheckFailure(t.not_in_sudoers_file(ctx.author.mention))
 
     return True
 
 
 class SudoCog(Cog, name="Sudo"):
-    CONTRIBUTORS = [Contributor.Defelo]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.TNT2k]
 
     def __init__(self):
         super().__init__()
 
         self.sudo_cache: dict[TextChannel, Message] = {}
 
+    @staticmethod
+    def prepare():
+        return bool(OWNER_ID)
+
     async def on_command_error(self, ctx: Context, _):
-        if ctx.author.id == 370876111992913922:
+        if ctx.author.id == OWNER_ID:
             self.sudo_cache[ctx.channel] = ctx.message
 
     @commands.command(hidden=True)

@@ -7,9 +7,9 @@ from discord.ext.commands import CommandError, UserInputError
 from sentry_sdk import capture_exception
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.material_colors import MaterialColors
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_long_embed
 from .api import Emkc, EmkcAPIException
 from ...contributor import Contributor
 

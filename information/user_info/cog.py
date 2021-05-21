@@ -10,12 +10,13 @@ from discord.utils import snowflake_time
 
 from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor, Config
 from PyDrocsid.database import db, filter_by, db_wrapper
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import reply, send_long_embed
 from .colors import Colors
 from .models import Join, Leave, UsernameUpdate, Verification
 from .permissions import UserInfoPermission
