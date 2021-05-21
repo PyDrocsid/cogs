@@ -9,7 +9,7 @@ from PyDrocsid.database import db, filter_by
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from cogs.library.moderation.user_notes.models import UserNote
-from cogs.library.moderation.user_notes.permissions import UserNotePermissions
+from cogs.library.moderation.user_notes.permissions import UserNotePermission
 from library.PyDrocsid.command import docs
 
 t = t.user_notes
@@ -20,7 +20,7 @@ class UserNoteCog(Cog, name="User notes"):
 
     @commands.group()
     @guild_only()
-    @UserNotePermissions.read.check
+    @UserNotePermission.read.check
     @docs(t.description)
     async def user_note(self, ctx: Context):
 
@@ -28,7 +28,7 @@ class UserNoteCog(Cog, name="User notes"):
             raise UserInputError
 
     @user_note.command(name="add")
-    @UserNotePermissions.write.check
+    @UserNotePermission.write.check
     async def add_user_note(self, ctx: Context, member: UserMemberConverter, *, message: str):
         await UserNote.create(
             member=member.id,
@@ -38,7 +38,7 @@ class UserNoteCog(Cog, name="User notes"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="remove")
-    @UserNotePermissions.write.check
+    @UserNotePermission.write.check
     async def remove_user_note(self, ctx: Context, message_id: str):
         user_notes = await db.get(UserNote, message_id=message_id)
         if user_notes:
