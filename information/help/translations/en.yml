@@ -9,3 +9,6 @@ help: Help
 help_usage: |
   Type `{0}help <command>` for more info on a command.
   Type `{0}help <cog>` for more info on a cog.
+required_permissions: Required Permissions
+required_permission_level: Required Permission Level
+optional_permissions: Optional Permissions

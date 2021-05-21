@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional
 
-from discord import Embed
+from discord import Embed, Role
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, Converter, BadArgument, CommandError, UserInputError
 
@@ -10,6 +10,7 @@ from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Config, get_subclasses_in_enabled_packages
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.permission import BasePermissionLevel, BasePermission
+from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from .colors import Colors
 from .permissions import PermissionsPermission
@@ -120,6 +121,19 @@ class PermissionsCog(Cog, name="Permissions"):
         for level in Config.PERMISSION_LEVELS:  # type: BasePermissionLevel
             description = t.aliases(", ".join(f"`{alias}`" for alias in level.aliases))
             description += "\n" + t.level(level.level)
+
+            granted_by: list[str] = [f"`{gp}`" for gp in level.guild_permissions]
+            for role_name in level.roles:
+                role: Optional[Role] = ctx.guild.get_role(await RoleSettings.get(role_name))
+                if role:
+                    granted_by.append(role.mention)
+
+            if not level.level:
+                granted_by = ["@everyone"]
+
+            if granted_by:
+                description += "\n" + t.granted_by + "\n" + "\n".join(f":small_orange_diamond: {x}" for x in granted_by)
+
             embed.add_field(name=level.description, value=description, inline=False)
 
         await send_long_embed(ctx, embed, paginate=True)
