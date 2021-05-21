@@ -12,17 +12,17 @@ class UserNote(db.Base):
 
     message_id: Union[Column, str] = Column(String(length=10), primary_key=True, unique=True)
     member: Union[Column, int] = Column(BigInteger)
-    applicant: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    author: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     message: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     timestamp: Union[Column, datetime] = Column(DateTime)
 
     @staticmethod
-    async def create(member: int, message: str, applicant: str):
+    async def create(member: int, message: str, author: str):
         row = UserNote(
             message_id=secrets.token_hex(nbytes=5)[:10],
             member=member,
             message=message,
-            applicant=applicant,
+            author=author,
             timestamp=datetime.utcnow(),
         )
         await db.add(row)

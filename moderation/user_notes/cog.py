@@ -30,7 +30,7 @@ class UserNoteCog(Cog, name="User notes"):
     async def add_user_note(self, ctx: Context, member: Member, *, message: str):
         await UserNote.create(
             member=member.id,
-            applicant=ctx.author.mention,
+            author=ctx.author.mention,
             message=message,
         )
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
@@ -52,5 +52,5 @@ class UserNoteCog(Cog, name="User notes"):
             embed.add_field(name=t.id, value=note.message_id, inline=True)
             embed.add_field(name=t.message, value=note.message, inline=True)
             embed.add_field(name=t.timestamp, value=note.timestamp.strftime("%d.%m.%Y %H:%M:%S"), inline=True)
-            embed.add_field(name=t.applicant, value=note.applicant, inline=True)
+            embed.add_field(name=t.author, value=note.author, inline=True)
         await ctx.send(embed=embed)
