@@ -44,7 +44,6 @@ class UserNoteCog(Cog, name="User notes"):
             await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_note.command(name="show")
-    @UserNotePermissions.read.check
     async def show_user_note(self, ctx: Context, member: Member):
         user_notes = await db.all(filter_by(UserNote, member=member.id))
         embed = Embed(title=t.user_info)
