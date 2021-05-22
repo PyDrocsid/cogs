@@ -13,13 +13,12 @@ from discord.ext.commands import (
 )
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply
+from PyDrocsid.command import reply, UserCommandError
 from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
-from library.PyDrocsid.command import UserCommandError
 from .colors import Colors
 from .models import Mute, Ban, Report, Warn, Kick
 from .permissions import ModPermission
