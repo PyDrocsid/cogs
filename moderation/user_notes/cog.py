@@ -1,4 +1,4 @@
-from discord import Member, Embed
+from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, guild_only
 
@@ -13,6 +13,7 @@ from PyDrocsid.translations import t
 from cogs.library.moderation.user_notes.models import UserNote
 from cogs.library.moderation.user_notes.permissions import UserNotePermission
 from library.PyDrocsid.command import docs
+from .colors import Colors
 
 t = t.user_notes
 
@@ -51,7 +52,7 @@ class UserNoteCog(Cog, name="User notes"):
     @user_note.command(name="show")
     async def show_user_note(self, ctx: Context, member: UserMemberConverter):
         user_notes = await db.all(filter_by(UserNote, member=member.id))
-        embed = Embed(title=t.user_notes)
+        embed = Embed(title=t.user_notes, colour=Colors.user_notes)
         for note in user_notes:
             embed.add_field(name=t.id, value=note.message_id, inline=True)
             embed.add_field(name=t.message, value=note.message, inline=True)
