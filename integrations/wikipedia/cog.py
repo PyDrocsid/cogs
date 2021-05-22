@@ -5,8 +5,8 @@ from PyDrocsid.cog import Cog
 from discord.ext.commands.context import Context
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.util import send_long_embed
-from wikipedia.exceptions import WikipediaException, DisambiguationError, PageError
-import wikipedia
+import wikipedia.exceptions as wx
+from wikipedia import summary as s
 from .colors import Colors
 
 
@@ -19,7 +19,8 @@ def make_embed(title: str, content: str, color, requested_by: Member) -> Embed:
     return embed
 
 
-# Note: wikipedia allows bots, but only bots that are responsible (not going too fast).
+# Note: wikipedia allows bots, but only bots that are responsible
+# (not going too fast).
 class WikipediaCog(Cog, name="Wikipedia"):
     CONTRIBUTORS = []
 
@@ -31,10 +32,11 @@ class WikipediaCog(Cog, name="Wikipedia"):
         """
 
         try:
-            summary = await run_in_thread(wikipedia.summary, title)
+            summary = await run_in_thread(s, title)
 
-        # this error occurs when the topic searched for has not been found, but there are suggestions
-        except DisambiguationError as err:
+        # this error occurs when the topic searched for has not been found,
+        # but there are suggestions
+        except wx.DisambiguationError as err:
             await ctx.send(
                 embed=make_embed(
                     title=f"{title} was not found!",
@@ -44,8 +46,9 @@ class WikipediaCog(Cog, name="Wikipedia"):
                 ),
             )
 
-        # this error occurs when the topic searched has not been found and there are no suggestions
-        except PageError as err:
+        # this error occurs when the topic searched has not been found
+        # and there are no suggestions
+        except wx.PageError as err:
             await ctx.send(
                 embed=make_embed(
                     title=title,
@@ -55,14 +58,16 @@ class WikipediaCog(Cog, name="Wikipedia"):
                 ),
             )
 
-        # WikipediaException is the base exception of all exceptions of the wikipedia module
+        # WikipediaException is the base exception of all exceptions
+        # of the wikipedia module
         # if an error occurs that has not been caught above
         # it may mean that wikipedia hasn't responded correctly or not at all
-        except WikipediaException:
+        except wx.WikipediaException:
             await ctx.send(
                 embed=make_embed(
                     title=title,
-                    content="Wikipedia is not available currently! Try again later.",
+                    content="Wikipedia is not available currently!"
+                    " Try again later.",
                     color=Colors.Wiki,
                     requested_by=ctx.author,
                 ),
