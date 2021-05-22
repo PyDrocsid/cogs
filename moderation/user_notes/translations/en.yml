@@ -1,0 +1,12 @@
+user_notes: "User Notes"
+id: "Message ID"
+message: "Message"
+timestamp: "Timestamp"
+author: "Author"
+description: "Mange notes for users"
+note_not_found: "The message was not found"
+new_note: "The following note for {} was added by {}: {}"
+removed_note: "The following note for {} was removed by {}: {}"
+permissions:
+  read: "Show user notes"
+  write: "Create and delete user notes"
