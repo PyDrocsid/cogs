@@ -4,6 +4,7 @@ message: "Message"
 timestamp: "Timestamp"
 author: "author"
 description: "mange notes for users"
+message_not_found: "the message was not found"
 permissions:
   read: "show user notes"
   write: "create and delete user notes"
