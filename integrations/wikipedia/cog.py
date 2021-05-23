@@ -5,8 +5,8 @@ from PyDrocsid.cog import Cog
 from discord.ext.commands.context import Context
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.util import send_long_embed
-import wikipedia.exceptions as wx
-from wikipedia import summary as s
+from wikipedia.exceptions import WikipediaException, DisambiguationError, PageError
+from wikipedia import summary
 from .colors import Colors
 
 
@@ -32,11 +32,11 @@ class WikipediaCog(Cog, name="Wikipedia"):
         """
 
         try:
-            summary = await run_in_thread(s, title)
+            c_summary = await run_in_thread(summary, title)
 
         # this error occurs when the topic searched for has not been found,
         # but there are suggestions
-        except wx.DisambiguationError as err:
+        except DisambiguationError as err:
             await ctx.send(
                 embed=make_embed(
                     title=f"{title} was not found!",
@@ -48,7 +48,7 @@ class WikipediaCog(Cog, name="Wikipedia"):
 
         # this error occurs when the topic searched has not been found
         # and there are no suggestions
-        except wx.PageError as err:
+        except PageError as err:
             await ctx.send(
                 embed=make_embed(
                     title=title,
@@ -62,21 +62,23 @@ class WikipediaCog(Cog, name="Wikipedia"):
         # of the wikipedia module
         # if an error occurs that has not been caught above
         # it may mean that wikipedia hasn't responded correctly or not at all
-        except wx.WikipediaException:
+        except WikipediaException:
             await ctx.send(
                 embed=make_embed(
                     title=title,
-                    content="Wikipedia is not available currently!"
-                    " Try again later.",
+                    content="Wikipedia is not available currently!" " Try again later.",
                     color=Colors.Wiki,
                     requested_by=ctx.author,
                 ),
             )
 
         else:
-            await send_long_embed(ctx.channel, embed=make_embed(
+            await send_long_embed(
+                ctx.channel,
+                embed=make_embed(
                     title=title,
-                    content=summary,
+                    content=c_summary,
                     color=Colors.Wiki,
                     requested_by=ctx.author,
-                ))
+                ),
+            )
