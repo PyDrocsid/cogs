@@ -5,7 +5,7 @@ from PyDrocsid.cog import Cog
 from discord.ext.commands.context import Context
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.util import send_long_embed
-from wikipedia.exceptions import WikipediaException, DisambiguationError, PageError # skipcq: PYL-E501
+from wikipedia.exceptions import WikipediaException, DisambiguationError, PageError  # skipcq: PYL-E501
 from wikipedia import summary
 from .colors import Colors
 
