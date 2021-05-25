@@ -49,8 +49,10 @@ class UserNoteCog(Cog, name="User notes"):
             raise CommandError(t.note_not_found)
         await db.delete(user_note)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-        await send_to_changelog(ctx.guild, t.removed_note(f"<@{user_note.member}>", f"<@{user_note.author}>",
-                                                          user_note.message))
+        await send_to_changelog(
+            ctx.guild,
+            t.removed_note(f"<@{user_note.member}>", f"<@{user_note.author}>", user_note.message),
+        )
 
     @user_note.command(name="show")
     async def show_user_note(self, ctx: Context, member: UserMemberConverter):
