@@ -37,7 +37,8 @@ class WikipediaCog(Cog, name="Wikipedia"):
         # this error occurs when the topic searched for has not been found,
         # but there are suggestions
         except DisambiguationError as err:
-            await ctx.send(
+            await send_long_embed(
+                ctx.channel,
                 embed=make_embed(
                     title=f"{title} was not found!",
                     content=str(err),
