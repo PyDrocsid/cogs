@@ -1,3 +1,4 @@
+from .antiraid import AntiRaidCog
 from .automod import AutoModCog
 from .autorole import AutoRoleCog
 from .invites import InvitesCog

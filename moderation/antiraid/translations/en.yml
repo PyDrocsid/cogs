@@ -1,0 +1,17 @@
+permissions:
+  read: view anti raid settings
+  timekick: kick members joined after a specific point in time
+  joinkick: instantly kick all users who join the server
+
+#AntiRaid
+antiraid: AntiRaid
+
+#joinkick
+joinkick: JoinKick
+joinkick_set_enabled: "**JoinKick** has been **enabled**. :white_check_mark:"
+joinkick_set_disabled: "**JoinKick** has been **disabled**. :white_check_mark:"
+
+#timekick
+timekick: TimeKick
+invalid_snowflake: "Invalid snowflake"
+timekick_done: "Kicked all users who joined after {} utc"
