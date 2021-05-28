@@ -2,10 +2,18 @@ permissions:
   change_prefix: change bot prefix
 
 commands:
-  change_prefix: change the bot prefix
+  local_prefix: change the local bot prefix
+  global_prefix: change the global bot prefix
+  remove_global_prefix: remove the global bot prefix
 
 prefix: Prefix
 invalid_prefix_length: Length of prefix must be between 1 and 16
 prefix_invalid_chars: Prefix contains invalid characters.
-prefix_updated: "Prefix has been updated. :white_check_mark:"
-log_prefix_updated: "**Bot prefix** has been **changed** to `{}`"
+local_prefix_updated: "Local prefix has been updated. :white_check_mark:"
+log_local_prefix_updated: "**Local bot prefix** has been **changed** to `{}`"
+global_prefix_not_available: This global prefix is not available.
+global_prefix_updated: "Global prefix has been updated. :white_check_mark:"
+log_global_prefix_updated: "**Global bot prefix** has been **changed** to `{}`"
+no_global_prefix: For this server no global prefix has been configured yet.
+global_prefix_removed: "Global prefix has been removed. :white_check_mark:"
+log_global_prefix_removed: "**Global bot prefix** has been **removed**."
