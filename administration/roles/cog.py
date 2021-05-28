@@ -26,7 +26,7 @@ async def configure_role(ctx: Context, role_name: str, role: Role, check_assigna
     if check_assignable:
         check_role_assignable(role)
 
-    await RoleSettings.set(role_name, role.id)
+    await RoleSettings.set(ctx.guild, role_name, role.id)
     await reply(ctx, t.role_set)
     await send_to_changelog(
         ctx.guild,
@@ -81,7 +81,7 @@ class RolesCog(Cog, name="Roles"):
 
         embed = Embed(title=t.roles, color=Colors.Roles)
         for name, (title, _) in Config.ROLES.items():
-            role = ctx.guild.get_role(await RoleSettings.get(name))
+            role = ctx.guild.get_role(await RoleSettings.get(ctx.guild, name))
             val = role.mention if role is not None else t.role_not_set
             embed.add_field(name=title, value=val, inline=True)
         await reply(ctx, embed=embed)

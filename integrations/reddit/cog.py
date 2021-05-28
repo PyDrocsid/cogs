@@ -1,8 +1,9 @@
-from datetime import datetime
+from asyncio import gather
+from datetime import datetime, timedelta
 from typing import Optional, List
 
 import requests
-from discord import Embed, TextChannel
+from discord import Embed, TextChannel, Guild
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
@@ -45,7 +46,7 @@ def fetch_reddit_posts(subreddit: str, limit: int) -> List[dict]:
     response = requests.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1",
-        headers={"User-agent": f"MorpheusHelper/{Config.VERSION}"},
+        headers={"User-agent": f"{Config.NAME}/{Config.VERSION}"},
         params={"limit": str(limit)},
     )
 
@@ -92,36 +93,39 @@ class RedditCog(Cog, name="Reddit"):
     CONTRIBUTORS = [Contributor.Scriptim, Contributor.Defelo, Contributor.wolflu, Contributor.Anorak]
 
     async def on_ready(self):
-        interval = await RedditSettings.interval.get()
-        await self.start_loop(interval)
+        try:
+            self.reddit_loop.start()
+        except RuntimeError:
+            self.reddit_loop.restart()
 
-    @tasks.loop()
-    @db_wrapper
+    @tasks.loop(hours=1)
     async def reddit_loop(self):
-        await self.pull_hot_posts()
+        await gather(*[self.pull_hot_posts(guild) for guild in self.bot.guilds])
+        await RedditPost.clean()
 
-    async def pull_hot_posts(self):
-        logger.info("pulling hot reddit posts")
-        limit = await RedditSettings.limit.get()
-        async for reddit_channel in await db.stream(select(RedditChannel)):  # type: RedditChannel
-            text_channel: Optional[TextChannel] = self.bot.get_channel(reddit_channel.channel)
+    @db_wrapper
+    async def pull_hot_posts(self, guild: Guild, force: bool = False):
+        interval = await RedditSettings.limit.get(guild)
+
+        if not force and await db.exists(
+            select(RedditPost).filter(
+                RedditPost.timestamp > datetime.utcnow() - timedelta(hours=interval, minutes=-10),
+            ),
+        ):
+            return
+
+        logger.info("pulling hot reddit posts for %s (%s)", guild.name, guild.id)
+        limit = await RedditSettings.limit.get(guild)
+        reddit_channel: RedditChannel
+        async for reddit_channel in await db.stream(select(RedditChannel).filter_by(guild_id=guild.id)):
+            text_channel: Optional[TextChannel] = guild.get_channel(reddit_channel.channel)
             if text_channel is None:
                 await db.delete(reddit_channel)
                 continue
 
             for post in fetch_reddit_posts(reddit_channel.subreddit, limit):
-                if await RedditPost.post(post["id"]):
+                if await RedditPost.post(guild.id, post["id"]):
                     await text_channel.send(embed=create_embed(post))
-
-        await RedditPost.clean()
-
-    async def start_loop(self, interval):
-        self.reddit_loop.cancel()
-        self.reddit_loop.change_interval(hours=interval)
-        try:
-            self.reddit_loop.start()
-        except RuntimeError:
-            self.reddit_loop.restart()
 
     @commands.group()
     @RedditPermission.read.check
@@ -138,15 +142,16 @@ class RedditCog(Cog, name="Reddit"):
 
         embed = Embed(title=t.reddit, colour=Colors.Reddit)
 
-        interval = await RedditSettings.interval.get()
+        interval = await RedditSettings.interval.get(ctx.guild)
         embed.add_field(name=t.interval, value=t.x_hours(cnt=interval))
 
-        limit = await RedditSettings.limit.get()
+        limit = await RedditSettings.limit.get(ctx.guild)
         embed.add_field(name=t.limit, value=str(limit))
 
         out = []
-        async for reddit_channel in await db.stream(select(RedditChannel)):  # type: RedditChannel
-            text_channel: Optional[TextChannel] = self.bot.get_channel(reddit_channel.channel)
+        reddit_channel: RedditChannel
+        async for reddit_channel in await db.stream(select(RedditChannel).filter_by(guild_id=ctx.guild.id)):
+            text_channel: Optional[TextChannel] = ctx.guild.get_channel(reddit_channel.channel)
             if text_channel is None:
                 await db.delete(reddit_channel)
             else:
@@ -163,16 +168,18 @@ class RedditCog(Cog, name="Reddit"):
         create a link between a subreddit and a channel
         """
 
+        guild: Guild = channel.guild
+
         if not exists_subreddit(subreddit):
             raise CommandError(t.subreddit_not_found)
-        if not channel.permissions_for(channel.guild.me).send_messages:
+        if not channel.permissions_for(guild.me).send_messages:
             raise CommandError(t.reddit_link_not_created_permission)
 
         subreddit = get_subreddit_name(subreddit)
-        if await db.exists(filter_by(RedditChannel, subreddit=subreddit, channel=channel.id)):
+        if await db.exists(filter_by(RedditChannel, subreddit=subreddit, channel=channel.id, guild_id=guild.id)):
             raise CommandError(t.reddit_link_already_exists)
 
-        await RedditChannel.create(subreddit, channel.id)
+        await RedditChannel.create(subreddit, channel.id, guild.id)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_link_created)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_link_created(subreddit, channel.mention))
@@ -184,8 +191,15 @@ class RedditCog(Cog, name="Reddit"):
         remove a reddit link
         """
 
+        guild: Guild = channel.guild
+
         subreddit = get_subreddit_name(subreddit)
-        link: Optional[RedditChannel] = await db.get(RedditChannel, subreddit=subreddit, channel=channel.id)
+        link: Optional[RedditChannel] = await db.get(
+            RedditChannel,
+            subreddit=subreddit,
+            channel=channel.id,
+            guild_id=guild.id,
+        )
         if link is None:
             raise CommandError(t.reddit_link_not_found)
 
@@ -204,8 +218,7 @@ class RedditCog(Cog, name="Reddit"):
         if not 0 < hours < (1 << 31):
             raise CommandError(tg.invalid_interval)
 
-        await RedditSettings.interval.set(hours)
-        await self.start_loop(hours)
+        await RedditSettings.interval.set(ctx.guild, hours)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_interval_set)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_interval_set(cnt=hours))
@@ -220,7 +233,7 @@ class RedditCog(Cog, name="Reddit"):
         if not 0 < limit < (1 << 31):
             raise CommandError(t.invalid_limit)
 
-        await RedditSettings.limit.set(limit)
+        await RedditSettings.limit.set(ctx.guild, limit)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_limit_set)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_limit_set(limit))
@@ -232,6 +245,6 @@ class RedditCog(Cog, name="Reddit"):
         pull hot posts now and reset the timer
         """
 
-        await self.start_loop(await RedditSettings.interval.get())
+        await self.pull_hot_posts(ctx.guild, force=True)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.done)
         await reply(ctx, embed=embed)

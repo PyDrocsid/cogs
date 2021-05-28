@@ -72,11 +72,11 @@ class PollsCog(Cog, name="Polls"):
         self.team_roles: list[str] = team_roles
 
     async def get_reacted_teamlers(self, message: Optional[Message] = None) -> str:
-        guild: Guild = self.bot.guilds[0]
+        guild: Guild = message.channel.guild
 
         teamlers: set[Member] = set()
         for role_name in self.team_roles:
-            if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
+            if not (team_role := guild.get_role(await RoleSettings.get(guild, role_name))):
                 continue
 
             teamlers.update(member for member in team_role.members if not member.bot)

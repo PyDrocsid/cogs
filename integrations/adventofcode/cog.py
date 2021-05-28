@@ -181,13 +181,32 @@ def parse_github_url(url: str) -> tuple[str, str]:
     return user, repo
 
 
+async def update_roles(guild: Guild, leaderboard: dict):
+    role: Optional[Role] = guild.get_role(await AdventOfCodeSettings.role.get(guild))
+    if not role:
+        return
+    rank: int = await AdventOfCodeSettings.rank.get(guild)
+
+    new_members: set[Member] = set()
+    for member in list(leaderboard["members"].values())[:rank]:
+        if link := await db.get(AOCLink, aoc_id=member["id"]):
+            if member := guild.get_member(link.discord_id):
+                new_members.add(member)
+    old_members: set[Member] = set(role.members)
+
+    for member in old_members - new_members:
+        await member.remove_roles(role)
+    for member in new_members - old_members:
+        await member.add_roles(role)
+
+
 class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
     CONTRIBUTORS = [Contributor.Defelo]
 
     def __init__(self):
         super().__init__()
 
-        AOCConfig.update_hook = self.update_roles
+        AOCConfig.update_hook = update_roles
 
     @staticmethod
     def prepare() -> bool:
@@ -204,25 +223,6 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
     @db_wrapper
     async def aoc_loop(self):
         await AOCConfig.get_leaderboard()
-
-    async def update_roles(self, leaderboard: dict):
-        guild: Guild = self.bot.guilds[0]
-        role: Optional[Role] = guild.get_role(await AdventOfCodeSettings.role.get())
-        if not role:
-            return
-        rank: int = await AdventOfCodeSettings.rank.get()
-
-        new_members: set[Member] = set()
-        for member in list(leaderboard["members"].values())[:rank]:
-            if link := await db.get(AOCLink, aoc_id=member["id"]):
-                if member := guild.get_member(link.discord_id):
-                    new_members.add(member)
-        old_members: set[Member] = set(role.members)
-
-        for member in old_members - new_members:
-            await member.remove_roles(role)
-        for member in new_members - old_members:
-            await member.add_roles(role)
 
     async def get_from_aoc(self, aoc_name: str) -> tuple[Optional[dict], Optional[User], Optional[AOCLink]]:
         aoc_member = await AOCConfig.get_member(aoc_name)
@@ -320,7 +320,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             aoc_member["rank"] % 10 * (aoc_member["rank"] // 10 % 10 != 1),
             "th",
         )
-        if aoc_member["rank"] <= await AdventOfCodeSettings.rank.get():
+        if aoc_member["rank"] <= await AdventOfCodeSettings.rank.get(ctx.guild):
             rank = f"**{rank}**"
             trophy = "medal"
         if aoc_member["rank"] <= 3:
@@ -454,8 +454,8 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
         embed = Embed(title=tg.role)
 
-        role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get())
-        rank: int = await AdventOfCodeSettings.rank.get()
+        role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get(ctx.guild))
+        rank: int = await AdventOfCodeSettings.rank.get(ctx.guild)
 
         if not role:
             embed.colour = Colors.error
@@ -479,14 +479,14 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
         check_role_assignable(role)
 
-        old_role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get())
+        old_role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get(ctx.guild))
 
-        await AdventOfCodeSettings.role.set(role.id)
+        await AdventOfCodeSettings.role.set(ctx.guild, role.id)
 
         if old_role:
             for member in old_role.members:
                 await member.remove_roles(old_role)
-        await self.update_roles(await AOCConfig.get_leaderboard(disable_hook=True))
+        await update_roles(ctx.guild, await AOCConfig.get_leaderboard(disable_hook=True))
 
         await reply(ctx, t.role_set)
         await send_to_changelog(ctx.guild, t.log_role_set(role.name, role.id))
@@ -498,9 +498,9 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         disable aoc role
         """
 
-        role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get())
+        role: Optional[Role] = ctx.guild.get_role(await AdventOfCodeSettings.role.get(ctx.guild))
 
-        await AdventOfCodeSettings.role.reset()
+        await AdventOfCodeSettings.role.reset(ctx.guild)
 
         if role:
             for member in role.members:
@@ -519,8 +519,8 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         if not 1 <= rank <= 200:
             raise CommandError(t.invalid_rank)
 
-        await AdventOfCodeSettings.rank.set(rank)
-        await self.update_roles(await AOCConfig.get_leaderboard(disable_hook=True))
+        await AdventOfCodeSettings.rank.set(ctx.guild, rank)
+        await update_roles(ctx.guild, await AOCConfig.get_leaderboard(disable_hook=True))
 
         await reply(ctx, t.rank_set)
         await send_to_changelog(ctx.guild, t.log_rank_set(rank))

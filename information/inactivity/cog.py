@@ -109,8 +109,8 @@ class InactivityCog(Cog, name="Inactivity"):
         await update_msg(message, t.updated_members(cnt=len(members)))
 
     @get_user_status_entries.subscribe
-    async def handle_get_user_status_entries(self, user_id) -> list[tuple[str, str]]:
-        inactive_days = await InactivitySettings.inactive_days.get()
+    async def handle_get_user_status_entries(self, guild: Guild, user_id) -> list[tuple[str, str]]:
+        inactive_days = await InactivitySettings.inactive_days.get(guild)
 
         activity: Optional[Activity] = await db.get(Activity, id=user_id)
 
@@ -136,7 +136,7 @@ class InactivityCog(Cog, name="Inactivity"):
             days = None
 
         if days is None:
-            days = await InactivitySettings.inactive_days.get()
+            days = await InactivitySettings.inactive_days.get(ctx.guild)
         elif days <= 0:
             raise CommandError(tg.invalid_duration)
 
@@ -179,7 +179,7 @@ class InactivityCog(Cog, name="Inactivity"):
         """
 
         if days is None:
-            days = await InactivitySettings.inactive_days.get()
+            days = await InactivitySettings.inactive_days.get(ctx.guild)
             await reply(ctx, t.inactive_duration(cnt=days))
             return
 
@@ -189,6 +189,6 @@ class InactivityCog(Cog, name="Inactivity"):
         if days <= 0:
             raise CommandError(tg.invalid_duration)
 
-        await InactivitySettings.inactive_days.set(days)
+        await InactivitySettings.inactive_days.set(ctx.guild, days)
         await reply(ctx, t.inactive_duration_set(cnt=days))
         await send_to_changelog(ctx.guild, t.inactive_duration_set(cnt=days))

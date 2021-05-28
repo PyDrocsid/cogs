@@ -23,7 +23,6 @@ roles_normal: Roles (normal)
 roles_reverse: Roles (reverse)
 verification_role: " - `@{}` ({}) (normal)"
 verification_role_reverse: " - `@{}` ({}) (reverse)"
-private_only: This command can only be used in direct messages.
 already_verified: You are already verified.
 password_incorrect: Password is incorrect!
 verified: "Verified successfully :white_check_mark:"

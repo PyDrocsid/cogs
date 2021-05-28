@@ -84,7 +84,7 @@ class UserInfoCog(Cog, name="User Information"):
         if not last_verification or not last_verification.accepted:
             return
 
-        role: Optional[Role] = member.guild.get_role(await RoleSettings.get("verified"))
+        role: Optional[Role] = member.guild.get_role(await RoleSettings.get(member.guild, "verified"))
         if role:
             await member.add_roles(role)
 
@@ -101,7 +101,7 @@ class UserInfoCog(Cog, name="User Information"):
         await UsernameUpdate.create(before.id, str(before), str(after), False)
 
     async def on_member_role_add(self, member: Member, role: Role):
-        if role.id != await RoleSettings.get("verified"):
+        if role.id != await RoleSettings.get(member.guild, "verified"):
             return
 
         last_verification: Optional[Verification] = await db.first(
@@ -113,7 +113,7 @@ class UserInfoCog(Cog, name="User Information"):
         await Verification.create(member.id, str(member), True)
 
     async def on_member_role_remove(self, member: Member, role: Role):
-        if role.id == await RoleSettings.get("verified"):
+        if role.id == await RoleSettings.get(member.guild, "verified"):
             await Verification.create(member.id, str(member), False)
 
     @revoke_verification.subscribe
@@ -145,7 +145,7 @@ class UserInfoCog(Cog, name="User Information"):
             status = t.not_a_member
         embed.add_field(name=t.membership, value=status, inline=False)
 
-        for response in await get_user_status_entries(user_id):
+        for response in await get_user_status_entries(ctx.guild, user_id):
             for name, value in response:
                 embed.add_field(name=name, value=value, inline=False)
 

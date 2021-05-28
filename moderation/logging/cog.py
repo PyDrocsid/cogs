@@ -1,3 +1,4 @@
+from asyncio import gather
 from datetime import datetime, timedelta
 from typing import Optional, Union
 
@@ -33,7 +34,7 @@ def add_field(embed: Embed, name: str, text: str):
 
 
 async def send_to_channel(guild: Guild, setting: LoggingSettings, message: Union[str, Embed]):
-    channel: Optional[TextChannel] = guild.get_channel(await setting.get())
+    channel: Optional[TextChannel] = guild.get_channel(await setting.get(guild))
     if not channel:
         return
 
@@ -46,7 +47,7 @@ async def send_to_channel(guild: Guild, setting: LoggingSettings, message: Union
 
 async def is_logging_channel(channel: TextChannel) -> bool:
     for setting in [LoggingSettings.edit_channel, LoggingSettings.delete_channel]:
-        if channel.id == await setting.get():
+        if channel.id == await setting.get(channel.guild):
             return True
 
     return False
@@ -71,7 +72,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
         if not channel.permissions_for(channel.guild.me).send_messages:
             raise CommandError(t.log_not_changed_no_permissions)
 
-        await getattr(LoggingSettings, f"{name}_channel").set(channel.id)
+        await getattr(LoggingSettings, f"{name}_channel").set(ctx.guild, channel.id)
         embed = Embed(
             title=t.logging,
             description=(text := getattr(t.channels, name).updated(channel.mention)),
@@ -83,7 +84,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
     @logging_channel.command(name="disable", aliases=["d"])
     @docs(getattr(t.channels, name).disable_description)
     async def disable_channel(ctx: Context):
-        await getattr(LoggingSettings, f"{name}_channel").reset()
+        await getattr(LoggingSettings, f"{name}_channel").reset(ctx.guild)
         embed = Embed(
             title=t.logging,
             description=(text := getattr(t.channels, name).disabled),
@@ -98,8 +99,8 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
 class LoggingCog(Cog, name="Logging"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
 
-    async def get_logging_channel(self, setting: LoggingSettings) -> Optional[TextChannel]:
-        return self.bot.get_channel(await setting.get())
+    async def get_logging_channel(self, guild: Union[Guild, int], setting: LoggingSettings) -> Optional[TextChannel]:
+        return self.bot.get_channel(await setting.get(guild))
 
     @send_to_changelog.subscribe
     async def handle_send_to_changelog(self, guild: Guild, message: Union[str, Embed]):
@@ -119,7 +120,7 @@ class LoggingCog(Cog, name="Logging"):
             LoggingSettings.member_join_channel,
             LoggingSettings.member_leave_channel,
         ]:
-            if await setting.get() == channel.id:
+            if await setting.get(channel.guild) == channel.id:
                 return False
         return True
 
@@ -134,15 +135,18 @@ class LoggingCog(Cog, name="Logging"):
             self.cleanup_loop.restart()
 
     @tasks.loop(minutes=30)
-    @db_wrapper
     async def cleanup_loop(self):
-        days: int = await LoggingSettings.maxage.get()
+        await gather(*[self.cleanup_guild(guild) for guild in self.bot.guilds])
+
+    @db_wrapper
+    async def cleanup_guild(self, guild: Guild):
+        days: int = await LoggingSettings.maxage.get(guild)
         if days == -1:
             return
 
         timestamp = datetime.utcnow() - timedelta(days=days)
         for setting in [LoggingSettings.edit_channel, LoggingSettings.delete_channel]:
-            channel: Optional[TextChannel] = await self.get_logging_channel(setting)
+            channel: Optional[TextChannel] = await self.get_logging_channel(guild, setting)
             if channel is None:
                 continue
 
@@ -157,10 +161,10 @@ class LoggingCog(Cog, name="Logging"):
             return
         if await redis.delete(f"ignore_message_edit:{before.channel.id}:{before.id}"):
             return
-        mindiff: int = await LoggingSettings.edit_mindiff.get()
+        mindiff: int = await LoggingSettings.edit_mindiff.get(before.guild)
         if calculate_edit_distance(before.content, after.content) < mindiff:
             return
-        if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
+        if (edit_channel := await self.get_logging_channel(before.channel.guild, LoggingSettings.edit_channel)) is None:
             return
         if await LogExclude.exists(after.channel.id):
             return
@@ -178,7 +182,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if await redis.delete(f"ignore_message_edit:{channel.id}:{message.id}"):
             return
-        if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
+        if (edit_channel := await self.get_logging_channel(channel.guild, LoggingSettings.edit_channel)) is None:
             return
         if await LogExclude.exists(message.channel.id):
             return
@@ -194,7 +198,9 @@ class LoggingCog(Cog, name="Logging"):
     async def on_message_delete(self, message: Message):
         if message.guild is None:
             return
-        if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
+        if (
+            delete_channel := await self.get_logging_channel(message.channel.guild, LoggingSettings.delete_channel)
+        ) is None:
             return
         if await is_logging_channel(message.channel):
             return
@@ -220,7 +226,7 @@ class LoggingCog(Cog, name="Logging"):
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
             return
-        if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
+        if (delete_channel := await self.get_logging_channel(event.guild_id, LoggingSettings.delete_channel)) is None:
             return
         if await LogExclude.exists(event.channel_id):
             return
@@ -236,13 +242,13 @@ class LoggingCog(Cog, name="Logging"):
         await delete_channel.send(embed=embed)
 
     async def on_member_join(self, member: Member):
-        if (log_channel := await self.get_logging_channel(LoggingSettings.member_join_channel)) is None:
+        if (log_channel := await self.get_logging_channel(member.guild, LoggingSettings.member_join_channel)) is None:
             return
 
         await log_channel.send(t.member_joined_server(member.mention, member))
 
     async def on_member_remove(self, member: Member):
-        if (log_channel := await self.get_logging_channel(LoggingSettings.member_leave_channel)) is None:
+        if (log_channel := await self.get_logging_channel(member.guild, LoggingSettings.member_leave_channel)) is None:
             return
 
         await log_channel.send(t.member_left_server(member))
@@ -259,14 +265,17 @@ class LoggingCog(Cog, name="Logging"):
 
         embed = Embed(title=t.logging, color=Colors.Logging)
 
-        maxage: int = await LoggingSettings.maxage.get()
+        maxage: int = await LoggingSettings.maxage.get(ctx.guild)
         if maxage != -1:
             embed.add_field(name=t.maxage, value=tg.x_days(cnt=maxage), inline=False)
         else:
             embed.add_field(name=t.maxage, value=tg.disabled, inline=False)
 
         for name in channels:
-            channel: Optional[TextChannel] = await self.get_logging_channel(getattr(LoggingSettings, f"{name}_channel"))
+            channel: Optional[TextChannel] = await self.get_logging_channel(
+                ctx.guild,
+                getattr(LoggingSettings, f"{name}_channel"),
+            )
             embed.add_field(
                 name=getattr(t.channels, name).name,
                 value=channel.mention if channel else tg.disabled,
@@ -274,7 +283,7 @@ class LoggingCog(Cog, name="Logging"):
             )
 
             if name == "edit" and channel is not None:
-                mindist: int = await LoggingSettings.edit_mindiff.get()
+                mindist: int = await LoggingSettings.edit_mindiff.get(ctx.guild)
                 embed.add_field(name=t.channels.edit.mindist.name, value=str(mindist), inline=True)
 
         await reply(ctx, embed=embed)
@@ -286,7 +295,7 @@ class LoggingCog(Cog, name="Logging"):
         if days != -1 and not 0 < days < (1 << 31):
             raise CommandError(tg.invalid_duration)
 
-        await LoggingSettings.maxage.set(days)
+        await LoggingSettings.maxage.set(ctx.guild, days)
         embed = Embed(title=t.logging, color=Colors.Logging)
         if days == -1:
             embed.description = t.maxage_set_disabled
@@ -310,7 +319,7 @@ class LoggingCog(Cog, name="Logging"):
         if mindist <= 0:
             raise CommandError(t.channels.edit.mindist.gt_zero)
 
-        await LoggingSettings.edit_mindiff.set(mindist)
+        await LoggingSettings.edit_mindiff.set(ctx.guild, mindist)
         embed = Embed(title=t.logging, description=t.channels.edit.mindist.updated(mindist), color=Colors.Logging)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.channels.edit.mindist.log_updated(mindist))

@@ -1,4 +1,5 @@
 import re
+from asyncio import gather
 from datetime import datetime, timedelta
 from typing import Optional, Union, List, Tuple
 
@@ -50,7 +51,7 @@ class DurationConverter(Converter):
 
 
 async def get_mute_role(guild: Guild) -> Role:
-    mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
+    mute_role: Optional[Role] = guild.get_role(await RoleSettings.get(guild, "mute"))
     if mute_role is None:
         raise CommandError(t.mute_role_not_set)
     return mute_role
@@ -100,7 +101,7 @@ class ModCog(Cog, name="Mod Tools"):
 
     async def on_ready(self):
         guild: Guild = self.bot.guilds[0]
-        mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
+        mute_role: Optional[Role] = guild.get_role(await RoleSettings.get(guild, "mute"))
         if mute_role is not None:
             async for mute in await db.stream(filter_by(Mute, active=True)):
                 member: Optional[Member] = guild.get_member(mute.member)
@@ -113,10 +114,11 @@ class ModCog(Cog, name="Mod Tools"):
             self.mod_loop.restart()
 
     @tasks.loop(minutes=30)
-    @db_wrapper
     async def mod_loop(self):
-        guild: Guild = self.bot.guilds[0]
+        await gather(*[self.update_guild(guild) for guild in self.bot.guilds])
 
+    @db_wrapper
+    async def update_guild(self, guild: Guild):
         async for ban in await db.stream(filter_by(Ban, active=True)):
             if ban.days != -1 and datetime.utcnow() >= ban.timestamp + timedelta(days=ban.days):
                 await Ban.deactivate(ban.id)
@@ -135,7 +137,7 @@ class ModCog(Cog, name="Mod Tools"):
                     t.log_unbanned_expired,
                 )
 
-        mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
+        mute_role: Optional[Role] = guild.get_role(await RoleSettings.get(guild, "mute"))
         if mute_role is None:
             return
 
@@ -187,7 +189,7 @@ class ModCog(Cog, name="Mod Tools"):
         return out
 
     @get_user_status_entries.subscribe
-    async def handle_get_user_status_entries(self, user_id: int) -> list[tuple[str, str]]:
+    async def handle_get_user_status_entries(self, guild: Guild, user_id: int) -> list[tuple[str, str]]:
         status = t.none
         if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
             if ban.days != -1:
@@ -267,7 +269,7 @@ class ModCog(Cog, name="Mod Tools"):
         return out
 
     async def on_member_join(self, member: Member):
-        mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get("mute"))
+        mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get(member.guild, "mute"))
         if mute_role is None:
             return
 

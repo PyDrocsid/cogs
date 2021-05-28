@@ -1,6 +1,6 @@
 from typing import Optional
 
-from discord import Embed, Message, Status, Game
+from discord import Embed, Message, Status, Game, Guild
 from discord.ext import commands, tasks
 from discord.ext.commands import Context
 
@@ -9,7 +9,7 @@ from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Config
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
-from PyDrocsid.prefix import get_prefix
+from PyDrocsid.prefix import get_prefix, get_guild
 from PyDrocsid.translations import t
 from .colors import Colors
 from .permissions import InfoPermission
@@ -62,13 +62,13 @@ class BotInfoCog(Cog, name="Bot Information"):
         await self.bot.change_presence(status=Status.online, activity=Game(name=t.profile_status[self.current_status]))
         self.current_status = (self.current_status + 1) % len(t.profile_status)
 
-    async def build_info_embed(self, authorized: bool) -> Embed:
+    async def build_info_embed(self, guild: Optional[Guild], authorized: bool) -> Embed:
         embed = Embed(title=Config.NAME, colour=Colors.info, description=t.bot_description)
 
         if self.info_icon:
             embed.set_thumbnail(url=self.info_icon)
 
-        prefix: str = await get_prefix()
+        prefix: str = await get_prefix(guild) if guild else ""
 
         features = t.features
         if authorized:
@@ -131,13 +131,13 @@ class BotInfoCog(Cog, name="Bot Information"):
     @commands.command(aliases=["infos", "about"])
     @docs(t.commands.info)
     async def info(self, ctx: Context):
-        await send_long_embed(ctx, await self.build_info_embed(False))
+        await send_long_embed(ctx, await self.build_info_embed(get_guild(ctx), False))
 
     @commands.command(aliases=["admininfos"])
     @InfoPermission.admininfo.check
     @docs(t.commands.admininfo)
     async def admininfo(self, ctx: Context):
-        await send_long_embed(ctx, await self.build_info_embed(True))
+        await send_long_embed(ctx, await self.build_info_embed(get_guild(ctx), True))
 
     @commands.command(aliases=["contri", "con"])
     @docs(t.commands.contributors)
@@ -172,4 +172,5 @@ class BotInfoCog(Cog, name="Bot Information"):
         )
 
     async def on_bot_ping(self, message: Message):
-        await reply(message, embed=await self.build_info_embed(False))
+        guild: Optional[Guild] = message.channel.guild if message.guild else None
+        await reply(message, embed=await self.build_info_embed(guild, False))

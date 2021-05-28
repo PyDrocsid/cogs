@@ -32,7 +32,7 @@ class SettingsCog(Cog, name="Settings"):
         if any(c not in valid_chars for c in new_prefix):
             raise CommandError(t.prefix_invalid_chars)
 
-        await set_prefix(new_prefix)
+        await set_prefix(ctx.guild, new_prefix)
         embed = Embed(title=t.prefix, description=t.prefix_updated, colour=Colors.prefix)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_prefix_updated(new_prefix))

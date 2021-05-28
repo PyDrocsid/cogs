@@ -54,6 +54,14 @@ async def kick_delay(member: Member, delay: int, role: Role, reverse: bool):
         await kick(member)
 
 
+async def get_autokick_role(guild: Guild) -> Optional[Role]:
+    return guild.get_role(await AutoModSettings.autokick_role.get(guild))
+
+
+async def get_instantkick_role(guild: Guild) -> Optional[Role]:
+    return guild.get_role(await AutoModSettings.instantkick_role.get(guild))
+
+
 class AutoModCog(Cog, name="AutoMod"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
 
@@ -61,14 +69,6 @@ class AutoModCog(Cog, name="AutoMod"):
         super().__init__()
 
         self.kick_tasks: Dict[Member, Task] = {}
-
-    async def get_autokick_role(self) -> Optional[Role]:
-        guild: Guild = self.bot.guilds[0]
-        return guild.get_role(await AutoModSettings.autokick_role.get())
-
-    async def get_instantkick_role(self) -> Optional[Role]:
-        guild: Guild = self.bot.guilds[0]
-        return guild.get_role(await AutoModSettings.instantkick_role.get())
 
     def cancel_task(self, member: Member):
         if member in self.kick_tasks:
@@ -78,12 +78,12 @@ class AutoModCog(Cog, name="AutoMod"):
         if member.bot:
             return
 
-        mode: int = await AutoModSettings.autokick_mode.get()
-        role: Optional[Role] = await self.get_autokick_role()
+        mode: int = await AutoModSettings.autokick_mode.get(member.guild)
+        role: Optional[Role] = await get_autokick_role(member.guild)
         if mode == 0 or role is None:
             return
 
-        delay: int = await AutoModSettings.autokick_delay.get()
+        delay: int = await AutoModSettings.autokick_delay.get(member.guild)
         self.kick_tasks[member] = asyncio.create_task(kick_delay(member, delay, role, mode == 2))
         self.kick_tasks[member].add_done_callback(lambda _: self.cancel_task(member))
 
@@ -98,21 +98,21 @@ class AutoModCog(Cog, name="AutoMod"):
         if member.bot:
             return
 
-        if role == await self.get_instantkick_role():
+        if role == await get_instantkick_role(member.guild):
             if not await kick(member):
                 await member.remove_roles(role)
             return
 
-        mode: int = await AutoModSettings.autokick_mode.get()
-        if mode == 1 and role == await self.get_autokick_role():
+        mode: int = await AutoModSettings.autokick_mode.get(member.guild)
+        if mode == 1 and role == await get_autokick_role(member.guild):
             self.cancel_task(member)
 
     async def on_member_role_remove(self, member: Member, role: Role):
         if member.bot:
             return
 
-        mode: int = await AutoModSettings.autokick_mode.get()
-        if mode == 2 and role == await self.get_autokick_role():
+        mode: int = await AutoModSettings.autokick_mode.get(member.guild)
+        if mode == 2 and role == await get_autokick_role(member.guild):
             self.cancel_task(member)
 
     @commands.group(aliases=["ak"])
@@ -129,8 +129,8 @@ class AutoModCog(Cog, name="AutoMod"):
             return
 
         embed = Embed(title=t.autokick, colour=Colors.error)
-        mode: int = await AutoModSettings.autokick_mode.get()
-        role: Optional[Role] = await self.get_autokick_role()
+        mode: int = await AutoModSettings.autokick_mode.get(ctx.guild)
+        role: Optional[Role] = await get_autokick_role(ctx.guild)
         if mode == AutoKickMode.off or role is None:
             embed.add_field(name=tg.status, value=t.autokick_disabled, inline=False)
             await reply(ctx, embed=embed)
@@ -138,7 +138,7 @@ class AutoModCog(Cog, name="AutoMod"):
 
         embed.add_field(name=tg.status, value=t.autokick_mode[mode - 1], inline=False)
         embed.colour = Colors.AutoMod
-        delay: int = await AutoModSettings.autokick_delay.get()
+        delay: int = await AutoModSettings.autokick_delay.get(ctx.guild)
         embed.add_field(name=tg.delay, value=t.x_seconds(cnt=delay), inline=False)
         embed.add_field(name=tg.role, value=role.mention, inline=False)
 
@@ -160,7 +160,7 @@ class AutoModCog(Cog, name="AutoMod"):
             raise UserInputError
 
         mode: int = getattr(AutoKickMode, mode)
-        await AutoModSettings.autokick_mode.set(mode)
+        await AutoModSettings.autokick_mode.set(ctx.guild, mode)
         embed = Embed(title=t.autokick, description=t.autokick_mode_configured[mode], colour=Colors.AutoMod)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.autokick_mode_configured[mode])
@@ -175,7 +175,7 @@ class AutoModCog(Cog, name="AutoMod"):
         if not 0 < seconds < 300:
             raise CommandError(tg.invalid_duration)
 
-        await AutoModSettings.autokick_delay.set(seconds)
+        await AutoModSettings.autokick_delay.set(ctx.guild, seconds)
         embed = Embed(title=t.autokick, description=t.autokick_delay_configured, colour=Colors.AutoMod)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_autokick_delay_configured(cnt=seconds))
@@ -187,7 +187,7 @@ class AutoModCog(Cog, name="AutoMod"):
         configure autokick role
         """
 
-        await AutoModSettings.autokick_role.set(role.id)
+        await AutoModSettings.autokick_role.set(ctx.guild, role.id)
         embed = Embed(title=t.autokick, description=t.autokick_role_configured, colour=Colors.AutoMod)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_autokick_role_configured(role.mention, role.id))
@@ -206,7 +206,7 @@ class AutoModCog(Cog, name="AutoMod"):
             return
 
         embed = Embed(title=t.instantkick, colour=Colors.error)
-        role: Optional[Role] = await self.get_instantkick_role()
+        role: Optional[Role] = await get_instantkick_role(ctx.guild)
         if role is None:
             embed.add_field(name=tg.status, value=t.instantkick_disabled)
             await reply(ctx, embed=embed)
@@ -225,7 +225,7 @@ class AutoModCog(Cog, name="AutoMod"):
         disable instantkick
         """
 
-        await AutoModSettings.instantkick_role.reset()
+        await AutoModSettings.instantkick_role.reset(ctx.guild)
         embed = Embed(title=t.instantkick, description=t.instantkick_set_disabled, colour=Colors.AutoMod)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.instantkick_set_disabled)
@@ -240,7 +240,7 @@ class AutoModCog(Cog, name="AutoMod"):
         if role >= ctx.me.top_role:
             raise CommandError(t.instantkick_cannot_kick)
 
-        await AutoModSettings.instantkick_role.set(role.id)
+        await AutoModSettings.instantkick_role.set(ctx.guild, role.id)
         embed = Embed(title=t.instantkick, description=t.instantkick_role_configured, colour=Colors.AutoMod)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_instantkick_role_configured(role.mention, role.id))

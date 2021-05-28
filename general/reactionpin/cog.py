@@ -35,7 +35,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         if not (await db.exists(select(ReactionPinChannel).filter_by(channel=message.channel.id)) or access):
             return
 
-        blocked_role = await RoleSettings.get("mute")
+        blocked_role = await RoleSettings.get(member.guild, "mute")
         if access or (member == message.author and all(r.id != blocked_role for r in member.roles)):
             if message.type != MessageType.default:
                 await message.remove_reaction(emoji, member)
@@ -70,7 +70,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         if message.guild is None:
             return
 
-        pin_messages_enabled = await ReactionPinSettings.keep_pin_message.get()
+        pin_messages_enabled = await ReactionPinSettings.keep_pin_message.get(message.guild)
         if not pin_messages_enabled and message.type == MessageType.pins_add:
             await message.delete()
             raise StopEventHandling
@@ -90,7 +90,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
 
         embed = Embed(title=t.reactionpin, colour=Colors.ReactionPin)
 
-        if await ReactionPinSettings.keep_pin_message.get():
+        if await ReactionPinSettings.keep_pin_message.get(ctx.guild):
             embed.add_field(name=t.pin_messages, value=tg.enabled, inline=False)
         else:
             embed.add_field(name=t.pin_messages, value=tg.disabled, inline=False)
@@ -148,7 +148,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         """
 
         embed = Embed(title=t.reactionpin, colour=Colors.ReactionPin)
-        await ReactionPinSettings.keep_pin_message.set(enabled)
+        await ReactionPinSettings.keep_pin_message.set(ctx.guild, enabled)
         if enabled:
             embed.description = t.pin_messages_now_enabled
             await send_to_changelog(ctx.guild, t.log_pin_messages_now_enabled)

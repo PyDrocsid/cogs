@@ -29,7 +29,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         if before.channel == after.channel:
             return
 
-        max_hops: int = await SpamDetectionSettings.max_hops.get()
+        max_hops: int = await SpamDetectionSettings.max_hops.get(member.guild)
         if max_hops <= 0:
             return
 
@@ -71,7 +71,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
 
         embed = Embed(title=t.spam_detection, color=Colors.SpamDetection)
 
-        if (max_hops := await SpamDetectionSettings.max_hops.get()) <= 0:
+        if (max_hops := await SpamDetectionSettings.max_hops.get(ctx.guild)) <= 0:
             embed.add_field(name=t.channel_hopping, value=tg.disabled)
         else:
             embed.add_field(name=t.channel_hopping, value=t.max_x_hops(cnt=max_hops))
@@ -86,7 +86,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         set this to 0 to disable channel hopping alerts
         """
 
-        await SpamDetectionSettings.max_hops.set(amount)
+        await SpamDetectionSettings.max_hops.set(ctx.guild, amount)
         embed = Embed(
             title=t.channel_hopping,
             description=t.hop_amount_set(amount) if amount > 0 else t.hop_detection_disabled,

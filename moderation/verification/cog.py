@@ -3,11 +3,12 @@ from typing import Optional, List
 
 from discord import Role, Member, Guild, Embed
 from discord.ext import commands
-from discord.ext.commands import Context, CommandError, CheckFailure, check, guild_only, UserInputError
+from discord.ext.commands import Context, CommandError, guild_only, UserInputError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.database import db, select
+from PyDrocsid.prefix import check_guild_context, GuildContext, get_guild
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
 from .colors import Colors
@@ -21,21 +22,14 @@ tg = t.g
 t = t.verification
 
 
-@check
-async def private_only(ctx: Context):
-    if ctx.guild is not None:
-        raise CheckFailure(t.private_only)
-
-    return True
-
-
 class VerificationCog(Cog, name="Verification"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
 
     @commands.command()
-    @private_only
+    @check_guild_context(GuildContext.PRIVATE_GUILD)
     async def verify(self, ctx: Context, *, password: str):
-        correct_password: str = await VerificationSettings.password.get()
+        guild: Guild = get_guild(ctx)
+        correct_password: str = await VerificationSettings.password.get(guild)
         if correct_password is None:
             raise CommandError(t.verification_disabled)
 
@@ -45,7 +39,7 @@ class VerificationCog(Cog, name="Verification"):
         guild: Guild = self.bot.guilds[0]
         member: Member = guild.get_member(ctx.author.id)
 
-        delay: int = await VerificationSettings.delay.get()
+        delay: int = await VerificationSettings.delay.get(guild)
         if delay != -1 and (datetime.utcnow() - member.joined_at).total_seconds() < delay:
             raise CommandError(t.password_incorrect)
 
@@ -87,7 +81,7 @@ class VerificationCog(Cog, name="Verification"):
                 raise UserInputError
             return
 
-        password: str = await VerificationSettings.password.get()
+        password: str = await VerificationSettings.password.get(ctx.guild)
 
         normal: List[Role] = []
         reverse: List[Role] = []
@@ -108,7 +102,7 @@ class VerificationCog(Cog, name="Verification"):
         embed.add_field(name=tg.status, value=t.verification_enabled, inline=False)
         embed.add_field(name=t.password, value=f"`{password}`", inline=False)
 
-        delay: int = await VerificationSettings.delay.get()
+        delay: int = await VerificationSettings.delay.get(ctx.guild)
         val = t.x_seconds(cnt=delay) if delay != -1 else tg.disabled
         embed.add_field(name=tg.delay, value=val, inline=False)
 
@@ -180,7 +174,7 @@ class VerificationCog(Cog, name="Verification"):
         if len(password) > 256:
             raise CommandError(t.password_too_long)
 
-        await VerificationSettings.password.set(password)
+        await VerificationSettings.password.set(ctx.guild, password)
         embed = Embed(
             title=t.verification,
             description=t.verification_password_configured,
@@ -200,7 +194,7 @@ class VerificationCog(Cog, name="Verification"):
         if seconds != -1 and not 0 <= seconds < (1 << 31):
             raise CommandError(tg.invalid_duration)
 
-        await VerificationSettings.delay.set(seconds)
+        await VerificationSettings.delay.set(ctx.guild, seconds)
         embed = Embed(title=t.verification, colour=Colors.Verification)
         if seconds == -1:
             embed.description = t.verification_delay_disabled

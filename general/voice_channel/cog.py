@@ -187,7 +187,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             guild.me: PermissionOverwrite(read_messages=True, connect=True),
         }
         for role_name in self.team_roles:
-            if (team_role := guild.get_role(await RoleSettings.get(role_name))) is not None:
+            if (team_role := guild.get_role(await RoleSettings.get(guild, role_name))) is not None:
                 overwrites[team_role] = PermissionOverwrite(read_messages=True, connect=True)
         text_chat: TextChannel = await category.create_text_channel(chan.name, overwrites=overwrites)
 
