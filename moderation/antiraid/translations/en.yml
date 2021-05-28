@@ -14,4 +14,10 @@ joinkick_set_disabled: "**JoinKick** has been **disabled**. :white_check_mark:"
 #timekick
 timekick: TimeKick
 invalid_snowflake: "Invalid snowflake"
+invalid_time: "The snowflake's creation time is invalid"
+kicked_timekick: "Kicked by timekick"
 timekick_done: "Kicked all users who joined after {} utc"
+
+#message sent to the user when they are kicked by the antir raid system
+ongoing_raid_title: "Ongoing Raid"
+ongoing_raid_message: "You were kicked because of an ongoing raid.\nIf you are not part of this raid, try rejoining in about 30 minutes"

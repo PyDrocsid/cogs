@@ -1,6 +1,6 @@
 from PyDrocsid.cog import Cog
 
-from discord import Embed, Guild, User, Member
+from discord import Embed, Guild, User, Member, Forbidden
 
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
@@ -17,6 +17,7 @@ from PyDrocsid.translations import t
 
 from .colors import Colors
 from .permission import AntiRaidPermission
+from ..mod.models import Kick
 from ...contributor import Contributor
 from ...information.user_info.models import Join
 from ...pubsub import send_to_changelog
@@ -55,7 +56,7 @@ class AntiRaidCog(Cog, name="AntiRaid"):
     @guild_only()
     async def antiraid(self, ctx: Context):
         """
-        Manage anti raid system
+        Manage the anti raid system
         """
 
         if ctx.subcommand_passed is not None:
@@ -77,21 +78,27 @@ class AntiRaidCog(Cog, name="AntiRaid"):
     @AntiRaidPermission.timekick.check
     async def timekick(self, ctx: Context, snowflake: int):
         """
-        Kick all users joined after the snowflake's creation time
+        Kick all users who joined after the snowflake's creation time
         """
-
-        # TODO Handle dates in the future
-        # TODO Add log entries for kicks
-        # TODO Send message to users
 
         try:
             time = snowflake_time(snowflake)
         except (OverflowError, ValueError):
             raise CommandError(t.invalid_snowflake)
+        
+        if time > datetime.utcnow():
+            raise CommandError(t.invalid_time)
+
+        user_embed = Embed(title=t.ongoing_raid_title, description=t.ongoing_raid_message, color=Colors.error)
 
         async for join in await db.stream(filter_by(Join).filter(Join.timestamp >= time).distinct(Join.member).group_by(Join.member)):
-            if user := ctx.guild.get_member(join.member):
-                await ctx.guild.kick(user)
+            if (member := ctx.guild.get_member(join.member)) and not member.bot:
+                try:
+                    await member.send(embed=user_embed)
+                except Forbidden:
+                    pass
+                await member.kick()
+                await Kick.create(member.id, str(member), ctx.author.id, t.kicked_timekick)
 
         embed = Embed(title=t.timekick, description=t.timekick_done(time.strftime("%d.%m.%Y %H:%M:%S")), color=Colors.AntiRaid)
         await reply(ctx, embed=embed)
@@ -123,7 +130,7 @@ class AntiRaidCog(Cog, name="AntiRaid"):
     @joinkick.command(name="enable", aliases=["e", "on"])
     async def joinkick_enable(self, ctx):
         """
-        Enable the joinkick
+        Enable joinkick
         """
 
         self.joinkick_enabled = True
@@ -136,7 +143,7 @@ class AntiRaidCog(Cog, name="AntiRaid"):
     @joinkick.command(name="disable", aliases=["d", "off"])
     async def joinkick_disable(self, ctx):
         """
-        Disable the joinkick
+        Disable joinkick
         """
 
         self.joinkick_enabled = False
