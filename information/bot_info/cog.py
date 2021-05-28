@@ -1,6 +1,6 @@
 from typing import Optional
 
-from discord import Embed, Message, Status, Game, Guild
+from discord import Embed, Message, Status, Game
 from discord.ext import commands, tasks
 from discord.ext.commands import Context
 
@@ -9,7 +9,7 @@ from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Config
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
-from PyDrocsid.prefix import get_prefix, get_guild
+from PyDrocsid.prefix import get_prefix, get_guild_context, GuildContext, GlobalPrefix
 from PyDrocsid.translations import t
 from .colors import Colors
 from .permissions import InfoPermission
@@ -62,13 +62,11 @@ class BotInfoCog(Cog, name="Bot Information"):
         await self.bot.change_presence(status=Status.online, activity=Game(name=t.profile_status[self.current_status]))
         self.current_status = (self.current_status + 1) % len(t.profile_status)
 
-    async def build_info_embed(self, guild: Optional[Guild], authorized: bool) -> Embed:
+    async def build_info_embed(self, message: Message, authorized: bool) -> Embed:
         embed = Embed(title=Config.NAME, colour=Colors.info, description=t.bot_description)
 
         if self.info_icon:
             embed.set_thumbnail(url=self.info_icon)
-
-        prefix: str = await get_prefix(guild) if guild else ""
 
         features = t.features
         if authorized:
@@ -97,8 +95,27 @@ class BotInfoCog(Cog, name="Bot Information"):
 
         embed.add_field(name=t.version_title, value=Config.VERSION, inline=True)
         embed.add_field(name=t.github_title, value=Config.REPO_LINK, inline=False)
-        embed.add_field(name=t.prefix_title, value=f"`{prefix}` or {self.bot.user.mention}", inline=True)
-        embed.add_field(name=t.help_command_title, value=f"`{prefix}help`", inline=True)
+
+        guild_context, guild, prefix = await get_guild_context(self.bot, message)
+        if guild_context == GuildContext.PRIVATE_GLOBAL:
+            embed.add_field(name=t.help_command_title, value="`help`", inline=True)
+        else:
+            local_prefix = await get_prefix(guild)
+            global_prefix = await GlobalPrefix.get_prefix(guild.id)
+            if guild_context == GuildContext.GUILD:
+                command_prefix = local_prefix
+            else:
+                command_prefix = global_prefix + " "
+
+            embed.add_field(
+                name=t.local_prefix_title,
+                value=f"`{local_prefix}` or {self.bot.user.mention}",
+                inline=True,
+            )
+            if global_prefix:
+                embed.add_field(name=t.global_prefix_title, value=f"`{global_prefix}`", inline=True)
+            embed.add_field(name=t.help_command_title, value=f"`{command_prefix}help`", inline=True)
+
         embed.add_field(
             name=t.bugs_features_title,
             value=t.bugs_features(repo=Config.REPO_LINK),
@@ -131,13 +148,13 @@ class BotInfoCog(Cog, name="Bot Information"):
     @commands.command(aliases=["infos", "about"])
     @docs(t.commands.info)
     async def info(self, ctx: Context):
-        await send_long_embed(ctx, await self.build_info_embed(get_guild(ctx), False))
+        await send_long_embed(ctx, await self.build_info_embed(ctx.message, False))
 
     @commands.command(aliases=["admininfos"])
     @InfoPermission.admininfo.check
     @docs(t.commands.admininfo)
     async def admininfo(self, ctx: Context):
-        await send_long_embed(ctx, await self.build_info_embed(get_guild(ctx), True))
+        await send_long_embed(ctx, await self.build_info_embed(ctx.message, True))
 
     @commands.command(aliases=["contri", "con"])
     @docs(t.commands.contributors)
@@ -172,5 +189,4 @@ class BotInfoCog(Cog, name="Bot Information"):
         )
 
     async def on_bot_ping(self, message: Message):
-        guild: Optional[Guild] = message.channel.guild if message.guild else None
-        await reply(message, embed=await self.build_info_embed(guild, False))
+        await reply(message, embed=await self.build_info_embed(message, False))

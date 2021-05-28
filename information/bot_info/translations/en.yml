@@ -14,7 +14,8 @@ author_title: Author
 contributors_title: Contributors
 github_title: GitHub
 version_title: Version
-prefix_title: Prefix
+local_prefix_title: Local Prefix
+global_prefix_title: Global Prefix
 help_command_title: Help Command
 bugs_features_title: Bug Reports / Feature Requests
 
