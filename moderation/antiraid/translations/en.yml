@@ -10,6 +10,7 @@ antiraid: AntiRaid
 joinkick: JoinKick
 joinkick_set_enabled: "**JoinKick** has been **enabled**. :white_check_mark:"
 joinkick_set_disabled: "**JoinKick** has been **disabled**. :white_check_mark:"
+kicked_joinkick: "Kicked by joinkick"
 
 #timekick
 timekick: TimeKick

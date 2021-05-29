@@ -49,7 +49,21 @@ class AntiRaidCog(Cog, name="AntiRaid"):
 
         self.joinkick_enabled: bool = False
 
-    # TODO Add join event to make joinkick work
+    async def on_member_join(self, member):
+        if not self.joinkick_enabled or member.bot:
+            return
+        
+        user_embed = Embed(title=t.ongoing_raid_title, description=t.ongoing_raid_message, color=Colors.error)
+        
+        try:
+            await member.send(embed=user_embed)
+        except Forbidden:
+            pass
+        await member.kick()
+        await Kick.create(member.id, str(member), None, t.kicked_joinkick)
+        # TODO Somehow put the correct reason into the database (maybe save teamler who enabled autokick)
+        # TODO maybe send a message to changelog
+        
 
     @commands.group(aliases=["ard"])
     @AntiRaidPermission.read.check
@@ -73,7 +87,7 @@ class AntiRaidCog(Cog, name="AntiRaid"):
 
         await reply(ctx, embed=embed)
 
-
+    
     @antiraid.command(aliases=["tk"])
     @AntiRaidPermission.timekick.check
     async def timekick(self, ctx: Context, snowflake: int):
