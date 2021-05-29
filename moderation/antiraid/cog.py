@@ -23,9 +23,11 @@ from PyDrocsid.translations import t
 from .colors import Colors
 from .permission import AntiRaidPermission
 from ..mod.models import Kick
+from ..mod import ModCog
+from ...information.user_info import UserInfoCog
 from ...contributor import Contributor
-from ...information.user_info.models import Join
 from ...pubsub import send_to_changelog
+from ...information.user_info.models import Join
 
 
 tg = t.g
@@ -55,6 +57,7 @@ async def send_to_changelog_antiraid(
 
 class AntiRaidCog(Cog, name="AntiRaid"):
     CONTRIBUTORS = [Contributor.Anorak]
+    DEPENDENCIES = [UserInfoCog, ModCog]
 
     def __init__(self):
         super().__init__()
