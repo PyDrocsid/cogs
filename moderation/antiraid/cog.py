@@ -3,7 +3,12 @@ from PyDrocsid.cog import Cog
 from discord import Embed, Guild, User, Member, Forbidden
 
 from discord.ext import commands
-from discord.ext.commands import Context, UserInputError, guild_only, CommandError
+from discord.ext.commands import (
+    Context,
+    UserInputError,
+    guild_only,
+    CommandError
+)
 
 from discord.utils import snowflake_time
 
@@ -34,15 +39,22 @@ async def send_to_changelog_antiraid(
     title: str,
     message: str,
 ):
-    embed = Embed(title=title, color=color, timestamp=datetime.utcnow(), description=message)
-    embed.set_footer(text=str(executing_teamler), icon_url=executing_teamler.avatar_url)
+    embed = Embed(
+        title=title,
+        color=color,
+        timestamp=datetime.utcnow(),
+        description=message
+    )
+    embed.set_footer(
+        text=str(executing_teamler),
+        icon_url=executing_teamler.avatar_url
+    )
 
     await send_to_changelog(guild, embed)
 
 
 class AntiRaidCog(Cog, name="AntiRaid"):
-    CONTRIBUTORS=[Contributor.Anorak]
-
+    CONTRIBUTORS = [Contributor.Anorak]
 
     def __init__(self):
         super().__init__()
@@ -52,18 +64,22 @@ class AntiRaidCog(Cog, name="AntiRaid"):
     async def on_member_join(self, member):
         if not self.joinkick_enabled or member.bot:
             return
-        
-        user_embed = Embed(title=t.ongoing_raid_title, description=t.ongoing_raid_message, color=Colors.error)
-        
+
+        user_embed = Embed(
+            title=t.ongoing_raid_title,
+            description=t.ongoing_raid_message,
+            color=Colors.error
+        )
+
         try:
             await member.send(embed=user_embed)
         except Forbidden:
             pass
         await member.kick()
         await Kick.create(member.id, str(member), None, t.kicked_joinkick)
-        # TODO Somehow put the correct reason into the database (maybe save teamler who enabled autokick)
+        # TODO Somehow put the correct reason into the database
+        #      (maybe save teamler who enabled autokick)
         # TODO maybe send a message to changelog
-        
 
     @commands.group(aliases=["ard"])
     @AntiRaidPermission.read.check
@@ -87,7 +103,6 @@ class AntiRaidCog(Cog, name="AntiRaid"):
 
         await reply(ctx, embed=embed)
 
-    
     @antiraid.command(aliases=["tk"])
     @AntiRaidPermission.timekick.check
     async def timekick(self, ctx: Context, snowflake: int):
@@ -99,25 +114,48 @@ class AntiRaidCog(Cog, name="AntiRaid"):
             time = snowflake_time(snowflake)
         except (OverflowError, ValueError):
             raise CommandError(t.invalid_snowflake)
-        
+
         if time > datetime.utcnow():
             raise CommandError(t.invalid_time)
 
-        user_embed = Embed(title=t.ongoing_raid_title, description=t.ongoing_raid_message, color=Colors.error)
+        user_embed = Embed(
+            title=t.ongoing_raid_title,
+            description=t.ongoing_raid_message,
+            color=Colors.error
+        )
 
-        async for join in await db.stream(filter_by(Join).filter(Join.timestamp >= time).distinct(Join.member).group_by(Join.member)):
+        async for join in await db.stream(
+            filter_by(Join)
+            .filter(Join.timestamp >= time)
+            .distinct(Join.member)
+            .group_by(Join.member)
+        ):
             if (member := ctx.guild.get_member(join.member)) and not member.bot:
                 try:
                     await member.send(embed=user_embed)
                 except Forbidden:
                     pass
                 await member.kick()
-                await Kick.create(member.id, str(member), ctx.author.id, t.kicked_timekick)
+                await Kick.create(
+                    member.id,
+                    str(member),
+                    ctx.author.id,
+                    t.kicked_timekick
+                )
 
-        embed = Embed(title=t.timekick, description=t.timekick_done(time.strftime("%d.%m.%Y %H:%M:%S")), color=Colors.AntiRaid)
+        embed = Embed(
+            title=t.timekick,
+            description=t.timekick_done(time.strftime("%d.%m.%Y %H:%M:%S")),
+            color=Colors.AntiRaid
+        )
         await reply(ctx, embed=embed)
-        await send_to_changelog_antiraid(ctx.guild, ctx.author, Colors.AntiRaid, t.antiraid, t.timekick_done(time.strftime("%d.%m.%Y %H:%M:%S")))
-
+        await send_to_changelog_antiraid(
+            ctx.guild,
+            ctx.author,
+            Colors.AntiRaid,
+            t.antiraid,
+            t.timekick_done(time.strftime("%d.%m.%Y %H:%M:%S"))
+        )
 
     @antiraid.group(aliases=["jk"])
     @AntiRaidPermission.joinkick.check
@@ -125,12 +163,12 @@ class AntiRaidCog(Cog, name="AntiRaid"):
         """
         Instantly kick all users who join the server
         """
-        
+
         if ctx.subcommand_passed is not None:
             if ctx.invoked_subcommand is None:
                 raise UserInputError
             return
-        
+
         embed = Embed(title=t.joinkick, color=Colors.error)
 
         if self.joinkick_enabled:
@@ -140,7 +178,6 @@ class AntiRaidCog(Cog, name="AntiRaid"):
 
         await reply(ctx, embed=embed)
 
-
     @joinkick.command(name="enable", aliases=["e", "on"])
     async def joinkick_enable(self, ctx):
         """
@@ -149,10 +186,19 @@ class AntiRaidCog(Cog, name="AntiRaid"):
 
         self.joinkick_enabled = True
 
-        embed = Embed(title=t.antiraid, description=t.joinkick_set_enabled, color=Colors.AntiRaid)
+        embed = Embed(
+            title=t.antiraid,
+            description=t.joinkick_set_enabled,
+            color=Colors.AntiRaid
+        )
         await reply(ctx, embed=embed)
-        await send_to_changelog_antiraid(ctx.guild, ctx.author, Colors.AntiRaid, t.joinkick, t.joinkick_set_enabled)
-
+        await send_to_changelog_antiraid(
+            ctx.guild,
+            ctx.author,
+            Colors.AntiRaid,
+            t.joinkick,
+            t.joinkick_set_enabled
+        )
 
     @joinkick.command(name="disable", aliases=["d", "off"])
     async def joinkick_disable(self, ctx):
@@ -162,6 +208,16 @@ class AntiRaidCog(Cog, name="AntiRaid"):
 
         self.joinkick_enabled = False
 
-        embed = Embed(title=t.antiraid, description=t.joinkick_set_disabled, color=Colors.AntiRaid)
+        embed = Embed(
+            title=t.antiraid,
+            description=t.joinkick_set_disabled,
+            color=Colors.AntiRaid
+        )
         await reply(ctx, embed=embed)
-        await send_to_changelog_antiraid(ctx.guild, ctx.author, Colors.AntiRaid, t.joinkick, t.joinkick_set_disabled)
+        await send_to_changelog_antiraid(
+            ctx.guild,
+            ctx.author,
+            Colors.AntiRaid,
+            t.joinkick,
+            t.joinkick_set_disabled
+        )
