@@ -34,7 +34,7 @@ class HeartbeatCog(Cog, name="Heartbeat"):
             await send_editable_log(
                 owner,
                 t.online_status,
-                t.status_description(Config.VERSION),
+                t.status_description(Config.NAME, Config.VERSION),
                 t.heartbeat,
                 datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S UTC"),
             )
@@ -47,7 +47,7 @@ class HeartbeatCog(Cog, name="Heartbeat"):
                 await send_editable_log(
                     owner,
                     t.online_status,
-                    t.status_description(Config.VERSION),
+                    t.status_description(Config.NAME, Config.VERSION),
                     t.logged_in,
                     datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S UTC"),
                     force_resend=True,
