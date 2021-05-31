@@ -2,7 +2,7 @@ from io import BytesIO
 from pathlib import Path
 
 import yaml
-from discord import Embed, File, TextChannel, Permissions
+from discord import Embed, File, TextChannel, Permissions, NotFound, Forbidden
 from discord.ext import commands
 from discord.ext.commands import Context, CommandError
 
@@ -39,12 +39,23 @@ def create_custom_command(name: str, data: dict):
         if not permissions.embed_links:
             raise CommandError(t.could_not_send_embed(channel.mention))
 
+        if delete_command := bool(data.get("delete_command", False)):
+            try:
+                await ctx.message.delete()
+            except (NotFound, Forbidden):
+                pass
+
         file = File(BytesIO(file_content), filename=file_name) if file_content else None
         if ctx.channel.id == channel.id:
-            await reply(ctx, content, file=file, embed=embed)
+            if delete_command:
+                await ctx.send(content, file=file, embed=embed)
+            else:
+                await reply(ctx, content, file=file, embed=embed)
         else:
-            await link_response(ctx, await channel.send(content, file=file, embed=embed))
-            await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+            msg = await channel.send(content, file=file, embed=embed)
+            if not delete_command:
+                await link_response(ctx, msg)
+                await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     async def with_channel_parameter(_, ctx: Context, channel: TextChannel):
         await send_message(ctx, channel)
