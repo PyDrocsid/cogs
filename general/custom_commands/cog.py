@@ -71,8 +71,21 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
     def __init__(self, *command_files: str):
         cmds = {}
-        for command_file in command_files:
-            with open(command_file) as file:
+
+        path_list = list(map(Path, command_files))
+
+        while path_list:
+            path = path_list.pop()
+            if not path.exists():
+                continue
+
+            if path.is_dir():
+                path_list += path.iterdir()
+                continue
+            if not path.is_file():
+                continue
+
+            with path.open() as file:
                 cmds |= yaml.safe_load(file)
 
         self.__cog_commands__ = tuple(
