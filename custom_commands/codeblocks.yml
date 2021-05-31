@@ -1,12 +1,12 @@
 codeblocks:
   aliases: [codeblock, code, c]
   disabled: false
-  permission_level:
   description: Instructions for codeblocks
 
   channel_parameter: false
   channel:
   delete_command: false
+  public: true
 
   content:
   file:
