@@ -39,10 +39,12 @@ async def gather_roles(guild: Guild, channel_id: int) -> List[Role]:
 
 
 async def get_group_channel(channel: VoiceChannel) -> Tuple[Optional[DynamicVoiceGroup], Optional[DynamicVoiceChannel]]:
-    dyn_channel: DynamicVoiceChannel = await db.first(select(DynamicVoiceChannel).filter_by(channel_id=channel.id))
+    dyn_channel: DynamicVoiceChannel = await db.get(DynamicVoiceChannel, channel_id=channel.id)
 
-    channel_id = dyn_channel.group_id if dyn_channel is not None else channel.id
-    group = await db.first(select(DynamicVoiceGroup).filter_by(channel_id=channel_id))
+    if dyn_channel is not None:
+        group = await db.get(DynamicVoiceGroup, id=dyn_channel.group_id)
+    else:
+        group = await db.get(DynamicVoiceGroup, channel_id=channel.id)
 
     return group, dyn_channel
 
