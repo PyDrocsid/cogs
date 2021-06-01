@@ -9,7 +9,7 @@ from discord.ext import commands
 from discord.ext.commands import Context, CommandError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import reply, docs, confirm
 from PyDrocsid.command_edit import link_response
 from PyDrocsid.config import Contributor
 from PyDrocsid.emojis import name_to_emoji
@@ -40,6 +40,17 @@ def create_custom_command(name: str, data: dict, permission: Optional[BasePermis
             raise CommandError(t.could_not_send_message(channel.mention))
         if not permissions.embed_links:
             raise CommandError(t.could_not_send_embed(channel.mention))
+
+        if bool(data.get("requires_confirmation", permission is not None)):
+            conf_embed = Embed(title=t.confirmation, description=t.confirm(name, channel.mention))
+            async with confirm(ctx, conf_embed) as (result, msg):
+                if not result:
+                    conf_embed.description += "\n\n" + t.canceled
+                    return
+
+                conf_embed.description += "\n\n" + t.confirmed
+                if msg:
+                    await msg.delete(delay=5)
 
         if delete_command := bool(data.get("delete_command", False)):
             try:
