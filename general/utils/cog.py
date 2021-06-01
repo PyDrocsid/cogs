@@ -71,7 +71,7 @@ class UtilsCog(Cog, name="Utils"):
 
         try:
             await reply(ctx, snowflake_time(arg).strftime("%d.%m.%Y %H:%M:%S"))
-        except (OverflowError, ValueError):
+        except (OverflowError, ValueError, OSError):
             raise CommandError(t.invalid_snowflake)
 
     @commands.command(aliases=["rc"])
