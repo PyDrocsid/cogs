@@ -14,6 +14,8 @@ deleted_nomedia: >
   Only pictures are allowed in this channel.
   For conversations please use the channels designated for this purpose.
 log_deleted_nomedia: "**Deleted a message** of {} in **media only channel** {} because it did not contain an image."
+log_nomedia_not_deleted: >
+  MediaOnly could not delete a message of {} in {} because I don't have `manage_messages` permission there.
 media_only_channels_header: "Media only channels"
 no_media_only_channels: ":x: No media only channels."
 channel_already_media_only: Channel is already a media only channel.
