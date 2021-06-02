@@ -15,7 +15,7 @@ from .models import VerificationRole
 from .permissions import VerificationPermission
 from .settings import VerificationSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog
+from ...pubsub import send_to_changelog, send_alert
 
 tg = t.g
 t = t.verification
@@ -67,7 +67,21 @@ class VerificationCog(Cog, name="Verification"):
         if not add and not remove:
             raise CommandError(t.already_verified)
         if fail:
-            raise CommandError(t.verification_reverse_role_not_assigned)
+            raise CommandError(t.verification_failed)
+
+        invalid = []
+        for role in add + remove:
+            try:
+                check_role_assignable(role)
+            except CommandError:
+                invalid.append(role)
+
+        if invalid:
+            await send_alert(
+                member.guild,
+                t.cannot_assign(cnt=len(invalid), member=member, roles=", ".join(role.mention for role in invalid)),
+            )
+            raise CommandError(t.verification_failed)
 
         await member.add_roles(*add)
         await member.remove_roles(*remove)
