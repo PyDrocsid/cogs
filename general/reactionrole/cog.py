@@ -55,18 +55,18 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
             else:
                 await member.add_roles(role)
         except (Forbidden, HTTPException):
-            logger.exception(
-                f"could not manage role {role} ({role.id}) on {member} ({member.id}) "
-                f"(channel: {message.channel.id}, msg: {message.id}, emoji: {emoji})",
+            raise PermissionError(
+                message.guild,
+                t.manage_role_error(role=role, member=member, message=message, emoji=emoji),
             )
 
         if link.auto_remove:
             try:
                 await message.remove_reaction(emoji, member)
             except (HTTPException, Forbidden, NotFound):
-                logger.exception(
-                    f"could not remove emoji {emoji} from {message.channel.id}/{message.id} "
-                    f"(member: {member} ({member.id}), role: {role} ({role.id}))",
+                raise PermissionError(
+                    message.guild,
+                    t.remove_emoji_error(role=role, member=member, message=message, emoji=emoji),
                 )
 
         raise StopEventHandling
@@ -85,9 +85,9 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
             else:
                 await member.remove_roles(role)
         except (Forbidden, HTTPException):
-            logger.exception(
-                f"could not manage role {role} ({role.id}) on {member} ({member.id}) "
-                f"(channel: {message.channel.id}, msg: {message.id}, emoji: {emoji})",
+            raise PermissionError(
+                message.guild,
+                t.manage_role_error(role=role, member=member, message=message, emoji=emoji),
             )
 
         raise StopEventHandling

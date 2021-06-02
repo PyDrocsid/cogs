@@ -22,3 +22,5 @@ log_rr_link_removed: "**ReactionRole link** for {} -> <@&{}> has been **deleted*
 rr_link: "{} -> {}"
 auto_remove: auto remove
 reverse: reverse
+manage_role_error: "ReactionRole could not manage role {role.mention} on {member.mention} ({member.id}) on [this message]({message.jump_url})."
+remove_emoji_error: "ReactionRole could not remove {emoji} reaction from [this message]({message.jump_url})."
