@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Union
 
 from PyDrocsid.logger import get_logger
-from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member
+from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member, Forbidden
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Group, Command
 
@@ -44,12 +44,17 @@ async def send_to_channel(guild: Guild, setting: LoggingSettings, message: Union
         logger.warning(f"Could not send message to {setting.name}: {msg}")
         return
 
-    logger.info(f"{setting.name}: {msg}")
     if isinstance(message, str):
         embed = Embed(colour=Colors.changelog, description=message)
     else:
         embed = message
-    await channel.send(embed=embed)
+
+    try:
+        await channel.send(embed=embed)
+    except Forbidden:
+        logger.warning(f"Could not send message to {setting.name}: {msg}")
+    else:
+        logger.info(f"{setting.name}: {msg}")
 
 
 async def is_logging_channel(channel: TextChannel) -> bool:
