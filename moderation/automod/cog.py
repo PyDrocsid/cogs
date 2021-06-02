@@ -13,7 +13,7 @@ from .colors import Colors
 from .permissions import AutoModPermission
 from .settings import AutoModSettings, AutoKickMode
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, log_auto_kick, revoke_verification
+from ...pubsub import send_to_changelog, log_auto_kick, revoke_verification, send_alert
 
 tg = t.g
 t = t.automod
@@ -23,6 +23,7 @@ pending_kicks: set[int] = set()
 
 async def kick(member: Member) -> bool:
     if not member.guild.me.guild_permissions.kick_members:
+        await send_alert(member.guild, t.cannot_kick(member.mention, member.id))
         return False
 
     if member.top_role >= member.guild.me.top_role or member.id == member.guild.owner_id:
