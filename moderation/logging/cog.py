@@ -14,7 +14,7 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance
+from PyDrocsid.util import calculate_edit_distance, check_message_send_permissions
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission
@@ -81,8 +81,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
     @logging_channel.command(name="channel", aliases=["ch", "c"])
     @docs(getattr(t.channels, name).set_description)
     async def set_channel(ctx: Context, *, channel: TextChannel):
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.log_not_changed_no_permissions)
+        check_message_send_permissions(channel, check_embed=True)
 
         await getattr(LoggingSettings, f"{name}_channel").set(channel.id)
         embed = Embed(
