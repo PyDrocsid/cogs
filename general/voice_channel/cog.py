@@ -174,12 +174,14 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         group: DynGroup
         async for group in await db.stream(select(DynGroup, DynGroup.channels)):
-            channels: list[TextChannel] = []
+            channels: list[tuple[VoiceChannel, Optional[TextChannel]]] = []
             for channel in group.channels:
-                if not (c := ctx.guild.get_channel(channel.channel_id)):
+                voice_channel: Optional[VoiceChannel] = ctx.guild.get_channel(channel.channel_id)
+                text_channel: Optional[TextChannel] = ctx.guild.get_channel(channel.text_id)
+                if not voice_channel:
                     await db.delete(channel)
                     continue
-                channels.append(c)
+                channels.append((voice_channel, text_channel))
 
             if not channels:
                 await db.delete(group)
@@ -187,7 +189,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
             embed.add_field(
                 name=t.cnt_channels(cnt=len(channels)),
-                value="\n".join(f":small_orange_diamond: {c.mention}" for c in channels),
+                value="\n".join(
+                    f":small_orange_diamond: {vc.mention} {txt.mention if txt else ''}" for vc, txt in channels
+                ),
             )
 
         if not embed.fields:
