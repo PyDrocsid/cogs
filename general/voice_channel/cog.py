@@ -14,6 +14,7 @@ from discord import (
     Guild,
     PermissionOverwrite,
     Role,
+    Message,
 )
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError
@@ -21,7 +22,7 @@ from discord.ext.commands import guild_only, Context, UserInputError, CommandErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
 from PyDrocsid.database import filter_by, db, select
-from PyDrocsid.embeds import send_long_embed
+from PyDrocsid.embeds import send_long_embed, EmbedLimits
 from PyDrocsid.translations import t
 from .colors import Colors
 from .models import DynGroup, DynChannel
@@ -55,6 +56,25 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     async def get_channel_name(self) -> str:
         return random.choice(self.names)  # noqa: S311
 
+    async def send_voice_msg(self, channel: DynChannel, title: str, msg: str):
+        text_channel: Optional[TextChannel] = self.bot.get_channel(channel.text_id)
+        if not text_channel:
+            return
+
+        color = int([Colors.unlocked, Colors.locked][channel.locked])
+        messages: list[Message] = await text_channel.history(limit=1).flatten()
+        if messages and messages[0].author == self.bot.user and len(messages[0].embeds) == 1:
+            e: Embed = messages[0].embeds[0]
+            desc_ok = len(e.description) + len(msg) + 1 <= EmbedLimits.DESCRIPTION
+            total_ok = len(e) + len(msg) + 1 <= EmbedLimits.TOTAL
+            if e.title == title and (color == e.colour or color == e.colour.value) and desc_ok and total_ok:
+                e.description += "\n" + msg
+                await messages[0].edit(embed=e)
+                return
+
+        embed = Embed(title=title, color=color, description=msg)
+        await text_channel.send(embed=embed)
+
     async def member_join(self, member: Member, voice_channel: VoiceChannel):
         guild: Guild = voice_channel.guild
         category: Union[CategoryChannel, Guild] = voice_channel.category or guild
@@ -80,8 +100,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                     overwrites[team_role] = PermissionOverwrite(read_messages=True)
             text_channel = await category.create_text_channel(voice_channel.name, overwrites=overwrites)
             channel.text_id = text_channel.id
+            await self.send_voice_msg(channel, t.voice_channel, t.dyn_voice_created(member.mention))
 
         await text_channel.set_permissions(member, overwrite=PermissionOverwrite(read_messages=True))
+        await self.send_voice_msg(channel, t.voice_channel, t.dyn_voice_joined(member.mention))
 
         if all(c.members for chnl in channel.group.channels if (c := self.bot.get_channel(chnl.channel_id))):
             overwrites = voice_channel.overwrites
@@ -108,6 +130,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         if text_channel and not channel.locked:
             await text_channel.set_permissions(member, overwrite=None)
+        await self.send_voice_msg(channel, t.voice_channel, t.dyn_voice_left(member.mention))
 
         if voice_channel.members:
             return
