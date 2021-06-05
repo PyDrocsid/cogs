@@ -2,7 +2,7 @@ import re
 from typing import Optional
 
 from aiohttp import ClientSession, ClientError
-from discord import Guild, TextChannel, Message, Embed
+from discord import Guild, TextChannel, Message, Embed, Forbidden
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
@@ -39,12 +39,20 @@ async def contains_image(message: Message) -> bool:
 
 
 async def delete_message(message: Message):
-    await message.delete()
+    try:
+        await message.delete()
+    except Forbidden:
+        deleted = False
+    else:
+        deleted = True
 
     embed = Embed(title=t.mediaonly, description=t.deleted_nomedia, colour=Colors.error)
     await message.channel.send(content=message.author.mention, embed=embed, delete_after=30)
 
-    await send_alert(message.guild, t.log_deleted_nomedia(message.author.mention, message.channel.mention))
+    if deleted:
+        await send_alert(message.guild, t.log_deleted_nomedia(message.author.mention, message.channel.mention))
+    else:
+        await send_alert(message.guild, t.log_nomedia_not_deleted(message.author.mention, message.channel.mention))
 
 
 class MediaOnlyCog(Cog, name="MediaOnly"):

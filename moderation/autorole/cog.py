@@ -5,10 +5,10 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
-from PyDrocsid.command import reply
 from .colors import Colors
 from .models import AutoRole
 from .permissions import AutoRolePermission
@@ -22,7 +22,28 @@ class AutoRoleCog(Cog, name="AutoRole"):
     CONTRIBUTORS = [Contributor.Defelo]
 
     async def on_member_join(self, member: Member):
-        await member.add_roles(*filter(lambda r: r, map(member.guild.get_role, await AutoRole.all())))
+        roles: list[Role] = []
+        invalid: list[Role] = []
+
+        role: Role
+        for role in map(member.guild.get_role, await AutoRole.all()):
+            if not role:
+                continue
+
+            try:
+                check_role_assignable(role)
+            except CommandError:
+                invalid.append(role)
+            else:
+                roles.append(role)
+
+        await member.add_roles(*roles)
+
+        if invalid:
+            raise PermissionError(
+                member.guild,
+                t.cannot_assign(cnt=len(invalid), member=member, roles=", ".join(role.mention for role in invalid)),
+            )
 
     @commands.group(aliases=["ar"])
     @AutoRolePermission.read.check

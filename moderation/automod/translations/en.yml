@@ -4,6 +4,8 @@ permissions:
   instantkick_read: read instantkick configuration
   instantkick_write: write instantkick configuration
 
+cannot_kick: AutoMod could not kick {} ({}) because I don't have `kick_members` permission.
+
 # autokick
 autokick: AutoKick
 autokick_mode_configured:

@@ -24,6 +24,11 @@ t = t.reactionpin
 EMOJI = name_to_emoji["pushpin"]
 
 
+def check_channel(channel: TextChannel):
+    if not channel.permissions_for(channel.guild.me).manage_messages:
+        raise PermissionError(channel.guild, t.no_permission_alert(channel.mention))
+
+
 class ReactionPinCog(Cog, name="ReactionPin"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
 
@@ -41,6 +46,9 @@ class ReactionPinCog(Cog, name="ReactionPin"):
                 await message.remove_reaction(emoji, member)
                 await message.channel.send(embed=make_error(t.msg_not_pinned_system))
                 raise StopEventHandling
+
+            check_channel(message.channel)
+
             try:
                 await message.pin()
             except HTTPException:
@@ -58,11 +66,13 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         access: bool = await ReactionPinPermission.pin.check_permissions(member)
         is_reactionpin_channel = await db.exists(select(ReactionPinChannel).filter_by(channel=message.channel.id))
         if message.pinned and (access or (is_reactionpin_channel and member == message.author)):
+            check_channel(message.channel)
             await message.unpin()
             raise StopEventHandling
 
     async def on_raw_reaction_clear(self, message: Message):
         if message.guild is not None and message.pinned:
+            check_channel(message.channel)
             await message.unpin()
         raise StopEventHandling
 
@@ -116,6 +126,9 @@ class ReactionPinCog(Cog, name="ReactionPin"):
         """
         add channel to whitelist
         """
+
+        if not channel.permissions_for(ctx.guild.me).manage_messages:
+            raise CommandError(t.no_permission)
 
         if await db.exists(select(ReactionPinChannel).filter_by(channel=channel.id)):
             raise CommandError(t.channel_already_whitelisted)

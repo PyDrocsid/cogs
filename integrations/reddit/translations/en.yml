@@ -33,3 +33,5 @@ invalid_limit: Invalid limit.
 reddit_limit: "Reddit limit: {}"
 reddit_limit_set: "Reddit limit has been updated. :white_check_mark:"
 log_reddit_limit_set: "**Reddit limit** has been **set** to {}."
+could_not_fetch: Could not fetch reddit posts of r/{}.
+cannot_send: Reddit integration cannot send messages to {}.

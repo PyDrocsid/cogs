@@ -1,7 +1,9 @@
+import json
 from datetime import datetime, timedelta
 from typing import Optional, Union
 
-from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member
+from PyDrocsid.logger import get_logger
+from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member, Forbidden
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Group, Command
 
@@ -12,13 +14,16 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance
+from PyDrocsid.util import calculate_edit_distance, check_message_send_permissions
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission
 from .settings import LoggingSettings
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction, ignore_message_edit
+
+
+logger = get_logger(__name__)
 
 tg = t.g
 t = t.logging
@@ -33,15 +38,23 @@ def add_field(embed: Embed, name: str, text: str):
 
 
 async def send_to_channel(guild: Guild, setting: LoggingSettings, message: Union[str, Embed]):
+    msg = json.dumps(message.to_dict()) if isinstance(message, Embed) else message
     channel: Optional[TextChannel] = guild.get_channel(await setting.get())
     if not channel:
+        logger.warning(f"Could not send message to {setting.name}: {msg}")
         return
 
     if isinstance(message, str):
         embed = Embed(colour=Colors.changelog, description=message)
     else:
         embed = message
-    await channel.send(embed=embed)
+
+    try:
+        await channel.send(embed=embed)
+    except Forbidden:
+        logger.warning(f"Could not send message to {setting.name}: {msg}")
+    else:
+        logger.info(f"{setting.name}: {msg}")
 
 
 async def is_logging_channel(channel: TextChannel) -> bool:
@@ -68,8 +81,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
     @logging_channel.command(name="channel", aliases=["ch", "c"])
     @docs(getattr(t.channels, name).set_description)
     async def set_channel(ctx: Context, *, channel: TextChannel):
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.log_not_changed_no_permissions)
+        check_message_send_permissions(channel, check_embed=True)
 
         await getattr(LoggingSettings, f"{name}_channel").set(channel.id)
         embed = Embed(

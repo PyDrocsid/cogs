@@ -12,3 +12,4 @@ rn_role_added: Role {} has been added to {}.
 rn_role_removed: Role {} has been removed from {}.
 rn_ping_role: ping role
 rn_ping_user: ping user
+cannot_send: RoleNotifications cannot send messages to {}.

@@ -12,3 +12,6 @@ ar_removed: AutoRole has been removed successfully.
 log_ar_removed: AutoRole `@{}` has been removed successfully.
 role_not_added_too_high: Role could not be added because `@{}` is higher than `@{}`.
 role_not_added_managed_role: Role could not be added because `@{}` cannot be assigned manually.
+cannot_assign:
+  one: AutoRole could not assign {roles} to {member.mention} ({member.id}).
+  many: "AutoRole could not assign the following roles to {member.mention} ({member.id}): {roles}"
