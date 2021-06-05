@@ -34,9 +34,9 @@ cnt_channels:
 no_dyn_group: No dynamic voice channel groups have been created yet.
 dyn_group_removed: "Dynamic voice channel group has been removed successfully. :white_check_mark:"
 log_dyn_group_removed: "A **dynamic voice channel group** has been **removed**."
-dyn_voice_created: Channel has been created by {}.
-dyn_voice_joined: "{} joined this channel."
-dyn_voice_left: "{} left this channel."
+dyn_voice_created: ":sparkles: Channel has been created by {}."
+dyn_voice_joined: ":tada: {} joined this channel."
+dyn_voice_left: ":door: {} left this channel."
 private_dyn_voice_help_title: Private Voice Channel Commands
 private_dyn_voice_help_content: |
   `{prefix}vc invite <member>` - add a member to this voice channel
@@ -64,7 +64,7 @@ user_not_in_this_channel: User is not in the same private voice channel.
 owner_of_private_voice: "Owner of this private voice channel: {}"
 bot_no_owner_transfer: You cannot transfer ownership to a bot.
 already_owner: "{} is already the owner of this voice channel."
-voice_owner_changed: "{} is now the owner of this voice channel. :white_check_mark:"
+voice_owner_changed: ":tools: {} is now the owner of this voice channel."
 private_voice_owner_changed_response: "Owner of this private voice channel has been changed. :white_check_mark:"
 link_on_dynamic_channel_not_created: >
   Link could not be created for dynamic voice channel.

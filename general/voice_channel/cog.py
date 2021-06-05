@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
 
@@ -13,7 +14,6 @@ from discord import (
     Guild,
     PermissionOverwrite,
     Role,
-    Message,
 )
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError
@@ -21,10 +21,11 @@ from discord.ext.commands import guild_only, Context, UserInputError, CommandErr
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
 from PyDrocsid.database import filter_by, db, select, delete
-from PyDrocsid.embeds import send_long_embed, EmbedLimits
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
+from PyDrocsid.util import send_editable_log
 from .colors import Colors
 from .models import DynGroup, DynChannel, DynChannelMember
 from .permissions import VoiceChannelPermission
@@ -80,24 +81,22 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         return new_owner
 
-    async def send_voice_msg(self, channel: DynChannel, title: str, msg: str):
+    async def send_voice_msg(self, channel: DynChannel, title: str, msg: str, force_new_embed: bool = False):
         text_channel: Optional[TextChannel] = self.bot.get_channel(channel.text_id)
         if not text_channel:
             return
 
         color = int([Colors.unlocked, Colors.locked][channel.locked])
-        messages: list[Message] = await text_channel.history(limit=1).flatten()
-        if messages and messages[0].author == self.bot.user and len(messages[0].embeds) == 1:
-            e: Embed = messages[0].embeds[0]
-            desc_ok = len(e.description) + len(msg) + 1 <= EmbedLimits.DESCRIPTION
-            total_ok = len(e) + len(msg) + 1 <= EmbedLimits.TOTAL
-            if e.title == title and (color == e.colour or color == e.colour.value) and desc_ok and total_ok:
-                e.description += "\n" + msg
-                await messages[0].edit(embed=e)
-                return
-
-        embed = Embed(title=title, color=color, description=msg)
-        await text_channel.send(embed=embed)
+        await send_editable_log(
+            text_channel,
+            title,
+            "",
+            datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S"),
+            msg,
+            colour=color,
+            force_new_embed=force_new_embed,
+            force_new_field=True,
+        )
 
     async def fix_owner(self, channel: DynChannel) -> Optional[Member]:
         voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
