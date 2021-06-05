@@ -67,8 +67,7 @@ class WikipediaCog(Cog, name="Wikipedia"):
             await ctx.send(
                 embed=make_embed(
                     title=title,
-                    content="Wikipedia is not available currently!"
-                            " Try again later.",
+                    content="Wikipedia is not available currently! Try again later.", # skipcq: PYL-E501
                     color=Colors.Wiki,
                     requested_by=ctx.author,
                 ),
