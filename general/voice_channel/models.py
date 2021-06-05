@@ -13,7 +13,7 @@ from PyDrocsid.database import db
 class DynGroup(db.Base):
     __tablename__ = "dynvoice_group"
 
-    id: Union[Column, int] = Column(String(36), primary_key=True, unique=True)
+    id: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     channels: list[DynChannel] = relationship("DynChannel", back_populates="group", cascade="all, delete")
 
     @staticmethod
@@ -30,9 +30,9 @@ class DynChannel(db.Base):
     channel_id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
     text_id: Union[Column, int] = Column(BigInteger)
     locked: Union[Column, bool] = Column(Boolean)
-    group_id: Union[Column, int] = Column(String(36), ForeignKey("dynvoice_group.id"))
+    group_id: Union[Column, str] = Column(String(36), ForeignKey("dynvoice_group.id"))
     group: DynGroup = relationship("DynGroup", back_populates="channels")
-    owner_id: Union[Column, int] = Column(String(36))
+    owner_id: Union[Column, str] = Column(String(36))
     members: list[DynChannelMember] = relationship(
         "DynChannelMember",
         back_populates="channel",
@@ -50,7 +50,7 @@ class DynChannel(db.Base):
 class DynChannelMember(db.Base):
     __tablename__ = "dynvoice_channel_member"
 
-    id: Union[Column, int] = Column(String(36), primary_key=True, unique=True)
+    id: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
     member_id: Union[Column, int] = Column(BigInteger)
     channel_id: Union[Column, int] = Column(BigInteger, ForeignKey("dynvoice_channel.channel_id"))
     channel: DynChannel = relationship("DynChannel", back_populates="members")
