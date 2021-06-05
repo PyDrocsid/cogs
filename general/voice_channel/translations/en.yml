@@ -10,6 +10,7 @@ commands:
   voice_dynamic: manage dynamic voice channels
   voice_dynamic_add: create a new dynamic voice channel group
   voice_dynamic_remove: remove a dynamic voice channel group
+  voice_owner: transfer voice channel ownership
 
 updating_voice_roles: Updating voice channel roles
 voice_init_done: Initialization complete
@@ -45,9 +46,8 @@ private_dyn_voice_help_content: |
   `{prefix}vc close` - manually close this voice channel
   Note that these commands can be used in any text channel.
 error_visibility: "`visibility` must either be `public` or `private`."
-not_in_voice: You have to be in a voice channel to use this command.
+not_in_voice: You have to be in a dynamic voice channel to use this command.
 user_not_in_voice: User is not in a dynamic voice channel.
-not_in_private_voice: You have to be in a private voice channel to use this command.
 private_voice_owner_required: You are not the owner of this voice channel.
 private_voice_closed: "Private voice channel has been closed successfully. :white_check_mark:"
 user_added_to_private_voice: "{} has been invited to join this private voice channel."
@@ -63,7 +63,8 @@ member_could_not_be_kicked: You cannot remove a team member ({}) from this voice
 user_not_in_this_channel: User is not in the same private voice channel.
 owner_of_private_voice: "Owner of this private voice channel: {}"
 bot_no_owner_transfer: You cannot transfer ownership to a bot.
-private_voice_owner_changed: "{} is now the owner of this private voice channel. :white_check_mark:"
+already_owner: "{} is already the owner of this voice channel."
+voice_owner_changed: "{} is now the owner of this voice channel. :white_check_mark:"
 private_voice_owner_changed_response: "Owner of this private voice channel has been changed. :white_check_mark:"
 link_on_dynamic_channel_not_created: >
   Link could not be created for dynamic voice channel.

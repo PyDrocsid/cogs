@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional, Union
 
 import yaml
-from PyDrocsid.settings import RoleSettings
 from discord import (
     VoiceChannel,
     Embed,
@@ -23,6 +22,8 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
 from PyDrocsid.database import filter_by, db, select, delete
 from PyDrocsid.embeds import send_long_embed, EmbedLimits
+from PyDrocsid.emojis import name_to_emoji
+from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from .colors import Colors
 from .models import DynGroup, DynChannel, DynChannelMember
@@ -49,12 +50,35 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
+        self._owners: dict[int, Member] = {}
 
         with Path(__file__).parent.joinpath("names.yml").open() as file:
             self.names: list[str] = yaml.safe_load(file)
 
     async def get_channel_name(self) -> str:
         return random.choice(self.names)  # noqa: S311
+
+    async def get_owner(self, channel: DynChannel) -> Optional[Member]:
+        if out := self._owners.get(channel.channel_id):
+            return out
+
+        self._owners[channel.channel_id] = await self.fetch_owner(channel)
+        return self._owners[channel.channel_id]
+
+    async def update_owner(self, channel: DynChannel, new_owner: Optional[Member]) -> Optional[Member]:
+        old_owner: Optional[Member] = self._owners.get(channel.channel_id)
+
+        if not new_owner:
+            self._owners.pop(channel.channel_id, None)
+        elif old_owner != new_owner:
+            self._owners[channel.channel_id] = new_owner
+            await self.send_voice_msg(
+                channel,
+                t.voice_channel,
+                t.voice_owner_changed(new_owner.mention),
+            )
+
+        return new_owner
 
     async def send_voice_msg(self, channel: DynChannel, title: str, msg: str):
         text_channel: Optional[TextChannel] = self.bot.get_channel(channel.text_id)
@@ -74,6 +98,39 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         embed = Embed(title=title, color=color, description=msg)
         await text_channel.send(embed=embed)
+
+    async def fix_owner(self, channel: DynChannel) -> Optional[Member]:
+        voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
+
+        in_voice = {m.id for m in voice_channel.members}
+        for m in channel.members:
+            if m.member_id in in_voice:
+                channel.owner_id = m.id
+                return await self.update_owner(channel, voice_channel.guild.get_member(m.member_id))
+
+        channel.owner_id = None
+        return await self.update_owner(channel, None)
+
+    async def fetch_owner(self, channel: DynChannel) -> Optional[Member]:
+        voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
+
+        if channel.owner_override and any(channel.owner_override == member.id for member in voice_channel.members):
+            return voice_channel.guild.get_member(channel.owner_override)
+
+        owner: Optional[DynChannelMember] = await db.get(DynChannelMember, id=channel.owner_id)
+        if owner and any(owner.member_id == member.id for member in voice_channel.members):
+            return voice_channel.guild.get_member(owner.member_id)
+
+        return await self.fix_owner(channel)
+
+    async def check_authorization(self, channel: DynChannel, member: Member):
+        if await VoiceChannelPermission.private_owner.check_permissions(member):
+            return
+
+        if await self.get_owner(channel) == member:
+            return
+
+        raise CommandError(t.private_voice_owner_required)
 
     async def member_join(self, member: Member, voice_channel: VoiceChannel):
         guild: Guild = voice_channel.guild
@@ -113,12 +170,13 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if not channel_member:
             channel.members.append(channel_member := await DynChannelMember.create(member.id, voice_channel.id))
 
-        if not channel.owner_id:
-            channel.owner_id = channel.members[0].id
-        else:
-            owner: Optional[DynChannelMember] = await db.get(DynChannelMember, id=channel.owner_id)
-            if channel_member.timestamp < owner.timestamp:
-                channel.owner_id = channel_member.id
+        owner: Optional[DynChannelMember] = await db.get(DynChannelMember, id=channel.owner_id)
+        update_owner = False
+        if (not owner or channel_member.timestamp < owner.timestamp) and channel.owner_id != channel_member.id:
+            channel.owner_id = channel_member.id
+            update_owner = True
+        if update_owner or channel.owner_override == member.id:
+            await self.update_owner(channel, await self.fetch_owner(channel))
 
         if all(c.members for chnl in channel.group.channels if (c := self.bot.get_channel(chnl.channel_id))):
             overwrites = voice_channel.overwrites
@@ -148,20 +206,15 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await self.send_voice_msg(channel, t.voice_channel, t.dyn_voice_left(member.mention))
 
         owner: Optional[DynChannelMember] = await db.get(DynChannelMember, id=channel.owner_id)
-        if owner and owner.member_id == member.id:
-            in_voice = {m.id for m in voice_channel.members}
-            for m in channel.members:
-                if m.member_id != member.id and m.member_id in in_voice:
-                    channel.owner_id = m.id
-                    break
-            else:
-                channel.owner_id = None
+        if owner and owner.member_id == member.id or channel.owner_override == member.id:
+            await self.fix_owner(channel)
 
         if voice_channel.members:
             return
 
         if text_channel:
             channel.owner_id = None
+            channel.owner_override = None
             await db.exec(delete(DynChannelMember).filter_by(channel_id=voice_channel.id))
             channel.members.clear()
             await text_channel.delete()
@@ -265,3 +318,28 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.dyn_group_removed)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_dyn_group_removed)
+
+    @voice.command(name="owner", aliases=["o"])
+    @docs(t.commands.voice_owner)
+    async def voice_owner(self, ctx: Context, member: Member):
+        if ctx.author.voice is None or ctx.author.voice.channel is None:
+            raise CommandError(t.not_in_voice)
+
+        voice_channel: VoiceChannel = ctx.author.voice.channel
+        channel: Optional[DynChannel] = await db.get(DynChannel, channel_id=voice_channel.id)
+        if not channel:
+            raise CommandError(t.not_in_voice)
+
+        await self.check_authorization(channel, ctx.author)
+
+        if member not in voice_channel.members:
+            raise CommandError(t.user_not_in_this_channel)
+        if member.bot:
+            raise CommandError(t.bot_no_owner_transfer)
+
+        if await self.get_owner(channel) == member:
+            raise CommandError(t.already_owner(member.mention))
+
+        channel.owner_override = member.id
+        await self.update_owner(channel, member)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])

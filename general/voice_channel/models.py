@@ -33,6 +33,7 @@ class DynChannel(db.Base):
     group_id: Union[Column, str] = Column(String(36), ForeignKey("dynvoice_group.id"))
     group: DynGroup = relationship("DynGroup", back_populates="channels")
     owner_id: Union[Column, str] = Column(String(36))
+    owner_override: Union[Column, int] = Column(BigInteger)
     members: list[DynChannelMember] = relationship(
         "DynChannelMember",
         back_populates="channel",
