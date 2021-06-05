@@ -147,9 +147,12 @@ class InactivityCog(Cog, name="Inactivity"):
             ts = await db.get(Activity, id=m.id)
             return m, ts.timestamp if ts else None
 
-        members: set[Member] = {member for role in roles for member in role.members}
-        last_activity: list[tuple[Member, Optional[datetime]]] = await semaphore_gather(50, *map(load_member, members))
+        if roles:
+            members: set[Member] = {member for role in roles for member in role.members}
+        else:
+            members: set[Member] = set(ctx.guild.members)
 
+        last_activity: list[tuple[Member, Optional[datetime]]] = await semaphore_gather(50, *map(load_member, members))
         last_activity.sort(key=lambda a: (a[1].timestamp() if a[1] else -1, str(a[0])))
 
         out = []

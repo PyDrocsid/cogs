@@ -4,17 +4,21 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
-from discord import Embed, File, TextChannel, Permissions, NotFound, Forbidden
+from PyDrocsid.logger import get_logger
+from discord import Embed, File, TextChannel, NotFound, Forbidden
 from discord.ext import commands
-from discord.ext.commands import Context, CommandError
+from discord.ext.commands import Context
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import reply, docs, confirm
 from PyDrocsid.command_edit import link_response
 from PyDrocsid.config import Contributor
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
+from PyDrocsid.util import check_message_send_permissions
+
+logger = get_logger(__name__)
 
 tg = t.g
 t = t.custom_commands
@@ -35,11 +39,18 @@ def create_custom_command(name: str, data: dict, permission: Optional[BasePermis
         embed = Embed.from_dict(embed_data)
 
     async def send_message(ctx: Context, channel: TextChannel):
-        permissions: Permissions = channel.permissions_for(channel.guild.me)
-        if not permissions.send_messages:
-            raise CommandError(t.could_not_send_message(channel.mention))
-        if not permissions.embed_links:
-            raise CommandError(t.could_not_send_embed(channel.mention))
+        check_message_send_permissions(channel, check_file=bool(file_content), check_embed=bool(embed))
+
+        if bool(data.get("requires_confirmation", permission is not None)):
+            conf_embed = Embed(title=t.confirmation, description=t.confirm(name, channel.mention))
+            async with confirm(ctx, conf_embed) as (result, msg):
+                if not result:
+                    conf_embed.description += "\n\n" + t.canceled
+                    return
+
+                conf_embed.description += "\n\n" + t.confirmed
+                if msg:
+                    await msg.delete(delay=5)
 
         if delete_command := bool(data.get("delete_command", False)):
             try:
@@ -89,6 +100,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         while path_list:
             path = path_list.pop()
             if not path.exists():
+                logger.warning(f"{path} does not exist")
                 continue
 
             if path.is_dir():

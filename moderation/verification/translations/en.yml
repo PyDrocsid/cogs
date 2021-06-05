@@ -29,9 +29,12 @@ password_incorrect: Password is incorrect!
 verified: "Verified successfully :white_check_mark:"
 verification_role_already_set: Role already set.
 verification_role_not_set: Role not set.
-verification_reverse_role_not_assigned: Verification failed!
+verification_failed: Verification failed!
 x_seconds:
   one: "{cnt} second"
   many: "{cnt} seconds"
 role_not_set_too_high: Role could not be set because `@{}` is higher than `@{}`.
 role_not_set_managed_role: Role could not be set because `@{}` cannot be assigned manually.
+cannot_assign:
+  one: Verification could not assign {roles} to {member.mention} ({member.id}).
+  many: "Verification could not assign the following roles to {member.mention} ({member.id}): {roles}"

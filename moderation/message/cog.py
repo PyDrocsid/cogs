@@ -8,7 +8,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
 from PyDrocsid.converter import Color
 from PyDrocsid.translations import t
-from PyDrocsid.util import read_normal_message, read_complete_message
+from PyDrocsid.util import read_normal_message, read_complete_message, check_message_send_permissions
 from .colors import Colors
 from .permissions import MessagePermission
 from ...contributor import Contributor
@@ -40,8 +40,7 @@ class MessageCog(Cog, name="Message Commands"):
     @send.command(name="text", aliases=["t"])
     @docs(t.commands.send_text)
     async def send_text(self, ctx: Context, channel: TextChannel):
-        if not channel.permissions_for(channel.guild.me).send_messages:
-            raise CommandError(t.could_not_send_message)
+        check_message_send_permissions(channel)
 
         embed = Embed(
             title=t.messages,
@@ -65,11 +64,7 @@ class MessageCog(Cog, name="Message Commands"):
     @send.command(name="embed", aliases=["e"])
     @docs(t.commands.send_embed)
     async def send_embed(self, ctx: Context, channel: TextChannel, color: Optional[Color] = None):
-        permissions: Permissions = channel.permissions_for(channel.guild.me)
-        if not permissions.send_messages:
-            raise CommandError(t.could_not_send_message)
-        if not permissions.embed_links:
-            raise CommandError(t.could_not_send_embed)
+        check_message_send_permissions(channel, check_embed=True)
 
         embed = Embed(
             title=t.messages,
@@ -131,6 +126,7 @@ class MessageCog(Cog, name="Message Commands"):
     async def edit_text(self, ctx: Context, message: Message):
         if message.author != self.bot.user:
             raise CommandError(t.could_not_edit)
+        check_message_send_permissions(message.channel, check_send=False)
 
         embed = Embed(
             title=t.messages,
@@ -155,6 +151,7 @@ class MessageCog(Cog, name="Message Commands"):
     async def edit_embed(self, ctx: Context, message: Message, color: Optional[Color] = None):
         if message.author != self.bot.user:
             raise CommandError(t.could_not_edit)
+        check_message_send_permissions(message.channel, check_send=False, check_embed=True)
 
         embed = Embed(
             title=t.messages,

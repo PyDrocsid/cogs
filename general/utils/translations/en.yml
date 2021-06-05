@@ -1,3 +1,7 @@
+permissions:
+  suggest_role_color: use the `suggest_role_color` command
+
 pong: Pong!
 pong_latency: ":hourglass: {:.0f} ms"
 invalid_snowflake: Invalid snowflake!
+could_not_generate_color: Could not generate a new role color.

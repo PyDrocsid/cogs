@@ -1,6 +1,6 @@
 from typing import Optional
 
-from discord import Member, Role, TextChannel, Embed, Guild
+from discord import Member, Role, TextChannel, Embed, Guild, Forbidden
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError
 
@@ -9,10 +9,11 @@ from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.translations import t
+from PyDrocsid.util import check_message_send_permissions
 from .colors import Colors
 from .models import RoleNotification
 from .permissions import RoleNotificationsPermission
-from ...pubsub import send_to_changelog
+from ...pubsub import send_to_changelog, send_alert
 
 tg = t.g
 t = t.role_notifications
@@ -30,7 +31,10 @@ class RoleNotificationsCog(Cog, name="Role Notifications"):
 
             role_name = role.mention if link.ping_role else f"`@{role}`"
             user_name = member.mention if link.ping_user else f"`@{member}`"
-            await channel.send(t.rn_role_added(role_name, user_name))
+            try:
+                await channel.send(t.rn_role_added(role_name, user_name))
+            except Forbidden:
+                await send_alert(member.guild, t.cannot_send(channel.mention))
 
     async def on_member_role_remove(self, member: Member, role: Role):
         link: RoleNotification
@@ -41,7 +45,10 @@ class RoleNotificationsCog(Cog, name="Role Notifications"):
 
             role_name = role.mention if link.ping_role else f"`@{role}`"
             user_name = member.mention if link.ping_user else f"`@{member}`"
-            await channel.send(t.rn_role_removed(role_name, user_name))
+            try:
+                await channel.send(t.rn_role_removed(role_name, user_name))
+            except Forbidden:
+                await send_alert(member.guild, t.cannot_send(channel.mention))
 
     @commands.group(aliases=["rn"])
     @RoleNotificationsPermission.read.check
@@ -88,6 +95,8 @@ class RoleNotificationsCog(Cog, name="Role Notifications"):
         """
         add a role notification link
         """
+
+        check_message_send_permissions(channel)
 
         if await db.exists(filter_by(RoleNotification, role_id=role.id, channel_id=channel.id)):
             raise CommandError(t.link_already_exists)

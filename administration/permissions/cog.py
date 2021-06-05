@@ -54,7 +54,7 @@ async def list_permissions(ctx: Context, title: str, min_level: BasePermissionLe
 class PermissionLevelConverter(Converter):
     async def convert(self, ctx: Context, argument: str) -> BasePermissionLevel:
         for level in Config.PERMISSION_LEVELS:  # type: BasePermissionLevel
-            if argument.lower() in level.aliases:
+            if argument.lower() in level.aliases or argument == str(level.level):
                 return level
 
         raise BadArgument(t.invalid_permission_level)
