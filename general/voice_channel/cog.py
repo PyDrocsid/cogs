@@ -21,11 +21,11 @@ from discord.ext.commands import guild_only, Context, UserInputError, CommandErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
-from PyDrocsid.database import filter_by, db, select
+from PyDrocsid.database import filter_by, db, select, delete
 from PyDrocsid.embeds import send_long_embed, EmbedLimits
 from PyDrocsid.translations import t
 from .colors import Colors
-from .models import DynGroup, DynChannel
+from .models import DynGroup, DynChannel, DynChannelMember
 from .permissions import VoiceChannelPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
@@ -105,6 +105,21 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await text_channel.set_permissions(member, overwrite=PermissionOverwrite(read_messages=True))
         await self.send_voice_msg(channel, t.voice_channel, t.dyn_voice_joined(member.mention))
 
+        channel_member: Optional[DynChannelMember] = await db.get(
+            DynChannelMember,
+            member_id=member.id,
+            channel_id=voice_channel.id,
+        )
+        if not channel_member:
+            channel.members.append(channel_member := await DynChannelMember.create(member.id, voice_channel.id))
+
+        if not channel.owner_id:
+            channel.owner_id = channel.members[0].id
+        else:
+            owner: Optional[DynChannelMember] = await db.get(DynChannelMember, id=channel.owner_id)
+            if channel_member.timestamp < owner.timestamp:
+                channel.owner_id = channel_member.id
+
         if all(c.members for chnl in channel.group.channels if (c := self.bot.get_channel(chnl.channel_id))):
             overwrites = voice_channel.overwrites
             if channel.locked:
@@ -132,10 +147,23 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await text_channel.set_permissions(member, overwrite=None)
         await self.send_voice_msg(channel, t.voice_channel, t.dyn_voice_left(member.mention))
 
+        owner: Optional[DynChannelMember] = await db.get(DynChannelMember, id=channel.owner_id)
+        if owner and owner.member_id == member.id:
+            in_voice = {m.id for m in voice_channel.members}
+            for m in channel.members:
+                if m.member_id != member.id and m.member_id in in_voice:
+                    channel.owner_id = m.id
+                    break
+            else:
+                channel.owner_id = None
+
         if voice_channel.members:
             return
 
         if text_channel:
+            channel.owner_id = None
+            await db.exec(delete(DynChannelMember).filter_by(channel_id=voice_channel.id))
+            channel.members.clear()
             await text_channel.delete()
 
         if not all(
@@ -144,6 +172,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             if chnl.channel_id != channel.channel_id and (c := self.bot.get_channel(chnl.channel_id))
         ):
             await voice_channel.delete()
+            await db.delete(channel)
 
     async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
         if before.channel == after.channel:

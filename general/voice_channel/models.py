@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Union, Optional
+from typing import Union
 from uuid import uuid4
 
 from sqlalchemy import Column, BigInteger, Boolean, DateTime, ForeignKey, String
@@ -32,11 +32,9 @@ class DynChannel(db.Base):
     locked: Union[Column, bool] = Column(Boolean)
     group_id: Union[Column, int] = Column(String(36), ForeignKey("dynvoice_group.id"))
     group: DynGroup = relationship("DynGroup", back_populates="channels")
-    owner_id: Union[Column, int] = Column(String(36), ForeignKey("dynvoice_channel_member.id"))
-    owner: Optional[DynChannelMember] = relationship("DynChannelMember", foreign_keys=[owner_id])
+    owner_id: Union[Column, int] = Column(String(36))
     members: list[DynChannelMember] = relationship(
         "DynChannelMember",
-        foreign_keys=lambda: [DynChannelMember.channel_id],
         back_populates="channel",
         cascade="all, delete",
         order_by="DynChannelMember.timestamp",
@@ -55,7 +53,7 @@ class DynChannelMember(db.Base):
     id: Union[Column, int] = Column(String(36), primary_key=True, unique=True)
     member_id: Union[Column, int] = Column(BigInteger)
     channel_id: Union[Column, int] = Column(BigInteger, ForeignKey("dynvoice_channel.channel_id"))
-    channel: DynChannel = relationship("DynChannel", foreign_keys=[channel_id], back_populates="members")
+    channel: DynChannel = relationship("DynChannel", back_populates="members")
     timestamp: Union[Column, datetime] = Column(DateTime)
 
     @staticmethod
