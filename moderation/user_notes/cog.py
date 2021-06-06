@@ -6,8 +6,8 @@ from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
-from cogs.library.moderation.user_notes.models import UserNote
-from cogs.library.moderation.user_notes.permissions import UserNotePermission
+from .models import UserNote
+from .permissions import UserNotePermission
 from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
