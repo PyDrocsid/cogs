@@ -6,6 +6,8 @@ from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
+
+from PyDrocsid.command import confirm
 from .models import UserNote
 from .permissions import UserNotePermission
 from discord import Embed
@@ -51,12 +53,15 @@ class UserNoteCog(Cog, name="User Notes"):
         user_note: Optional[UserNote] = await db.get(UserNote, message_id=message_id)
         if not user_note:
             raise CommandError(t.note_not_found)
-        await db.delete(user_note)
-        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-        await send_to_changelog(
-            ctx.guild,
-            t.removed_note(f"<@{user_note.member}>", f"<@{user_note.author}>", user_note.message),
-        )
+        conf_embed = Embed(title=t.confirmation, description=t.confirm(user_note.message, f"<@{user_note.member}>"))
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.canceled
+                return
+
+            conf_embed.description += "\n\n" + t.confirmed
+            if msg:
+                await db.delete(user_note)
 
     @user_notes.command(name="show", aliases=["s"])
     @docs(t.show_user_note)
