@@ -34,6 +34,7 @@ class UserNoteCog(Cog, name="User Notes"):
 
     @user_notes.command(name="add", aliases=["a"])
     @UserNotePermission.write.check
+    @docs(t.add_user_note)
     async def add_user_note(self, ctx: Context, member: UserMemberConverter, *, message: str):
         await UserNote.create(
             member=member.id,
@@ -45,6 +46,7 @@ class UserNoteCog(Cog, name="User Notes"):
 
     @user_notes.command(name="remove", aliases=["r"])
     @UserNotePermission.write.check
+    @docs(t.remove_user_note)
     async def remove_user_note(self, ctx: Context, message_id: int):
         user_note: Optional[UserNote] = await db.get(UserNote, message_id=message_id)
         if not user_note:
@@ -57,6 +59,7 @@ class UserNoteCog(Cog, name="User Notes"):
         )
 
     @user_notes.command(name="show", aliases=["s"])
+    @docs(t.show_user_note)
     async def show_user_note(self, ctx: Context, member: UserMemberConverter):
         embed = Embed(title=t.user_notes, colour=Colors.user_notes)
         async for note in await db.stream(select(UserNote).filter_by(member=member.id)):
