@@ -12,6 +12,7 @@ commands:
   voice_dynamic_remove: remove a dynamic voice channel group
   voice_owner: transfer voice channel ownership
   voice_lock: lock a dynamic voice channel
+  voice_hide: hide a dynamic voice channel
   voice_unlock: unlock a dynamic voice channel
   voice_add: add a member to a dynamic voice channel
   voice_remove: remove a member from a dynamic voice channel
@@ -75,9 +76,11 @@ link_on_dynamic_channel_not_created: >
   Specify the parent channel instead.
 voice_channel: Voice Channel
 already_locked: This voice channel is already locked.
-locked: ":lock: {} locked this voice channel."
+already_hidden: This voice channel is already hidden.
+locked: ":lock: {} has locked this voice channel."
+hidden: ":lock: {} has hidden this voice channel."
 already_unlocked: This voice channel is already unlocked.
-unlocked: ":unlock: {} unlocked this voice channel."
+unlocked: ":unlock: {} has unlocked this voice channel."
 channel_not_locked: This voice channel is not locked.
 
 voice_info: "Voice Channel Information"

@@ -59,14 +59,17 @@ def check_voice_permissions(voice_channel: VoiceChannel, role: Role) -> bool:
     return view_channel and connect
 
 
-async def lock_channel(channel: DynChannel, voice_channel: VoiceChannel):
+async def lock_channel(channel: DynChannel, voice_channel: VoiceChannel, *, hide: bool):
     channel.locked = True
     member_overwrites = [
         (member, PermissionOverwrite(view_channel=True, connect=True)) for member in voice_channel.members
     ]
     overwrites = merge_permission_overwrites(
         voice_channel.overwrites,
-        (voice_channel.guild.get_role(channel.group.user_role), PermissionOverwrite(connect=False)),
+        (
+            voice_channel.guild.get_role(channel.group.user_role),
+            PermissionOverwrite(view_channel=not hide, connect=False),
+        ),
         *member_overwrites,
     )
     await voice_channel.edit(overwrites=overwrites)
@@ -87,7 +90,10 @@ async def unlock_channel(channel: DynChannel, voice_channel: VoiceChannel):
     overwrites = filter_overwrites(
         merge_permission_overwrites(
             voice_channel.overwrites,
-            (voice_channel.guild.get_role(channel.group.user_role), PermissionOverwrite(connect=True)),
+            (
+                voice_channel.guild.get_role(channel.group.user_role),
+                PermissionOverwrite(view_channel=True, connect=True),
+            ),
         ),
         keep_members=False,
     )
@@ -220,9 +226,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         return channel, voice_channel
 
     async def add_to_channel(self, channel: DynChannel, voice_channel: VoiceChannel, member: Member):
-        await voice_channel.set_permissions(member, overwrite=PermissionOverwrite(connect=True))
+        overwrite = PermissionOverwrite(view_channel=True, connect=True)
+        await voice_channel.set_permissions(member, overwrite=overwrite)
         if text_channel := voice_channel.guild.get_channel(channel.text_id):
-            await text_channel.set_permissions(member, overwrite=PermissionOverwrite(view_channel=True))
+            await text_channel.set_permissions(member, overwrite=overwrite)
 
         await self.send_voice_msg(channel, t.voice_channel, t.user_added(member.mention))
 
@@ -391,14 +398,14 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         group: DynGroup
         async for group in await db.stream(select(DynGroup, DynGroup.channels)):
-            channels: list[tuple[VoiceChannel, Optional[TextChannel]]] = []
+            channels: list[tuple[bool, VoiceChannel, Optional[TextChannel]]] = []
             for channel in group.channels:
                 voice_channel: Optional[VoiceChannel] = ctx.guild.get_channel(channel.channel_id)
                 text_channel: Optional[TextChannel] = ctx.guild.get_channel(channel.text_id)
                 if not voice_channel:
                     await db.delete(channel)
                     continue
-                channels.append((voice_channel, text_channel))
+                channels.append((channel.locked, voice_channel, text_channel))
 
             if not channels:
                 await db.delete(group)
@@ -407,7 +414,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             embed.add_field(
                 name=t.cnt_channels(cnt=len(channels)),
                 value="\n".join(
-                    f":small_orange_diamond: {vc.mention} {txt.mention if txt else ''}" for vc, txt in channels
+                    f":{(1-lck)*'un'}lock: {vc.mention} {txt.mention if txt else ''}" for lck, vc, txt in channels
                 ),
             )
 
@@ -483,8 +490,21 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if channel.locked:
             raise CommandError(t.already_locked)
 
-        await lock_channel(channel, voice_channel)
+        await lock_channel(channel, voice_channel, hide=False)
         await self.send_voice_msg(channel, t.voice_channel, t.locked(ctx.author.mention), force_new_embed=True)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
+    @voice.command(name="hide", aliases=["h"])
+    @docs(t.commands.voice_hide)
+    async def voice_hide(self, ctx: Context):
+        channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
+        user_role = voice_channel.guild.get_role(channel.group.user_role)
+        locked = channel.locked
+        if locked and not voice_channel.overwrites_for(user_role).view_channel:
+            raise CommandError(t.already_hidden)
+
+        await lock_channel(channel, voice_channel, hide=True)
+        await self.send_voice_msg(channel, t.voice_channel, t.hidden(ctx.author.mention), force_new_embed=not locked)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="unlock", aliases=["u"])
