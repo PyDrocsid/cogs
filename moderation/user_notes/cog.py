@@ -1,3 +1,5 @@
+from typing import Optional
+
 from PyDrocsid.cog import Cog
 from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, filter_by, select
@@ -44,7 +46,7 @@ class UserNoteCog(Cog, name="User Notes"):
     @user_note.command(name="remove")
     @UserNotePermission.write.check
     async def remove_user_note(self, ctx: Context, message_id: int):
-        user_note: UserNote = await db.get(UserNote, message_id=message_id)
+        user_note: Optional[UserNote] = await db.get(UserNote, message_id=message_id)
         if not user_note:
             raise CommandError(t.note_not_found)
         await db.delete(user_note)
