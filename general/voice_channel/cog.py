@@ -120,6 +120,13 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     async def get_channel_name(self) -> str:
         return random.choice(self.names)  # noqa: S311
 
+    async def is_teamler(self, member: Member) -> bool:
+        return any(
+            team_role in member.roles
+            for role_name in self.team_roles
+            if (team_role := member.guild.get_role(await RoleSettings.get(role_name))) is not None
+        )
+
     async def get_owner(self, channel: DynChannel) -> Optional[Member]:
         if out := self._owners.get(channel.channel_id):
             return out
@@ -466,6 +473,73 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_dyn_group_removed)
 
+    @voice.command(name="info", aliases=["i"])
+    @docs(t.commands.voice_info)
+    async def voice_info(self, ctx: Context, *, voice_channel: Optional[Union[VoiceChannel, Member]] = None):
+        if not isinstance(voice_channel, VoiceChannel):
+            member = voice_channel or ctx.author
+            if not member.voice:
+                if not voice_channel:
+                    raise CommandError(t.not_in_voice)
+                if await self.is_teamler(ctx.author):
+                    raise CommandError(t.user_not_in_voice)
+                raise CommandError(tg.permission_denied)
+            voice_channel = member.voice.channel
+
+        channel: Optional[DynChannel] = await db.get(
+            DynChannel,
+            DynChannel.group,
+            DynGroup.channels,
+            DynChannel.members,
+            channel_id=voice_channel.id,
+        )
+        if not channel:
+            raise CommandError(t.dyn_group_not_found)
+
+        if not voice_channel.permissions_for(ctx.author).connect:
+            raise CommandError(tg.permission_denied)
+
+        if channel.locked:
+            if voice_channel.overwrites_for(voice_channel.guild.get_role(channel.group.user_role)).view_channel:
+                state = t.state.locked
+            else:
+                state = t.state.hidden
+        else:
+            state = t.state.unlocked
+
+        embed = Embed(
+            title=t.voice_info,
+            color=[Colors.unlocked, Colors.locked][channel.locked],
+        )
+        embed.add_field(name=t.voice_name, value=voice_channel.name)
+        embed.add_field(name=t.voice_state, value=state)
+
+        if owner := await self.get_owner(channel):
+            embed.add_field(name=t.voice_owner, value=owner.mention)
+
+        out = []
+
+        active = members = set(voice_channel.members)
+        if channel.locked:
+            members = {m for m in voice_channel.overwrites if isinstance(m, Member)}
+
+        join_map = {m.member_id: m.timestamp.timestamp() for m in channel.members}
+        members = sorted(members, key=lambda m: -1 if m.id == channel.owner_override else join_map.get(m, 1e1337))
+
+        for member in members:
+            if member in active:
+                out.append(f":small_orange_diamond: {member.mention}")
+            else:
+                out.append(f":small_blue_diamond: {member.mention}")
+
+        if channel.locked:
+            name = t.voice_members.locked(len(active), cnt=len(members))
+        else:
+            name = t.voice_members.unlocked(cnt=len(members))
+        embed.add_field(name=name, value="\n".join(out), inline=False)
+
+        await send_long_embed(ctx, embed, paginate=True)
+
     @voice.command(name="owner", aliases=["o"])
     @docs(t.commands.voice_owner)
     async def voice_owner(self, ctx: Context, member: Member):
@@ -530,7 +604,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await self.send_voice_msg(channel, t.voice_channel, t.unlocked(ctx.author.mention), force_new_embed=True)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
-    @voice.command(name="add", aliases=["a", "+", "invite", "i"])
+    @voice.command(name="add", aliases=["a", "+", "invite"])
     @docs(t.commands.voice_add)
     async def voice_add(self, ctx: Context, *members: Greedy[Member]):
         if not members:

@@ -10,6 +10,7 @@ commands:
   voice_dynamic: manage dynamic voice channels
   voice_dynamic_add: create a new dynamic voice channel group
   voice_dynamic_remove: remove a dynamic voice channel group
+  voice_info: show information about a given dynamic voice channel
   voice_owner: transfer voice channel ownership
   voice_lock: lock a dynamic voice channel
   voice_hide: hide a dynamic voice channel
@@ -89,9 +90,17 @@ not_hidden: This voice channel is not hidden.
 voice_info: "Voice Channel Information"
 voice_creator: "Creator"
 voice_owner: "Owner"
-voice_members: "Members"
-public: ":globe_with_meridians: Public"
-private: ":lock: Private"
-voice_visibility: "Visibility"
-voice_create_date: "Created at:"
+voice_members:
+  unlocked:
+    one: "{cnt} Member"
+    many: "{cnt} Members"
+  locked:
+    one: "{}/{cnt} Member"
+    many: "{}/{cnt} Members"
+voice_state: "State"
 voice_name: "Name"
+
+state:
+  unlocked: ":unlock: Unlocked"
+  locked: ":lock: Locked"
+  hidden: ":lock: Hidden"
