@@ -159,8 +159,12 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         in_voice = {m.id for m in voice_channel.members}
         for m in channel.members:
             if m.member_id in in_voice:
+                member = voice_channel.guild.get_member(m.member_id)
+                if member.bot:
+                    continue
+
                 channel.owner_id = m.id
-                return await self.update_owner(channel, voice_channel.guild.get_member(m.member_id))
+                return await self.update_owner(channel, member)
 
         channel.owner_id = None
         return await self.update_owner(channel, None)
@@ -282,8 +286,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         owner: Optional[DynChannelMember] = await db.get(DynChannelMember, id=channel.owner_id)
         update_owner = False
         if (not owner or channel_member.timestamp < owner.timestamp) and channel.owner_id != channel_member.id:
-            channel.owner_id = channel_member.id
-            update_owner = True
+            if not member.bot:
+                channel.owner_id = channel_member.id
+                update_owner = True
         if update_owner or channel.owner_override == member.id:
             await self.update_owner(channel, await self.fetch_owner(channel))
 
@@ -318,7 +323,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if owner and owner.member_id == member.id or channel.owner_override == member.id:
             await self.fix_owner(channel)
 
-        if voice_channel.members:
+        if any(not m.bot for m in voice_channel.members):
             return
 
         if text_channel:
@@ -331,7 +336,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         channel.members.clear()
 
         if not all(
-            c.members
+            any(not m.bot for m in c.members)
             for chnl in channel.group.channels
             if chnl.channel_id != channel.channel_id and (c := self.bot.get_channel(chnl.channel_id))
         ):
