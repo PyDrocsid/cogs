@@ -14,11 +14,12 @@ class DynGroup(db.Base):
     __tablename__ = "dynvoice_group"
 
     id: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
+    user_role: Union[Column, int] = Column(BigInteger)
     channels: list[DynChannel] = relationship("DynChannel", back_populates="group", cascade="all, delete")
 
     @staticmethod
-    async def create(channel_id: int) -> DynGroup:
-        group = DynGroup(id=str(uuid4()))
+    async def create(channel_id: int, user_role: int) -> DynGroup:
+        group = DynGroup(id=str(uuid4()), user_role=user_role)
         group.channels.append(await DynChannel.create(channel_id, group.id))
         await db.add(group)
         return group

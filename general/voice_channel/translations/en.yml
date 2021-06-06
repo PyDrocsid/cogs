@@ -11,6 +11,10 @@ commands:
   voice_dynamic_add: create a new dynamic voice channel group
   voice_dynamic_remove: remove a dynamic voice channel group
   voice_owner: transfer voice channel ownership
+  voice_lock: lock a dynamic voice channel
+  voice_unlock: unlock a dynamic voice channel
+  voice_add: add a member to a dynamic voice channel
+  voice_remove: remove a member from a dynamic voice channel
 
 updating_voice_roles: Updating voice channel roles
 voice_init_done: Initialization complete
@@ -25,6 +29,7 @@ link_deleted: "Link has been deleted. :white_check_mark:"
 log_link_deleted: "**Link** has been **deleted** between voice channel `{}` and role `@{}`."
 
 dyn_group_already_exists: This channel is already part of an existing voice channel group.
+invalid_user_role: The role {} does not have `view_channel` and `connect` permissions in this voice channel. Please either grant this role the required permissions in this channel or specify a (different) role which should have access to this voice channel group.
 dyn_group_created: "Dynamic voice channel group has been created successfully. :white_check_mark:"
 log_dyn_group_created: "A new **dynamic voice channel group** has been **created**."
 dyn_group_not_found: This channel is not part of any voice channel group.
@@ -53,12 +58,11 @@ private_voice_closed: "Private voice channel has been closed successfully. :whit
 user_added_to_private_voice: "{} has been invited to join this private voice channel."
 user_added_to_private_voice_no_dm: >
   {} has been invited to join this private voice channel but does not allow direct messages.
-user_added_to_private_voice_dm: "{} just invited you to join a private voice channel."
-user_added_to_private_voice_response: "User has been added to this private voice channel. :white_check_mark:"
-cannot_add_user: User {} could not be added.
-user_removed_from_private_voice: "{} has been removed from this private voice channel."
-user_removed_from_private_voice_response: "User has been removed from this private voice channel. :white_check_mark:"
-cannot_remove_member: The member {} could not be removed.
+user_added: ":white_check_mark: {} has been added to this voice channel."
+cannot_add_user: "{} could not be added."
+user_removed: ":x: {} has been removed from this voice channel."
+cannot_remove_user: "{} could not be removed."
+not_added: "{} has not been added to this voice channel."
 member_could_not_be_kicked: You cannot remove a team member ({}) from this voice channel.
 user_not_in_this_channel: User is not in the same private voice channel.
 owner_of_private_voice: "Owner of this private voice channel: {}"
@@ -70,6 +74,11 @@ link_on_dynamic_channel_not_created: >
   Link could not be created for dynamic voice channel.
   Specify the parent channel instead.
 voice_channel: Voice Channel
+already_locked: This voice channel is already locked.
+locked: ":lock: {} locked this voice channel."
+already_unlocked: This voice channel is already unlocked.
+unlocked: ":unlock: {} unlocked this voice channel."
+channel_not_locked: This voice channel is not locked.
 
 voice_info: "Voice Channel Information"
 voice_creator: "Creator"
