@@ -22,8 +22,8 @@ class UserNoteCog(Cog, name="User Notes"):
     CONTRIBUTORS = [Contributor.Florian]
 
     @commands.group()
-    @guild_only()
     @UserNotePermission.read.check
+    @guild_only()
     @docs(t.description)
     async def user_note(self, ctx: Context):
 
