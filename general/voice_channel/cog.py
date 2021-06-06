@@ -1,3 +1,4 @@
+import asyncio
 import random
 from datetime import datetime
 from pathlib import Path
@@ -21,9 +22,10 @@ from discord.ext.commands import guild_only, Context, UserInputError, CommandErr
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
-from PyDrocsid.database import filter_by, db, select, delete
+from PyDrocsid.database import filter_by, db, select, delete, db_context
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
+from PyDrocsid.multilock import MultiLock
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_editable_log
@@ -96,6 +98,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
         self._owners: dict[int, Member] = {}
+
+        self._join_tasks: dict[tuple[Member, VoiceChannel], asyncio.Task] = {}
+        self._leave_tasks: dict[tuple[Member, VoiceChannel], asyncio.Task] = {}
+        self._channel_lock = MultiLock()
 
         with Path(__file__).parent.joinpath("names.yml").open() as file:
             self.names: list[str] = yaml.safe_load(file)
@@ -328,10 +334,29 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if before.channel == after.channel:
             return
 
+        async def delayed(func, delay_callback, *args):
+            await asyncio.sleep(1)
+            delay_callback()
+            async with self._channel_lock[args[1]]:
+                async with db_context():
+                    return await func(*args)
+
+        def create_task(k, task_dict, func):
+            task_dict[k] = asyncio.create_task(delayed(func, lambda: task_dict.pop(k, None), *k))
+
         if (channel := before.channel) is not None:
-            await self.member_leave(member, channel)
+            key = (member, channel)
+            if task := self._join_tasks.pop(key, None):
+                task.cancel()
+            elif key not in self._leave_tasks:
+                create_task(key, self._leave_tasks, self.member_leave)
+
         if (channel := after.channel) is not None:
-            await self.member_join(member, channel)
+            key = (member, channel)
+            if task := self._leave_tasks.pop(key, None):
+                task.cancel()
+            elif key not in self._join_tasks:
+                create_task(key, self._join_tasks, self.member_join)
 
     @commands.group(aliases=["vc"])
     @guild_only()
