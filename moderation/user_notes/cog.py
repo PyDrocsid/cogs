@@ -32,7 +32,7 @@ class UserNoteCog(Cog, name="User Notes"):
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
-    @user_notes.command(name="add")
+    @user_notes.command(name="add", aliases=["a"])
     @UserNotePermission.write.check
     async def add_user_note(self, ctx: Context, member: UserMemberConverter, *, message: str):
         await UserNote.create(
@@ -43,7 +43,7 @@ class UserNoteCog(Cog, name="User Notes"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
         await send_to_changelog(ctx.guild, t.new_note(member.mention, f"<@{ctx.author.id}>", message))
 
-    @user_notes.command(name="remove")
+    @user_notes.command(name="remove", aliases=["r"])
     @UserNotePermission.write.check
     async def remove_user_note(self, ctx: Context, message_id: int):
         user_note: Optional[UserNote] = await db.get(UserNote, message_id=message_id)
@@ -56,7 +56,7 @@ class UserNoteCog(Cog, name="User Notes"):
             t.removed_note(f"<@{user_note.member}>", f"<@{user_note.author}>", user_note.message),
         )
 
-    @user_notes.command(name="show")
+    @user_notes.command(name="show", aliases=["s"])
     async def show_user_note(self, ctx: Context, member: UserMemberConverter):
         embed = Embed(title=t.user_notes, colour=Colors.user_notes)
         async for note in await db.stream(select(UserNote).filter_by(member=member.id)):
