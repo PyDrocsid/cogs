@@ -18,7 +18,7 @@ from ...pubsub import send_to_changelog
 t = t.user_notes
 
 
-class UserNoteCog(Cog, name="User notes"):
+class UserNoteCog(Cog, name="User Notes"):
     CONTRIBUTORS = [Contributor.Florian]
 
     @commands.group()
