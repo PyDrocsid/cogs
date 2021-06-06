@@ -76,20 +76,25 @@ async def lock_channel(channel: DynChannel, voice_channel: VoiceChannel):
 
 
 async def unlock_channel(channel: DynChannel, voice_channel: VoiceChannel):
-    def filter_overwrites(ov):
-        return {k: v for k, v in ov.items() if not isinstance(k, Member) or k == voice_channel.guild.me}
+    def filter_overwrites(ov, keep_members: bool):
+        return {
+            k: v
+            for k, v in ov.items()
+            if not isinstance(k, Member) or k == voice_channel.guild.me or (keep_members and k in voice_channel.members)
+        }
 
     channel.locked = False
     overwrites = filter_overwrites(
         merge_permission_overwrites(
             voice_channel.overwrites,
             (voice_channel.guild.get_role(channel.group.user_role), PermissionOverwrite(connect=True)),
-        )
+        ),
+        keep_members=False,
     )
     await voice_channel.edit(overwrites=overwrites)
 
     if text_channel := voice_channel.guild.get_channel(channel.text_id):
-        await text_channel.edit(overwrites=filter_overwrites(text_channel.overwrites))
+        await text_channel.edit(overwrites=filter_overwrites(text_channel.overwrites, keep_members=True))
 
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
@@ -223,12 +228,15 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await text_channel.set_permissions(member, overwrite=None)
 
         await db.exec(delete(DynChannelMember).filter_by(channel_id=voice_channel.id, member_id=member.id))
+        is_owner = member == await self.get_owner(channel)
         if member.voice and member.voice.channel == voice_channel:
             try:
                 await member.move_to(None)
             except Forbidden:
-                pass
+                is_owner = False
         await self.send_voice_msg(channel, t.voice_channel, t.user_removed(member.mention))
+        if is_owner:
+            await self.fix_owner(channel)
 
     async def member_join(self, member: Member, voice_channel: VoiceChannel):
         guild: Guild = voice_channel.guild
