@@ -23,7 +23,7 @@ t = t.user_notes
 class UserNoteCog(Cog, name="User Notes"):
     CONTRIBUTORS = [Contributor.Florian]
 
-    @commands.group()
+    @commands.group(aliases=["un"])
     @UserNotePermission.read.check
     @guild_only()
     @docs(t.description)
