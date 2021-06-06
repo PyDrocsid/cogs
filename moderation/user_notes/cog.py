@@ -9,7 +9,7 @@ from cogs.library.moderation.user_notes.permissions import UserNotePermission
 from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
-from library.PyDrocsid.command import docs
+from PyDrocsid.command import docs
 
 from .colors import Colors
 from ...contributor import Contributor
