@@ -507,6 +507,18 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await self.send_voice_msg(channel, t.voice_channel, t.hidden(ctx.author.mention), force_new_embed=not locked)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
+    @voice.command(name="show", aliases=["s"])
+    @docs(t.commands.voice_show)
+    async def voice_show(self, ctx: Context):
+        channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
+        user_role = voice_channel.guild.get_role(channel.group.user_role)
+        if not channel.locked or voice_channel.overwrites_for(user_role).view_channel:
+            raise CommandError(t.not_hidden)
+
+        await voice_channel.set_permissions(user_role, view_channel=True)
+        await self.send_voice_msg(channel, t.voice_channel, t.visible)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
     @voice.command(name="unlock", aliases=["u"])
     @docs(t.commands.voice_unlock)
     async def voice_unlock(self, ctx: Context):
