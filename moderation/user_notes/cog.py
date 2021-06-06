@@ -26,7 +26,7 @@ class UserNoteCog(Cog, name="User Notes"):
     @commands.group(aliases=["un"])
     @UserNotePermission.read.check
     @guild_only()
-    @docs(t.description)
+    @docs(t.command.description)
     async def user_notes(self, ctx: Context):
 
         if ctx.invoked_subcommand is None:

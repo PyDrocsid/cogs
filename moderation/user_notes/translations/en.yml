@@ -3,7 +3,6 @@ id: "Message ID"
 message: "Message"
 timestamp: "Timestamp"
 author: "Author"
-description: "Mange notes for users"
 note_not_found: "The message was not found"
 new_note: "The following note for {} was added by {}: {}"
 removed_note: "The following note for {} was removed by {}: {}"
@@ -13,3 +12,5 @@ show_user_note: "Display notes for a specific user"
 permissions:
   read: "Show user notes"
   write: "Create and delete user notes"
+command:
+  description: "Mange notes for users"
