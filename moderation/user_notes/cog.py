@@ -64,4 +64,4 @@ class UserNoteCog(Cog, name="User Notes"):
             embed.add_field(name=t.message, value=note.message, inline=True)
             embed.add_field(name=t.timestamp, value=note.timestamp.strftime("%d.%m.%Y %H:%M:%S"), inline=True)
             embed.add_field(name=t.author, value=f"<@{note.author}>", inline=True)
-        await send_long_embed(ctx, embed)
+        await send_long_embed(ctx, embed, paginate=True)
