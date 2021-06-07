@@ -184,8 +184,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         voice_channel: VoiceChannel = member.voice.channel
         channel: Optional[DynChannel] = await db.get(
             DynChannel,
-            DynChannel.group,
-            DynGroup.channels,
+            [DynChannel.group, DynGroup.channels],
             DynChannel.members,
             channel_id=voice_channel.id,
         )
@@ -306,8 +305,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         channel: Optional[DynChannel] = await db.get(
             DynChannel,
-            DynChannel.group,
-            DynGroup.channels,
+            [DynChannel.group, DynGroup.channels],
             DynChannel.members,
             channel_id=voice_channel.id,
         )
@@ -383,8 +381,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     async def member_leave(self, member: Member, voice_channel: VoiceChannel):
         channel: Optional[DynChannel] = await db.get(
             DynChannel,
-            DynChannel.group,
-            DynGroup.channels,
+            [DynChannel.group, DynGroup.channels],
             DynChannel.members,
             channel_id=voice_channel.id,
         )
@@ -542,8 +539,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     async def voice_dynamic_remove(self, ctx: Context, *, voice_channel: VoiceChannel):
         channel: Optional[DynChannel] = await db.get(
             DynChannel,
-            DynChannel.group,
-            DynGroup.channels,
+            [DynChannel.group, DynGroup.channels],
             DynChannel.members,
             channel_id=voice_channel.id,
         )
@@ -582,8 +578,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         channel: Optional[DynChannel] = await db.get(
             DynChannel,
-            DynChannel.group,
-            DynGroup.channels,
+            [DynChannel.group, DynGroup.channels],
             DynChannel.members,
             channel_id=voice_channel.id,
         )
