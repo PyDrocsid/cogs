@@ -29,9 +29,9 @@ from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.multilock import MultiLock
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_editable_log
+from PyDrocsid.util import send_editable_log, check_role_assignable
 from .colors import Colors
-from .models import DynGroup, DynChannel, DynChannelMember
+from .models import DynGroup, DynChannel, DynChannelMember, RoleVoiceLink
 from .permissions import VoiceChannelPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog, send_alert
@@ -58,6 +58,31 @@ def check_voice_permissions(voice_channel: VoiceChannel, role: Role) -> bool:
     if connect is None:
         connect = role.permissions.connect
     return view_channel and connect
+
+
+async def collect_links(guild: Guild, link_set, channel_id):
+    link: RoleVoiceLink
+    async for link in await db.stream(filter_by(RoleVoiceLink, voice_channel=channel_id)):
+        if role := guild.get_role(link.role):
+            link_set.add(role)
+
+
+async def update_roles(member: Member, *, add: set[Role] = None, remove: set[Role] = None):
+    add = add or set()
+    remove = remove or set()
+    add, remove = add - remove, remove - add
+
+    if remove:
+        try:
+            await member.remove_roles(*remove)
+        except Forbidden:
+            await send_alert(member.guild, t.could_not_remove_roles(member.mention))
+
+    if add:
+        try:
+            await member.add_roles(*add)
+        except Forbidden:
+            await send_alert(member.guild, t.could_not_add_roles(member.mention))
 
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
@@ -199,6 +224,49 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         return channel, voice_channel
 
+    async def on_ready(self):
+        guild: Guild = self.bot.guilds[0]
+
+        role_voice_links: dict[Role, list[VoiceChannel]] = {}
+
+        link: RoleVoiceLink
+        async for link in await db.stream(select(RoleVoiceLink)):
+            role: Optional[Role] = guild.get_role(link.role)
+            if role is None:
+                await db.delete(link)
+                continue
+
+            if link.voice_channel.isnumeric():
+                voice: Optional[VoiceChannel] = guild.get_channel(int(link.voice_channel))
+                if not voice:
+                    await db.delete(link)
+                else:
+                    role_voice_links.setdefault(role, []).append(voice)
+            else:
+                group: Optional[DynGroup] = await db.get(DynGroup, DynGroup.channels, id=link.voice_channel)
+                if not group:
+                    await db.delete(link)
+                    continue
+
+                for channel in group.channels:
+                    if voice := guild.get_channel(channel.channel_id):
+                        role_voice_links.setdefault(role, []).append(voice)
+
+        role_changes: dict[Member, tuple[set[Role], set[Role]]] = {}
+        for role, channels in role_voice_links.items():
+            members = set()
+            for channel in channels:
+                members.update(channel.members)
+            for member in members:
+                if role not in member.roles:
+                    role_changes.setdefault(member, (set(), set()))[0].add(role)
+            for member in role.members:
+                if member not in members:
+                    role_changes.setdefault(member, (set(), set()))[1].add(role)
+
+        for member, (add, remove) in role_changes.items():
+            asyncio.create_task(update_roles(member, add=add, remove=remove))
+
     async def lock_channel(self, channel: DynChannel, voice_channel: VoiceChannel, *, hide: bool):
         channel.locked = True
         member_overwrites = [
@@ -300,17 +368,15 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await self.fix_owner(channel)
 
     async def member_join(self, member: Member, voice_channel: VoiceChannel):
+        channel: Optional[DynChannel] = await DynChannel.get(channel_id=voice_channel.id)
+        if not channel:
+            return
+
         guild: Guild = voice_channel.guild
         category: Union[CategoryChannel, Guild] = voice_channel.category or guild
 
-        channel: Optional[DynChannel] = await db.get(
-            DynChannel,
-            [DynChannel.group, DynGroup.channels],
-            DynChannel.members,
-            channel_id=voice_channel.id,
-        )
-        if not channel:
-            return
+        await collect_links(member.guild, add := set(), channel.group_id)
+        await update_roles(member, add=add)
 
         text_channel: Optional[TextChannel] = self.bot.get_channel(channel.text_id)
         if not text_channel:
@@ -379,14 +445,12 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 await DynChannel.create(new_channel.id, channel.group_id)
 
     async def member_leave(self, member: Member, voice_channel: VoiceChannel):
-        channel: Optional[DynChannel] = await db.get(
-            DynChannel,
-            [DynChannel.group, DynGroup.channels],
-            DynChannel.members,
-            channel_id=voice_channel.id,
-        )
+        channel: Optional[DynChannel] = await DynChannel.get(channel_id=voice_channel.id)
         if not channel:
             return
+
+        await collect_links(member.guild, remove := set(), channel.group_id)
+        await update_roles(member, remove=remove)
 
         text_channel: Optional[TextChannel] = self.bot.get_channel(channel.text_id)
         if not text_channel:
@@ -449,22 +513,25 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 async with db_context():
                     return await func(*args)
 
-        def create_task(k, task_dict, func):
-            task_dict[k] = asyncio.create_task(delayed(func, lambda: task_dict.pop(k, None), *k))
-
-        if (channel := before.channel) is not None:
-            key = (member, channel)
-            if task := self._join_tasks.pop(key, None):
+        def create_task(c, task_dict, cancel_dict, func):
+            key = member, c
+            if task := cancel_dict.pop(key, None):
                 task.cancel()
-            elif key not in self._leave_tasks:
-                create_task(key, self._leave_tasks, self.member_leave)
+            elif key not in task_dict:
+                task_dict[key] = asyncio.create_task(delayed(func, lambda: task_dict.pop(key, None), *key))
 
-        if (channel := after.channel) is not None:
-            key = (member, channel)
-            if task := self._leave_tasks.pop(key, None):
-                task.cancel()
-            elif key not in self._join_tasks:
-                create_task(key, self._join_tasks, self.member_join)
+        remove: set[Role] = set()
+        add: set[Role] = set()
+
+        if channel := before.channel:
+            await collect_links(channel.guild, remove, str(channel.id))
+            create_task(channel, self._leave_tasks, self._join_tasks, self.member_leave)
+
+        if channel := after.channel:
+            await collect_links(channel.guild, add, str(channel.id))
+            create_task(channel, self._join_tasks, self._leave_tasks, self.member_join)
+
+        await update_roles(member, add=add, remove=remove)
 
     @commands.group(aliases=["vc"])
     @guild_only()
@@ -742,3 +809,109 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await self.remove_from_channel(channel, voice_channel, member)
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
+    @voice.group(name="role_links", aliases=["rl"])
+    @VoiceChannelPermission.link_read.check
+    @docs(t.commands.voice_link)
+    async def voice_link(self, ctx: Context):
+        if len(ctx.message.content.lstrip(ctx.prefix).split()) > 2:
+            if ctx.invoked_subcommand is None:
+                raise UserInputError
+            return
+
+        guild: Guild = ctx.guild
+
+        out: list[tuple[VoiceChannel, Role]] = []
+        link: RoleVoiceLink
+        async for link in await db.stream(select(RoleVoiceLink)):
+            role: Optional[Role] = guild.get_role(link.role)
+            if role is None:
+                await db.delete(link)
+                continue
+
+            if link.voice_channel.isnumeric():
+                voice: Optional[VoiceChannel] = guild.get_channel(int(link.voice_channel))
+                if not voice:
+                    await db.delete(link)
+                    continue
+                out.append((voice, role))
+            else:
+                group: Optional[DynGroup] = await db.get(DynGroup, DynGroup.channels, id=link.voice_channel)
+                if not group:
+                    await db.delete(link)
+                    continue
+
+                for channel in group.channels:
+                    if voice := guild.get_channel(channel.channel_id):
+                        out.append((voice, role))
+
+        embed = Embed(title=t.voice_channel, color=Colors.Voice)
+        embed.description = "\n".join(
+            f"{voice.mention} (`{voice.id}`) -> {role.mention} (`{role.id}`)" for voice, role in out
+        )
+
+        if not out:
+            embed.colour = Colors.error
+            embed.description = t.no_links_created
+
+        await send_long_embed(ctx, embed)
+
+    def gather_members(self, channel: Optional[DynChannel], voice_channel: VoiceChannel) -> set[Member]:
+        members: set[Member] = set(voice_channel.members)
+        if not channel:
+            return members
+
+        for dyn_channel in channel.group.channels:
+            if x := self.bot.get_channel(dyn_channel.channel_id):
+                members.update(x.members)
+
+        return members
+
+    @voice_link.command(name="add", aliases=["a", "+"])
+    @VoiceChannelPermission.link_write.check
+    @docs(t.commands.voice_link_add)
+    async def voice_link_add(self, ctx: Context, voice_channel: VoiceChannel, *, role: Role):
+        if channel := await DynChannel.get(channel_id=voice_channel.id):
+            voice_id = channel.group_id
+        else:
+            voice_id = str(voice_channel.id)
+
+        if await db.exists(filter_by(RoleVoiceLink, role=role.id, voice_channel=voice_id)):
+            raise CommandError(t.link_already_exists)
+
+        check_role_assignable(role)
+
+        await RoleVoiceLink.create(role.id, voice_id)
+
+        for m in self.gather_members(channel, voice_channel):
+            asyncio.create_task(update_roles(m, add={role}))
+
+        embed = Embed(
+            title=t.voice_channel,
+            colour=Colors.Voice,
+            description=t.link_created(voice_channel, role.id),
+        )
+        await reply(ctx, embed=embed)
+        await send_to_changelog(ctx.guild, t.log_link_created(voice_channel, role))
+
+    @voice_link.command(name="remove", aliases=["del", "r", "d", "-"])
+    @VoiceChannelPermission.link_write.check
+    @docs(t.commands.voice_link_remove)
+    async def voice_link_remove(self, ctx: Context, voice_channel: VoiceChannel, *, role: Role):
+        if channel := await DynChannel.get(channel_id=voice_channel.id):
+            voice_id = channel.group_id
+        else:
+            voice_id = str(voice_channel.id)
+
+        link: Optional[RoleVoiceLink] = await db.get(RoleVoiceLink, role=role.id, voice_channel=voice_id)
+        if not link:
+            raise CommandError(t.link_not_found)
+
+        await db.delete(link)
+
+        for m in self.gather_members(channel, voice_channel):
+            asyncio.create_task(update_roles(m, remove={role}))
+
+        embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.link_deleted)
+        await reply(ctx, embed=embed)
+        await send_to_changelog(ctx.guild, t.log_link_deleted(voice_channel, role))

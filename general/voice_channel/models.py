@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Union
+from typing import Union, Optional
 from uuid import uuid4
 
 from sqlalchemy import Column, BigInteger, Boolean, DateTime, ForeignKey, String
@@ -48,6 +48,15 @@ class DynChannel(db.Base):
         await db.add(channel)
         return channel
 
+    @staticmethod
+    async def get(**kwargs) -> Optional[DynChannel]:
+        return await db.get(
+            DynChannel,
+            [DynChannel.group, DynGroup.channels],
+            DynChannel.members,
+            **kwargs,
+        )
+
 
 class DynChannelMember(db.Base):
     __tablename__ = "dynvoice_channel_member"
@@ -68,3 +77,16 @@ class DynChannelMember(db.Base):
         )
         await db.add(member)
         return member
+
+
+class RoleVoiceLink(db.Base):
+    __tablename__ = "role_voice_link"
+
+    role: Union[Column, int] = Column(BigInteger, primary_key=True)
+    voice_channel: Union[Column, str] = Column(String(36), primary_key=True)
+
+    @staticmethod
+    async def create(role: int, voice_channel: str) -> RoleVoiceLink:
+        link = RoleVoiceLink(role=role, voice_channel=voice_channel)
+        await db.add(link)
+        return link

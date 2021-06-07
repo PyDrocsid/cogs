@@ -18,6 +18,9 @@ commands:
   voice_unlock: unlock a dynamic voice channel
   voice_add: add a member to a dynamic voice channel
   voice_remove: remove a member from a dynamic voice channel
+  voice_link: manage links between voice channels and roles
+  voice_link_add: link a voice channel with a role
+  voice_link_remove: delete the link between a voice channel and a role
 
 updating_voice_roles: Updating voice channel roles
 voice_init_done: Initialization complete
@@ -30,6 +33,8 @@ log_link_created: "**Link** has been **created** between voice channel `{}` and 
 link_not_found: Link does not exist.
 link_deleted: "Link has been deleted. :white_check_mark:"
 log_link_deleted: "**Link** has been **deleted** between voice channel `{}` and role `@{}`."
+could_not_remove_roles: Could not remove some roles from {}.
+could_not_add_roles: Could not add some roles to {}.
 
 dyn_group_already_exists: This channel is already part of an existing voice channel group.
 invalid_user_role: The role {} does not have `view_channel` and `connect` permissions in this voice channel. Please either grant this role the required permissions in this channel or specify a (different) role which should have access to this voice channel group.
