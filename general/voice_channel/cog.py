@@ -101,7 +101,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             self.names: list[str] = yaml.safe_load(file)
 
     async def get_channel_name(self) -> str:
-        return random.choice(self.names)  # noqa: S311
+        if random.randrange(100):
+            return random.choice(self.names)
+
+        return random.choice(["razupaltuff", "defelo", "tnt2k", "loc", "florian", "cephox", "anorak", "delta"])
 
     async def is_teamler(self, member: Member) -> bool:
         return any(
@@ -642,6 +645,10 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     @voice.command(name="info", aliases=["i"])
     @docs(t.commands.voice_info)
     async def voice_info(self, ctx: Context, *, voice_channel: Optional[Union[VoiceChannel, Member]] = None):
+        if not voice_channel:
+            if channel := await db.get(DynChannel, text_id=ctx.channel.id):
+                voice_channel = self.bot.get_channel(channel.channel_id)
+
         if not isinstance(voice_channel, VoiceChannel):
             member = voice_channel or ctx.author
             if not member.voice:
