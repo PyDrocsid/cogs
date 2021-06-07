@@ -86,6 +86,14 @@ async def update_roles(member: Member, *, add: set[Role] = None, remove: set[Rol
             await send_alert(member.guild, t.could_not_add_roles(member.mention))
 
 
+async def get_commands_embed() -> Embed:
+    return Embed(
+        title=t.dyn_voice_help_title,
+        color=Colors.Voice,
+        description=t.dyn_voice_help_content(prefix=await get_prefix()),
+    )
+
+
 class VoiceChannelCog(Cog, name="Voice Channels"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.Florian, Contributor.wolflu, Contributor.TNT2k]
 
@@ -402,14 +410,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 return
 
             channel.text_id = text_channel.id
-            prefix = await get_prefix()
-            await text_channel.send(
-                embed=Embed(
-                    title=t.dyn_voice_help_title,
-                    color=Colors.Voice,
-                    description=t.dyn_voice_help_content(prefix=prefix),
-                ),
-            )
+            await text_channel.send(embed=await get_commands_embed())
             await self.send_voice_msg(channel, t.voice_channel, t.dyn_voice_created(member.mention))
 
         try:
@@ -648,6 +649,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.dyn_group_removed)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_dyn_group_removed)
+
+    @voice.command(name="help", aliases=["commands", "c"])
+    @docs(t.commands.help)
+    async def voice_help(self, ctx: Context):
+        await reply(ctx, embed=await get_commands_embed())
 
     @voice.command(name="info", aliases=["i"])
     @docs(t.commands.voice_info)
