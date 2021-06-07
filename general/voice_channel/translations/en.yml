@@ -49,7 +49,7 @@ dyn_voice_left: ":door: {} left this channel."
 dyn_voice_help_title: Voice Channel Commands
 dyn_voice_help_content: |
   :lock: `{prefix}vc lock` - lock this voice channel
-  :lock: `{prefix}vc hide` - lock and hide this voice channel
+  :man_detective: `{prefix}vc hide` - lock and hide this voice channel
   :eye: `{prefix}vc show` - unhide this voice channel
   :unlock: `{prefix}vc unlock` - unlock this voice channel
   :white_check_mark: `{prefix}vc add <member>` - add a member to this voice channel
@@ -73,7 +73,7 @@ voice_channel: Voice Channel
 already_locked: This voice channel is already locked.
 already_hidden: This voice channel is already hidden.
 locked: ":lock: {} has locked this voice channel."
-hidden: ":lock: {} has hidden this voice channel."
+hidden: ":man_detective: {} has hidden this voice channel."
 visible: ":eye: This voice channel is now visible, but still locked."
 already_unlocked: This voice channel is already unlocked.
 unlocked: ":unlock: {} has unlocked this voice channel."
@@ -104,4 +104,4 @@ voice_name: "Name"
 state:
   unlocked: ":unlock: Unlocked"
   locked: ":lock: Locked"
-  hidden: ":lock: Hidden"
+  hidden: ":man_detective: Hidden"
