@@ -9,7 +9,7 @@ class VoiceChannelPermission(BasePermission):
     def description(self) -> str:
         return t.voice_channel.permissions[self.name]
 
-    private_owner = auto()
+    override_owner = auto()
     dyn_read = auto()
     dyn_write = auto()
     link_read = auto()

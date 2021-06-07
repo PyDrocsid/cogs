@@ -27,6 +27,7 @@ from PyDrocsid.database import filter_by, db, select, delete, db_context
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.multilock import MultiLock
+from PyDrocsid.prefix import get_prefix
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_editable_log, check_role_assignable
@@ -188,7 +189,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         return await self.fix_owner(channel)
 
     async def check_authorization(self, channel: DynChannel, member: Member):
-        if await VoiceChannelPermission.private_owner.check_permissions(member):
+        if await VoiceChannelPermission.override_owner.check_permissions(member):
             return
 
         if await self.get_owner(channel) == member:
@@ -398,6 +399,14 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 return
 
             channel.text_id = text_channel.id
+            prefix = await get_prefix()
+            await text_channel.send(
+                embed=Embed(
+                    title=t.dyn_voice_help_title,
+                    color=Colors.Voice,
+                    description=t.dyn_voice_help_content(prefix=prefix),
+                ),
+            )
             await self.send_voice_msg(channel, t.voice_channel, t.dyn_voice_created(member.mention))
 
         try:
