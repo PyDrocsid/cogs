@@ -519,30 +519,30 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if before.channel == after.channel:
             return
 
-        async def delayed(func, delay_callback, *args):
-            await asyncio.sleep(1)
+        async def delayed(delay, func, delay_callback, *args):
+            await asyncio.sleep(delay)
             delay_callback()
             async with self._channel_lock[args[1]]:
                 async with db_context():
                     return await func(*args)
 
-        def create_task(c, task_dict, cancel_dict, func):
+        def create_task(delay, c, task_dict, cancel_dict, func):
             key = member, c
             if task := cancel_dict.pop(key, None):
                 task.cancel()
             elif key not in task_dict:
-                task_dict[key] = asyncio.create_task(delayed(func, lambda: task_dict.pop(key, None), *key))
+                task_dict[key] = asyncio.create_task(delayed(delay, func, lambda: task_dict.pop(key, None), *key))
 
         remove: set[Role] = set()
         add: set[Role] = set()
 
         if channel := before.channel:
             await collect_links(channel.guild, remove, str(channel.id))
-            create_task(channel, self._leave_tasks, self._join_tasks, self.member_leave)
+            create_task(5, channel, self._leave_tasks, self._join_tasks, self.member_leave)
 
         if channel := after.channel:
             await collect_links(channel.guild, add, str(channel.id))
-            create_task(channel, self._join_tasks, self._leave_tasks, self.member_join)
+            create_task(1, channel, self._join_tasks, self._leave_tasks, self.member_join)
 
         await update_roles(member, add=add, remove=remove)
 
