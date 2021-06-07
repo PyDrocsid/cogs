@@ -565,14 +565,23 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         group: DynGroup
         async for group in await db.stream(select(DynGroup, DynGroup.channels)):
-            channels: list[tuple[bool, VoiceChannel, Optional[TextChannel]]] = []
+            channels: list[tuple[str, VoiceChannel, Optional[TextChannel]]] = []
             for channel in group.channels:
                 voice_channel: Optional[VoiceChannel] = ctx.guild.get_channel(channel.channel_id)
                 text_channel: Optional[TextChannel] = ctx.guild.get_channel(channel.text_id)
                 if not voice_channel:
                     await db.delete(channel)
                     continue
-                channels.append((channel.locked, voice_channel, text_channel))
+
+                if channel.locked:
+                    if voice_channel.overwrites_for(voice_channel.guild.get_role(channel.group.user_role)).view_channel:
+                        icon = "lock"
+                    else:
+                        icon = "man_detective"
+                else:
+                    icon = "unlock"
+
+                channels.append((icon, voice_channel, text_channel))
 
             if not channels:
                 await db.delete(group)
@@ -580,9 +589,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
             embed.add_field(
                 name=t.cnt_channels(cnt=len(channels)),
-                value="\n".join(
-                    f":{(1 - lck) * 'un'}lock: {vc.mention} {txt.mention if txt else ''}" for lck, vc, txt in channels
-                ),
+                value="\n".join(f":{icon}: {vc.mention} {txt.mention if txt else ''}" for icon, vc, txt in channels),
             )
 
         if not embed.fields:
