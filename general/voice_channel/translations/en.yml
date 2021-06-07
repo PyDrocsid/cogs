@@ -86,6 +86,15 @@ already_unlocked: This voice channel is already unlocked.
 unlocked: ":unlock: {} has unlocked this voice channel."
 channel_not_locked: This voice channel is not locked.
 not_hidden: This voice channel is not hidden.
+could_not_overwrite_permissions: Could not modify permission overwrites in {}.
+no_text_channel: "{} has no associated text channel."
+could_not_send_voice_msg: Could not send message to {}.
+could_not_kick: Could not kick {} out of {}.
+text_channel_for: Text Channel for {}
+could_not_create_text_channel: Could not create text channel for {}.
+could_not_create_voice_channel: Could not create new voice channel.
+could_not_delete_channel: Could not delete {}.
+cannot_edit: I cannot edit this channel.
 
 voice_info: "Voice Channel Information"
 voice_creator: "Creator"
