@@ -755,7 +755,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             raise CommandError(t.not_hidden)
 
         try:
-            await voice_channel.set_permissions(user_role, view_channel=True)
+            await voice_channel.set_permissions(user_role, view_channel=True, connect=False)
         except Forbidden:
             raise CommandError(t.could_not_overwrite_permissions(voice_channel.mention))
 
