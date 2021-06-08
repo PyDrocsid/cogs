@@ -7,3 +7,4 @@ class Contributor(ContributorBase):
     AdriBloober = (330148908531580928, "MDQ6VXNlcjQ1MzIxMTA3")
     pohlium = (None, "MDQ6VXNlcjI0NDgwNTc0")
     Anorak = (202370816384565248, "MDQ6VXNlcjMyNDg3NzYw")
+    LoC = (519559136237715486, "MDQ6VXNlcjY0MDk1MjUz")
