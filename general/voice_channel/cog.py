@@ -104,6 +104,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         self._join_tasks: dict[tuple[Member, VoiceChannel], asyncio.Task] = {}
         self._leave_tasks: dict[tuple[Member, VoiceChannel], asyncio.Task] = {}
         self._channel_lock = MultiLock()
+        self._recent_kicks: set[tuple[Member, VoiceChannel]] = set()
 
         with Path(__file__).parent.joinpath("names.yml").open() as file:
             self.names: list[str] = yaml.safe_load(file)
@@ -374,6 +375,8 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             except Forbidden:
                 await send_alert(member.guild, t.could_not_kick(member.mention, voice_channel.mention))
                 is_owner = False
+            else:
+                self._recent_kicks.add((member, voice_channel))
 
         await self.send_voice_msg(channel, t.voice_channel, t.user_removed(member.mention))
         if is_owner:
@@ -538,7 +541,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         if channel := before.channel:
             await collect_links(channel.guild, remove, str(channel.id))
-            create_task(5, channel, self._leave_tasks, self._join_tasks, self.member_leave)
+            if (k := (member, channel)) in self._recent_kicks:
+                self._recent_kicks.remove(k)
+                await self.member_leave(member, channel)
+            else:
+                create_task(5, channel, self._leave_tasks, self._join_tasks, self.member_leave)
 
         if channel := after.channel:
             await collect_links(channel.guild, add, str(channel.id))
