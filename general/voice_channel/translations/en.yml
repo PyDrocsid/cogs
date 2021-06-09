@@ -76,7 +76,7 @@ already_locked: This voice channel is already locked.
 already_hidden: This voice channel is already hidden.
 locked: ":lock: {} has locked this voice channel."
 hidden: ":man_detective: {} has hidden this voice channel."
-visible: ":eye: This voice channel is now visible, but still locked."
+visible: ":eye: {} has made this voice channel visible again, but it is still locked."
 already_unlocked: This voice channel is already unlocked.
 unlocked: ":unlock: {} has unlocked this voice channel."
 channel_not_locked: This voice channel is not locked.
