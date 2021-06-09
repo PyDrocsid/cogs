@@ -514,7 +514,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 guild.me: PermissionOverwrite(read_messages=True, manage_channels=True),
             }
             for role_name in self.team_roles:
-                if (team_role := guild.get_role(await RoleSettings.get(role_name))) is not None:
+                if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
+                    continue
+                if check_voice_permissions(voice_channel, team_role):
                     overwrites[team_role] = PermissionOverwrite(read_messages=True)
             try:
                 text_channel = await category.create_text_channel(
@@ -719,6 +721,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             embed.add_field(
                 name=t.cnt_channels(cnt=len(channels)),
                 value="\n".join(f":{icon}: {vc.mention} {txt.mention if txt else ''}" for icon, vc, txt in channels),
+                inline=False,
             )
 
         if not embed.fields:
