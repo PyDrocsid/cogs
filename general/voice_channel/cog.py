@@ -958,7 +958,8 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         team_roles: list[Role] = [
             team_role
             for role_name in self.team_roles
-            if (team_role := ctx.guild.get_role(await RoleSettings.get(role_name))) is not None
+            if (team_role := ctx.guild.get_role(await RoleSettings.get(role_name)))
+            if check_voice_permissions(voice_channel, team_role)
         ]
         for member in members:
             if member not in voice_channel.overwrites:
