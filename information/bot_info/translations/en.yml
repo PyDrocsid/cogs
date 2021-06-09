@@ -9,10 +9,11 @@ commands:
   contributors: show list of contributors
   cogs: show list of enabled cogs
 
-features_title: Features
 author_title: Author
-contributors_title: Contributors
-github_title: GitHub
+cnt_contributors:
+  one: "{cnt} Contributor"
+  many: "{cnt} Contributors"
+github_title: GitHub Repository
 version_title: Version
 prefix_title: Prefix
 help_command_title: Help Command
@@ -23,10 +24,14 @@ profile_status:
   - github.com/PyDrocsid
 
 bot_description: Default Bot Description
-features:
-  - Feature
-admin_features:
-  - Admin Feature
 bugs_features: Please [create an issue]({repo}/issues/new) in the GitHub repository.
 
 enabled_cogs: Enabled Cogs
+cnt_cogs_enabled:
+  one: "{cnt} Cog"
+  many: "{cnt} Cogs"
+
+pydrocsid: PyDrocsid
+pydrocsid_info: |
+  **Discord Server:** https://discord.gg/{code}
+  **GitHub Organization:** https://github.com/PyDrocsid
