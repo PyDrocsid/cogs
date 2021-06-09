@@ -26,7 +26,6 @@ from discord.abc import Messageable
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
 
-from PyDrocsid.redis import redis
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
 from PyDrocsid.database import filter_by, db, select, delete, db_context
@@ -34,6 +33,7 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.multilock import MultiLock
 from PyDrocsid.prefix import get_prefix
+from PyDrocsid.redis import redis
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_editable_log, check_role_assignable
@@ -119,7 +119,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if random.randrange(100):
             return random.choice(self.names)
 
-        return random.choice(["razupaltuff", "defelo", "tnt2k", "loc", "florian", "cephox", "anorak", "delta"])
+        names = "acddflmrtneeelooanopflocrztrhetr pu2aolai hpkkxo a ea     n ul       st        u        f        f "
+        idx = random.randrange(9)
+        return names[idx::9].strip()
 
     async def is_teamler(self, member: Member) -> bool:
         return any(
@@ -505,9 +507,6 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         guild: Guild = voice_channel.guild
         category: Union[CategoryChannel, Guild] = voice_channel.category or guild
 
-        await collect_links(member.guild, add := set(), channel.group_id)
-        await update_roles(member, add=add)
-
         text_channel: Optional[TextChannel] = self.bot.get_channel(channel.text_id)
         if not text_channel:
             overwrites = {
@@ -580,9 +579,6 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if not channel:
             return
 
-        await collect_links(member.guild, remove := set(), channel.group_id)
-        await update_roles(member, remove=remove)
-
         text_channel: Optional[TextChannel] = self.bot.get_channel(channel.text_id)
         if not text_channel:
             await send_alert(voice_channel.guild, t.no_text_channel(f"<#{channel.channel_id}>"))
@@ -644,7 +640,17 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 async with db_context():
                     return await func(*args)
 
-        def create_task(delay, c, task_dict, cancel_dict, func):
+        async def create_task(delay, c, task_dict, cancel_dict, func):
+            dyn_channel: Optional[DynChannel] = await DynChannel.get(channel_id=channel.id)
+            if not dyn_channel:
+                return
+
+            await collect_links(member.guild, roles := set(), dyn_channel.group_id)
+            if func == self.member_leave:
+                await update_roles(member, remove=roles)
+            else:
+                await update_roles(member, add=roles)
+
             key = member, c
             if task := cancel_dict.pop(key, None):
                 task.cancel()
@@ -660,11 +666,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 self._recent_kicks.remove(k)
                 await self.member_leave(member, channel)
             else:
-                create_task(5, channel, self._leave_tasks, self._join_tasks, self.member_leave)
+                await create_task(5, channel, self._leave_tasks, self._join_tasks, self.member_leave)
 
         if channel := after.channel:
             await collect_links(channel.guild, add, str(channel.id))
-            create_task(1, channel, self._join_tasks, self._leave_tasks, self.member_join)
+            await create_task(1, channel, self._join_tasks, self._leave_tasks, self.member_join)
 
         await update_roles(member, add=add, remove=remove)
 
