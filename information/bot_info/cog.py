@@ -36,11 +36,7 @@ class InfoComponent:
             if not cog.github_users:
                 await cog.load_github_users()
 
-            contributors = [
-                f
-                for c, _ in Config.CONTRIBUTORS.most_common()
-                if (f := cog.format_contributor(c)) and c != Config.AUTHOR
-            ]
+            contributors = [f for c, _ in Config.CONTRIBUTORS.most_common() if (f := cog.format_contributor(c))]
 
             embed.add_field(name=t.cnt_contributors(cnt=len(contributors)), value=" ".join(contributors), inline=inline)
 
@@ -207,16 +203,14 @@ class BotInfoCog(Cog, name="Bot Information"):
         if not self.github_users:
             await self.load_github_users()
 
+        contributors = [f for c, _ in Config.CONTRIBUTORS.most_common() if (f := self.format_contributor(c))]
+
         await send_long_embed(
             ctx,
             Embed(
-                title=t.contributors_title,
+                title=t.cnt_contributors(cnt=len(contributors)),
                 colour=Colors.info,
-                description="\n".join(
-                    f":small_orange_diamond: {f}"
-                    for c, cnt in [(Config.AUTHOR, 0), *Config.CONTRIBUTORS.most_common()]
-                    if (f := self.format_contributor(c, long=True)) and (c != Config.AUTHOR or not cnt)
-                ),
+                description="\n".join(f":small_orange_diamond: {con}" for con in contributors),
             ),
         )
 
