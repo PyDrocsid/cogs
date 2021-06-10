@@ -847,7 +847,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             members = {m for m in voice_channel.overwrites if isinstance(m, Member)}
 
         join_map = {m.member_id: m.timestamp.timestamp() for m in channel.members}
-        members = sorted(members, key=lambda m: -1 if m.id == channel.owner_override else join_map.get(m, 1e1337))
+        members = sorted(members, key=lambda m: -1 if m.id == channel.owner_override else join_map.get(m.id, 1e1337))
 
         for member in members:
             if member in active:
