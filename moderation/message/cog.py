@@ -18,7 +18,7 @@ t = t.message
 
 
 class MessageCog(Cog, name="Message Commands"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.LoC]
 
     async def get_message_cancel(self, channel: TextChannel, member: Member) -> tuple[Optional[str], list[File]]:
         content, files = await read_normal_message(self.bot, channel, member)
