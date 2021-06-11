@@ -203,7 +203,7 @@ class BotInfoCog(Cog, name="Bot Information"):
         if not self.github_users:
             await self.load_github_users()
 
-        contributors = [f for c, _ in Config.CONTRIBUTORS.most_common() if (f := self.format_contributor(c))]
+        contributors = [f for c, _ in Config.CONTRIBUTORS.most_common() if (f := self.format_contributor(c, True))]
 
         await send_long_embed(
             ctx,
