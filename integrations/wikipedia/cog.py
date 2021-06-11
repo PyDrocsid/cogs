@@ -1,12 +1,12 @@
-from discord import Member
-from discord.embeds import Embed
+from discord import Member, Embed
 from discord.ext import commands
-from PyDrocsid.cog import Cog
 from discord.ext.commands.context import Context
-from PyDrocsid.async_thread import run_in_thread
-from PyDrocsid.util import send_long_embed
-from wikipedia.exceptions import WikipediaException, DisambiguationError, PageError  # skipcq: PYL-E501
 from wikipedia import summary
+from wikipedia.exceptions import WikipediaException, DisambiguationError, PageError
+
+from PyDrocsid.async_thread import run_in_thread
+from PyDrocsid.cog import Cog
+from PyDrocsid.embeds import send_long_embed
 from .colors import Colors
 
 
@@ -67,7 +67,7 @@ class WikipediaCog(Cog, name="Wikipedia"):
             await ctx.send(
                 embed=make_embed(
                     title=title,
-                    content="Wikipedia is not available currently! Try again later.",  # skipcq: PYL-E501
+                    content="Wikipedia is not available currently! Try again later.",
                     color=Colors.Wiki,
                     requested_by=ctx.author,
                 ),
