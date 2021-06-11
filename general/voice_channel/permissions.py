@@ -12,5 +12,6 @@ class VoiceChannelPermission(BasePermission):
     override_owner = auto()
     dyn_read = auto()
     dyn_write = auto()
+    dyn_rename = auto()
     link_read = auto()
     link_write = auto()

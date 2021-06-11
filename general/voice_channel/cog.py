@@ -26,6 +26,7 @@ from discord.abc import Messageable
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
 
+from PyDrocsid.async_thread import gather_any, GatherAnyException
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
 from PyDrocsid.database import filter_by, db, select, delete, db_context
@@ -98,6 +99,16 @@ async def get_commands_embed() -> Embed:
         color=Colors.Voice,
         description=t.dyn_voice_help_content(prefix=await get_prefix()),
     )
+
+
+async def rename_channel(channel: Union[TextChannel, VoiceChannel], name: str):
+    try:
+        idx, _ = await gather_any(channel.edit(name=name), asyncio.sleep(3))
+    except GatherAnyException as e:
+        raise e.exception
+
+    if idx:
+        raise CommandError(t.rename_rate_limit)
 
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
@@ -864,6 +875,25 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         messages = await send_long_embed(target, embed, paginate=True)
         if channel := await DynChannel.get(text_id=channel.text_id):
             await self.update_control_message(channel, messages[-1])
+
+    @voice.command(name="rename")
+    @VoiceChannelPermission.dyn_rename.check
+    @docs(t.commands.voice_rename)
+    async def voice_rename(self, ctx: Context, *, name: str):
+        channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
+        text_channel: TextChannel = self.get_text_channel(channel)
+        old_name = voice_channel.name
+
+        try:
+            await rename_channel(voice_channel, name)
+            await rename_channel(text_channel, name)
+        except Forbidden:
+            raise CommandError(t.cannot_edit)
+        except HTTPException:
+            raise CommandError(t.rename_failed)
+
+        await self.send_voice_msg(channel, t.voice_channel, t.renamed(ctx.author.mention, old_name, name))
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="owner", aliases=["o"])
     @docs(t.commands.voice_owner)

@@ -2,6 +2,7 @@ permissions:
   override_owner: pretend to be the owner of a dynamic voice channel
   dyn_read: read dynamic voice channel configuration
   dyn_write: write dynamic voice channel configuration
+  dyn_rename: rename a dynamic voice channel
   link_read: read voice channel links
   link_write: write voice channel links
 
@@ -11,6 +12,7 @@ commands:
   voice_dynamic_add: create a new dynamic voice channel group
   voice_dynamic_remove: remove a dynamic voice channel group
   voice_info: show information about a given dynamic voice channel
+  voice_rename: rename a dynamic voice channel
   voice_owner: transfer voice channel ownership
   voice_lock: lock a dynamic voice channel
   voice_hide: hide a dynamic voice channel
@@ -90,6 +92,11 @@ could_not_create_text_channel: Could not create text channel for {}.
 could_not_create_voice_channel: Could not create new voice channel.
 could_not_delete_channel: Could not delete {}.
 cannot_edit: I cannot edit this channel.
+renamed: ":label: {} has renamed this channel from `{}` to `{}`."
+rename_failed: Renaming this channel failed.
+rename_rate_limit: |
+  Thanks to [Discord's stupid channel edit rate limit](https://support.discord.com/hc/en-us/community/posts/360067755532-Increase-rate-limit-for-editing-channel-description), I can't rename this channel right now. :rolling_eyes:
+  Please try again later or create a new channel.
 
 voice_info: "Voice Channel Information"
 voice_owner: "Owner"
