@@ -630,26 +630,45 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await db.exec(delete(DynChannelMember).filter_by(channel_id=voice_channel.id))
         channel.members.clear()
 
+        try:
+            await voice_channel.delete()
+        except Forbidden:
+            await send_alert(voice_channel.guild, t.could_not_delete_channel(voice_channel.mention))
+            return
+        else:
+            await db.delete(channel)
+
         if not all(
             any(not m.bot for m in c.members)
             for chnl in channel.group.channels
             if chnl.channel_id != channel.channel_id and (c := self.bot.get_channel(chnl.channel_id))
         ):
-            try:
-                await voice_channel.delete()
-            except Forbidden:
-                await send_alert(voice_channel.guild, t.could_not_delete_channel(voice_channel.mention))
-            else:
-                await db.delete(channel)
+            return
+
+        guild: Guild = voice_channel.guild
+        category: Union[CategoryChannel, Guild] = voice_channel.category or guild
+
+        overwrites = voice_channel.overwrites
+        if channel.locked:
+            overwrites = merge_permission_overwrites(
+                {k: v for k, v in overwrites.items() if not isinstance(k, Member) or k == guild.me},
+                (guild.default_role, PermissionOverwrite(view_channel=True, connect=True)),
+            )
+        try:
+            new_channel = await category.create_voice_channel(await self.get_channel_name(), overwrites=overwrites)
+        except (Forbidden, HTTPException):
+            await send_alert(guild, t.could_not_create_voice_channel)
+        else:
+            await DynChannel.create(new_channel.id, channel.group_id)
 
     async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
         if before.channel == after.channel:
             return
 
-        async def delayed(delay, func, delay_callback, *args):
+        async def delayed(delay, key, func, delay_callback, *args):
             await asyncio.sleep(delay)
             delay_callback()
-            async with self._channel_lock[args[1]]:
+            async with self._channel_lock[key]:
                 async with db_context():
                     return await func(*args)
 
@@ -668,7 +687,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             if task := cancel_dict.pop(key, None):
                 task.cancel()
             elif key not in task_dict:
-                task_dict[key] = asyncio.create_task(delayed(delay, func, lambda: task_dict.pop(key, None), *key))
+                task_dict[key] = asyncio.create_task(
+                    delayed(delay, dyn_channel.group_id, func, lambda: task_dict.pop(key, None), *key),
+                )
 
         remove: set[Role] = set()
         add: set[Role] = set()
