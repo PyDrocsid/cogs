@@ -1,20 +1,31 @@
-user_notes: "User Notes"
-id: "Message ID"
-message: "Message"
-timestamp: "Timestamp"
-author: "Author"
-note_not_found: "The message was not found"
-new_note: "The following note for {} was added by {}: {}"
-removed_note: "The following note for {} was removed by {}: {}"
-add_user_note: "Adding a note for a specific user"
-remove_user_note: "Delete a note by specifying the id"
-show_user_note: "Display notes for a specific user"
-confirmed: "Confirmed :white_check_mark:"
-canceled: ":x: Canceled"
-confirmation: "Confirmation"
-confirm: "Are you sure you want to delete the following message: `{}` from {} ?"
 permissions:
-  read: "Show user notes"
-  write: "Create and delete user notes"
-command:
-  description: "Mange notes for users"
+  read: read user notes
+  write: create and delete user notes
+
+commands:
+  user_notes: mange notes for users
+  user_notes_show: display notes for a specific user
+  user_notes_add: add a note for a specific user
+  user_notes_remove: delete a user note by specifying its id
+
+user_notes: "User Notes"
+too_long: Note content is too long.
+no_notes: No notes have been created yet for this user.
+user_note_entry: |
+  ID: `{id}`, Author: {author}
+  {content}
+note_not_found: "The note was not found."
+new_note: |
+  {} added a new note for {}:
+  {}
+removed_note: |
+  {} removed a note from {}:
+  {}
+content: Content
+
+confirmation: "Confirmation"
+confirm: |
+  Are you sure you want to delete this note from {}?
+  {}
+canceled: ":x: Canceled"
+confirmed: "Confirmed :white_check_mark:"
