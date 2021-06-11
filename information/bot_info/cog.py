@@ -1,5 +1,9 @@
-from typing import Optional
+from __future__ import annotations
 
+from collections import Callable
+from typing import Optional, Awaitable
+
+from aiohttp import ClientSession
 from discord import Embed, Message, Status, Game
 from discord.ext import commands, tasks
 from discord.ext.commands import Context
@@ -12,11 +16,90 @@ from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
 from PyDrocsid.prefix import get_prefix
 from PyDrocsid.translations import t
 from .colors import Colors
-from .permissions import InfoPermission
 from ...contributor import Contributor
 
 tg = t.g
 t = t.bot_info
+
+
+class InfoComponent:
+    @staticmethod
+    def author(inline: bool):
+        async def inner(cog: BotInfoCog, embed: Embed):
+            embed.add_field(name=t.author_title, value=cog.format_contributor(Config.AUTHOR), inline=inline)
+
+        return inner
+
+    @staticmethod
+    def contributors(inline: bool):
+        async def inner(cog: BotInfoCog, embed: Embed):
+            if not cog.github_users:
+                await cog.load_github_users()
+
+            contributors = [f for c, _ in Config.CONTRIBUTORS.most_common() if (f := cog.format_contributor(c))]
+
+            embed.add_field(name=t.cnt_contributors(cnt=len(contributors)), value=" ".join(contributors), inline=inline)
+
+        return inner
+
+    @staticmethod
+    def version(inline: bool):
+        async def inner(_, embed: Embed):
+            embed.add_field(name=t.version_title, value=Config.VERSION, inline=inline)
+
+        return inner
+
+    @staticmethod
+    def github_repo(inline: bool):
+        async def inner(_, embed: Embed):
+            embed.add_field(name=t.github_title, value=Config.REPO_LINK, inline=inline)
+
+        return inner
+
+    @staticmethod
+    def prefix(inline: bool):
+        async def inner(cog: BotInfoCog, embed: Embed):
+            prefix: str = await get_prefix()
+            embed.add_field(name=t.prefix_title, value=f"`{prefix}` or {cog.bot.user.mention}", inline=inline)
+
+        return inner
+
+    @staticmethod
+    def help_command(inline: bool):
+        async def inner(_, embed: Embed):
+            prefix: str = await get_prefix()
+            embed.add_field(name=t.help_command_title, value=f"`{prefix}help`", inline=inline)
+
+        return inner
+
+    @staticmethod
+    def bugs_features(inline: bool):
+        async def inner(_, embed: Embed):
+            embed.add_field(
+                name=t.bugs_features_title,
+                value=t.bugs_features(repo=Config.REPO_LINK),
+                inline=inline,
+            )
+
+        return inner
+
+    @staticmethod
+    def pydrocsid(inline: bool):
+        async def inner(_, embed: Embed):
+            async with ClientSession() as session, session.head("https://discord.pydrocsid.ml") as response:
+                url = response.headers["location"]
+            code = url.split("/")[-1]
+
+            embed.add_field(name=t.pydrocsid, value=t.pydrocsid_info(code=code), inline=inline)
+
+        return inner
+
+    @staticmethod
+    def enabled_cogs(inline: bool):
+        async def inner(cog: BotInfoCog, embed: Embed):
+            embed.add_field(name=t.enabled_cogs, value=t.cnt_cogs_enabled(cnt=len(cog.bot.cogs)), inline=inline)
+
+        return inner
 
 
 class BotInfoCog(Cog, name="Bot Information"):
@@ -62,48 +145,29 @@ class BotInfoCog(Cog, name="Bot Information"):
         await self.bot.change_presence(status=Status.online, activity=Game(name=t.profile_status[self.current_status]))
         self.current_status = (self.current_status + 1) % len(t.profile_status)
 
-    async def build_info_embed(self, authorized: bool) -> Embed:
-        embed = Embed(title=Config.NAME, colour=Colors.info, description=t.bot_description)
+    @property
+    def info_components(self) -> list[Callable[[BotInfoCog, Embed], Awaitable[None]]]:
+        return [
+            InfoComponent.author(True),
+            InfoComponent.version(True),
+            InfoComponent.enabled_cogs(True),
+            InfoComponent.contributors(False),
+            InfoComponent.github_repo(False),
+            InfoComponent.pydrocsid(False),
+            InfoComponent.prefix(True),
+            InfoComponent.help_command(True),
+            InfoComponent.bugs_features(False),
+        ]
+
+    async def build_info_embed(self) -> Embed:
+        embed = Embed(title=Config.NAME or "", colour=Colors.info, description=t.bot_description or "")
 
         if self.info_icon:
             embed.set_thumbnail(url=self.info_icon)
 
-        prefix: str = await get_prefix()
+        for component in self.info_components:
+            await component(self, embed)
 
-        features = t.features
-        if authorized:
-            features += t.admin_features
-
-        embed.add_field(
-            name=t.features_title,
-            value="\n".join(f":small_orange_diamond: {feature}" for feature in features),
-            inline=False,
-        )
-
-        if not self.github_users:
-            await self.load_github_users()
-
-        embed.add_field(name=t.author_title, value=self.format_contributor(Config.AUTHOR), inline=True)
-
-        embed.add_field(
-            name=t.contributors_title,
-            value=" ".join(
-                f
-                for c, _ in Config.CONTRIBUTORS.most_common()
-                if (f := self.format_contributor(c)) and c != Config.AUTHOR
-            ),
-            inline=True,
-        )
-
-        embed.add_field(name=t.version_title, value=Config.VERSION, inline=True)
-        embed.add_field(name=t.github_title, value=Config.REPO_LINK, inline=False)
-        embed.add_field(name=t.prefix_title, value=f"`{prefix}` or {self.bot.user.mention}", inline=True)
-        embed.add_field(name=t.help_command_title, value=f"`{prefix}help`", inline=True)
-        embed.add_field(
-            name=t.bugs_features_title,
-            value=t.bugs_features(repo=Config.REPO_LINK),
-            inline=False,
-        )
         return embed
 
     @commands.command(aliases=["gh"])
@@ -131,13 +195,7 @@ class BotInfoCog(Cog, name="Bot Information"):
     @commands.command(aliases=["infos", "about"])
     @docs(t.commands.info)
     async def info(self, ctx: Context):
-        await send_long_embed(ctx, await self.build_info_embed(False))
-
-    @commands.command(aliases=["admininfos"])
-    @InfoPermission.admininfo.check
-    @docs(t.commands.admininfo)
-    async def admininfo(self, ctx: Context):
-        await send_long_embed(ctx, await self.build_info_embed(True))
+        await send_long_embed(ctx, await self.build_info_embed())
 
     @commands.command(aliases=["contri", "con"])
     @docs(t.commands.contributors)
@@ -145,16 +203,14 @@ class BotInfoCog(Cog, name="Bot Information"):
         if not self.github_users:
             await self.load_github_users()
 
+        contributors = [f for c, _ in Config.CONTRIBUTORS.most_common() if (f := self.format_contributor(c))]
+
         await send_long_embed(
             ctx,
             Embed(
-                title=t.contributors_title,
+                title=t.cnt_contributors(cnt=len(contributors)),
                 colour=Colors.info,
-                description="\n".join(
-                    f":small_orange_diamond: {f}"
-                    for c, cnt in [(Config.AUTHOR, 0), *Config.CONTRIBUTORS.most_common()]
-                    if (f := self.format_contributor(c, long=True)) and (c != Config.AUTHOR or not cnt)
-                ),
+                description="\n".join(f":small_orange_diamond: {con}" for con in contributors),
             ),
         )
 
@@ -172,4 +228,4 @@ class BotInfoCog(Cog, name="Bot Information"):
         )
 
     async def on_bot_ping(self, message: Message):
-        await reply(message, embed=await self.build_info_embed(False))
+        await send_long_embed(message, await self.build_info_embed())

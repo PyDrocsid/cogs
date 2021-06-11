@@ -7,4 +7,5 @@ from .message import MessageCog
 from .mod import ModCog
 from .role_notifications import RoleNotificationsCog
 from .spam_detection import SpamDetectionCog
+from .user_notes import UserNoteCog
 from .verification import VerificationCog

@@ -4,9 +4,10 @@ from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 
 
-class InfoPermission(BasePermission):
+class UserNotePermission(BasePermission):
     @property
     def description(self) -> str:
-        return t.bot_info.permissions[self.name]
+        return t.user_notes.permissions[self.name]
 
-    admininfo = auto()
+    read = auto()
+    write = auto()
