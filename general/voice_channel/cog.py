@@ -619,12 +619,6 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 await send_alert(text_channel.guild, t.could_not_delete_channel(text_channel.mention))
                 return
 
-        try:
-            await self.unlock_channel(None, channel, voice_channel, skip_text=True)
-        except CommandError as e:
-            await send_alert(voice_channel.guild, *e.args)
-            return
-
         channel.owner_id = None
         channel.owner_override = None
         await db.exec(delete(DynChannelMember).filter_by(channel_id=voice_channel.id))
