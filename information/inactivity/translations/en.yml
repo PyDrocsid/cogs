@@ -24,8 +24,8 @@ status:
 inactive_users: Inactive Users
 inactive_users_cnt: Inactive Users ({})
 no_inactive_users: "No inactive users :white_check_mark:"
-user_inactive: ":small_orange_diamond: {} ({})"
-user_inactive_since: ":small_orange_diamond: {} ({}, since {})"
+user_inactive: "{} {} ({})"
+user_inactive_since: "{} {} ({}, since {})"
 inactive_duration:
   one: Users that have not sent a message for {cnt} day are marked as inactive.
   many: Users that have not sent a message for {cnt} days are marked as inactive.

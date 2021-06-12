@@ -12,3 +12,4 @@ class MessagePermission(BasePermission):
     send = auto()
     edit = auto()
     delete = auto()
+    clear = auto()

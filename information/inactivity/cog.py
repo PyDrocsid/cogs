@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 
-from discord import Message, Guild, Member, Embed, Role, Permissions, NotFound, TextChannel
+from discord import Message, Guild, Member, Embed, Role, Permissions, NotFound, TextChannel, Status
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, max_concurrency
 
@@ -20,6 +20,15 @@ from ...pubsub import ignore_message_edit, send_to_changelog, get_user_status_en
 
 tg = t.g
 t = t.inactivity
+
+
+def status_icon(status: Status) -> str:
+    return {
+        Status.online: ":green_circle:",
+        Status.idle: ":yellow_circle:",
+        Status.dnd: ":red_circle:",
+        Status.offline: ":black_circle:",
+    }[status]
 
 
 class InactivityCog(Cog, name="Inactivity"):
@@ -158,11 +167,18 @@ class InactivityCog(Cog, name="Inactivity"):
         out = []
         for member, timestamp in last_activity:
             if timestamp is None:
-                out.append(t.user_inactive(member.mention, f"@{member}"))
+                out.append(t.user_inactive(status_icon(member.status), member.mention, f"@{member}"))
             elif timestamp >= now - timedelta(days=days):
                 break
             else:
-                out.append(t.user_inactive_since(member.mention, f"@{member}", timestamp.strftime("%d.%m.%Y %H:%M:%S")))
+                out.append(
+                    t.user_inactive_since(
+                        status_icon(member.status),
+                        member.mention,
+                        f"@{member}",
+                        timestamp.strftime("%d.%m.%Y %H:%M:%S"),
+                    ),
+                )
 
         embed = Embed(title=t.inactive_users, colour=0x256BE6)
         if out:

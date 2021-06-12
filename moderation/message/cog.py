@@ -1,17 +1,18 @@
 from typing import Optional
 
-from discord import TextChannel, Message, HTTPException, Forbidden, Permissions, Embed, Member, File
+from discord import TextChannel, Message, HTTPException, Forbidden, Permissions, Embed, Member, File, NotFound
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply
+from PyDrocsid.command import docs, reply, confirm
 from PyDrocsid.converter import Color
 from PyDrocsid.translations import t
 from PyDrocsid.util import read_normal_message, read_complete_message, check_message_send_permissions
 from .colors import Colors
 from .permissions import MessagePermission
 from ...contributor import Contributor
+from ...pubsub import send_alert
 
 tg = t.g
 t = t.message
@@ -211,3 +212,43 @@ class MessageCog(Cog, name="Message Commands"):
         await message.delete()
         embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.msg_deleted)
         await reply(ctx, embed=embed)
+
+    @commands.command(aliases=["clean"])
+    @MessagePermission.clear.check
+    @guild_only()
+    @docs(t.commands.clear)
+    async def clear(self, ctx: Context, count: int):
+        channel: TextChannel = ctx.channel
+
+        if count not in range(1, 101):
+            raise CommandError(t.count_between)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm(channel.mention, cnt=count),
+            color=Colors.MessageCommands,
+        )
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.canceled
+                return
+
+            conf_embed.description += "\n\n" + t.confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        messages = (await channel.history(limit=count + 2).flatten())[2:]
+        try:
+            await channel.delete_messages(messages)
+        except (Forbidden, NotFound, HTTPException):
+            raise CommandError(t.msg_not_deleted)
+
+        await reply(
+            ctx,
+            embed=Embed(
+                title=t.clear_channel,
+                description=t.deleted_messages(channel.mention, cnt=count),
+                color=Colors.MessageCommands,
+            ),
+        )
+        await send_alert(ctx.guild, t.log_cleared(ctx.author.mention, channel.mention, cnt=count))
