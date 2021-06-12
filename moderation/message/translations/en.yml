@@ -2,6 +2,7 @@ permissions:
   send: send a message as the bot
   edit: edit messages sent by the bot
   delete: delete a message
+  clear: delete lots of messages at once
 
 commands:
   send: send messages as the bot
@@ -13,6 +14,7 @@ commands:
   edit_embed: edit an embed (specify message link)
   edit_copy: copy a message into another message (specify message links)
   delete: delete a message (specify message link)
+  clear: "delete the last <count> messages in this channel"
 
 messages: Messages
 send_embed_title: "Send me the title of the embed! Send {} to cancel."
@@ -32,3 +34,20 @@ msg_deleted: "Message has been deleted successfully. :white_check_mark:"
 title_too_long: Title is too long.
 cannot_edit_files: Files cannot be edited.
 cancel: CANCEL
+
+confirmation: Confirmation
+clear_channel: Clean Channel
+count_between: You cannot delete less than 1 or more than 100 messages.
+confirm:
+  one: Are you sure you want to delete the last message in {}?
+  many: Are you sure you want to delete the last {cnt} messages in {}?
+canceled: ":x: Canceled"
+confirmed: "Confirmed :white_check_mark:"
+clearing: Deleting messages in {} ({}/{})
+msg_not_deleted: Some messages could not be deleted!
+deleted_messages:
+  one: "{cnt} message has been deleted in {}!"
+  many: "{cnt} messages have been deleted in {}!"
+log_cleared:
+  one: "{} deleted {cnt} message in {}."
+  many: "{} deleted {cnt} messages in {}."
