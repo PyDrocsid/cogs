@@ -1,6 +1,6 @@
 from typing import Optional, Union, Dict, List
 
-from discord import Role, Embed, Member
+from discord import Role, Embed, Member, Status
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, guild_only, UserInputError
 
@@ -43,6 +43,15 @@ async def is_authorized(author: Member, target_role: Role) -> bool:
             return True
 
     return False
+
+
+def status_icon(status: Status) -> str:
+    return {
+        Status.online: ":green_circle:",
+        Status.idle: ":yellow_circle:",
+        Status.dnd: ":red_circle:",
+        Status.offline: ":black_circle:",
+    }[status]
 
 
 class RolesCog(Cog, name="Roles"):
@@ -182,7 +191,11 @@ class RolesCog(Cog, name="Roles"):
     @RolesPermission.list_members.check
     @docs(t.commands.roles_list)
     async def roles_list(self, ctx: Context, *, role: Role):
-        out = [t.member_list_line(member.mention, f"@{member}") for member in role.members]
+        members: list[Member] = sorted(
+            role.members,
+            key=lambda m: ([Status.online, Status.idle, Status.dnd, Status.offline].index(m.status), str(m), m.id),
+        )
+        out = [f"{status_icon(member.status)} {member.mention} (@{member})" for member in members]
         if out:
             embed = Embed(title=t.member_list_cnt(len(out)), colour=0x256BE6, description="\n".join(out))
         else:
