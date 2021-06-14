@@ -4,6 +4,8 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 
+from ...contributor import Contributor
+
 tg = t.g
 t = t.remindme
 
@@ -19,7 +21,7 @@ EMOJI = {
 
 
 class RemindMeCog(Cog, name="RemindMe"):
-    CONTRIBUTORS = []
+    CONTRIBUTORS = [Contributor.Tristan]
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
         if str(emoji) not in EMOJI or member.bot or message.guild is None:
