@@ -4,7 +4,7 @@ from PyDrocsid.translations import t
 from discord import Message, Member, PartialEmoji
 
 tg = t.g
-t = t.reactionpin
+t = t.remindme
 
 EMOJI = {name_to_emoji["star"],
          name_to_emoji["mailbox"],
@@ -15,7 +15,7 @@ EMOJI = {name_to_emoji["star"],
          name_to_emoji["floppy_disk"]}
 
 
-class ReactionPinCog(Cog, name="RemindMe"):
+class RemindMeCog(Cog, name="RemindMe"):
     CONTRIBUTORS = []
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
