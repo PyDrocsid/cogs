@@ -22,4 +22,4 @@ class RemindMeCog(Cog, name="RemindMe"):
         if str(emoji) not in EMOJI or member.bot or message.guild is None:
             return
 
-        await Member.send(message.content, embed=message.embeds[0] if message.embeds else None)
+        await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
