@@ -1,4 +1,4 @@
-from discord import Message, Member, PartialEmoji
+from discord import Message, Member, PartialEmoji, Forbidden
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji
@@ -9,7 +9,7 @@ from ...contributor import Contributor
 tg = t.g
 t = t.remindme
 
-EMOJI = {
+EMOJIS = {
     name_to_emoji["star"],
     name_to_emoji["mailbox"],
     name_to_emoji["e_mail"],
@@ -24,7 +24,9 @@ class RemindMeCog(Cog, name="RemindMe"):
     CONTRIBUTORS = [Contributor.Tristan]
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
-        if str(emoji) not in EMOJI or member.bot or message.guild is None:
+        if str(emoji) not in EMOJIS or member.bot or message.guild is None:
             return
-
-        await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
+        try:
+            await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
+        except Forbidden:
+            await message.remove_reaction(emoji, member)
