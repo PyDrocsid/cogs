@@ -214,8 +214,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await redis.setex(key, 86400, message.id)
 
         voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
+        user_role = voice_channel.guild.get_role(channel.group.user_role)
         locked = channel.locked
-        hidden = not voice_channel.overwrites_for(voice_channel.guild.get_role(channel.group.user_role)).view_channel
+        hidden = voice_channel.overwrites_for(user_role).view_channel is False
 
         emojis = [
             "information_source",
@@ -263,8 +264,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             return
 
         voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
+        user_role = voice_channel.guild.get_role(channel.group.user_role)
         locked = channel.locked
-        hidden = not voice_channel.overwrites_for(voice_channel.guild.get_role(channel.group.user_role)).view_channel
+        hidden = voice_channel.overwrites_for(user_role).view_channel is False
 
         if str(emoji) == name_to_emoji["lock"] and not locked:
             await self.lock_channel(user, channel, voice_channel, hide=False)
