@@ -48,10 +48,13 @@ tg = t.g
 t = t.voice_channel
 
 
+Overwrites = dict[Union[Member, Role], PermissionOverwrite]
+
+
 def merge_permission_overwrites(
-    overwrites: dict[Union[Member, Role], PermissionOverwrite],
+    overwrites: Overwrites,
     *args: tuple[Union[Member, Role], PermissionOverwrite],
-) -> dict[Union[Member, Role], PermissionOverwrite]:
+) -> Overwrites:
     out = {k: PermissionOverwrite.from_pair(*v.pair()) for k, v in overwrites.items()}
     for k, v in args:
         out.setdefault(k, PermissionOverwrite()).update(**{p: q for p, q in v if q is not None})
@@ -109,6 +112,57 @@ async def rename_channel(channel: Union[TextChannel, VoiceChannel], name: str):
 
     if idx:
         raise CommandError(t.rename_rate_limit)
+
+
+def get_user_role(guild: Guild, channel: DynChannel) -> Optional[Role]:
+    return guild.get_role(channel.group.user_role)
+
+
+def remove_lock_overrides(
+    channel: DynChannel,
+    voice_channel: VoiceChannel,
+    overwrites: Overwrites,
+    *,
+    keep_members: bool,
+    reset_user_role: bool,
+) -> Overwrites:
+    me = voice_channel.guild.me
+    overwrites = {
+        k: v
+        for k, v in overwrites.items()
+        if not isinstance(k, Member) or k == me or (keep_members and k in voice_channel.members)
+    }
+    if not reset_user_role:
+        return overwrites
+
+    user_role = voice_channel.guild.get_role(channel.group.user_role)
+    return merge_permission_overwrites(
+        overwrites,
+        (user_role, PermissionOverwrite(view_channel=True, connect=True)),
+    )
+
+
+async def safe_create_voice_channel(
+    category: Union[CategoryChannel, Guild],
+    channel: DynChannel,
+    name: str,
+    overwrites: Overwrites,
+) -> VoiceChannel:
+    guild: Guild = category.guild if isinstance(category, CategoryChannel) else category
+    user_role: Role = get_user_role(guild, channel)
+
+    try:
+        return await category.create_voice_channel(name, overwrites=overwrites)
+    except Forbidden:
+        pass
+
+    ov = overwrites.pop(user_role, None)
+    voice_channel: VoiceChannel = await category.create_voice_channel(name, overwrites=overwrites)
+    if ov:
+        overwrites[user_role] = ov
+        await voice_channel.edit(overwrites=overwrites)
+
+    return voice_channel
 
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
@@ -424,24 +478,13 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         *,
         skip_text: bool = False,
     ):
-        def filter_overwrites(ov, keep_members: bool):
-            me = voice_channel.guild.me
-            return {
-                k: v
-                for k, v in ov.items()
-                if not isinstance(k, Member) or k == me or (keep_members and k in voice_channel.members)
-            }
-
         channel.locked = False
-        overwrites = filter_overwrites(
-            merge_permission_overwrites(
-                voice_channel.overwrites,
-                (
-                    voice_channel.guild.get_role(channel.group.user_role),
-                    PermissionOverwrite(view_channel=True, connect=True),
-                ),
-            ),
+        overwrites = remove_lock_overrides(
+            channel,
+            voice_channel,
+            voice_channel.overwrites,
             keep_members=False,
+            reset_user_role=True,
         )
 
         try:
@@ -454,7 +497,15 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         text_channel = self.get_text_channel(channel)
         try:
-            await text_channel.edit(overwrites=filter_overwrites(text_channel.overwrites, keep_members=True))
+            await text_channel.edit(
+                overwrites=remove_lock_overrides(
+                    channel,
+                    voice_channel,
+                    text_channel.overwrites,
+                    keep_members=True,
+                    reset_user_role=False,
+                ),
+            )
         except Forbidden:
             raise CommandError(t.could_not_overwrite_permissions(text_channel.mention))
 
@@ -578,12 +629,20 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if all(c.members for chnl in channel.group.channels if (c := self.bot.get_channel(chnl.channel_id))):
             overwrites = voice_channel.overwrites
             if channel.locked:
-                overwrites = merge_permission_overwrites(
-                    {k: v for k, v in overwrites.items() if not isinstance(k, Member) or k == guild.me},
-                    (guild.default_role, PermissionOverwrite(view_channel=True, connect=True)),
+                overwrites = remove_lock_overrides(
+                    channel,
+                    voice_channel,
+                    overwrites,
+                    keep_members=False,
+                    reset_user_role=True,
                 )
             try:
-                new_channel = await category.create_voice_channel(await self.get_channel_name(), overwrites=overwrites)
+                new_channel = await safe_create_voice_channel(
+                    category,
+                    channel,
+                    await self.get_channel_name(),
+                    overwrites,
+                )
             except (Forbidden, HTTPException):
                 await send_alert(voice_channel.guild, t.could_not_create_voice_channel)
             else:
@@ -646,12 +705,20 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         overwrites = voice_channel.overwrites
         if channel.locked:
-            overwrites = merge_permission_overwrites(
-                {k: v for k, v in overwrites.items() if not isinstance(k, Member) or k == guild.me},
-                (guild.default_role, PermissionOverwrite(view_channel=True, connect=True)),
+            overwrites = remove_lock_overrides(
+                channel,
+                voice_channel,
+                overwrites,
+                keep_members=False,
+                reset_user_role=True,
             )
         try:
-            new_channel = await category.create_voice_channel(await self.get_channel_name(), overwrites=overwrites)
+            new_channel = await safe_create_voice_channel(
+                category,
+                channel,
+                await self.get_channel_name(),
+                overwrites,
+            )
         except (Forbidden, HTTPException):
             await send_alert(guild, t.could_not_create_voice_channel)
         else:
