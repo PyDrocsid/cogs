@@ -1,7 +1,8 @@
+from discord import Message, Member, PartialEmoji
+
 from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
-from discord import Message, Member, PartialEmoji
 
 tg = t.g
 t = t.remindme
