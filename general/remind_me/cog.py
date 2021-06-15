@@ -22,7 +22,17 @@ class RemindMeCog(Cog, name="RemindMe"):
         if str(emoji) not in EMOJIS or member.bot or message.guild is None:
             return
 
-        try:
-            await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
-        except Forbidden:
-            await message.remove_reaction(emoji, member)
+        if message.attachments:
+            try:
+                await member.send("\n".join(attachment.url for attachment in message.attachments))
+            except Forbidden:
+                await message.remove_reaction(emoji, member)
+                return
+
+        embed = message.embeds[0] if message.embeds else None
+
+        if message.content or embed:
+            try:
+                await member.send(message.content, embed=embed)
+            except Forbidden:
+                await message.remove_reaction(emoji, member)
