@@ -136,10 +136,12 @@ def remove_lock_overrides(
         return overwrites
 
     user_role = voice_channel.guild.get_role(channel.group.user_role)
-    return merge_permission_overwrites(
+    overwrites = merge_permission_overwrites(
         overwrites,
-        (user_role, PermissionOverwrite(view_channel=True, connect=True)),
+        (user_role, PermissionOverwrite(view_channel=True)),
     )
+    overwrites[user_role].update(connect=None)
+    return overwrites
 
 
 async def safe_create_voice_channel(
