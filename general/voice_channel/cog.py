@@ -1,6 +1,7 @@
 import asyncio
 import random
 from datetime import datetime
+from os import getenv
 from pathlib import Path
 from typing import Optional, Union
 
@@ -179,8 +180,14 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         self._channel_lock = MultiLock()
         self._recent_kicks: set[tuple[Member, VoiceChannel]] = set()
 
-        with Path(__file__).parent.joinpath("names.yml").open() as file:
-            self.names: list[str] = yaml.safe_load(file)
+        names = map(str.lower, getenv("VOICE_CHANNEL_NAMES", "elements").split(","))
+        self.names: list[str] = []
+        for name in names:
+            with Path(__file__).parent.joinpath(f"names/{name}.yml").open() as file:
+                self.names += yaml.safe_load(file)
+
+    def prepare(self) -> bool:
+        return bool(self.names)
 
     async def get_channel_name(self) -> str:
         if random.randrange(100):
