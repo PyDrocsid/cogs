@@ -72,7 +72,7 @@ class RunCodeCog(Cog, name="Run Code"):
 
         description = "```\n" + output.replace("`", "`\u200b") + "\n```"
 
-        embed = Embed(title=t.run_output, color=MaterialColors.green, description=description)
+        embed = Embed(title=f"{t.run_output} ({language})", color=MaterialColors.green, description=description)
         if api_result["stderr"] and not api_result["stdout"]:
             embed.colour = MaterialColors.error
 
