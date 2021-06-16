@@ -25,6 +25,7 @@ class RemindMeCog(Cog, name="RemindMe"):
         if message.attachments:
             try:
                 await member.send("\n".join(attachment.url for attachment in message.attachments))
+                await message.remove_reaction(emoji, member)
             except Forbidden:
                 await message.remove_reaction(emoji, member)
                 return
@@ -34,5 +35,6 @@ class RemindMeCog(Cog, name="RemindMe"):
         if message.content or embed:
             try:
                 await member.send(message.content, embed=embed)
+                await message.remove_reaction(emoji, member)
             except Forbidden:
                 await message.remove_reaction(emoji, member)
