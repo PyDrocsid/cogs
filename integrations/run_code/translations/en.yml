@@ -4,4 +4,4 @@ run_usage: |
   `​`​`language
   your code
   `​`​`
-run_output: Run Output
+run_output: Run Output ({} {})
