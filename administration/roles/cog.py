@@ -35,6 +35,12 @@ async def configure_role(ctx: Context, role_name: str, role: Role, check_assigna
 
 
 async def is_authorized(author: Member, target_role: Role) -> bool:
+    if author.guild_permissions.manage_roles and target_role < author.top_role:
+        return True
+
+    if await RolesPermission.auth_write.check_permissions(author):
+        return True
+
     roles = {role.id for role in author.roles} | {author.id}
 
     auth: RoleAuth
