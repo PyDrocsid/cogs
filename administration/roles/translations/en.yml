@@ -13,7 +13,11 @@ commands:
   roles_auth_remove: remove a role assignment authorization
   roles_add: assign a role to a member
   roles_remove: remove a role from a member
+  roles_perma_add: assign a role permanently to a member
+  roles_perma_unset: remove the perma flag from a member role
+  roles_perma_remove: remove a perma role from a member
   roles_list: list all members with a specific role
+  roles_perma_list: list all permanent role assignments
 
 roles: Roles
 configure_role: configure {} role
@@ -39,3 +43,10 @@ member_list_line: ":small_orange_diamond: {} ({})"
 no_members: No member was found with this role.
 role_already_assigned: Role has already been assigned to this member.
 role_not_assigned: Role has not yet been assigned to this member.
+added_perma_role: Role {} has been permanently assigned to {} ({}).
+removed_perma_role: Perma role {} has been removed from {} ({}).
+cannot_remove_perma: This role has been permanently assigned to this member and can therefore only be removed by using the `{}roles perma_remove` command.
+perma_reassigned: Perma role {} has been reassigned to {} ({}). If you want to remove this role, please use the `{}roles perma_remove` command.
+no_perma_roles: No permanent role assignments.
+perma_roles: Permanent Role Assignments
+could_not_reassign: Could not reassign perma role {} to {} ({}).
