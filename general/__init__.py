@@ -6,3 +6,4 @@ from .reactionpin import ReactionPinCog
 from .reactionrole import ReactionRoleCog
 from .utils import UtilsCog
 from .voice_channel import VoiceChannelCog
+from .discord_bot_token_deleter import DiscordBotTokenDeleter
