@@ -365,32 +365,38 @@ class RolesCog(Cog, name="Roles"):
     async def roles_perma_list(self, ctx: Context):
         guild: Guild = ctx.guild
 
-        role_members: dict[Role, list[Member]] = {}
+        role_users: dict[Role, list[User]] = {}
         perma_role: PermaRole
         async for perma_role in await db.stream(select(PermaRole)):
             if not (role := guild.get_role(perma_role.role_id)):
                 await db.delete(perma_role)
                 continue
-            if not (member := guild.get_member(perma_role.member_id)):
+
+            try:
+                user = await self.bot.fetch_user(perma_role.member_id)
+            except NotFound:
                 await db.delete(perma_role)
                 continue
 
-            role_members.setdefault(role, []).append(member)
+            role_users.setdefault(role, []).append(user)
 
         embed = Embed(title=t.perma_roles, color=Colors.Roles)
-        if not role_members:
+        if not role_users:
             embed.colour = Colors.error
             embed.description = t.no_perma_roles
             await reply(ctx, embed=embed)
             return
 
-        for role, members in role_members.items():
+        for role, users in role_users.items():
             lines = []
-            for member in members:
-                if role in member.roles:
-                    lines.append(f":small_orange_diamond: {member.mention} ({member})")
+            for user in users:
+                member: Optional[Member] = guild.get_member(user.id)
+                if not member:
+                    lines.append(f":small_blue_diamond: {user.mention} ({user})")
+                elif role not in member.roles:
+                    lines.append(f":small_blue_diamond: {user.mention} ({user}) :warning:")
                 else:
-                    lines.append(f":small_blue_diamond: {member.mention} ({member}) :warning:")
+                    lines.append(f":small_orange_diamond: {user.mention} ({user})")
 
             embed.add_field(name=f"@{role} ({role.id})", value="\n".join(lines), inline=False)
 
