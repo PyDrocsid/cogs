@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
     CONTRIBUTORS = [Contributor.Tert0]
-    RE_DC_TOKEN = re.compile(r'[A-Za-z\d]{24}\.[A-Za-z\d]{6}\.[A-Za-z\d\-\_]{27}')
+    RE_DC_TOKEN = re.compile(r"[A-Za-z\d]{24}\.[A-Za-z\d]{6}\.[A-Za-z\d\-\_]{27}")
 
     async def on_message(self, message: Message):
         """
@@ -25,8 +25,7 @@ class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
             return
         embed = Embed(title=t.discord_bot_token_deleter_title, colour=MaterialColors.bluegrey)
         embed.description = t.discord_bot_token_deleter_description
-        embed.set_footer(text=tg.requested_by(message.author, message.author.id),
-                         icon_url=message.author.avatar_url)
+        embed.set_footer(text=tg.requested_by(message.author, message.author.id), icon_url=message.author.avatar_url)
         await message.channel.send(embed=embed)
         try:
             await message.delete()
