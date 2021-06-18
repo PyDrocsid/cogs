@@ -3,14 +3,13 @@ import re
 from discord import Message, Embed, Forbidden, NotFound, HTTPException
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.logger import get_logger
 from PyDrocsid.material_colors import MaterialColors
 from PyDrocsid.translations import t
 from ...contributor import Contributor
+from ...pubsub import send_alert
 
 tg = t.g
 t = t.discord_bot_token_deleter
-logger = get_logger(__name__)
 
 
 class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
@@ -32,4 +31,4 @@ class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
         try:
             await message.delete()
         except (Forbidden, NotFound, HTTPException) as error:
-            logger.error(error)
+            await send_alert(message.guild, f'Discord Bot Token deletion Error: {error}')
