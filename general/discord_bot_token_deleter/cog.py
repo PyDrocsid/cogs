@@ -26,8 +26,7 @@ class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
             return
         embed = Embed(title=t.title, colour=MaterialColors.bluegrey)
         embed.description = t.description
-        embed.set_footer(text=tg.requested_by(message.author, message.author.id), icon_url=message.author.avatar_url)
-        await message.channel.send(embed=embed)
+        await message.channel.send(message.author.mention, embed=embed)
         try:
             await message.delete()
         except (Forbidden, NotFound, HTTPException) as error:
