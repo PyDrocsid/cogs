@@ -1,10 +1,12 @@
-from PyDrocsid.cog import Cog
-from ...contributor import Contributor
-from PyDrocsid.translations import t
-from PyDrocsid.logger import get_logger
-from discord import Message, Embed, Forbidden, NotFound, HTTPException
-from PyDrocsid.material_colors import MaterialColors
 import re
+
+from discord import Message, Embed, Forbidden, NotFound, HTTPException
+
+from PyDrocsid.cog import Cog
+from PyDrocsid.logger import get_logger
+from PyDrocsid.material_colors import MaterialColors
+from PyDrocsid.translations import t
+from ...contributor import Contributor
 
 tg = t.g
 t = t.discord_bot_token_deleter
