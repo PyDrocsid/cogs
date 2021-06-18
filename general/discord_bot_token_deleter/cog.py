@@ -25,8 +25,8 @@ class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
             return
         if not self.RE_DC_TOKEN.findall(message.content):
             return
-        embed = Embed(title=t.discord_bot_token_deleter_title, colour=MaterialColors.bluegrey)
-        embed.description = t.discord_bot_token_deleter_description
+        embed = Embed(title=t.title, colour=MaterialColors.bluegrey)
+        embed.description = t.description
         embed.set_footer(text=tg.requested_by(message.author, message.author.id), icon_url=message.author.avatar_url)
         await message.channel.send(embed=embed)
         try:

@@ -1,5 +1,5 @@
-discord_bot_token_deleter_title: Discord Bot Token Deleter
-discord_bot_token_deleter_description: >
+title: Discord Bot Token Deleter
+description: >
   You sended a message with a Discord Bot Token into this Channel.
   I deleted this message because other people can use this Token to control this Bot!
   You can regenerate the Discord Bot Token in the Discord Developer Portal (https://discord.com/developers/applications):
