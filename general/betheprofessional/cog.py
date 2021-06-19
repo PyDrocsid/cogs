@@ -25,28 +25,25 @@ def split_topics(topics: str) -> List[str]:
     return [topic for topic in map(str.strip, topics.replace(";", ",").split(",")) if topic]
 
 
-async def parse_topics(guild: Guild, topics: str, author: Member) -> List[Role]:
+async def parse_topics(topics_str: str, author: Member) -> List[BTPTopic]:
     # TODO
 
-    roles: List[Role] = []
-    all_topics: List[Role] = await list_topics(guild)
-    for topic in split_topics(topics):
-        for role in guild.roles:
-            if role.name.lower() == topic.lower():
-                if role in all_topics:
-                    break
-                if not role.managed and role >= guild.me.top_role:
-                    raise CommandError(t.youre_not_the_first_one(topic, author.mention))
-        else:
-            if all_topics:
-                def dist(name: str) -> int:
-                    return calculate_edit_distance(name.lower(), topic.lower())
+    topics: List[BTPTopic] = []
+    all_topics: List[BTPTopic] = await get_topics()
+    for topic in split_topics(topics_str):
+        query = select(BTPTopic).filter_by(name=topic)
+        topic_db = await db.first(query)
+        if not (await db.exists(query)):
+            def dist(name: str) -> int:
+                return calculate_edit_distance(name.lower(), topic.lower())
 
-                best_match = min([r.name for r in all_topics], key=dist)
+            best_match = min([r.name for r in all_topics], key=dist)
+            if best_match:
                 raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
-            raise CommandError(t.topic_not_found(topic))
-        roles.append(role)
-    return roles
+            else:
+                raise CommandError(t.topic_not_found(topic))
+        topics.append(topic_db)
+    return topics
 
 
 async def get_topics() -> List[BTPTopic]:
@@ -86,16 +83,12 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         """
 
         member: Member = ctx.author
-        roles: List[Role] = [r for r in await parse_topics(ctx.guild, topics, ctx.author) if r not in member.roles]
-
-        for role in roles:
-            check_role_assignable(role)
-
-        await member.add_roles(*roles)
-
+        topics: List[BTPTopic] = [topic for topic in await parse_topics(topics, ctx.author)]  # TODO check if user has it already
+        for topic in topics:
+            await BTPUser.create(member.id, topic.id)
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-        embed.description = t.topics_added(cnt=len(roles))
-        if not roles:
+        embed.description = t.topics_added(cnt=len(topics))
+        if not topics:
             embed.colour = Colors.error
 
         await reply(ctx, embed=embed)
