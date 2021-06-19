@@ -170,17 +170,16 @@ class LoggingCog(Cog, name="Logging"):
         if await redis.delete(f"ignore_message_edit:{before.channel.id}:{before.id}"):
             return
         mindiff: int = await LoggingSettings.edit_mindiff.get()
-        if (old_message := await redis.get(f"little_diff_message_edit:{after.id}")) is None:
-            old_message = before.content
+        old_message = await redis.get(key := f"little_diff_message_edit:{before.id}") or before.content
         if calculate_edit_distance(old_message, after.content) < mindiff:
-            if not await redis.exists(f"little_diff_message_edit:{after.id}"):
-                await redis.setex(f"little_diff_message_edit:{before.id}", 1000 * 60 * 60 * 24, before.content)
+            if not await redis.exists(key):
+                await redis.setex(key, 1000 * 60 * 60 * 24, before.content)
             return
         if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
         if await LogExclude.exists(after.channel.id):
             return
-        await redis.delete(f"little_diff_message_edit:{before.id}")
+        await redis.delete(key)
         embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=datetime.utcnow())
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
