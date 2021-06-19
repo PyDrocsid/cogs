@@ -173,7 +173,7 @@ class LoggingCog(Cog, name="Logging"):
         old_message = await redis.get(key := f"little_diff_message_edit:{before.id}") or before.content
         if calculate_edit_distance(old_message, after.content) < mindiff:
             if not await redis.exists(key):
-                await redis.setex(key, 1000 * 60 * 60 * 24, before.content)
+                await redis.setex(key, 60 * 60 * 24, before.content)
             return
         if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
