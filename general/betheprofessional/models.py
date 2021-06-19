@@ -22,7 +22,8 @@ class BTPTopic(db.Base):
 class BTPUser(db.Base):
     __tablename__ = "btp_users"
 
-    user_id: Union[Column, int] = Column(BigInteger, primary_key=True)
+    id: Union[Column, int] = Column(Integer, primary_key=True)
+    user_id: Union[Column, int] = Column(BigInteger)
     topic: Union[Column, int] = Column(Integer, ForeignKey(BTPTopic.id))
 
     @staticmethod
