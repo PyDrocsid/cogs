@@ -8,7 +8,7 @@ class BTPTopic(db.Base):
     __tablename__ = "btp_topic"
 
     id: Union[Column, int] = Column(Integer, primary_key=True)
-    name: Union[Column, str] = Column(String)
+    name: Union[Column, str] = Column(String(255))
     parent: Union[Column, int] = Column(Integer)
     role_id: Union[Column, int] = Column(BigInteger)
 
