@@ -32,8 +32,8 @@ log_link_created: "**Link** has been **created** between voice channel `{}` and 
 link_not_found: Link does not exist.
 link_deleted: "Link has been deleted. :white_check_mark:"
 log_link_deleted: "**Link** has been **deleted** between voice channel `{}` and role `@{}`."
-could_not_remove_roles: Could not remove some roles from {}.
-could_not_add_roles: Could not add some roles to {}.
+could_not_remove_roles: Could not remove role {} from {}.
+could_not_add_roles: Could not add role {} to {}.
 
 dyn_group_already_exists: This channel is already part of an existing voice channel group.
 invalid_user_role: The role {} does not have `view_channel` and `connect` permissions in this voice channel. Please either grant this role the required permissions in this channel or specify a (different) role which should have access to this voice channel group.

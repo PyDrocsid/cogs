@@ -84,17 +84,17 @@ async def update_roles(member: Member, *, add: set[Role] = None, remove: set[Rol
     remove = remove or set()
     add, remove = add - remove, remove - add
 
-    if remove:
+    for role in remove:
         try:
-            await member.remove_roles(*remove)
+            await member.remove_roles(role)
         except Forbidden:
-            await send_alert(member.guild, t.could_not_remove_roles(member.mention))
+            await send_alert(member.guild, t.could_not_remove_roles(role.mention, member.mention))
 
-    if add:
+    for role in add:
         try:
-            await member.add_roles(*add)
+            await member.add_roles(role)
         except Forbidden:
-            await send_alert(member.guild, t.could_not_add_roles(member.mention))
+            await send_alert(member.guild, t.could_not_add_roles(role.mention, member.mention))
 
 
 async def get_commands_embed() -> Embed:
