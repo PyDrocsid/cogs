@@ -27,7 +27,7 @@ class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
             return
         has_discord_bot_tokens = False
         for discord_bot_token in discord_bot_tokens:
-            if base64.b64decode(re.match(r'[A-Za-z\d]+', discord_bot_token).group(0)).isdigit():
+            if base64.b64decode(re.match(r"[A-Za-z\d]+", discord_bot_token).group(0)).isdigit():
                 has_discord_bot_tokens = True
                 break
         if not has_discord_bot_tokens:
