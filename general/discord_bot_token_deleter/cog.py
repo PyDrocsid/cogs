@@ -15,7 +15,7 @@ t = t.discord_bot_token_deleter
 
 class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
     CONTRIBUTORS = [Contributor.Tert0]
-    RE_DC_TOKEN = re.compile(r"([A-Za-z\d]+)\.[A-Za-z\d]+\.[A-Za-z\d\-\_]+")
+    RE_DC_TOKEN = re.compile(r"[A-Za-z\d]+\.[A-Za-z\d]+\.[A-Za-z\d\-\_]+")
 
     async def on_message(self, message: Message):
         """
@@ -27,7 +27,7 @@ class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
             return
         has_discord_bot_tokens = False
         for discord_bot_token in discord_bot_tokens:
-            if base64.b64decode(discord_bot_token.group(0)).isdigit():
+            if base64.b64decode(re.match(r'[A-Za-z\d]+', discord_bot_token).group(0)).isdigit():
                 has_discord_bot_tokens = True
                 break
         if not has_discord_bot_tokens:
