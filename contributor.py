@@ -8,5 +8,5 @@ class Contributor(ContributorBase):
     pohlium = (None, "MDQ6VXNlcjI0NDgwNTc0")
     Anorak = (202370816384565248, "MDQ6VXNlcjMyNDg3NzYw")
     LoC = (519559136237715486, "MDQ6VXNlcjY0MDk1MjUz")
-    Tert0 = (621330363167539210, "MDQ6VXNlcjYyMDM2NDY0")
     Tristan = (277069925678317568, "MDQ6VXNlcjQ1MzMwNjY3")
+    Tert0 = (621330363167539210, "MDQ6VXNlcjYyMDM2NDY0")
