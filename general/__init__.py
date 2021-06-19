@@ -1,4 +1,5 @@
 from .betheprofessional import BeTheProfessionalCog
+from .color_picker import ColorPickerCog
 from .custom_commands import CustomCommandsCog
 from .discord_bot_token_deleter import DiscordBotTokenDeleterCog
 from .news import NewsCog
@@ -12,6 +13,7 @@ from .voice_channel import VoiceChannelCog
 
 __all__ = [
     "BeTheProfessionalCog",
+    "ColorPickerCog",
     "CustomCommandsCog",
     "DiscordBotTokenDeleterCog",
     "NewsCog",
