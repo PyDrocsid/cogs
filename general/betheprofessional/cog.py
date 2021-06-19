@@ -1,5 +1,5 @@
 import string
-from typing import List
+from typing import List, Union
 
 from discord import Role, Guild, Member, Embed
 from discord.ext import commands
@@ -12,7 +12,7 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, check_role_assignable
 from .colors import Colors
-from .models import BTPRole
+from .models import BTPUser, BTPTopic
 from .permissions import BeTheProfessionalPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
@@ -26,6 +26,8 @@ def split_topics(topics: str) -> List[str]:
 
 
 async def parse_topics(guild: Guild, topics: str, author: Member) -> List[Role]:
+    # TODO
+
     roles: List[Role] = []
     all_topics: List[Role] = await list_topics(guild)
     for topic in split_topics(topics):
@@ -37,7 +39,6 @@ async def parse_topics(guild: Guild, topics: str, author: Member) -> List[Role]:
                     raise CommandError(t.youre_not_the_first_one(topic, author.mention))
         else:
             if all_topics:
-
                 def dist(name: str) -> int:
                     return calculate_edit_distance(name.lower(), topic.lower())
 
@@ -48,49 +49,11 @@ async def parse_topics(guild: Guild, topics: str, author: Member) -> List[Role]:
     return roles
 
 
-async def list_topics(guild: Guild) -> List[Role]:
-    roles: List[Role] = []
-    async for btp_role in await db.stream(select(BTPRole)):
-        if (role := guild.get_role(btp_role.role_id)) is None:
-            await db.delete(btp_role)
-        else:
-            roles.append(role)
-    return roles
-
-
-async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
-    guild: Guild = ctx.guild
-    roles: List[Role] = []
-    btp_roles: List[BTPRole] = []
-    names = split_topics(topics)
-    if not names:
-        raise UserInputError
-
-    for topic in names:
-        for role in guild.roles:
-            if role.name.lower() == topic.lower():
-                break
-        else:
-            raise CommandError(t.topic_not_registered(topic))
-        if (btp_role := await db.first(select(BTPRole).filter_by(role_id=role.id))) is None:
-            raise CommandError(t.topic_not_registered(topic))
-
-        roles.append(role)
-        btp_roles.append(btp_role)
-
-    for role, btp_role in zip(roles, btp_roles):
-        if delete_roles:
-            check_role_assignable(role)
-            await role.delete()
-        await db.delete(btp_role)
-
-    embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-    embed.description = t.topics_unregistered(cnt=len(roles))
-    await send_to_changelog(
-        ctx.guild,
-        t.log_topics_unregistered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
-    )
-    await send_long_embed(ctx, embed)
+async def get_topics() -> List[BTPTopic]:
+    topics: List[BTPTopic] = []
+    async for topic in await db.stream(select(BTPTopic)):
+        topics.append(topic)
+    return topics
 
 
 class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
@@ -104,7 +67,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         """
 
         embed = Embed(title=t.available_topics_header, colour=Colors.BeTheProfessional)
-        out = [role.name for role in await list_topics(ctx.guild)]
+        out = [topic.name for topic in await get_topics()]
         if not out:
             embed.colour = Colors.error
             embed.description = t.no_topics_registered
@@ -144,20 +107,26 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         remove one or more topics (use * to remove all topics)
         """
 
+        # TODO
+
         member: Member = ctx.author
         if topics.strip() == "*":
-            roles: List[Role] = await list_topics(ctx.guild)
+            topics: List[BTPTopic] = await get_topics()
         else:
-            roles: List[Role] = await parse_topics(ctx.guild, topics, ctx.author)
-        roles = [r for r in roles if r in member.roles]
-
-        for role in roles:
-            check_role_assignable(role)
-
-        await member.remove_roles(*roles)
+            topics: List[BTPTopic] = await parse_topics(ctx.guild, topics, ctx.author)
+        # TODO Check if user has
+        for topic in topics:
+            user_has_topic = False
+            for user_topic in db.all(select(BTPUser).filter_by(user_id=member.id)):
+                if user_topic.id == topic.id:
+                    user_has_topic = True
+            if not user_has_topic:
+                raise CommandError("you have da topic not")  # TODO
+        for topic in topics:
+            await db.delete(topic)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-        embed.description = t.topics_removed(cnt=len(roles))
+        embed.description = t.topics_removed(cnt=len(topics))
         await reply(ctx, embed=embed)
 
     @commands.command(name="*")
@@ -168,43 +137,29 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         register one or more new topics
         """
 
-        guild: Guild = ctx.guild
         names = split_topics(topics)
         if not names:
             raise UserInputError
 
         valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_`{|}~")
-        to_be_created: List[str] = []
-        roles: List[Role] = []
+        registered_topics: list[tuple[str, Union[BTPTopic, None]]] = []
         for topic in names:
             if any(c not in valid_chars for c in topic):
                 raise CommandError(t.topic_invalid_chars(topic))
 
-            for role in guild.roles:
-                if role.name.lower() == topic.lower():
-                    break
-            else:
-                to_be_created.append(topic)
-                continue
-
-            if await db.exists(select(BTPRole).filter_by(role_id=role.id)):
+            if await db.exists(select(BTPTopic).filter_by(name=topic)):
                 raise CommandError(t.topic_already_registered(topic))
+            else:
+                registered_topics.append((topic, None))
 
-            check_role_assignable(role)
-
-            roles.append(role)
-
-        for name in to_be_created:
-            roles.append(await guild.create_role(name=name, mentionable=True))
-
-        for role in roles:
-            await BTPRole.create(role.id)
+        for registered_topic in registered_topics:
+            await BTPTopic.create(registered_topic[0], None, registered_topic[1])
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-        embed.description = t.topics_registered(cnt=len(roles))
+        embed.description = t.topics_registered(cnt=len(registered_topics))
         await send_to_changelog(
             ctx.guild,
-            t.log_topics_registered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
+            t.log_topics_registered(cnt=len(registered_topics), topics=", ".join(f"`{r}`" for r in registered_topics)),
         )
         await reply(ctx, embed=embed)
 
@@ -216,14 +171,23 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         delete one or more topics
         """
 
-        await unregister_roles(ctx, topics, delete_roles=True)
+        topics = split_topics(topics)
 
-    @commands.command(name="%")
-    @BeTheProfessionalPermission.manage.check
-    @guild_only()
-    async def unregister_topics(self, ctx: Context, *, topics: str):
-        """
-        unregister one or more topics without deleting the roles
-        """
+        delete_topics: list[BTPTopic] = []
 
-        await unregister_roles(ctx, topics, delete_roles=False)
+        for topic in topics:
+            if not await db.exists(select(BTPTopic).filter_by(name=topic)):
+                raise CommandError(t.topic_not_registered(topic))
+            else:
+                delete_topics.append(await db.first(select(BTPTopic).filter_by(name=topic)))
+
+        for topic in delete_topics:
+            await db.delete(topic)  # TODO Delete Role
+
+        embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
+        embed.description = t.topics_unregistered(cnt=len(delete_topics))
+        await send_to_changelog(
+            ctx.guild,
+            t.log_topics_unregistered(cnt=len(delete_topics), topics=", ".join(f"`{r}`" for r in delete_topics)),
+        )
+        await send_long_embed(ctx, embed)
