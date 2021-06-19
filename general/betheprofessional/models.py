@@ -13,7 +13,7 @@ class BTPTopic(db.Base):
     role_id: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
-    async def create(name: str, role_id: int, parent: Optional[int]) -> "BTPTopic":
+    async def create(name: str, role_id: Union[int, None], parent: Optional[Union[int, None]]) -> "BTPTopic":
         row = BTPTopic(name=name, role_id=role_id, parent=parent)
         await db.add(row)
         return row
