@@ -7,3 +7,4 @@ from .reactionrole import ReactionRoleCog
 from .remind_me import RemindMeCog
 from .utils import UtilsCog
 from .voice_channel import VoiceChannelCog
+from .color_picker import ColorPickerCog
