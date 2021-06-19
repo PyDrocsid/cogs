@@ -1,4 +1,5 @@
 import re
+import base64
 
 from discord import Message, Embed, Forbidden, NotFound, HTTPException
 
@@ -14,7 +15,7 @@ t = t.discord_bot_token_deleter
 
 class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
     CONTRIBUTORS = [Contributor.Tert0]
-    RE_DC_TOKEN = re.compile(r"[A-Za-z\d]{24}\.[A-Za-z\d]{6}\.[A-Za-z\d\-\_]{27}")
+    RE_DC_TOKEN = re.compile(r"([A-Za-z\d]+)\.[A-Za-z\d]+\.[A-Za-z\d\-\_]+")
 
     async def on_message(self, message: Message):
         """
@@ -22,7 +23,14 @@ class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
         """
         if message.author.id == self.bot.user.id:
             return
-        if not self.RE_DC_TOKEN.findall(message.content):
+        if not (discord_bot_tokens := self.RE_DC_TOKEN.findall(message.content)):
+            return
+        has_discord_bot_tokens = False
+        for discord_bot_token in discord_bot_tokens:
+            if base64.b64decode(discord_bot_token.group(0)).isdigit():
+                has_discord_bot_tokens = True
+                break
+        if not has_discord_bot_tokens:
             return
         embed = Embed(title=t.title, colour=MaterialColors.bluegrey)
         embed.description = t.description
