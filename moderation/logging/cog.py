@@ -174,7 +174,7 @@ class LoggingCog(Cog, name="Logging"):
             old_message = before.content
         if calculate_edit_distance(old_message, after.content) < mindiff:
             if not await redis.exists(f"little_diff_message_edit:{after.id}"):
-                await redis.set(f"little_diff_message_edit:{before.id}", before.content)
+                await redis.pset(f"little_diff_message_edit:{before.id}", before.content, 1000 * 60 * 60 * 24)
             return
         if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
@@ -212,6 +212,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
+        await redis.delete(f"little_diff_message_edit:{message.id}")
         if await is_logging_channel(message.channel):
             return
         if await LogExclude.exists(message.channel.id):
@@ -238,6 +239,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
+        await redis.delete(f"little_diff_message_edit:{event.message_id}")
         if await LogExclude.exists(event.channel_id):
             return
 
