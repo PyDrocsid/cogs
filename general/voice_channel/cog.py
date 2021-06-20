@@ -29,7 +29,7 @@ from discord.ext.commands import guild_only, Context, UserInputError, CommandErr
 
 from PyDrocsid.async_thread import gather_any, GatherAnyException
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply
+from PyDrocsid.command import docs, reply, confirm
 from PyDrocsid.database import filter_by, db, select, delete, db_context
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -181,21 +181,25 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         self._recent_kicks: set[tuple[Member, VoiceChannel]] = set()
 
         names = map(str.lower, getenv("VOICE_CHANNEL_NAMES", "elements").split(","))
-        self.names: list[str] = []
+        self.names: set[str] = set()
         for name in names:
             with Path(__file__).parent.joinpath(f"names/{name}.yml").open() as file:
-                self.names += yaml.safe_load(file)
+                self.names.update(yaml.safe_load(file))
 
     def prepare(self) -> bool:
         return bool(self.names)
 
-    async def get_channel_name(self) -> str:
-        if random.randrange(100):
-            return random.choice(self.names)
+    def _random_channel_name(self, avoid: set[str]) -> Optional[str]:
+        allowed = list({*self.names} - avoid)
+        if allowed and random.randrange(100):
+            return random.choice(allowed)
 
-        names = "acddflmrtneeelooanopflocrztrhetr pu2aolai hpkkxo a ea     n ul       st        u        f        f "
-        idx = random.randrange(9)
-        return names[idx::9].strip()
+        a = "acddflmrtneeelooanopflocrztrhetr pu2aolai hpkkxo a ea     n ul       st        u        f        f "
+        c = len(b := [*range(13 - 37 + 42 >> (1 & 3 & 3 & 7 & ~42))])
+        return random.shuffle(b) or next((e for d in b if (e := a[d::c].strip()) not in avoid), None)
+
+    async def get_channel_name(self, guild: Guild) -> str:
+        return self._random_channel_name({channel.name for channel in guild.voice_channels})
 
     async def is_teamler(self, member: Member) -> bool:
         return any(
@@ -674,7 +678,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 new_channel = await safe_create_voice_channel(
                     category,
                     channel,
-                    await self.get_channel_name(),
+                    await self.get_channel_name(guild),
                     overwrites,
                 )
             except (Forbidden, HTTPException):
@@ -750,7 +754,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             new_channel = await safe_create_voice_channel(
                 category,
                 channel,
-                await self.get_channel_name(),
+                await self.get_channel_name(guild),
                 overwrites,
             )
         except (Forbidden, HTTPException):
@@ -871,7 +875,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             raise CommandError(t.dyn_group_already_exists)
 
         try:
-            await voice_channel.edit(name=await self.get_channel_name())
+            await voice_channel.edit(name=await self.get_channel_name(voice_channel.guild))
         except Forbidden:
             raise CommandError(t.cannot_edit)
 
@@ -1001,6 +1005,17 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
         text_channel: TextChannel = self.get_text_channel(channel)
         old_name = voice_channel.name
+
+        if any(c.id != voice_channel.id and name == c.name for c in voice_channel.guild.voice_channels):
+            conf_embed = Embed(title=t.rename_confirmation, description=t.rename_description, color=Colors.Voice)
+            async with confirm(ctx, conf_embed) as (result, msg):
+                if not result:
+                    conf_embed.description += "\n\n" + t.canceled
+                    return
+
+                conf_embed.description += "\n\n" + t.confirmed
+                if msg:
+                    await msg.delete(delay=5)
 
         try:
             await rename_channel(voice_channel, name)

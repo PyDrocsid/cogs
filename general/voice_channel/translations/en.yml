@@ -99,6 +99,10 @@ rename_failed: Renaming this channel failed.
 rename_rate_limit: |
   Thanks to [Discord's stupid channel edit rate limit](https://support.discord.com/hc/en-us/community/posts/360067755532-Increase-rate-limit-for-editing-channel-description), I can't rename this channel right now. :rolling_eyes:
   Please try again later or create a new channel.
+rename_confirmation: Rename this Voice Channel?
+rename_description: A voice channel with this name already exists. Do you want to rename this voice channel anyway?
+canceled: ":x: Canceled"
+confirmed: "Confirmed :white_check_mark:"
 
 voice_info: "Voice Channel Information"
 voice_owner: "Owner"
