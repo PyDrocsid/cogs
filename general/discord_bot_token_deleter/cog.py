@@ -18,10 +18,9 @@ class DiscordBotTokenDeleterCog(Cog, name="Discord Bot Token Deleter"):
     RE_DC_TOKEN = re.compile(r"([A-Za-z\d\-_]+)\.[A-Za-z\d\-_]+\.[A-Za-z\d\-_]+")
 
     async def on_message(self, message: Message):
-        """
-        deletes a message if it contains a discord bot token
-        """
-        if message.author.id == self.bot.user.id:
+        """Delete a message if it contains a Discord bot token"""
+
+        if message.author.id == self.bot.user.id or not message.guild:
             return
         if not (discord_bot_tokens := self.RE_DC_TOKEN.findall(message.content)):
             return
