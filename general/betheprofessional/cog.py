@@ -40,6 +40,9 @@ async def split_parents(topics: List[str]) -> List[tuple[str, str, Union[BTPTopi
         )
         if isinstance(parent, CommandError):
             raise parent
+        if parent is not None:
+            if group != parent.group:
+                raise CommandError(t.group_not_parent_group(group, parent.group))
         topic = topic_tree[-1]
         result.append((topic, group, parent))
     return result
@@ -136,7 +139,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 affected_topics.append(topic)
 
         for topic in affected_topics:
-            await db.delete(topic)
+            await db.delete(await db.first(select(BTPUser).filter_by(topic=topic.id)))
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_removed(cnt=len(affected_topics))
