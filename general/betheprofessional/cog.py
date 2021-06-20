@@ -181,7 +181,8 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         await send_to_changelog(
             ctx.guild,
             t.log_topics_registered(
-                cnt=len(registered_topics), topics=", ".join(f"`{r[0]}`" for r in registered_topics)
+                cnt=len(registered_topics),
+                topics=", ".join(f"`{r[0]}`" for r in registered_topics),
             ),
         )
         await reply(ctx, embed=embed)
