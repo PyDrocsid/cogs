@@ -1,0 +1,23 @@
+discordtoken:
+  aliases: [token, dctoken, tokeninfo]
+  disabled: false
+  description: Discord Bot Token Informations
+
+  channel_parameter: false
+  channel:
+  delete_command: false
+  public: true
+  requires_confirmation: false
+
+  content:
+  file:
+  embed:
+    title: Discord Bot Token
+    color: 0x212121
+    description: |
+      Discord bot tokens are used for authentication.
+      **If another person gets such a token, they can use it to control the entire bot!**
+      In this case you should regenerate the token in the [Discord Developer Portal](https://discord.com/developers/applications):
+        - Select the application
+        - Click on "Bot" in the side menu
+        - Click on "Regenerate" to regenerate the token
