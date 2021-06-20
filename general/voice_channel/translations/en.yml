@@ -54,7 +54,7 @@ dyn_voice_help_content: |
   :lock: `{prefix}vc lock` - lock this voice channel
   :man_detective: `{prefix}vc hide` - lock and hide this voice channel
   :eye: `{prefix}vc show` - unhide this voice channel
-  :unlock: `{prefix}vc unlock` - unlock this voice channel
+  :unlock: `{prefix}vc unlock` - unlock and unhide this voice channel
   :white_check_mark: `{prefix}vc add <member>` - add a member to this voice channel
   :x: `{prefix}vc remove <member>` - kick and remove a member from this voice channel
   :tools: `{prefix}vc owner <member>` - transfer ownership of this voice channel
