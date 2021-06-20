@@ -1,7 +1,7 @@
 import string
 from typing import List, Union
 
-from discord import Role, Guild, Member, Embed
+from discord import Member, Embed, Role
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
@@ -10,7 +10,7 @@ from PyDrocsid.command import reply
 from PyDrocsid.database import db, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance, check_role_assignable
+from PyDrocsid.util import calculate_edit_distance
 from .colors import Colors
 from .models import BTPUser, BTPTopic
 from .permissions import BeTheProfessionalPermission
@@ -25,15 +25,34 @@ def split_topics(topics: str) -> List[str]:
     return [topic for topic in map(str.strip, topics.replace(";", ",").split(",")) if topic]
 
 
-async def parse_topics(topics_str: str, author: Member) -> List[BTPTopic]:
-    # TODO
+async def split_parents(topics: List[str]) -> List[tuple[str, str, Union[BTPTopic, None]]]:
+    result: List[tuple[str, str, Union[BTPTopic, None]]] = []
+    for topic in topics:
+        topic_tree = topic.split("/")
+        if len(topic_tree) > 3 or len(topic_tree) < 2:
+            raise UserInputError  # TODO ?
+        group = topic_tree[0]
+        query = select(BTPTopic).filter_by(name=topic_tree[1])
+        parent: Union[BTPTopic, None, CommandError] = (
+            (await db.first(query) if await db.exists(query) else CommandError(t.parent_not_exists(topic_tree[1])))
+            if len(topic_tree) > 2
+            else None
+        )
+        if isinstance(parent, CommandError):
+            raise parent
+        topic = topic_tree[-1]
+        result.append((topic, group, parent))
+    return result
 
+
+async def parse_topics(topics_str: str) -> List[BTPTopic]:
     topics: List[BTPTopic] = []
     all_topics: List[BTPTopic] = await get_topics()
     for topic in split_topics(topics_str):
         query = select(BTPTopic).filter_by(name=topic)
         topic_db = await db.first(query)
-        if not (await db.exists(query)):
+        if not (await db.exists(query)) and len(all_topics) > 0:
+
             def dist(name: str) -> int:
                 return calculate_edit_distance(name.lower(), topic.lower())
 
@@ -42,6 +61,8 @@ async def parse_topics(topics_str: str, author: Member) -> List[BTPTopic]:
                 raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
             else:
                 raise CommandError(t.topic_not_found(topic))
+        elif not (await db.exists(query)):
+            raise CommandError(t.no_topics_registered)
         topics.append(topic_db)
     return topics
 
@@ -83,7 +104,12 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         """
 
         member: Member = ctx.author
-        topics: List[BTPTopic] = [topic for topic in await parse_topics(topics, ctx.author)]  # TODO check if user has it already
+        topics: List[BTPTopic] = [
+            topic
+            for topic in await parse_topics(topics)
+            if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
+            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))
+        ]
         for topic in topics:
             await BTPUser.create(member.id, topic.id)
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
@@ -99,27 +125,21 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         """
         remove one or more topics (use * to remove all topics)
         """
-
-        # TODO
-
         member: Member = ctx.author
         if topics.strip() == "*":
             topics: List[BTPTopic] = await get_topics()
         else:
-            topics: List[BTPTopic] = await parse_topics(ctx.guild, topics, ctx.author)
-        # TODO Check if user has
+            topics: List[BTPTopic] = await parse_topics(topics)
+        affected_topics: List[BTPTopic] = []
         for topic in topics:
-            user_has_topic = False
-            for user_topic in db.all(select(BTPUser).filter_by(user_id=member.id)):
-                if user_topic.id == topic.id:
-                    user_has_topic = True
-            if not user_has_topic:
-                raise CommandError("you have da topic not")  # TODO
-        for topic in topics:
+            if await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)):
+                affected_topics.append(topic)
+
+        for topic in affected_topics:
             await db.delete(topic)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-        embed.description = t.topics_removed(cnt=len(topics))
+        embed.description = t.topics_removed(cnt=len(affected_topics))
         await reply(ctx, embed=embed)
 
     @commands.command(name="*")
@@ -131,28 +151,38 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         """
 
         names = split_topics(topics)
-        if not names:
+        topics: List[tuple[str, str, Union[BTPTopic, None]]] = await split_parents(names)
+        if not names or not topics:
             raise UserInputError
 
         valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_`{|}~")
-        registered_topics: list[tuple[str, Union[BTPTopic, None]]] = []
-        for topic in names:
-            if any(c not in valid_chars for c in topic):
+        registered_topics: List[tuple[str, str, Union[BTPTopic, None]]] = []
+        for topic in topics:
+            if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
 
-            if await db.exists(select(BTPTopic).filter_by(name=topic)):
-                raise CommandError(t.topic_already_registered(topic))
+            if await db.exists(select(BTPTopic).filter_by(name=topic[0])):
+                raise CommandError(
+                    t.topic_already_registered(f"{topic[1]}/{topic[2].name + '/' if topic[2] else ''}{topic[0]}")
+                )
             else:
-                registered_topics.append((topic, None))
+                registered_topics.append(topic)
 
         for registered_topic in registered_topics:
-            await BTPTopic.create(registered_topic[0], None, registered_topic[1])
+            await BTPTopic.create(
+                registered_topic[0],
+                None,
+                registered_topic[1],
+                registered_topic[2].id if registered_topic[2] is not None else None,
+            )
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_registered(cnt=len(registered_topics))
         await send_to_changelog(
             ctx.guild,
-            t.log_topics_registered(cnt=len(registered_topics), topics=", ".join(f"`{r}`" for r in registered_topics)),
+            t.log_topics_registered(
+                cnt=len(registered_topics), topics=", ".join(f"`{r[0]}`" for r in registered_topics)
+            ),
         )
         await reply(ctx, embed=embed)
 
@@ -164,7 +194,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         delete one or more topics
         """
 
-        topics = split_topics(topics)
+        topics: List[str] = split_topics(topics)
 
         delete_topics: list[BTPTopic] = []
 
@@ -172,10 +202,20 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             if not await db.exists(select(BTPTopic).filter_by(name=topic)):
                 raise CommandError(t.topic_not_registered(topic))
             else:
-                delete_topics.append(await db.first(select(BTPTopic).filter_by(name=topic)))
-
+                btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
+                delete_topics.append(btp_topic)
+                for child_topic in await db.all(
+                    select(BTPTopic).filter_by(parent=btp_topic.id)
+                ):  # TODO Recursive? Fix more level childs
+                    delete_topics.insert(0, child_topic)
         for topic in delete_topics:
-            await db.delete(topic)  # TODO Delete Role
+            if topic.role_id is not None:
+                role: Role = ctx.guild.get_role(topic.role_id)
+                await role.delete()
+            for user_topic in await db.all(select(BTPUser).filter_by(topic=topic.id)):
+                await db.delete(user_topic)
+                await db.commit()
+            await db.delete(topic)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_unregistered(cnt=len(delete_topics))
