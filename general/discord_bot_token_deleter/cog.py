@@ -15,7 +15,7 @@ t = t.discord_bot_token_deleter
 
 class DiscordBotTokenDeleterCog(Cog, name="Discord Bot Token Deleter"):
     CONTRIBUTORS = [Contributor.Tert0]
-    RE_DC_TOKEN = re.compile(r"[A-Za-z\d]+\.[A-Za-z\d]+\.[A-Za-z\d\-\_]+")
+    RE_DC_TOKEN = re.compile(r"([A-Za-z\d\-_]+)\.[A-Za-z\d\-_]+\.[A-Za-z\d\-_]+")
 
     async def on_message(self, message: Message):
         """
