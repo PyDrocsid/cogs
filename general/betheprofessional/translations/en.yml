@@ -40,3 +40,4 @@ log_topics_unregistered:
   many: "{cnt} **topics** have been **removed**: {topics}"
 
 parent_not_exists: "Parent `{}` doesn't exists"
+group_parent_format_help: "Please write `Group-Name/[Parent-Name/]Topic-Name`"

@@ -30,7 +30,7 @@ async def split_parents(topics: List[str]) -> List[tuple[str, str, Union[BTPTopi
     for topic in topics:
         topic_tree = topic.split("/")
         if len(topic_tree) > 3 or len(topic_tree) < 2:
-            raise UserInputError  # TODO ?
+            raise CommandError(t.group_parent_format_help)
         group = topic_tree[0]
         query = select(BTPTopic).filter_by(name=topic_tree[1])
         parent: Union[BTPTopic, None, CommandError] = (
