@@ -2,7 +2,12 @@ from discord import Message, Member, PartialEmoji, Forbidden
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji
+from PyDrocsid.translations import t
 from ...contributor import Contributor
+from ...pubsub import send_alert
+
+tg = t.g
+t = t.remind_me
 
 EMOJIS = {
     name_to_emoji["star"],
@@ -25,4 +30,7 @@ class RemindMeCog(Cog, name="RemindMe"):
         try:
             await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
         except Forbidden:
-            await message.remove_reaction(emoji, member)
+            try:
+                await message.remove_reaction(emoji, member)
+            except Forbidden:
+                await send_alert(message.guild, t.cannot_send(message.jump_url))
