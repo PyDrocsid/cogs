@@ -108,7 +108,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))
+               and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
         for topic in topics:
             await BTPUser.create(member.id, topic.id)
@@ -206,7 +206,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
                 delete_topics.append(btp_topic)
                 for child_topic in await db.all(
-                    select(BTPTopic).filter_by(parent=btp_topic.id),
+                        select(BTPTopic).filter_by(parent=btp_topic.id),
                 ):  # TODO Recursive? Fix more level childs
                     delete_topics.insert(0, child_topic)
         for topic in delete_topics:
