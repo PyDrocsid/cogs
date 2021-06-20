@@ -24,9 +24,9 @@ EMOJIS = {
 
 class RemindMeCog(Cog, name="RemindMe"):
     """
-    discord.RawReactionActionEvent
     Adds a "Remind Me"-functionality by sending the user a message they reacted on.
     """
+
     CONTRIBUTORS = [Contributor.Tristan]
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
