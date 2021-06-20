@@ -1,1 +1,1 @@
-from .cog import DiscordBotTokenDeleter
+from .cog import DiscordBotTokenDeleterCog

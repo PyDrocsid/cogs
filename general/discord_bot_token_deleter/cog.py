@@ -13,7 +13,7 @@ tg = t.g
 t = t.discord_bot_token_deleter
 
 
-class DiscordBotTokenDeleter(Cog, name="DiscordBotTokenDeleter"):
+class DiscordBotTokenDeleterCog(Cog, name="Discord Bot Token Deleter"):
     CONTRIBUTORS = [Contributor.Tert0]
     RE_DC_TOKEN = re.compile(r"[A-Za-z\d]+\.[A-Za-z\d]+\.[A-Za-z\d\-\_]+")
 
