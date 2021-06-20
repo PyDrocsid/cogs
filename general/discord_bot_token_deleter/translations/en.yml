@@ -1,10 +1,10 @@
 title: Discord Bot Token Deleter
 description: >
-  You sended a message with a Discord Bot Token into this Channel.
-  I deleted this message because other people can use this Token to control this Bot!
-  You can regenerate the Discord Bot Token in the Discord Developer Portal (https://discord.com/developers/applications):
-    - Select the Application
-    - Click on "Bot" in the Side Menu
-    - Click on "Regenerate" to regenerate the Token
+  You have sent a message with a Discord bot token into this channel.
+  I deleted this message because other people can use this token to control your bot!
+  You can regenerate the token in the [Discord Developer Portal](https://discord.com/developers/applications):
+    - Select the application
+    - Click on "Bot" in the side menu
+    - Click on "Regenerate" to regenerate the token
 not_deleted: >
   [This message]({}) contains a Discord bot token but I could not delete it because I don't have `manage_messages` permission in {}.
