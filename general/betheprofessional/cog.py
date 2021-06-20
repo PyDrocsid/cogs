@@ -1,5 +1,5 @@
 import string
-from typing import List, Union
+from typing import List, Union, Optional, Dict
 
 from discord import Member, Embed, Role
 from discord.ext import commands
@@ -82,21 +82,54 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
 
     @commands.command(name="?")
     @guild_only()
-    async def list_topics(self, ctx: Context):
+    async def list_topics(self, ctx: Context, parent_topic: Optional[str]):
         """
-        list all registered topics
+        list all registered topics TODO
         """
-
+        parent: Union[None, BTPTopic, CommandError] = (
+            None
+            if parent_topic is None
+            else await db.first(select(BTPTopic).filter_by(name=parent_topic))
+            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+        )
+        if isinstance(parent, CommandError):
+            raise parent
         embed = Embed(title=t.available_topics_header, colour=Colors.BeTheProfessional)
-        out = [topic.name for topic in await get_topics()]
+        grouped_topics: Dict[str, List[str]] = {}
+        out: List[BTPTopic] = [
+            topic
+            for topic in await db.all(select(BTPTopic).filter_by(parent=parent if parent is None else parent.id))
+            if topic.group is not None
+        ]
         if not out:
             embed.colour = Colors.error
             embed.description = t.no_topics_registered
             await reply(ctx, embed=embed)
             return
 
-        out.sort(key=str.lower)
-        embed.description = ", ".join(f"`{topic}`" for topic in out)
+        out.sort(key=lambda topic: topic.name.lower())
+        for topic in out:
+            if topic.group.title() not in grouped_topics.keys():
+                grouped_topics[topic.group] = [f"{topic.name}"]
+            else:
+                grouped_topics[topic.group.title()].append(f"{topic.name}")
+
+        for group in grouped_topics.keys():
+            embed.add_field(
+                name=group.title(),
+                value=", ".join(
+                    [
+                        f"`{topic.name}"
+                        + (
+                            f" ({c})`"
+                            if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id, group=topic.group))) > 0
+                            else "`"
+                        )
+                        for topic in out
+                    ]
+                ),
+                inline=False,
+            )
         await send_long_embed(ctx, embed)
 
     @commands.command(name="+")
