@@ -197,7 +197,9 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
 
-            if await db.exists(select(BTPTopic).filter_by(name=topic[0])):
+            if await db.exists(
+                select(BTPTopic).filter_by(name=topic[0], parent=topic[2].id if topic[2] is not None else None, group=topic[1]),
+            ):
                 raise CommandError(
                     t.topic_already_registered(f"{topic[1]}/{topic[2].name + '/' if topic[2] else ''}{topic[0]}"),
                 )
