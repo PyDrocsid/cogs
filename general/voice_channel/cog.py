@@ -261,17 +261,35 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         async def clear_reactions(msg_id):
             try:
                 await (await message.channel.fetch_message(msg_id)).clear_reactions()
-            except (NotFound, Forbidden, HTTPException):
-                pass
-
-        async def update_reactions(add, rm):
-            try:
-                await asyncio.gather(*[rct.clear() for rct in rm])
-                await asyncio.gather(*[message.add_reaction(e) for e in add])
+            except Forbidden:
+                await send_alert(message.guild, t.could_not_clear_reactions(message.jump_url, message.channel.mention))
             except NotFound:
                 pass
 
-        if (msg := await redis.get(key := f"dynvc_control_message:{channel.text_id}")) != str(message.id):
+        async def update_reactions(add, rm):
+            if rm:
+                try:
+                    await asyncio.gather(*[rct.clear() for rct in rm])
+                except Forbidden:
+                    await send_alert(
+                        message.guild,
+                        t.could_not_clear_reactions(message.jump_url, message.channel.mention),
+                    )
+                except NotFound:
+                    return
+
+            if add:
+                try:
+                    await asyncio.gather(*[message.add_reaction(e) for e in add])
+                except Forbidden:
+                    await send_alert(
+                        message.guild,
+                        t.could_not_add_reactions(message.jump_url, message.channel.mention),
+                    )
+                except NotFound:
+                    return
+
+        if (msg := await redis.get(key := f"dynvc_control_message:{channel.text_id}")) and msg != str(message.id):
             asyncio.create_task(clear_reactions(msg))
 
         await redis.setex(key, 86400, message.id)
@@ -311,7 +329,12 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         async with self._channel_lock[channel.group_id]:
 
-            await message.remove_reaction(emoji, user)
+            try:
+                await message.remove_reaction(emoji, user)
+            except Forbidden:
+                await send_alert(message.guild, t.could_not_clear_reactions(message.jump_url, message.channel.mention))
+            except NotFound:
+                pass
 
             if str(emoji) == name_to_emoji["information_source"]:
                 await self.send_voice_info(message.channel, channel)

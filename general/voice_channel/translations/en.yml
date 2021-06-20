@@ -91,6 +91,8 @@ text_channel_for: Text Channel for {}
 could_not_create_text_channel: Could not create text channel for {}.
 could_not_create_voice_channel: Could not create new voice channel.
 could_not_delete_channel: Could not delete {}.
+could_not_add_reactions: Could not add control reactions to [this message]({}) in {}.
+could_not_clear_reactions: Could not remove control reactions from [this message]({}) in {}.
 cannot_edit: I cannot edit this channel.
 renamed: ":label: {} has renamed this channel from `{}` to `{}`."
 rename_failed: Renaming this channel failed.
