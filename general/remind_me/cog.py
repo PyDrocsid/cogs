@@ -2,7 +2,9 @@ from discord import Message, Member, PartialEmoji, Forbidden
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji
+from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
+from PyDrocsid.util import check_wastebasket
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
@@ -37,9 +39,14 @@ class RemindMeCog(Cog, name="RemindMe"):
             return
 
         try:
-            await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
+            message_to_user = await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
+            message_to_user.add_reaction(name_to_emoji["wastebasket"])
         except Forbidden:
             try:
                 await message.remove_reaction(emoji, member)
             except Forbidden:
                 await send_alert(message.guild, t.cannot_send(message.jump_url))
+
+        if await check_wastebasket(message_to_user, member, emoji, t.created_by):
+            await message.delete()
+            raise StopEventHandling
