@@ -6,3 +6,5 @@ description: >
     - Select the Application
     - Click on "Bot" in the Side Menu
     - Click on "Regenerate" to regenerate the Token
+not_deleted: >
+  [This message]({}) contains a Discord bot token but I could not delete it because I don't have `manage_messages` permission in {}.

@@ -36,5 +36,5 @@ class DiscordBotTokenDeleterCog(Cog, name="Discord Bot Token Deleter"):
         await message.channel.send(message.author.mention, embed=embed)
         try:
             await message.delete()
-        except (Forbidden, NotFound, HTTPException) as error:
-            await send_alert(message.guild, f"Discord Bot Token deletion Error: {error}")
+        except Forbidden:
+            await send_alert(message.guild, t.not_deleted(message.jump_url, message.channel.mention))
