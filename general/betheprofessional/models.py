@@ -11,10 +11,13 @@ class BTPTopic(db.Base):
     name: Union[Column, str] = Column(String(255))
     parent: Union[Column, int] = Column(Integer)
     role_id: Union[Column, int] = Column(BigInteger)
+    group: Union[Column, str] = Column(String(255))
 
     @staticmethod
-    async def create(name: str, role_id: Union[int, None], parent: Optional[Union[int, None]]) -> "BTPTopic":
-        row = BTPTopic(name=name, role_id=role_id, parent=parent)
+    async def create(
+        name: str, role_id: Union[int, None], group: str, parent: Optional[Union[int, None]]
+    ) -> "BTPTopic":
+        row = BTPTopic(name=name, role_id=role_id, parent=parent, group=group)
         await db.add(row)
         return row
 
