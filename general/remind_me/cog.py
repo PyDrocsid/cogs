@@ -38,14 +38,29 @@ class RemindMeCog(Cog, name="RemindMe"):
         if str(emoji) not in EMOJIS or member.bot or message.guild is None:
             return
 
-        try:
-            message_to_user = await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
-            message_to_user.add_reaction(name_to_emoji["wastebasket"])
-        except Forbidden:
+        if message.attachments:
             try:
-                await message.remove_reaction(emoji, member)
+                message_to_user = await member.send("\n".join(attachment.url for attachment in message.attachments))
+                message_to_user.add_reaction(name_to_emoji["wastebasket"])
             except Forbidden:
-                await send_alert(message.guild, t.cannot_send(message.jump_url))
+                try:
+                    await message.remove_reaction(emoji, member)
+                    return
+                except Forbidden:
+                    await send_alert(message.guild, t.cannot_send(message.jump_url))
+                    return
+
+        embed = message.embeds[0] if message.embeds else None
+
+        if message.content or embed:
+            try:
+                message_to_user = await member.send(message.content, embed=embed)
+                message_to_user.add_reaction(name_to_emoji["wastebasket"])
+            except Forbidden:
+                try:
+                    await message.remove_reaction(emoji, member)
+                except Forbidden:
+                    await send_alert(message.guild, t.cannot_send(message.jump_url))
 
         if await check_wastebasket(message_to_user, member, emoji, t.created_by):
             await message.delete()

@@ -108,7 +108,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
 
 
 class LoggingCog(Cog, name="Logging"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0]
 
     async def get_logging_channel(self, setting: LoggingSettings) -> Optional[TextChannel]:
         return self.bot.get_channel(await setting.get())
@@ -170,18 +170,21 @@ class LoggingCog(Cog, name="Logging"):
         if await redis.delete(f"ignore_message_edit:{before.channel.id}:{before.id}"):
             return
         mindiff: int = await LoggingSettings.edit_mindiff.get()
-        if calculate_edit_distance(before.content, after.content) < mindiff:
+        old_message = await redis.get(key := f"little_diff_message_edit:{before.id}") or before.content
+        if calculate_edit_distance(old_message, after.content) < mindiff:
+            if not await redis.exists(key):
+                await redis.setex(key, 60 * 60 * 24, before.content)
             return
         if (edit_channel := await self.get_logging_channel(LoggingSettings.edit_channel)) is None:
             return
         if await LogExclude.exists(after.channel.id):
             return
-
+        await redis.delete(key)
         embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=datetime.utcnow())
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
         embed.add_field(name=t.url, value=before.jump_url, inline=False)
-        add_field(embed, t.old_content, before.content)
+        add_field(embed, t.old_content, old_message)
         add_field(embed, t.new_content, after.content)
         await edit_channel.send(embed=embed)
 
@@ -208,6 +211,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
+        await redis.delete(f"little_diff_message_edit:{message.id}")
         if await is_logging_channel(message.channel):
             return
         if await LogExclude.exists(message.channel.id):
@@ -234,6 +238,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
+        await redis.delete(f"little_diff_message_edit:{event.message_id}")
         if await LogExclude.exists(event.channel_id):
             return
 
