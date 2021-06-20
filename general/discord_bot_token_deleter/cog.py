@@ -1,7 +1,9 @@
-import re
 import base64
+import binascii
+import re
 
-from discord import Message, Embed, Forbidden, NotFound, HTTPException
+from aiohttp import ClientSession
+from discord import Message, Embed, Forbidden
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.material_colors import MaterialColors
@@ -14,7 +16,7 @@ t = t.discord_bot_token_deleter
 
 
 class DiscordBotTokenDeleterCog(Cog, name="Discord Bot Token Deleter"):
-    CONTRIBUTORS = [Contributor.Tert0]
+    CONTRIBUTORS = [Contributor.Tert0, Contributor.Defelo]
     RE_DC_TOKEN = re.compile(r"([A-Za-z\d\-_]+)\.[A-Za-z\d\-_]+\.[A-Za-z\d\-_]+")
 
     async def on_message(self, message: Message):
@@ -22,17 +24,24 @@ class DiscordBotTokenDeleterCog(Cog, name="Discord Bot Token Deleter"):
 
         if message.author.id == self.bot.user.id or not message.guild:
             return
-        if not (discord_bot_tokens := self.RE_DC_TOKEN.findall(message.content)):
+
+        for match in self.RE_DC_TOKEN.finditer(message.content):
+            try:
+                if not base64.urlsafe_b64decode(match.group(1)).isdigit():
+                    continue
+            except binascii.Error:
+                continue
+
+            async with ClientSession() as session, session.get(
+                "https://discord.com/api/users/@me",
+                headers={"Authorization": f"Bot {match.group(0)}"},
+            ) as response:
+                if response.ok:
+                    break
+        else:
             return
-        has_discord_bot_tokens = False
-        for discord_bot_token in discord_bot_tokens:
-            if base64.b64decode(re.match(r"[A-Za-z\d]+", discord_bot_token).group(0)).isdigit():
-                has_discord_bot_tokens = True
-                break
-        if not has_discord_bot_tokens:
-            return
-        embed = Embed(title=t.title, colour=MaterialColors.bluegrey)
-        embed.description = t.description
+
+        embed = Embed(title=t.title, colour=MaterialColors.bluegrey, description=t.description)
         await message.channel.send(message.author.mention, embed=embed)
         try:
             await message.delete()
