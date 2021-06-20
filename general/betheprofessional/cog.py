@@ -163,7 +163,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
 
             if await db.exists(select(BTPTopic).filter_by(name=topic[0])):
                 raise CommandError(
-                    t.topic_already_registered(f"{topic[1]}/{topic[2].name + '/' if topic[2] else ''}{topic[0]}")
+                    t.topic_already_registered(f"{topic[1]}/{topic[2].name + '/' if topic[2] else ''}{topic[0]}"),
                 )
             else:
                 registered_topics.append(topic)
@@ -206,7 +206,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
                 delete_topics.append(btp_topic)
                 for child_topic in await db.all(
-                    select(BTPTopic).filter_by(parent=btp_topic.id)
+                    select(BTPTopic).filter_by(parent=btp_topic.id),
                 ):  # TODO Recursive? Fix more level childs
                     delete_topics.insert(0, child_topic)
         for topic in delete_topics:
