@@ -309,36 +309,38 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if not channel:
             return
 
-        await message.remove_reaction(emoji, user)
+        async with self._channel_lock[channel.group_id]:
 
-        if str(emoji) == name_to_emoji["information_source"]:
-            await self.send_voice_info(message.channel, channel)
-            return
-        elif str(emoji) == name_to_emoji["grey_question"]:
-            await self.update_control_message(
-                channel,
-                await message.channel.send(embed=await get_commands_embed()),
-            )
-            return
+            await message.remove_reaction(emoji, user)
 
-        try:
-            await self.check_authorization(channel, user)
-        except CommandError:
-            return
+            if str(emoji) == name_to_emoji["information_source"]:
+                await self.send_voice_info(message.channel, channel)
+                return
+            elif str(emoji) == name_to_emoji["grey_question"]:
+                await self.update_control_message(
+                    channel,
+                    await message.channel.send(embed=await get_commands_embed()),
+                )
+                return
 
-        voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
-        user_role = voice_channel.guild.get_role(channel.group.user_role)
-        locked = channel.locked
-        hidden = voice_channel.overwrites_for(user_role).view_channel is False
+            try:
+                await self.check_authorization(channel, user)
+            except CommandError:
+                return
 
-        if str(emoji) == name_to_emoji["lock"] and not locked:
-            await self.lock_channel(user, channel, voice_channel, hide=False)
-        elif str(emoji) == name_to_emoji["unlock"] and locked:
-            await self.unlock_channel(user, channel, voice_channel)
-        elif str(emoji) == name_to_emoji["man_detective"] and not hidden:
-            await self.lock_channel(user, channel, voice_channel, hide=True)
-        elif str(emoji) == name_to_emoji["eye"] and hidden:
-            await self.unhide_channel(user, channel, voice_channel)
+            voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
+            user_role = voice_channel.guild.get_role(channel.group.user_role)
+            locked = channel.locked
+            hidden = voice_channel.overwrites_for(user_role).view_channel is False
+
+            if str(emoji) == name_to_emoji["lock"] and not locked:
+                await self.lock_channel(user, channel, voice_channel, hide=False)
+            elif str(emoji) == name_to_emoji["unlock"] and locked:
+                await self.unlock_channel(user, channel, voice_channel)
+            elif str(emoji) == name_to_emoji["man_detective"] and not hidden:
+                await self.lock_channel(user, channel, voice_channel, hide=True)
+            elif str(emoji) == name_to_emoji["eye"] and hidden:
+                await self.unhide_channel(user, channel, voice_channel)
 
     async def fix_owner(self, channel: DynChannel) -> Optional[Member]:
         voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
