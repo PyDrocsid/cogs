@@ -2,12 +2,7 @@ from discord import Message, Member, PartialEmoji, Forbidden
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji
-from PyDrocsid.translations import t
-
 from ...contributor import Contributor
-
-tg = t.g
-t = t.remindme
 
 EMOJIS = {
     name_to_emoji["star"],
@@ -26,6 +21,7 @@ class RemindMeCog(Cog, name="RemindMe"):
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
         if str(emoji) not in EMOJIS or member.bot or message.guild is None:
             return
+
         try:
             await member.send(message.content, embed=message.embeds[0] if message.embeds else None)
         except Forbidden:
