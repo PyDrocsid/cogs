@@ -66,7 +66,8 @@ class Mute(db.Base):
     is_upgrade: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    async def create(member: int, member_name: str, mod: int, minutes: int, reason: str, is_upgrade: bool = False) -> Mute:
+    async def create(member: int, member_name: str, mod: int, minutes: int, reason: str,
+                     is_upgrade: bool = False) -> Mute:
         row = Mute(
             member=member,
             member_name=member_name,
@@ -133,7 +134,8 @@ class Ban(db.Base):
     is_upgrade: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    async def create(member: int, member_name: str, mod: int, minutes: int, reason: str, is_upgrade: bool = False) -> Ban:
+    async def create(member: int, member_name: str, mod: int, minutes: int, reason: str,
+                     is_upgrade: bool = False) -> Ban:
         row = Ban(
             member=member,
             member_name=member_name,
