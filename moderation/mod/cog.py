@@ -37,9 +37,6 @@ tg = t.g
 t = t.mod
 
 
-days_in_minutes = 60*60*24
-
-
 class DurationConverter(Converter):
     async def convert(self, ctx, argument: str) -> Optional[int]:
         if argument.lower() in ("inf", "perm", "permanent", "-1", "∞"):
