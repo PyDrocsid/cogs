@@ -227,14 +227,14 @@ class ModCog(Cog, name="Mod Tools"):
         if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
             if ban.minutes != -1:
                 expiry_date: datetime = ban.timestamp + timedelta(minutes=ban.minutes)
-                time_left = time_to_units((expiry_date - datetime.utcnow()).total_seconds()/60 + 1)
+                time_left = time_to_units((expiry_date - datetime.utcnow()).total_seconds() / 60 + 1)
                 status = t.status_banned_time(time_to_units(ban.minutes), time_left)
             else:
                 status = t.status_banned
         elif (mute := await db.get(Mute, member=user_id, active=True)) is not None:
             if mute.minutes != -1:
                 expiry_date: datetime = mute.timestamp + timedelta(minutes=mute.minutes)
-                time_left = time_to_units((expiry_date - datetime.utcnow()).total_seconds()/60 + 1)
+                time_left = time_to_units((expiry_date - datetime.utcnow()).total_seconds() / 60 + 1)
                 status = t.status_muted_time(time_to_units(mute.minutes), time_left)
             else:
                 status = t.status_muted
