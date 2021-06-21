@@ -4,6 +4,23 @@ permissions:
   kick: kick a user
   ban: ban a user
 
+times:
+  years:
+    one: "{cnt} year"
+    many: "{cnt} years"
+  months:
+    one: "{cnt} month"
+    many: "{cnt} months"
+  days:
+    one: "{cnt} day"
+    many: "{cnt} days"
+  hours:
+    one: "{cnt} hour"
+    many: "{cnt} hours"
+  minutes:
+    one: "{cnt} minute"
+    many: "{cnt} minutes"
+
 log_field:
   member: ":bust_in_silhouette: Member"
   member_id: ":dna: Member ID"
@@ -13,7 +30,7 @@ log_field:
   days:
     one: "{cnt} day"
     many: "{cnt} days"
-  days_infinity: "*Permanent*"
+  infinity: "*Permanent*"
 
 jump_url: "{} [[Jump]]({})"
 no_dm: ":warning: User does not allow direct messages."
@@ -37,9 +54,7 @@ unmute: ":loud_sound: Mute"
 mute_role_not_set: User could not be muted because no mute role is configured.
 cannot_mute: This member cannot be muted.
 already_muted: User is already muted for the given period of time.
-muted:
-  one: "{} just muted you on {} for {cnt} day:```\n{}\n```"
-  many: "{} just muted you on {} for {cnt} days:```\n{}\n```"
+muted: "{} just muted you on {} for {}:```\n{}\n```"
 muted_inf: "{} just muted you on {}:```\n{}\n```"
 muted_response: "User muted successfully :white_check_mark:"
 log_muted: ":mute: Member muted"
@@ -60,9 +75,7 @@ unban: ":white_check_mark: Ban"
 cannot_ban: This member cannot be banned.
 already_banned: This member is already banned for the given period of time.
 cannot_ban_permissions: User could not be banned because I don't have `ban_members` permission on this server.
-banned:
-  one: "{} just banned you from {} for {cnt} day:```\n{}\n```"
-  many: "{} just banned you from {} for {cnt} days:```\n{}\n```"
+banned: "{} just banned you from {} for {}:```\n{}\n```"
 banned_inf: "{} just banned you from {}:```\n{}\n```"
 banned_response: "User banned successfully :white_check_mark:"
 log_banned: ":no_entry: Member Banned"
@@ -85,13 +98,9 @@ autokicks:
 active_sanctions: Active Punishments
 none: None
 status_banned: ":no_entry: User is banned from this server."
-status_banned_days:
-  one: ":no_entry: User is banned for {cnt} day from this server ({left} left)."
-  many: ":no_entry: User is banned for {cnt} days from this server ({left} left)."
+status_banned_time: ":no_entry: User is banned for {} from this server ({} left)."
 status_muted: ":mute: User is muted on this server."
-status_muted_days:
-  one: ":mute: User is muted for {cnt} day on this server ({left} left)."
-  many: ":mute: User is muted for {cnt} days on this server ({left} left)."
+status_muted_time: ":mute: User is muted for {} on this server ({} left)."
 
 ulog:
   reported: ":speech_balloon: **Reported** by {} because of `{}`"
@@ -99,14 +108,10 @@ ulog:
 
   muted:
     first:
-      temp:
-        one: ":mute: **Muted** by {} for {cnt} day because of `{}`"
-        many: ":mute: **Muted** by {} for {cnt} days because of `{}`"
+      temp: ":mute: **Muted** by {} for {} because of `{}`"
       inf: ":mute: **Muted** permanently by {} because of `{}`"
     upgrade:
-      temp:
-        one: ":mute: **Mute upgraded** by {} to {cnt} day because of `{}`"
-        many: ":mute: **Mute upgraded** by {} to {cnt} days because of `{}`"
+      temp: ":mute: **Mute upgraded** by {} to {} because of `{}`"
       inf: ":mute: **Mute upgraded** to permanent by {} because of `{}`"
   unmuted: ":loud_sound: **Unmuted** by {} because of `{}`"
   unmuted_expired: ":loud_sound: **Unmuted** because the mute time has expired."
@@ -116,14 +121,10 @@ ulog:
 
   banned:
     first:
-      temp:
-        one: ":no_entry: **Banned** by {} for {cnt} day because of `{}`"
-        many: ":no_entry: **Banned** by {} for {cnt} days because of `{}`"
+      temp: ":no_entry: **Banned** by {} for {} because of `{}`"
       inf: ":no_entry: **Banned** permanently by {} because of `{}`"
     upgrade:
-      temp:
-        one: ":no_entry: **Ban upgraded** by {} to {cnt} day because of `{}`"
-        many: ":no_entry: **Ban upgraded** by {} to {cnt} days because of `{}`"
+      temp: ":no_entry: **Ban upgraded** by {} to {} because of `{}`"
       inf: ":no_entry: **Ban upgraded** to permanent by {} because of `{}`"
   unbanned: ":white_check_mark: **Unbanned** by {} because of `{}`"
   unbanned_expired: ":white_check_mark: **Unbanned** because the ban time has expired."

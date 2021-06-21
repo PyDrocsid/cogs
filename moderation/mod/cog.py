@@ -1,6 +1,7 @@
 import re
 from datetime import datetime, timedelta
-from typing import Optional, Union, List, Tuple
+from dateutil.relativedelta import relativedelta
+from typing import Optional, Union, List, Tuple, Generator
 
 from discord import Role, Guild, Member, Forbidden, HTTPException, User, Embed, NotFound, Message
 from discord.ext import commands, tasks
@@ -36,17 +37,54 @@ tg = t.g
 t = t.mod
 
 
+days_in_minutes = 60*60*24
+
+
 class DurationConverter(Converter):
     async def convert(self, ctx, argument: str) -> Optional[int]:
         if argument.lower() in ("inf", "perm", "permanent", "-1", "∞"):
             return None
-        if (match := re.match(r"^(\d+)d?$", argument)) is None:
+        if (match := re.match(r"^(\d+y)?(\d+m)?(\d+w)?(\d+d)?(\d+h)?(\d+n)?$", argument)) is None:
             raise BadArgument(tg.invalid_duration)
-        if (days := int(match.group(1))) <= 0:
+
+        minutes = ToMinutes.convert(*[ToMinutes.toint(match.group(i)) for i in range(1, 7)])
+
+        if minutes <= 0:
             raise BadArgument(tg.invalid_duration)
-        if days >= (1 << 31):
+        if minutes >= (1 << 31):
             raise BadArgument(t.invalid_duration_inf)
-        return days
+        return minutes
+
+
+class ToMinutes:
+    @staticmethod
+    def toint(value: str) -> int:
+        return 0 if value is None else int(value[:-1])
+
+    @staticmethod
+    def convert(years: int, months: int, weeks: int, days: int, hours: int, minutes: int) -> int:
+        days += years * 365
+        days += months * 30
+        days += weeks * 7
+
+        td = timedelta(days=days, hours=hours, minutes=minutes)
+        return int(td.total_seconds() / 60)
+
+
+def time_to_units(minutes: Union[int, float]) -> str:
+    rd = relativedelta(datetime.fromtimestamp(0) + timedelta(minutes=minutes),
+                       datetime.fromtimestamp(0))  # Workaround that should be improved later
+
+    def generator() -> Generator:
+        for unit in [t.times.years(cnt=rd.years),
+                     t.times.months(cnt=rd.months),
+                     t.times.days(cnt=rd.days),
+                     t.times.hours(cnt=rd.hours),
+                     t.times.minutes(cnt=rd.minutes)]:
+            if not str(unit).startswith("0"):
+                yield str(unit)
+
+    return ", ".join(generator())
 
 
 async def get_mute_role(guild: Guild) -> Role:
@@ -96,7 +134,7 @@ async def send_to_changelog_mod(
 
 
 class ModCog(Cog, name="Mod Tools"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Florian]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Florian, Contributor.LoC]
 
     async def on_ready(self):
         guild: Guild = self.bot.guilds[0]
@@ -118,7 +156,7 @@ class ModCog(Cog, name="Mod Tools"):
         guild: Guild = self.bot.guilds[0]
 
         async for ban in await db.stream(filter_by(Ban, active=True)):
-            if ban.days != -1 and datetime.utcnow() >= ban.timestamp + timedelta(days=ban.days):
+            if ban.minutes != -1 and datetime.utcnow() >= ban.timestamp + timedelta(minutes=ban.minutes):
                 await Ban.deactivate(ban.id)
 
                 try:
@@ -140,7 +178,7 @@ class ModCog(Cog, name="Mod Tools"):
             return
 
         async for mute in await db.stream(filter_by(Mute, active=True)):
-            if mute.days != -1 and datetime.utcnow() >= mute.timestamp + timedelta(days=mute.days):
+            if mute.minutes != -1 and datetime.utcnow() >= mute.timestamp + timedelta(minutes=mute.minutes):
                 if member := guild.get_member(mute.member):
                     await member.remove_roles(mute_role)
                 else:
@@ -190,17 +228,17 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_get_user_status_entries(self, user_id: int) -> list[tuple[str, str]]:
         status = t.none
         if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
-            if ban.days != -1:
-                expiry_date: datetime = ban.timestamp + timedelta(days=ban.days)
-                days_left = (expiry_date - datetime.utcnow()).days + 1
-                status = t.status_banned_days(cnt=ban.days, left=days_left)
+            if ban.minutes != -1:
+                expiry_date: datetime = ban.timestamp + timedelta(minutes=ban.minutes)
+                time_left = time_to_units((expiry_date - datetime.utcnow()).total_seconds()/60 + 1)
+                status = t.status_banned_time(time_to_units(ban.minutes), time_left)
             else:
                 status = t.status_banned
         elif (mute := await db.get(Mute, member=user_id, active=True)) is not None:
-            if mute.days != -1:
-                expiry_date: datetime = mute.timestamp + timedelta(days=mute.days)
-                days_left = (expiry_date - datetime.utcnow()).days + 1
-                status = t.status_muted_days(cnt=mute.days, left=days_left)
+            if mute.minutes != -1:
+                expiry_date: datetime = mute.timestamp + timedelta(minutes=mute.minutes)
+                time_left = time_to_units((expiry_date - datetime.utcnow()).total_seconds()/60 + 1)
+                status = t.status_muted_time(time_to_units(mute.minutes), time_left)
             else:
                 status = t.status_muted
         return [(t.active_sanctions, status)]
@@ -221,10 +259,10 @@ class ModCog(Cog, name="Mod Tools"):
         async for mute in await db.stream(filter_by(Mute, member=user_id)):
             text = t.ulog.muted.upgrade if mute.is_upgrade else t.ulog.muted.first
 
-            if mute.days == -1:
+            if mute.minutes == -1:
                 out.append((mute.timestamp, text.inf(f"<@{mute.mod}>", mute.reason)))
             else:
-                out.append((mute.timestamp, text.temp(f"<@{mute.mod}>", mute.reason, cnt=mute.days)))
+                out.append((mute.timestamp, text.temp(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason)))
 
             if not mute.active and not mute.upgraded:
                 if mute.unmute_mod is None:
@@ -248,10 +286,10 @@ class ModCog(Cog, name="Mod Tools"):
         async for ban in await db.stream(filter_by(Ban, member=user_id)):
             text = t.ulog.banned.upgrade if ban.is_upgrade else t.ulog.banned.first
 
-            if ban.days == -1:
+            if ban.minutes == -1:
                 out.append((ban.timestamp, text.inf(f"<@{ban.mod}>", ban.reason)))
             else:
-                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", ban.reason, cnt=ban.days)))
+                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason)))
 
             if not ban.active and not ban.upgraded:
                 if ban.unban_mod is None:
@@ -332,15 +370,17 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
-    async def mute(self, ctx: Context, user: UserMemberConverter, days: DurationConverter, *, reason: str):
+    async def mute(self, ctx: Context, user: UserMemberConverter, time: DurationConverter, *, reason: str):
         """
         mute a user
+        time format: `ymwdhn`
         set days to `inf` for a permanent mute
         """
 
         user: Union[Member, User]
 
-        days: Optional[int]
+        time: Optional[int]
+        minutes = time
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -356,11 +396,11 @@ class ModCog(Cog, name="Mod Tools"):
 
         active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
         for mute in active_mutes:
-            if mute.days == -1:
+            if mute.minutes == -1:
                 raise UserCommandError(user, t.already_muted)
 
-            ts = mute.timestamp + timedelta(days=mute.days)
-            if days is not None and datetime.utcnow() + timedelta(days=days) <= ts:
+            ts = mute.timestamp + timedelta(minutes=mute.minutes)
+            if minutes is not None and datetime.utcnow() + timedelta(minutes=minutes) <= ts:
                 raise UserCommandError(user, t.already_muted)
 
         for mute in active_mutes:
@@ -370,9 +410,9 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
-        if days is not None:
-            await Mute.create(user.id, str(user), ctx.author.id, days, reason, bool(active_mutes))
-            user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, reason, cnt=days)
+        if minutes is not None:
+            await Mute.create(user.id, str(user), ctx.author.id, minutes, reason, bool(active_mutes))
+            user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
             await send_to_changelog_mod(
                 ctx.guild,
                 ctx.message,
@@ -380,7 +420,7 @@ class ModCog(Cog, name="Mod Tools"):
                 t.log_muted,
                 user,
                 reason,
-                duration=t.log_field.days(cnt=days),
+                duration=time_to_units(minutes),
             )
         else:
             await Mute.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_mutes))
@@ -392,7 +432,7 @@ class ModCog(Cog, name="Mod Tools"):
                 t.log_muted,
                 user,
                 reason,
-                duration=t.log_field.days_infinity,
+                duration=t.log_field.infinity,
             )
 
         try:
@@ -486,17 +526,20 @@ class ModCog(Cog, name="Mod Tools"):
         self,
         ctx: Context,
         user: UserMemberConverter,
-        ban_days: DurationConverter,
+        time: DurationConverter,
         delete_days: int,
         *,
         reason: str,
     ):
         """
         ban a user
+        time format: `ymwdhn`
         set ban_days to `inf` for a permanent ban
         """
 
-        ban_days: Optional[int]
+        time: Optional[int]
+        minutes = time
+
         user: Union[Member, User]
 
         if not ctx.guild.me.guild_permissions.ban_members:
@@ -514,11 +557,11 @@ class ModCog(Cog, name="Mod Tools"):
 
         active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=user.id))
         for ban in active_bans:
-            if ban.days == -1:
+            if ban.minutes == -1:
                 raise UserCommandError(user, t.already_banned)
 
-            ts = ban.timestamp + timedelta(days=ban.days)
-            if ban_days is not None and datetime.utcnow() + timedelta(days=ban_days) <= ts:
+            ts = ban.timestamp + timedelta(minutes=ban.minutes)
+            if minutes is not None and datetime.utcnow() + timedelta(minutes=minutes) <= ts:
                 raise UserCommandError(user, t.already_banned)
 
         for ban in active_bans:
@@ -530,9 +573,9 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
-        if ban_days is not None:
-            await Ban.create(user.id, str(user), ctx.author.id, ban_days, reason, bool(active_bans))
-            user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, reason, cnt=ban_days)
+        if minutes is not None:
+            await Ban.create(user.id, str(user), ctx.author.id, minutes, reason, bool(active_bans))
+            user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
             await send_to_changelog_mod(
                 ctx.guild,
                 ctx.message,
@@ -540,7 +583,7 @@ class ModCog(Cog, name="Mod Tools"):
                 t.log_banned,
                 user,
                 reason,
-                duration=t.log_field.days(cnt=ban_days),
+                duration=time_to_units(minutes),
             )
         else:
             await Ban.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_bans))
@@ -552,7 +595,7 @@ class ModCog(Cog, name="Mod Tools"):
                 t.log_banned,
                 user,
                 reason,
-                duration=t.log_field.days_infinity,
+                duration=t.log_field.infinity,
             )
 
         try:
