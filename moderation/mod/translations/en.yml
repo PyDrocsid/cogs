@@ -103,28 +103,54 @@ status_muted: ":mute: User is muted on this server."
 status_muted_time: ":mute: User is muted for {} on this server ({} left)."
 
 ulog:
-  reported: ":speech_balloon: **Reported** by {} because of `{}`"
-  warned: ":warning: **Warned** by {} because of `{}`"
+  reported:
+    id_off: ":speech_balloon: **Reported** by {} because of `{}`"
+    id_on: ":speech_balloon: **Reported** by {} because of `{}`\n`(ID: {})`"
+  warned:
+    id_off: ":warning: **Warned** by {} because of `{}`"
+    id_on: ":warning: **Warned** by {} because of `{}`\n`(ID: {})`"
 
   muted:
     first:
-      temp: ":mute: **Muted** by {} for {} because of `{}`"
-      inf: ":mute: **Muted** permanently by {} because of `{}`"
+      temp:
+        id_off: ":mute: **Muted** by {} for {} because of `{}`"
+        id_on: ":mute: **Muted** by {} for {} because of `{}`\n`(ID: {})`"
+      inf:
+        id_off: ":mute: **Muted** permanently by {} because of `{}`"
+        id_on: ":mute: **Muted** permanently by {} because of `{}`\n`(ID: {})`"
     upgrade:
-      temp: ":mute: **Mute upgraded** by {} to {} because of `{}`"
-      inf: ":mute: **Mute upgraded** to permanent by {} because of `{}`"
-  unmuted: ":loud_sound: **Unmuted** by {} because of `{}`"
+      temp:
+        id_off: ":mute: **Mute upgraded** by {} to {} because of `{}`"
+        id_on: ":mute: **Mute upgraded** by {} to {} because of `{}`\n`(ID: {})`"
+      inf:
+        id_off: ":mute: **Mute upgraded** to permanent by {} because of `{}`"
+        id_on: ":mute: **Mute upgraded** to permanent by {} because of `{}`\n`(ID: {})`"
+  unmuted:
+    id_off: ":loud_sound: **Unmuted** by {} because of `{}`"
+    id_on: ":loud_sound: **Unmuted** by {} because of `{}`\n`(ID: {})`"
   unmuted_expired: ":loud_sound: **Unmuted** because the mute time has expired."
 
-  kicked: ":x: **Kicked** by {} because of `{}`"
+  kicked:
+    id_off: ":x: **Kicked** by {} because of `{}`"
+    id_on: ":x: **Kicked** by {} because of `{}`\n`(ID: {})`"
   autokicked: ":hourglass: **Kicked** automatically."
 
   banned:
     first:
-      temp: ":no_entry: **Banned** by {} for {} because of `{}`"
-      inf: ":no_entry: **Banned** permanently by {} because of `{}`"
+      temp:
+        id_off: ":no_entry: **Banned** by {} for {} because of `{}`"
+        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`"
+      inf:
+        id_off: ":no_entry: **Banned** permanently by {} because of `{}`"
+        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`"
     upgrade:
-      temp: ":no_entry: **Ban upgraded** by {} to {} because of `{}`"
-      inf: ":no_entry: **Ban upgraded** to permanent by {} because of `{}`"
-  unbanned: ":white_check_mark: **Unbanned** by {} because of `{}`"
+      temp:
+        id_off: ":no_entry: **Ban upgraded** by {} to {} because of `{}`"
+        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`"
+      inf:
+        id_off: ":no_entry: **Ban upgraded** to permanent by {} because of `{}`"
+        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`"
+  unbanned:
+    id_off: ":white_check_mark: **Unbanned** by {} because of `{}`"
+    id_on: ":white_check_mark: **Unbanned** by {} because of `{}`\n`(ID: {})`"
   unbanned_expired: ":white_check_mark: **Unbanned** because the ban time has expired."

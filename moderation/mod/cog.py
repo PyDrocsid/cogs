@@ -241,41 +241,74 @@ class ModCog(Cog, name="Mod Tools"):
         return [(t.active_sanctions, status)]
 
     @get_userlog_entries.subscribe
-    async def handle_get_userlog_entries(self, user_id: int) -> list[tuple[datetime, str]]:
+    async def handle_get_userlog_entries(self, user_id: int, show_ids: bool) -> list[tuple[datetime, str]]:
         out: list[tuple[datetime, str]] = []
 
         report: Report
         async for report in await db.stream(filter_by(Report, member=user_id)):
-            out.append((report.timestamp, t.ulog.reported(f"<@{report.reporter}>", report.reason)))
+            if show_ids:
+                out.append((report.timestamp, t.ulog.reported.id_on(f"<@{report.reporter}>", report.reason, report.id)))
+            else:
+                out.append((report.timestamp, t.ulog.reported.id_off(f"<@{report.reporter}>", report.reason)))
 
         warn: Warn
         async for warn in await db.stream(filter_by(Warn, member=user_id)):
-            out.append((warn.timestamp, t.ulog.warned(f"<@{warn.mod}>", warn.reason)))
+            if show_ids:
+                out.append((warn.timestamp, t.ulog.warned.id_on(f"<@{warn.mod}>", warn.reason, warn.id)))
+            else:
+                out.append((warn.timestamp, t.ulog.warned.id_off(f"<@{warn.mod}>", warn.reason)))
 
         mute: Mute
         async for mute in await db.stream(filter_by(Mute, member=user_id)):
             text = t.ulog.muted.upgrade if mute.is_upgrade else t.ulog.muted.first
 
             if mute.minutes == -1:
-                out.append((mute.timestamp, text.inf(f"<@{mute.mod}>", mute.reason)))
+                if show_ids:
+                    out.append((mute.timestamp, text.inf.id_on(f"<@{mute.mod}>", mute.reason, mute.id)))
+                else:
+                    out.append((mute.timestamp, text.inf.id_off(f"<@{mute.mod}>", mute.reason)))
             else:
-                out.append((mute.timestamp, text.temp(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason)))
+                if show_ids:
+                    out.append(
+                        (
+                            mute.timestamp,
+                            text.temp.id_on(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason, mute.id)
+                        )
+                    )
+                else:
+                    out.append(
+                        (
+                            mute.timestamp,
+                            text.temp.id_off(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason)
+                        )
+                    )
 
             if not mute.active and not mute.upgraded:
                 if mute.unmute_mod is None:
                     out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
                 else:
-                    out.append(
-                        (
-                            mute.deactivation_timestamp,
-                            t.ulog.unmuted(f"<@{mute.unmute_mod}>", mute.unmute_reason),
-                        ),
-                    )
+                    if show_ids:
+                        out.append(
+                            (
+                                mute.deactivation_timestamp,
+                                t.ulog.unmuted.id_on(f"<@{mute.unmute_mod}>", mute.unmute_reason, mute.id),
+                            ),
+                        )
+                    else:
+                        out.append(
+                            (
+                                mute.deactivation_timestamp,
+                                t.ulog.unmuted.id_off(f"<@{mute.unmute_mod}>", mute.unmute_reason),
+                            ),
+                        )
 
         kick: Kick
         async for kick in await db.stream(filter_by(Kick, member=user_id)):
             if kick.mod is not None:
-                out.append((kick.timestamp, t.ulog.kicked(f"<@{kick.mod}>", kick.reason)))
+                if show_ids:
+                    out.append((kick.timestamp, t.ulog.kicked.id_on(f"<@{kick.mod}>", kick.reason, kick.id)))
+                else:
+                    out.append((kick.timestamp, t.ulog.kicked.id_off(f"<@{kick.mod}>", kick.reason)))
             else:
                 out.append((kick.timestamp, t.ulog.autokicked))
 
@@ -284,20 +317,44 @@ class ModCog(Cog, name="Mod Tools"):
             text = t.ulog.banned.upgrade if ban.is_upgrade else t.ulog.banned.first
 
             if ban.minutes == -1:
-                out.append((ban.timestamp, text.inf(f"<@{ban.mod}>", ban.reason)))
+                if show_ids:
+                    out.append((ban.timestamp, text.inf.id_on(f"<@{ban.mod}>", ban.reason, ban.id)))
+                else:
+                    out.append((ban.timestamp, text.inf.id_off(f"<@{ban.mod}>", ban.reason)))
             else:
-                out.append((ban.timestamp, text.temp(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason)))
+                if show_ids:
+                    out.append(
+                        (
+                            ban.timestamp,
+                            text.temp.id_on(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason, ban.id)
+                        )
+                    )
+                else:
+                    out.append(
+                        (
+                            ban.timestamp,
+                            text.temp.id_off(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason)
+                        )
+                    )
 
             if not ban.active and not ban.upgraded:
                 if ban.unban_mod is None:
                     out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
                 else:
-                    out.append(
-                        (
-                            ban.deactivation_timestamp,
-                            t.ulog.unbanned(f"<@{ban.unban_mod}>", ban.unban_reason),
-                        ),
-                    )
+                    if show_ids:
+                        out.append(
+                            (
+                                ban.deactivation_timestamp,
+                                t.ulog.unbanned.id_on(f"<@{ban.unban_mod}>", ban.unban_reason, ban.id),
+                            ),
+                        )
+                    else:
+                        out.append(
+                            (
+                                ban.deactivation_timestamp,
+                                t.ulog.unbanned.id_off(f"<@{ban.unban_mod}>", ban.unban_reason),
+                            ),
+                        )
 
         return out
 

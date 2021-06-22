@@ -160,7 +160,7 @@ class UserInfoCog(Cog, name="User Information"):
 
     @commands.command(aliases=["userlog", "ulog"])
     @optional_permissions(UserInfoPermission.view_userlog)
-    async def userlogs(self, ctx: Context, user: Optional[Union[User, int]] = None):
+    async def userlogs(self, ctx: Context, user: Optional[Union[User, int]] = None, show_ids: bool = False):
         """
         show moderation log of a user
         """
@@ -168,6 +168,9 @@ class UserInfoCog(Cog, name="User Information"):
         guild: Guild = self.bot.guilds[0]
 
         user, user_id, arg_passed = await get_user(ctx, user, UserInfoPermission.view_userlog)
+
+        if show_ids and not await UserInfoPermission.view_userlog.check_permissions(ctx.author):
+            raise CommandError(t.not_allowed)
 
         out: list[tuple[datetime, str]] = [(snowflake_time(user_id), t.ulog.created)]
 
@@ -199,7 +202,7 @@ class UserInfoCog(Cog, name="User Information"):
                 else:
                     out.append((verification.timestamp, t.ulog.verification.revoked))
 
-        responses = await get_userlog_entries(user_id)
+        responses = await get_userlog_entries(user_id, show_ids)
         for response in responses:
             out += response
 
