@@ -310,7 +310,6 @@ class ModCog(Cog, name="Mod Tools"):
             await member.add_roles(mute_role)
 
     @commands.command()
-    @guild_only()
     async def report(self, ctx: Context, user: UserMemberConverter, *, reason: str):
         """
         report a user
