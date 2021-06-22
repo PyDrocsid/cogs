@@ -160,7 +160,7 @@ class UserInfoCog(Cog, name="User Information"):
 
     @commands.command(aliases=["userlog", "ulog"])
     @optional_permissions(UserInfoPermission.view_userlog)
-    async def userlogs(self, ctx: Context, user: Optional[Union[User, int]] = None, show_ids: bool = False):
+    async def userlogs(self, ctx: Context, user: Optional[Union[User, int]] = None, show_ids: Optional[bool] = False):
         """
         show moderation log of a user
         """
