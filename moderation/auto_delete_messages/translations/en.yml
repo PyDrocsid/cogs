@@ -1,2 +1,5 @@
+commands:
+  auto_delete_messages: Delete old messages inside a channel
+  add_channel: Adding a channel for deleting old messages
 negative_value: The passed minutes are not allowed to be negative or zero
 not_deleted: I am sorry to inform you that i don't have `manage_messages` permission in {}.

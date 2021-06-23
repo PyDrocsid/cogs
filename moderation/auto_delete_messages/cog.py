@@ -1,6 +1,7 @@
 import datetime
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import docs
 from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
 from discord import TextChannel, Forbidden
@@ -16,6 +17,13 @@ t = t.auto_delete_messages
 
 class AutoDeleteMessages(Cog, name="Auto Delete Messages"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
+
+    @guild_only()
+    @commands.group(aliases=["adm"])
+    @docs(t.commands.auto_delete_messages)
+    async def auto_delete_messages(self, ctx: Context):
+        if ctx.invoked_subcommand is None:
+            raise UserInputError
 
     @tasks.loop()
     async def delete_old_messages_loop(self):
@@ -33,13 +41,8 @@ class AutoDeleteMessages(Cog, name="Auto Delete Messages"):
     async def on_ready(self):
         await self.start_loop(1)
 
-    @guild_only()
-    @commands.group(aliases=["adm"])
-    async def auto_delete_messages(self, ctx: Context):
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
-
     @auto_delete_messages.command(aliases=["add"])
+    @docs(t.commands.add_channel)
     async def add_channel(self, ctx: Context, channel: TextChannel, minutes: int):
         if not minutes > 0:
             raise CommandError(t.negative_value)
