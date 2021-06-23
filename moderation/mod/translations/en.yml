@@ -83,8 +83,12 @@ unban: ":white_check_mark: Ban"
 cannot_ban: This member cannot be banned.
 already_banned: This member is already banned for the given period of time.
 cannot_ban_permissions: User could not be banned because I don't have `ban_members` permission on this server.
-banned: "{} just banned you from {} for {}:```\n{}\n```"
-banned_inf: "{} just banned you from {}:```\n{}\n```"
+banned:
+  evidence: "{} just banned you from {} for {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just banned you from {} for {}:```\n{}\n```"
+banned_inf:
+  evidence: "{} just banned you from {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just banned you from {}:```\n{}\n```"
 banned_response: "User banned successfully :white_check_mark:"
 log_banned: ":no_entry: Member Banned"
 log_unbanned_expired: "Unbanned automatically because the ban time for this user has expired."

@@ -630,7 +630,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
 
-        # await member.kick(reason=reason)
+        await member.kick(reason=reason)
         await revoke_verification(member)
 
         await reply(ctx, embed=server_embed)
@@ -685,13 +685,27 @@ class ModCog(Cog, name="Mod Tools"):
         async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
             await Mute.upgrade(mute.id, ctx.author.id)
 
+        if attachments := ctx.message.attachments:
+            evidence = attachments[0]
+            evidence_url = evidence.url
+        else:
+            evidence = None
+            evidence_url = None
+
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if minutes is not None:
-            await Ban.create(user.id, str(user), ctx.author.id, minutes, reason, bool(active_bans))
-            user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
+            await Ban.create(user.id, str(user), ctx.author.id, minutes, reason, evidence_url, bool(active_bans))
+            if evidence:
+                user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
+                                                           reason, t.image_link(evidence.filename, evidence_url)
+                                                           )
+            else:
+                user_embed.description = t.banned.no_evidence(ctx.author.mention, ctx.guild.name,
+                                                              time_to_units(minutes), reason
+                                                              )
             await send_to_changelog_mod(
                 ctx.guild,
                 ctx.message,
@@ -700,10 +714,17 @@ class ModCog(Cog, name="Mod Tools"):
                 user,
                 reason,
                 duration=time_to_units(minutes),
+                evidence=evidence,
             )
         else:
-            await Ban.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_bans))
-            user_embed.description = t.banned_inf(ctx.author.mention, ctx.guild.name, reason)
+            await Ban.create(user.id, str(user), ctx.author.id, -1, reason, evidence_url, bool(active_bans))
+            if evidence:
+                user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, reason,
+                                                           t.image_link(evidence.filename, evidence_url)
+                                                           )
+            else:
+                user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, reason)
+
             await send_to_changelog_mod(
                 ctx.guild,
                 ctx.message,
@@ -712,6 +733,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user,
                 reason,
                 duration=t.log_field.infinity,
+                evidence=evidence
             )
 
         try:
