@@ -3,12 +3,13 @@ import datetime
 from PyDrocsid.cog import Cog
 from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
-from discord import TextChannel
+from discord import TextChannel, Forbidden
 from discord.ext import commands, tasks
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
 
 from .models import AutoDeleteMessage
 from ...contributor import Contributor
+from ...pubsub import send_alert
 
 t = t.auto_delete_messages
 
@@ -24,7 +25,10 @@ class AutoDeleteMessages(Cog, name="Auto Delete Messages"):
             async for message in channel.history(limit=None):
                 time_diff = (datetime.datetime.now() - message.created_at).total_seconds() // 60
                 if time_diff >= minutes:
-                    await message.delete()
+                    try:
+                        await message.delete()
+                    except Forbidden:
+                        await send_alert(message.guild, t.not_deleted(channel.name))
 
     async def on_ready(self):
         await self.start_loop(1)
