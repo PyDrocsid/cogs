@@ -3,6 +3,7 @@ from discord import TextChannel
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, guild_only
 
+from .models import AutoDeleteMessage
 from ...contributor import Contributor
 
 
@@ -16,5 +17,5 @@ class AutoDeleteMessages(Cog, name="Auto Delete Messages"):
             raise UserInputError
 
     @auto_delete_messages.command(aliases=["add"])
-    async def add_channel(self, ctx: Context, channel: TextChannel):
-        pass
+    async def add_channel(self, ctx: Context, channel: TextChannel, minutes: int):
+        await AutoDeleteMessage.create(channel.id, minutes)
