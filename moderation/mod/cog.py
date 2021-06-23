@@ -414,11 +414,22 @@ class ModCog(Cog, name="Mod Tools"):
         if user == self.bot.user:
             raise UserCommandError(user, t.cannot_warn)
 
+        if attachments := ctx.message.attachments:
+            evidence = attachments[0]
+        else:
+            evidence = None
+
         user_embed = Embed(
             title=t.warn,
-            description=t.warned(ctx.author.mention, ctx.guild.name, reason),
             colour=Colors.ModTools,
         )
+        if evidence:
+            user_embed.description = t.warned.evidence(ctx.author.mention, ctx.guild.name, reason,
+                                                       t.image_link(evidence.filename, evidence.url)
+                                                       )
+        else:
+            user_embed.description = t.warned.no_evidence(ctx.author.mention, ctx.guild.name, reason)
+
         server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         try:
@@ -426,9 +437,9 @@ class ModCog(Cog, name="Mod Tools"):
         except (Forbidden, HTTPException):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
-        await Warn.create(user.id, str(user), ctx.author.id, reason)
+        await Warn.create(user.id, str(user), ctx.author.id, reason, evidence.url)
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason, evidence=evidence)
 
     @commands.command()
     @ModPermission.mute.check

@@ -45,7 +45,9 @@ log_reported: ":speech_balloon: Member reported"
 
 warn: ":warning: Warn"
 cannot_warn: This member cannot be warned.
-warned: "{} just warned you on {}:```\n{}\n```"
+warned:
+  evidence: "{} just warned you on {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just warned you on {}:```\n{}\n```"
 warned_response: "User warned successfully :white_check_mark:"
 log_warned: ":warning: Member warned"
 

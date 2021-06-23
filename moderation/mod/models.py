@@ -42,10 +42,17 @@ class Warn(db.Base):
     mod: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(DateTime)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
     @staticmethod
-    async def create(member: int, member_name: str, mod: int, reason: str) -> Warn:
-        row = Warn(member=member, member_name=member_name, mod=mod, timestamp=datetime.utcnow(), reason=reason)
+    async def create(member: int, member_name: str, mod: int, reason: str, evidence: Optional[str]) -> Warn:
+        row = Warn(member=member,
+                   member_name=member_name,
+                   mod=mod,
+                   timestamp=datetime.utcnow(),
+                   reason=reason,
+                   evidence=evidence,
+                   )
         await db.add(row)
         return row
 
