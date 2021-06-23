@@ -58,7 +58,7 @@ jobs:
 
       - name: Check cog docs
         run: |
-          set -ex
+          set -e
 
           for category in administration moderation information integrations general; do
             cd $category
@@ -72,3 +72,9 @@ jobs:
 
             cd ..
           done
+
+      - name: Lint docs
+        uses: docker://avtodev/markdown-lint:v1
+        with:
+          config: .linter.yml
+          args: .
