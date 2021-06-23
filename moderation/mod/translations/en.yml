@@ -27,12 +27,12 @@ log_field:
   channel: ":compass: Channel"
   duration: ":clock2: Duration"
   reason: ":scroll: Reason"
-  days:
-    one: "{cnt} day"
-    many: "{cnt} days"
   infinity: "*Permanent*"
+  evidence: ":file_cabinet: Evidence image"
+
 
 jump_url: "{} [[Jump]]({})"
+image_link: "{} [[Go to image]]({})"
 no_dm: ":warning: User does not allow direct messages."
 reason_too_long: "Reason is too long. :pencil:"
 invalid_duration_inf: Invalid duration. Try `inf` instead.

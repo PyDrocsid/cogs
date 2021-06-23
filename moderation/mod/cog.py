@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from typing import Optional, Union, List, Tuple, Generator
 
-from discord import Role, Guild, Member, Forbidden, HTTPException, User, Embed, NotFound, Message
+from discord import Role, Guild, Member, Forbidden, HTTPException, User, Embed, NotFound, Message, Attachment
 from discord.ext import commands, tasks
 from discord.ext.commands import (
     guild_only,
@@ -100,6 +100,7 @@ async def send_to_changelog_mod(
     reason: str,
     *,
     duration: Optional[str] = None,
+    evidence: Optional[Attachment] = None,
 ):
     embed = Embed(title=title, colour=colour, timestamp=datetime.utcnow())
 
@@ -124,6 +125,9 @@ async def send_to_changelog_mod(
 
     if duration:
         embed.add_field(name=t.log_field.duration, value=duration, inline=True)
+
+    if evidence:
+        embed.add_field(name=t.log_field.evidence, value=t.image_link(evidence.filename, evidence.url), inline=True)
 
     embed.add_field(name=t.log_field.reason, value=reason, inline=False)
 
@@ -382,11 +386,17 @@ class ModCog(Cog, name="Mod Tools"):
         if user == ctx.author:
             raise UserCommandError(user, t.no_self_report)
 
+        if attachments := ctx.message.attachments:
+            evidence = attachments[0]
+        else:
+            evidence = None
+
         await Report.create(user.id, str(user), ctx.author.id, reason)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, user, reason)
+        await send_to_changelog_mod(ctx.guild,
+                                    ctx.message, Colors.report, t.log_reported, user, reason, evidence=evidence)
 
     @commands.command()
     @ModPermission.warn.check
