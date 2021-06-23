@@ -91,6 +91,12 @@ async def get_mute_role(guild: Guild) -> Role:
     return mute_role
 
 
+def show_evidence(evidence: Optional[str]) -> str:
+    if evidence:
+        return t.ulog.evidence(evidence)
+    return ""
+
+
 async def send_to_changelog_mod(
     guild: Guild,
     message: Optional[Message],
@@ -251,39 +257,77 @@ class ModCog(Cog, name="Mod Tools"):
         report: Report
         async for report in await db.stream(filter_by(Report, member=user_id)):
             if show_ids:
-                out.append((report.timestamp, t.ulog.reported.id_on(f"<@{report.reporter}>", report.reason, report.id)))
+                out.append(
+                    (report.timestamp,
+                     t.ulog.reported.id_on(f"<@{report.reporter}>", report.reason, report.id,
+                                           show_evidence(report.evidence)
+                                           )
+                     )
+                )
             else:
-                out.append((report.timestamp, t.ulog.reported.id_off(f"<@{report.reporter}>", report.reason)))
+                out.append(
+                    (report.timestamp,
+                     t.ulog.reported.id_off(f"<@{report.reporter}>", report.reason, show_evidence(report.evidence))
+                     )
+                )
 
         warn: Warn
         async for warn in await db.stream(filter_by(Warn, member=user_id)):
             if show_ids:
-                out.append((warn.timestamp, t.ulog.warned.id_on(f"<@{warn.mod}>", warn.reason, warn.id)))
+                out.append(
+                    (
+                        warn.timestamp,
+                        t.ulog.warned.id_on(f"<@{warn.mod}>", warn.reason, warn.id, show_evidence(warn.evidence))
+                    )
+                )
             else:
-                out.append((warn.timestamp, t.ulog.warned.id_off(f"<@{warn.mod}>", warn.reason)))
+                out.append(
+                    (
+                        warn.timestamp,
+                        t.ulog.warned.id_off(f"<@{warn.mod}>", warn.reason, show_evidence(warn.evidence))
+                    )
+                )
 
         mute: Mute
         async for mute in await db.stream(filter_by(Mute, member=user_id)):
-            text = t.ulog.muted.upgrade if mute.is_upgrade else t.ulog.muted.first
+            if mute.is_upgrade:
+                text = t.ulog.muted.upgrade
+                mute.evidence = None
+            else:
+                text = t.ulog.muted.first
 
             if mute.minutes == -1:
-                if show_ids:
-                    out.append((mute.timestamp, text.inf.id_on(f"<@{mute.mod}>", mute.reason, mute.id)))
-                else:
-                    out.append((mute.timestamp, text.inf.id_off(f"<@{mute.mod}>", mute.reason)))
-            else:
                 if show_ids:
                     out.append(
                         (
                             mute.timestamp,
-                            text.temp.id_on(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason, mute.id)
+                            text.inf.id_on(f"<@{mute.mod}>", mute.reason, mute.id, show_evidence(mute.evidence))
                         )
                     )
                 else:
                     out.append(
                         (
                             mute.timestamp,
-                            text.temp.id_off(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason)
+                            text.inf.id_off(f"<@{mute.mod}>", mute.reason, show_evidence(mute.evidence))
+                        )
+                    )
+            else:
+                if show_ids:
+                    out.append(
+                        (
+                            mute.timestamp,
+                            text.temp.id_on(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason, mute.id,
+                                            show_evidence(mute.evidence)
+                                            )
+                        )
+                    )
+                else:
+                    out.append(
+                        (
+                            mute.timestamp,
+                            text.temp.id_off(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason,
+                                             show_evidence(mute.evidence)
+                                             )
                         )
                     )
 
@@ -310,34 +354,61 @@ class ModCog(Cog, name="Mod Tools"):
         async for kick in await db.stream(filter_by(Kick, member=user_id)):
             if kick.mod is not None:
                 if show_ids:
-                    out.append((kick.timestamp, t.ulog.kicked.id_on(f"<@{kick.mod}>", kick.reason, kick.id)))
+                    out.append(
+                        (
+                            kick.timestamp,
+                            t.ulog.kicked.id_on(f"<@{kick.mod}>", kick.reason, kick.id, show_evidence(kick.evidence))
+                        )
+                    )
                 else:
-                    out.append((kick.timestamp, t.ulog.kicked.id_off(f"<@{kick.mod}>", kick.reason)))
+                    out.append(
+                        (
+                            kick.timestamp,
+                            t.ulog.kicked.id_off(f"<@{kick.mod}>", kick.reason, show_evidence(kick.evidence))
+                        )
+                    )
             else:
                 out.append((kick.timestamp, t.ulog.autokicked))
 
         ban: Ban
         async for ban in await db.stream(filter_by(Ban, member=user_id)):
-            text = t.ulog.banned.upgrade if ban.is_upgrade else t.ulog.banned.first
+            if ban.is_upgrade:
+                text = t.ulog.banned.upgrade
+                ban.evidence = None
+            else:
+                text = t.ulog.banned.first
 
             if ban.minutes == -1:
                 if show_ids:
-                    out.append((ban.timestamp, text.inf.id_on(f"<@{ban.mod}>", ban.reason, ban.id)))
+                    out.append(
+                        (
+                            ban.timestamp,
+                            text.inf.id_on(f"<@{ban.mod}>", ban.reason, ban.id, show_evidence(ban.evidence))
+                        )
+                    )
                 else:
-                    out.append((ban.timestamp, text.inf.id_off(f"<@{ban.mod}>", ban.reason)))
+                    out.append(
+                        (
+                            ban.timestamp, text.inf.id_off(f"<@{ban.mod}>", ban.reason)
+                        )
+                    )
             else:
                 if show_ids:
                     out.append(
                         (
                             ban.timestamp,
-                            text.temp.id_on(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason, ban.id)
+                            text.temp.id_on(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason, ban.id,
+                                            show_evidence(ban.evidence)
+                                            )
                         )
                     )
                 else:
                     out.append(
                         (
                             ban.timestamp,
-                            text.temp.id_off(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason)
+                            text.temp.id_off(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason,
+                                             show_evidence(ban.evidence)
+                                             )
                         )
                     )
 
