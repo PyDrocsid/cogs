@@ -46,3 +46,29 @@ jobs:
           reporter: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && 'github-pr-review' || 'terminal' }}
         env:
           GITHUB_TOKEN: ${{ secrets.github_token }}
+
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+
+      - name: Check cog docs
+        run: |
+          set -ex
+
+          for category in administration moderation information integrations general; do
+            cd $category
+
+            for cog in $(ls); do
+              [[ -d $cog ]] || continue
+              if ! [[ -f $cog/documentation.md ]]; then
+                echo ::warning::Could not find documentation for $category/$cog
+              fi
+            done
+
+            cd ..
+          done
