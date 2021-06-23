@@ -56,8 +56,12 @@ unmute: ":loud_sound: Mute"
 mute_role_not_set: User could not be muted because no mute role is configured.
 cannot_mute: This member cannot be muted.
 already_muted: User is already muted for the given period of time.
-muted: "{} just muted you on {} for {}:```\n{}\n```"
-muted_inf: "{} just muted you on {}:```\n{}\n```"
+muted:
+  evidence: "{} just muted you on {} for {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just muted you on {} for {}:```\n{}\n```"
+muted_inf:
+  evidence: "{} just muted you on {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just muted you on {}:```\n{}\n```"
 muted_response: "User muted successfully :white_check_mark:"
 log_muted: ":mute: Member muted"
 log_unmuted_expired: "Unmuted automatically because the mute time for this user has expired."

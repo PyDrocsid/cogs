@@ -67,6 +67,7 @@ class Mute(db.Base):
     timestamp: Union[Column, datetime] = Column(DateTime)
     minutes: Union[Column, int] = Column(Integer)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     active: Union[Column, bool] = Column(Boolean)
     deactivation_timestamp: Union[Column, Optional[datetime]] = Column(DateTime, nullable=True)
     unmute_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
@@ -76,7 +77,7 @@ class Mute(db.Base):
 
     @staticmethod
     async def create(member: int, member_name: str, mod: int, minutes: int, reason: str,
-                     is_upgrade: bool = False) -> Mute:
+                     evidence: Optional[str], is_upgrade: bool = False) -> Mute:
         row = Mute(
             member=member,
             member_name=member_name,
@@ -84,6 +85,7 @@ class Mute(db.Base):
             timestamp=datetime.utcnow(),
             minutes=minutes,
             reason=reason,
+            evidence=evidence,
             active=True,
             deactivation_timestamp=None,
             unmute_mod=None,

@@ -388,10 +388,12 @@ class ModCog(Cog, name="Mod Tools"):
 
         if attachments := ctx.message.attachments:
             evidence = attachments[0]
+            evidence_url = evidence.url
         else:
             evidence = None
+            evidence_url = None
 
-        await Report.create(user.id, str(user), ctx.author.id, reason, evidence.url)
+        await Report.create(user.id, str(user), ctx.author.id, reason, evidence_url)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         await reply(ctx, embed=server_embed)
@@ -416,8 +418,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         if attachments := ctx.message.attachments:
             evidence = attachments[0]
+            evidence_url = evidence.url
         else:
             evidence = None
+            evidence_url = None
 
         user_embed = Embed(
             title=t.warn,
@@ -425,7 +429,7 @@ class ModCog(Cog, name="Mod Tools"):
         )
         if evidence:
             user_embed.description = t.warned.evidence(ctx.author.mention, ctx.guild.name, reason,
-                                                       t.image_link(evidence.filename, evidence.url)
+                                                       t.image_link(evidence.filename, evidence_url),
                                                        )
         else:
             user_embed.description = t.warned.no_evidence(ctx.author.mention, ctx.guild.name, reason)
@@ -477,6 +481,13 @@ class ModCog(Cog, name="Mod Tools"):
             if minutes is not None and datetime.utcnow() + timedelta(minutes=minutes) <= ts:
                 raise UserCommandError(user, t.already_muted)
 
+        if attachments := ctx.message.attachments:
+            evidence = attachments[0]
+            evidence_url = evidence.url
+        else:
+            evidence = None
+            evidence_url = None
+
         for mute in active_mutes:
             await Mute.upgrade(mute.id, ctx.author.id)
 
@@ -485,8 +496,16 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if minutes is not None:
-            await Mute.create(user.id, str(user), ctx.author.id, minutes, reason, bool(active_mutes))
-            user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
+            await Mute.create(user.id, str(user), ctx.author.id, minutes, reason, evidence_url, bool(active_mutes))
+            if evidence:
+                user_embed.description = t.muted.evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
+                                                          reason, t.image_link(evidence.filename, evidence_url),
+                                                          )
+            else:
+                user_embed.description = t.muted.no_evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
+                                                             reason,
+                                                             )
+
             await send_to_changelog_mod(
                 ctx.guild,
                 ctx.message,
@@ -495,10 +514,17 @@ class ModCog(Cog, name="Mod Tools"):
                 user,
                 reason,
                 duration=time_to_units(minutes),
+                evidence=evidence,
             )
         else:
-            await Mute.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_mutes))
-            user_embed.description = t.muted_inf(ctx.author.mention, ctx.guild.name, reason)
+            await Mute.create(user.id, str(user), ctx.author.id, -1, reason, evidence_url, bool(active_mutes))
+            if evidence:
+                user_embed.description = t.muted_inf.evidence(ctx.author.mention, ctx.guild.name, reason,
+                                                              t.image_link(evidence.filename, evidence_url),
+                                                              )
+            else:
+                user_embed.description = t.muted_inf.no_evidence(ctx.author.mention, ctx.guild.name, reason)
+
             await send_to_changelog_mod(
                 ctx.guild,
                 ctx.message,
@@ -507,6 +533,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user,
                 reason,
                 duration=t.log_field.infinity,
+                evidence=evidence,
             )
 
         try:
