@@ -17,15 +17,17 @@ class Report(db.Base):
     reporter: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(DateTime)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
     @staticmethod
-    async def create(member: int, member_name: str, reporter: int, reason: str) -> Report:
+    async def create(member: int, member_name: str, reporter: int, reason: str, evidence: Optional[str]) -> Report:
         row = Report(
             member=member,
             member_name=member_name,
             reporter=reporter,
             timestamp=datetime.utcnow(),
             reason=reason,
+            evidence=evidence,
         )
         await db.add(row)
         return row

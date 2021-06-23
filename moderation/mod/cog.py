@@ -391,7 +391,7 @@ class ModCog(Cog, name="Mod Tools"):
         else:
             evidence = None
 
-        await Report.create(user.id, str(user), ctx.author.id, reason)
+        await Report.create(user.id, str(user), ctx.author.id, reason, evidence.url)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         await reply(ctx, embed=server_embed)
