@@ -595,14 +595,29 @@ class ModCog(Cog, name="Mod Tools"):
         if member.top_role >= ctx.guild.me.top_role or member.id == ctx.guild.owner_id:
             raise UserCommandError(member, t.cannot_kick)
 
-        await Kick.create(member.id, str(member), ctx.author.id, reason)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason)
+        if attachments := ctx.message.attachments:
+            evidence = attachments[0]
+            evidence_url = evidence.url
+        else:
+            evidence = None
+            evidence_url = None
+
+        await Kick.create(member.id, str(member), ctx.author.id, reason, evidence_url)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason,
+                                    evidence=evidence)
 
         user_embed = Embed(
             title=t.kick,
-            description=t.kicked(ctx.author.mention, ctx.guild.name, reason),
             colour=Colors.ModTools,
         )
+
+        if evidence:
+            user_embed.description = t.kicked.evidence(ctx.author.mention, ctx.guild.name, reason,
+                                                       t.image_link(evidence.filename, evidence_url),
+                                                       )
+        else:
+            user_embed.description = t.kicked.no_evidence(ctx.author.mention, ctx.guild.name, reason)
+
         server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)
         server_embed.set_author(
             name=str(member),
@@ -615,7 +630,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
 
-        await member.kick(reason=reason)
+        # await member.kick(reason=reason)
         await revoke_verification(member)
 
         await reply(ctx, embed=server_embed)

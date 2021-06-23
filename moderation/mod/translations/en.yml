@@ -70,7 +70,9 @@ log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
 
 kick: ":x: Kick"
-kicked: "{} just kicked you from {}:```\n{}\n```"
+kicked:
+  evidence: "{} just kicked you from {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just kicked you from {}:```\n{}\n```"
 kicked_response: "User kicked successfully :white_check_mark:"
 log_kicked: ":x: Member kicked"
 cannot_kick: This member cannot be kicked.
