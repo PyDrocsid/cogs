@@ -46,7 +46,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     @docs(t.commands.add_channel)
     @AutoDeleteMessagesPermission.add.check
     async def add_channel(self, ctx: Context, channel: TextChannel, minutes: int):
-        if not minutes > 0:
+        if minutes <= 0:
             raise CommandError(t.negative_value)
         row = await db.get(AutoDeleteMessage, channel=channel.id)
         if not row:
