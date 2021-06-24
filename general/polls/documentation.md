@@ -2,7 +2,9 @@
 
 This cog provides commands for simple "yes/no" polls, multiple choice polls and team polls.
 
+
 ## `yesno`
+
 The `.yesno` command creates a "yes/no" poll by putting :thumbsup: and :thumbsdown: as reactions under the message (pictures and other files work, too).
 
 ```css
@@ -15,7 +17,9 @@ The `.yesno` command creates a "yes/no" poll by putting :thumbsup: and :thumbsdo
 
 If `content` is a message link, the bot puts the reactions on the message this link refers to.
 
+
 ## `poll`
+
 The `.poll` command creates a poll with 1 to a maximum of 19 options.
 
 ```css
@@ -34,7 +38,9 @@ The `.poll` command creates a poll with 1 to a maximum of 19 options.
 !!! note
     Multiline titles and options can be specified using a \ at the end of a line
 
+
 ## `teampoll`
+
 The `.teampoll` command creates a poll with 1 to a maximum of 20 options and shows which team members have not voted yet.
 
 ```css

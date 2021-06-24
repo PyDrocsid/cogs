@@ -2,7 +2,9 @@
 
 This cog provides commands to manage a whitelist for discord invites that may be sent in the chat and automatic deletion of invites not on the list.
 
+
 ## `list`
+
 The `.list` command returns a list of all Discord servers on the whitelist.
 
 ```css
@@ -11,6 +13,7 @@ The `.list` command returns a list of all Discord servers on the whitelist.
 
 
 ## `show`
+
 The `.show` command shows detailed information about a given server on the whitelist.
 
 ```css
@@ -23,6 +26,7 @@ The `.show` command shows detailed information about a given server on the white
 
 
 ## `add`
+
 The `.add` command adds a Discord server to the whitelist.
 
 ```css
@@ -40,6 +44,7 @@ Required Permissions:
 
 
 ## `remove`
+
 The `.remove` command removes a server from the whitelist.
 
 ```css
@@ -56,6 +61,7 @@ Required Permissions:
 
 
 ## `update`
+
 The `.update` command allows the applicant and users with the `invites.manage` permission to update the invite link to a server on the whitelist.
 
 ```css

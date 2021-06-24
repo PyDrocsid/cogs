@@ -2,9 +2,12 @@
 
 This cog contains information about the bot and its tasks.
 
+
 ## Commands
 
+
 ### `info`
+
 The `.info` command shows information about the bot.
 
 ```css
@@ -26,6 +29,7 @@ The information given by this command includes:
 
 
 ### `version`
+
 The `.version` command returns the bot's current version.
 
 ```css
@@ -34,6 +38,7 @@ The `.version` command returns the bot's current version.
 
 
 ### `github`
+
 The `.github` command returns information about the bot's GitHub repository.
 
 ```css
@@ -42,6 +47,7 @@ The `.github` command returns information about the bot's GitHub repository.
 
 
 ### `contributors`
+
 The `.contributors` command returns a list of all people that contributed to the bot.
 
 ```css
@@ -50,6 +56,7 @@ The `.contributors` command returns a list of all people that contributed to the
 
 
 ### `cogs`
+
 The `.cogs` command returns a list of all cogs currently in use.
 
 ```css
@@ -58,4 +65,5 @@ The `.cogs` command returns a list of all cogs currently in use.
 
 
 ## Status Message
+
 The bot displays a status message that is updated every 20 seconds. The list of status strings is defined under the `profile_status` [translation key](https://docs.pydrocsid.ml/library/translations/){target=_blank}.
