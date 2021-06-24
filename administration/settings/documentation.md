@@ -2,7 +2,9 @@
 
 This cog contains commands to change various settings of the bot.
 
+
 ## `prefix`
+
 The `.prefix` command can be used to change the bot prefix. Any message containing a command has to start with this prefix, directly followed by the command itself.
 
 !!! note

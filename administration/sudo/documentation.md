@@ -2,7 +2,9 @@
 
 This cog contains the `.sudo` command, as well as some other commands used to maintain the bot instance. This `.sudo` command is similar to the `sudo` command on Linux.
 
+
 ## `sudo`
+
 The `.sudo` command allows a specific user to execute any command even without having the necessary permission level by temporarily granting the user the highest permission level (`owner`).
 
 ```css
@@ -22,6 +24,7 @@ To use this command your user ID has to match the value of the `OWNER_ID` enviro
 
 
 ### `clear_cache`
+
 This command clears the redis cache by executing the `FLUSHALL` command.
 
 ```css
@@ -30,6 +33,7 @@ This command clears the redis cache by executing the `FLUSHALL` command.
 
 
 ### `reload`
+
 This command reloads the bot by refiring all startup functions.
 
 ```css
@@ -38,6 +42,7 @@ This command reloads the bot by refiring all startup functions.
 
 
 ### `stop`
+
 This command stops the running bot instance gracefully.
 
 ```css
@@ -46,6 +51,7 @@ This command stops the running bot instance gracefully.
 
 
 ### `kill`
+
 This command kills the running bot instance.
 
 ```css

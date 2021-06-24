@@ -2,7 +2,9 @@
 
 This cog contains the `mediaonly` command to set up and manage channels only pictures can be sent to.
 
+
 ## `list`
+
 The `list` subcommand shows a list of all media-only channels.
 
 ```css
@@ -15,6 +17,7 @@ Required Permissions:
 
 
 ## `add`
+
 The `add` subcommand sets the media-only flag for a given text channel.
 
 ```css
@@ -32,6 +35,7 @@ Required Permissions:
 
 
 ## `remove`
+
 The `remove` subcommand removes the media-only flag from a given text channel.
 
 ```css
