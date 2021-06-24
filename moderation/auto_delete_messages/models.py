@@ -12,10 +12,7 @@ class AutoDeleteMessage(db.Base):
 
     @staticmethod
     async def create(channel: int, minutes: int):
-        row = AutoDeleteMessage(
-            channel=channel,
-            minutes=minutes,
-        )
+        row = AutoDeleteMessage(channel=channel, minutes=minutes,)
         await db.add(row)
         return row
 
