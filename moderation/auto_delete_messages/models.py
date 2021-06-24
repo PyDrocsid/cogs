@@ -1,6 +1,6 @@
 from typing import Union
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, db_wrapper
 from sqlalchemy import Column, Integer, BigInteger
 
 
@@ -20,6 +20,7 @@ class AutoDeleteMessage(db.Base):
         return row
 
     @staticmethod
+    @db_wrapper
     async def update(channel: int, minutes: int):
         row: AutoDeleteMessage = await db.get(AutoDeleteMessage, channel=channel)
         row.minutes = minutes
