@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
 
 from .models import AutoDeleteMessage
+from .permissions import AutoDeleteMessagesPermission
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
@@ -43,10 +44,18 @@ class AutoDeleteMessages(Cog, name="Auto Delete Messages"):
 
     @auto_delete_messages.command(aliases=["add"])
     @docs(t.commands.add_channel)
+    @AutoDeleteMessagesPermission.add.check
     async def add_channel(self, ctx: Context, channel: TextChannel, minutes: int):
         if not minutes > 0:
             raise CommandError(t.negative_value)
         await AutoDeleteMessage.create(channel.id, minutes)
+
+    @auto_delete_messages.command(aliases=["rm"])
+    @docs(t.commands.remove_channel)
+    @AutoDeleteMessagesPermission.remove.check
+    async def remove_channel(self, ctx: Context, channel: TextChannel):
+        row = await db.get(AutoDeleteMessage, channel=channel.id)
+        await db.delete(row)
 
     async def start_loop(self, interval):
         self.delete_old_messages_loop.cancel()
