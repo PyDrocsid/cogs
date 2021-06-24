@@ -48,18 +48,22 @@ class AutoDeleteMessages(Cog, name="Auto Delete Messages"):
     async def add_channel(self, ctx: Context, channel: TextChannel, minutes: int):
         if not minutes > 0:
             raise CommandError(t.negative_value)
-        await AutoDeleteMessage.create(channel.id, minutes)
+        row = await db.get(AutoDeleteMessage, channel=channel.id)
+        if not row:
+            await AutoDeleteMessage.create(channel.id, minutes)
+        await AutoDeleteMessage.update(channel.id, minutes)
 
     @auto_delete_messages.command(aliases=["rm"])
     @docs(t.commands.remove_channel)
     @AutoDeleteMessagesPermission.remove.check
     async def remove_channel(self, ctx: Context, channel: TextChannel):
         row = await db.get(AutoDeleteMessage, channel=channel.id)
-        await db.delete(row)
+        if row:
+            await db.delete(row)
 
     async def start_loop(self, interval):
         self.delete_old_messages_loop.cancel()
-        self.delete_old_messages_loop.change_interval(seconds=interval)
+        self.delete_old_messages_loop.change_interval(hours=interval)
         try:
             self.delete_old_messages_loop.start()
         except RuntimeError:
