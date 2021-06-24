@@ -16,7 +16,7 @@ from ...pubsub import send_alert
 t = t.auto_delete_messages
 
 
-class AutoDeleteMessages(Cog, name="Auto Delete Messages"):
+class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
 
     @guild_only()

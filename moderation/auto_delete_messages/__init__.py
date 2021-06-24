@@ -1,1 +1,1 @@
-from .cog import AutoDeleteMessages
+from .cog import AutoDeleteMessagesCog
