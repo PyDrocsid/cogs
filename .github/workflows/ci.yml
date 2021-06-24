@@ -60,6 +60,11 @@ jobs:
         run: |
           set -e
 
+          if ! [[ -f pubsub.md ]]; then
+            echo ::error::Could not find pubsub documentation
+            exit 1
+          fi
+
           for category in administration moderation information integrations general; do
             cd $category
 
