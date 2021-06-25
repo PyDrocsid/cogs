@@ -25,26 +25,25 @@ def split_topics(topics: str) -> List[str]:
     return [topic for topic in map(str.strip, topics.replace(";", ",").split(",")) if topic]
 
 
-async def split_parents(topics: List[str]) -> List[tuple[str, str, Union[BTPTopic, None]]]:
-    result: List[tuple[str, str, Union[BTPTopic, None]]] = []
+async def split_parents(topics: List[str], assignable: bool) -> List[tuple[str, bool, Optional[list[BTPTopic]]]]:
+    result: List[tuple[str, bool, Optional[list[BTPTopic]]]] = []
     for topic in topics:
         topic_tree = topic.split("/")
-        if len(topic_tree) > 3 or len(topic_tree) < 2:
-            raise CommandError(t.group_parent_format_help)
-        group = topic_tree[0]
-        query = select(BTPTopic).filter_by(name=topic_tree[1])
-        parent: Union[BTPTopic, None, CommandError] = (
-            (await db.first(query) if await db.exists(query) else CommandError(t.parent_not_exists(topic_tree[1])))
-            if len(topic_tree) > 2
-            else None
-        )
-        if isinstance(parent, CommandError):
-            raise parent
-        if parent is not None:
-            if group != parent.group:
-                raise CommandError(t.group_not_parent_group(group, parent.group))
+
+        parents: List[Union[BTPTopic, None, CommandError]] = [
+            await db.first(select(BTPTopic).filter_by(name=topic))
+            if await db.exists(select(BTPTopic).filter_by(name=topic))
+            else CommandError(t.parent_not_exists(topic))
+            for topic in topic_tree[:-1]
+        ]
+
+        parents = [parent for parent in parents if parent is not None]
+        for parent in parents:
+            if isinstance(parent, CommandError):
+                raise parent
+
         topic = topic_tree[-1]
-        result.append((topic, group, parent))
+        result.append((topic, assignable, parents))
     return result
 
 
@@ -84,48 +83,49 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     @guild_only()
     async def list_topics(self, ctx: Context, parent_topic: Optional[str]):
         """
-        list all registered topics TODO
+        list all registered topics
         """
-        parent: Union[None, BTPTopic, CommandError] = (
+        parent: Union[BTPTopic, None, CommandError] = (
             None
             if parent_topic is None
             else await db.first(select(BTPTopic).filter_by(name=parent_topic))
-            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
+
         embed = Embed(title=t.available_topics_header, colour=Colors.BeTheProfessional)
-        grouped_topics: Dict[str, List[str]] = {}
-        out: List[BTPTopic] = [
-            topic
-            for topic in await db.all(select(BTPTopic).filter_by(parent=parent if parent is None else parent.id))
-            if topic.group is not None
+        sorted_topics: Dict[str, List[str]] = {}
+        topics: List[BTPTopic] = [
+            topic for topic in await db.all(select(BTPTopic).filter_by(parent=None if parent is None else parent.id))
         ]
-        if not out:
+        if not topics:
             embed.colour = Colors.error
             embed.description = t.no_topics_registered
             await reply(ctx, embed=embed)
             return
 
-        out.sort(key=lambda topic: topic.name.lower())
-        for topic in out:
-            if topic.group.title() not in grouped_topics.keys():
-                grouped_topics[topic.group] = [f"{topic.name}"]
+        topics.sort(key=lambda topic: topic.name.lower())
+        root_topic: Union[BTPTopic, None] = None if parent_topic is None else await db.first(
+            select(BTPTopic).filter_by(name=parent_topic))
+        for topic in topics:
+            if (root_topic.name if root_topic is not None else "Topics") not in sorted_topics.keys():
+                sorted_topics[root_topic.name if root_topic is not None else "Topics"] = [f"{topic.name}"]
             else:
-                grouped_topics[topic.group.title()].append(f"{topic.name}")
+                sorted_topics[root_topic.name if root_topic is not None else "Topics"].append(f"{topic.name}")
 
-        for group in grouped_topics.keys():
+        for root_topic in sorted_topics.keys():
             embed.add_field(
-                name=group.title(),
+                name=root_topic.title(),
                 value=", ".join(
                     [
                         f"`{topic.name}"
                         + (
                             f" ({c})`"
-                            if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id, group=topic.group))) > 0
+                            if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id))) > 0
                             else "`"
                         )
-                        for topic in out
+                        for topic in topics
                     ]
                 ),
                 inline=False,
@@ -144,7 +144,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+               and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
         for topic in topics:
             await BTPUser.create(member.id, topic.id)
@@ -181,27 +181,27 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     @commands.command(name="*")
     @BeTheProfessionalPermission.manage.check
     @guild_only()
-    async def register_topics(self, ctx: Context, *, topics: str):
+    async def register_topics(self, ctx: Context, *, topics: str, assignable: bool = True):
         """
         register one or more new topics
         """
 
         names = split_topics(topics)
-        topics: List[tuple[str, str, Union[BTPTopic, None]]] = await split_parents(names)
+        topics: List[tuple[str, bool, Optional[list[BTPTopic]]]] = await split_parents(names, assignable)
         if not names or not topics:
             raise UserInputError
 
         valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_`{|}~")
-        registered_topics: List[tuple[str, str, Union[BTPTopic, None]]] = []
+        registered_topics: List[tuple[str, bool, Optional[list[BTPTopic]]]] = []
         for topic in topics:
             if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
 
             if await db.exists(
-                select(BTPTopic).filter_by(name=topic[0], parent=topic[2].id if topic[2] is not None else None, group=topic[1]),
+                    select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
             ):
                 raise CommandError(
-                    t.topic_already_registered(f"{topic[1]}/{topic[2].name + '/' if topic[2] else ''}{topic[0]}"),
+                    t.topic_already_registered(f"{topic[1]}/{topic[2][-1].name + '/' if topic[1] else ''}{topic[0]}"),
                 )
             else:
                 registered_topics.append(topic)
@@ -210,8 +210,8 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             await BTPTopic.create(
                 registered_topic[0],
                 None,
-                registered_topic[1],
-                registered_topic[2].id if registered_topic[2] is not None else None,
+                True,
+                registered_topic[2][-1].id if len(registered_topic[2]) > 0 else None,
             )
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
@@ -244,7 +244,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
                 delete_topics.append(btp_topic)
                 for child_topic in await db.all(
-                    select(BTPTopic).filter_by(parent=btp_topic.id),
+                        select(BTPTopic).filter_by(parent=btp_topic.id),
                 ):  # TODO Recursive? Fix more level childs
                     delete_topics.insert(0, child_topic)
         for topic in delete_topics:
