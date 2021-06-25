@@ -42,3 +42,5 @@ log_topics_unregistered:
 parent_not_exists: "Parent `{}` doesn't exists"
 parent_format_help: "Please write `[Parents/]Topic-Name`"
 group_not_parent_group: "The group `{}` is not the same as the group of the Parent `{}`"
+nobody_has_topic: "Nobody has the Topic `{}`"
+

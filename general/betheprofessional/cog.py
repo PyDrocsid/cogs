@@ -1,7 +1,7 @@
 import string
 from typing import List, Union, Optional, Dict
 
-from discord import Member, Embed, Role
+from discord import Member, Embed, Role, Message
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
@@ -197,7 +197,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 raise CommandError(t.topic_invalid_chars(topic))
 
             if await db.exists(
-                select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
+                    select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
             ):
                 raise CommandError(
                     t.topic_already_registered(f"{topic[1]}/{topic[2][-1].name + '/' if topic[1] else ''}{topic[0]}"),
@@ -243,7 +243,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
                 delete_topics.append(btp_topic)
                 for child_topic in await db.all(
-                    select(BTPTopic).filter_by(parent=btp_topic.id),
+                        select(BTPTopic).filter_by(parent=btp_topic.id),
                 ):  # TODO Recursive? Fix more level childs
                     delete_topics.insert(0, child_topic)
         for topic in delete_topics:
@@ -262,3 +262,24 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             t.log_topics_unregistered(cnt=len(delete_topics), topics=", ".join(f"`{r}`" for r in delete_topics)),
         )
         await send_long_embed(ctx, embed)
+
+    @commands.command()
+    @guild_only()
+    async def topic(self, ctx: Context, topic_name: str, message: Optional[Message]):
+        topic: BTPTopic = await db.first(select(BTPTopic).filter_by(name=topic_name))
+        mention: str
+        if topic is None:
+            raise CommandError(t.topic_not_found(topic_name))
+        if topic.role_id is not None:
+            mention = ctx.guild.get_role(topic.role_id).mention
+        else:
+            topic_members: List[BTPUser] = await db.all(select(BTPUser).filter_by(topic=topic.id))
+            members: List[Member] = [ctx.guild.get_member(member.user_id) for member in topic_members]
+            mention = ', '.join(map(lambda m: m.mention, members))
+
+        if mention == '':
+            raise CommandError(t.nobody_has_topic(topic_name))
+        if message is None:
+            await ctx.send(mention)
+        else:
+            await message.reply(mention)
