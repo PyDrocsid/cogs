@@ -1,6 +1,6 @@
 # RemindMe
 
-This cog provides a simple remind feature. \
+This cog provides a simple remind feature. <br>
 When a user reacts on a message with one of the following emojis, the bot sends a copy of that message to the user as a direct message:
 
 |Emoji|Name|
