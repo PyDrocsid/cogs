@@ -1,9 +1,8 @@
-import logging
 import string
 from collections import Counter
 from typing import List, Union, Optional, Dict
 
-from discord import Member, Embed, Role, Message, Guild
+from discord import Member, Embed, Role, Message
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
@@ -11,6 +10,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.database import db, select, db_wrapper
 from PyDrocsid.embeds import send_long_embed
+from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance
 from .colors import Colors
@@ -18,7 +18,6 @@ from .models import BTPUser, BTPTopic
 from .permissions import BeTheProfessionalPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
-from PyDrocsid.logger import get_logger
 
 tg = t.g
 t = t.betheprofessional
