@@ -310,7 +310,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 await self.bot.guilds[0].get_role(topic.role_id).delete()
         for top_topic in top_topics:
             if (
-                topic := await db.first(select(BTPTopic).filter(BTPTopic.id == top_topic, BTPTopic.role_id == None))
-            ) is not None:  # noqa: E711
+                topic := await db.first(select(BTPTopic).filter(BTPTopic.id == top_topic, BTPTopic.role_id == None))  # noqa: E711
+            ) is not None:
                 topic.role_id = (await self.bot.guilds[0].create_role(name=topic.name)).id
         logger.info("Created Top Topic Roles")
