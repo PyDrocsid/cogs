@@ -89,16 +89,14 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             None
             if parent_topic is None
             else await db.first(select(BTPTopic).filter_by(name=parent_topic))
-                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
 
         embed = Embed(title=t.available_topics_header, colour=Colors.BeTheProfessional)
         sorted_topics: Dict[str, List[str]] = {}
-        topics: List[BTPTopic] = [
-            topic for topic in await db.all(select(BTPTopic).filter_by(parent=None if parent is None else parent.id))
-        ]
+        topics: List[BTPTopic] = await db.all(select(BTPTopic).filter_by(parent=None if parent is None else parent.id))
         if not topics:
             embed.colour = Colors.error
             embed.description = t.no_topics_registered
@@ -119,8 +117,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 name=root_topic.title(),
                 value=", ".join(
                     [
-                        f"`{topic.name}"
-                        + (
+                        f"`{topic.name}" + (
                             f" ({c})`"
                             if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id))) > 0
                             else "`"
