@@ -97,7 +97,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             None
             if parent_topic is None
             else await db.first(select(BTPTopic).filter_by(name=parent_topic))
-                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
@@ -151,7 +151,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-               and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
         for topic in topics:
             await BTPUser.create(member.id, topic.id)
@@ -205,7 +205,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 raise CommandError(t.topic_invalid_chars(topic))
 
             if await db.exists(
-                    select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
+                select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
             ):
                 raise CommandError(
                     t.topic_already_registered(f"{topic[1]}/{topic[2][-1].name + '/' if topic[1] else ''}{topic[0]}"),
@@ -251,7 +251,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
                 delete_topics.append(btp_topic)
                 for child_topic in await db.all(
-                        select(BTPTopic).filter_by(parent=btp_topic.id),
+                    select(BTPTopic).filter_by(parent=btp_topic.id),
                 ):  # TODO Recursive? Fix more level childs
                     delete_topics.insert(0, child_topic)
         for topic in delete_topics:
@@ -283,9 +283,9 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         else:
             topic_members: List[BTPUser] = await db.all(select(BTPUser).filter_by(topic=topic.id))
             members: List[Member] = [ctx.guild.get_member(member.user_id) for member in topic_members]
-            mention = ', '.join(map(lambda m: m.mention, members))
+            mention = ", ".join(map(lambda m: m.mention, members))
 
-        if mention == '':
+        if mention == "":
             raise CommandError(t.nobody_has_topic(topic_name))
         if message is None:
             await ctx.send(mention)
@@ -296,19 +296,21 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     @db_wrapper
     # TODO Change to Config
     async def update_roles(self):
-        logger.info('Started Update Role Loop')
+        logger.info("Started Update Role Loop")
         topic_count: List[int] = []
         for topic in await db.all(select(BTPTopic)):
             for _ in range(await db.count(select(BTPUser).filter_by(topic=topic.id))):
                 topic_count.append(topic.id)
         topic_count: Counter = Counter(topic_count)
         top_topics: List[int] = []
-        for topic_count in sorted(topic_count)[:(100 if len(topic_count) >= 100 else len(topic_count))]:
+        for topic_count in sorted(topic_count)[: (100 if len(topic_count) >= 100 else len(topic_count))]:
             top_topics.append(topic_count)
         for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id != None)):  # noqa: E711
             if topic.id not in top_topics:
                 await self.bot.guilds[0].get_role(topic.role_id).delete()
         for top_topic in top_topics:
-            if (topic := await db.first(select(BTPTopic).filter(BTPTopic.id == top_topic, BTPTopic.role_id == None))) is not None:  # noqa: E711
+            if (
+                topic := await db.first(select(BTPTopic).filter(BTPTopic.id == top_topic, BTPTopic.role_id == None))
+            ) is not None:  # noqa: E711
                 topic.role_id = (await self.bot.guilds[0].create_role(name=topic.name)).id
-        logger.info('Created Top Topic Roles')
+        logger.info("Created Top Topic Roles")
