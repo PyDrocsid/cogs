@@ -103,7 +103,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             await reply(ctx, embed=embed)
             return
 
-        topics.sort(key=lambda topic: topic.name.lower())
+        topics.sort(key=lambda btp_topic: btp_topic.name.lower())
         root_topic: Union[BTPTopic, None] = (
             None if parent_topic is None else await db.first(select(BTPTopic).filter_by(name=parent_topic))
         )
@@ -119,13 +119,13 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 value=", ".join(
                     [
                         f"`{topic.name}"
-                        + (
+                        + (  # noqa: W503
                             f" ({c})`"
                             if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id))) > 0
                             else "`"
                         )
                         for topic in topics
-                    ]
+                    ],
                 ),
                 inline=False,
             )
