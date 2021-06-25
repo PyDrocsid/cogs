@@ -1,13 +1,15 @@
+import logging
 import string
+from collections import Counter
 from typing import List, Union, Optional, Dict
 
-from discord import Member, Embed, Role, Message
-from discord.ext import commands
+from discord import Member, Embed, Role, Message, Guild
+from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
-from PyDrocsid.database import db, select
+from PyDrocsid.database import db, select, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance
@@ -16,9 +18,12 @@ from .models import BTPUser, BTPTopic
 from .permissions import BeTheProfessionalPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
+from PyDrocsid.logger import get_logger
 
 tg = t.g
 t = t.betheprofessional
+
+logger = get_logger(__name__)
 
 
 def split_topics(topics: str) -> List[str]:
@@ -79,6 +84,9 @@ async def get_topics() -> List[BTPTopic]:
 class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.MaxiHuHe04, Contributor.AdriBloober]
 
+    async def on_ready(self):
+        self.update_roles.start()
+
     @commands.command(name="?")
     @guild_only()
     async def list_topics(self, ctx: Context, parent_topic: Optional[str]):
@@ -89,7 +97,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             None
             if parent_topic is None
             else await db.first(select(BTPTopic).filter_by(name=parent_topic))
-            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
@@ -143,7 +151,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+               and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
         for topic in topics:
             await BTPUser.create(member.id, topic.id)
@@ -283,3 +291,24 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             await ctx.send(mention)
         else:
             await message.reply(mention)
+
+    @tasks.loop(seconds=30)  # SET hours to 24 in Prod
+    @db_wrapper
+    # TODO Change to Config
+    async def update_roles(self):
+        logger.info('Started Update Role Loop')
+        topic_count: List[int] = []
+        for topic in await db.all(select(BTPTopic)):
+            for _ in range(await db.count(select(BTPUser).filter_by(topic=topic.id))):
+                topic_count.append(topic.id)
+        topic_count: Counter = Counter(topic_count)
+        top_topics: List[int] = []
+        for topic_count in sorted(topic_count)[:(100 if len(topic_count) >= 100 else len(topic_count))]:
+            top_topics.append(topic_count)
+        for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id != None)):  # noqa: E711
+            if topic.id not in top_topics:
+                await self.bot.guilds[0].get_role(topic.role_id).delete()
+        for top_topic in top_topics:
+            if (topic := await db.first(select(BTPTopic).filter(BTPTopic.id == top_topic, BTPTopic.role_id == None))) is not None:  # noqa: E711
+                topic.role_id = (await self.bot.guilds[0].create_role(name=topic.name)).id
+        logger.info('Created Top Topic Roles')
