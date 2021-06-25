@@ -104,8 +104,9 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             return
 
         topics.sort(key=lambda topic: topic.name.lower())
-        root_topic: Union[BTPTopic, None] = None if parent_topic is None else await db.first(
-            select(BTPTopic).filter_by(name=parent_topic))
+        root_topic: Union[BTPTopic, None] = (
+            None if parent_topic is None else await db.first(select(BTPTopic).filter_by(name=parent_topic))
+        )
         for topic in topics:
             if (root_topic.name if root_topic is not None else "Topics") not in sorted_topics.keys():
                 sorted_topics[root_topic.name if root_topic is not None else "Topics"] = [f"{topic.name}"]
@@ -117,7 +118,8 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 name=root_topic.title(),
                 value=", ".join(
                     [
-                        f"`{topic.name}" + (
+                        f"`{topic.name}"
+                        + (
                             f" ({c})`"
                             if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id))) > 0
                             else "`"
@@ -141,7 +143,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-               and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
         for topic in topics:
             await BTPUser.create(member.id, topic.id)
@@ -195,7 +197,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 raise CommandError(t.topic_invalid_chars(topic))
 
             if await db.exists(
-                    select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
+                select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
             ):
                 raise CommandError(
                     t.topic_already_registered(f"{topic[1]}/{topic[2][-1].name + '/' if topic[1] else ''}{topic[0]}"),
@@ -241,7 +243,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
                 btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
                 delete_topics.append(btp_topic)
                 for child_topic in await db.all(
-                        select(BTPTopic).filter_by(parent=btp_topic.id),
+                    select(BTPTopic).filter_by(parent=btp_topic.id),
                 ):  # TODO Recursive? Fix more level childs
                     delete_topics.insert(0, child_topic)
         for topic in delete_topics:
