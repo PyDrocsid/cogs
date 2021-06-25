@@ -1,7 +1,7 @@
 from typing import Union, Optional
 
 from PyDrocsid.database import db
-from sqlalchemy import Column, BigInteger, String, Integer, ForeignKey
+from sqlalchemy import Column, BigInteger, String, Integer, ForeignKey, Boolean
 
 
 class BTPTopic(db.Base):
@@ -11,16 +11,16 @@ class BTPTopic(db.Base):
     name: Union[Column, str] = Column(String(255))
     parent: Union[Column, int] = Column(Integer)
     role_id: Union[Column, int] = Column(BigInteger)
-    group: Union[Column, str] = Column(String(255))
+    assignable: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
     async def create(
         name: str,
         role_id: Union[int, None],
-        group: str,
+        assignable: bool,
         parent: Optional[Union[int, None]],
     ) -> "BTPTopic":
-        row = BTPTopic(name=name, role_id=role_id, parent=parent, group=group)
+        row = BTPTopic(name=name, role_id=role_id, parent=parent, assignable=assignable)
         await db.add(row)
         return row
 
