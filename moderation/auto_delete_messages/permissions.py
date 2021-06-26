@@ -9,5 +9,5 @@ class AutoDeleteMessagesPermission(BasePermission):
     def description(self) -> str:
         return t.auto_delete_messages.permissions[self.name]
 
-    add = auto()
-    remove = auto()
+    read = auto()
+    write = auto()

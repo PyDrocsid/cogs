@@ -14,7 +14,8 @@ from ...contributor import Contributor
 from ...pubsub import send_alert
 
 tg = t.g
-t = t.user_notes
+t = t.auto_delete_messages
+
 
 class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
@@ -44,7 +45,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
 
     @auto_delete_messages.command(aliases=["add"])
     @docs(t.commands.add_channel)
-    @AutoDeleteMessagesPermission.add.check
+    @AutoDeleteMessagesPermission.write.check
     async def disable_channel(self, ctx: Context, channel: TextChannel, minutes: int):
         if minutes <= 0:
             raise CommandError(t.negative_value)
@@ -55,7 +56,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
 
     @auto_delete_messages.command(aliases=["rm"])
     @docs(t.commands.remove_channel)
-    @AutoDeleteMessagesPermission.remove.check
+    @AutoDeleteMessagesPermission.write.check
     async def remove_channel(self, ctx: Context, channel: TextChannel):
         row = await db.get(AutoDeleteMessage, channel=channel.id)
         if row:
