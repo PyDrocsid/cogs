@@ -60,8 +60,9 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     @AutoDeleteMessagesPermission.read.check
     async def disable(self, ctx: Context, channel: TextChannel):
         row = await db.get(AutoDeleteMessage, channel=channel.id)
-        if row:
-            await db.delete(row)
+        if not row:
+            raise CommandError(t.no_rule)
+        await db.delete(row)
 
     async def start_loop(self, interval):
         self.delete_old_messages_loop.cancel()
