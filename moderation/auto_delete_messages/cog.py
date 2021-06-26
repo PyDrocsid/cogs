@@ -34,7 +34,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
         async for auto_delete in await db.stream(select(AutoDeleteMessage)):
             channel = self.bot.get_channel(auto_delete.channel)
             minutes = auto_delete.minutes
-            async for message in channel.history(limit=None):
+            async for message in channel.history(limit=None, oldest_first=True):
                 time_diff = (datetime.datetime.now() - message.created_at).total_seconds() // 60
                 if time_diff >= minutes:
                     try:
