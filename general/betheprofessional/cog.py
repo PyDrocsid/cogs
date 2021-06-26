@@ -291,9 +291,15 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         else:
             await message.reply(mention)
 
-    @tasks.loop(seconds=30)  # SET hours to 24 in Prod
+    @commands.command(aliases=["topic_update", "update_roles"])
+    @guild_only()
+    @BeTheProfessionalPermission.manage.check
+    async def topic_update_roles(self, ctx: Context):
+        await self.update_roles()
+        await reply(ctx, 'Updated Topic Roles')
+
+    @tasks.loop(hours=24)
     @db_wrapper
-    # TODO Change to Config
     async def update_roles(self):
         logger.info("Started Update Role Loop")
         topic_count: List[int] = []
