@@ -23,6 +23,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     @guild_only()
     @commands.group(aliases=["adm"])
     @docs(t.commands.auto_delete_messages)
+    @AutoDeleteMessagesPermission.read.check
     async def auto_delete_messages(self, ctx: Context):
         if ctx.invoked_subcommand is None:
             raise UserInputError
