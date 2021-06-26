@@ -56,7 +56,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
 
     @auto_delete_messages.command(aliases=["rm"])
     @docs(t.commands.remove_channel)
-    @AutoDeleteMessagesPermission.write.check
+    @AutoDeleteMessagesPermission.read.check
     async def remove_channel(self, ctx: Context, channel: TextChannel):
         row = await db.get(AutoDeleteMessage, channel=channel.id)
         if row:
