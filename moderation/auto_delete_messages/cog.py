@@ -13,8 +13,8 @@ from .permissions import AutoDeleteMessagesPermission
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
-t = t.auto_delete_messages
-
+tg = t.g
+t = t.user_notes
 
 class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
