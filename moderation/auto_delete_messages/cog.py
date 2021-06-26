@@ -52,9 +52,10 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
         if minutes <= 0:
             raise CommandError(t.negative_value)
         row = await db.get(AutoDeleteMessage, channel=channel.id)
-        row.minutes = minutes
         if not row:
             await AutoDeleteMessage.create(channel.id, minutes)
+        else:
+            row.minutes = minutes
 
     @auto_delete_messages.command(aliases=["rm"])
     @docs(t.commands.remove_channel)
