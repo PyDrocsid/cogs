@@ -2,7 +2,7 @@ import datetime
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
-from PyDrocsid.database import db, select
+from PyDrocsid.database import db, select, db_wrapper
 from PyDrocsid.translations import t
 from discord import TextChannel, Forbidden
 from discord.ext import commands, tasks
@@ -28,7 +28,8 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
-    @tasks.loop()
+    @tasks.loop(minutes=60)
+    @db_wrapper
     async def delete_old_messages_loop(self):
         async for auto_delete in await db.stream(select(AutoDeleteMessage)):
             channel = self.bot.get_channel(auto_delete.channel)
