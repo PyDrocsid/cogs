@@ -5,7 +5,7 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
 from PyDrocsid.database import db, select, db_wrapper
 from PyDrocsid.translations import t
-from discord import TextChannel, Forbidden
+from discord import TextChannel, Forbidden, Embed
 from discord.ext import commands, tasks
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
 
@@ -13,6 +13,7 @@ from .models import AutoDeleteMessage
 from .permissions import AutoDeleteMessagesPermission
 from ...contributor import Contributor
 from ...pubsub import send_alert
+from .colors import Colors
 
 tg = t.g
 t = t.auto_delete_messages
@@ -26,8 +27,24 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     @docs(t.commands.auto_delete_messages)
     @AutoDeleteMessagesPermission.read.check
     async def auto_delete_messages(self, ctx: Context):
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
+        if ctx.subcommand_passed is not None:
+            if ctx.invoked_subcommand is None:
+                raise UserInputError
+            return
+
+        embed = Embed(title=t.auto_delete_messages, colour=Colors.AutoDeleteMessages)
+        out = []
+        for auto_delete in await AutoDeleteMessage.all():
+            channel = self.bot.get_channel(auto_delete.channel)
+            if not channel:
+                continue
+            out.append(f"<#{auto_delete.channel}>: {auto_delete.minutes}")
+        if not out:
+            embed.description = t.no_auto_delete_message
+            embed.colour = Colors.error
+        else:
+            embed.description = "\n".join(out)
+        await ctx.send(embed=embed)
 
     @tasks.loop(minutes=60)
     @db_wrapper
