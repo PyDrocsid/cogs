@@ -89,7 +89,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
 
     async def start_loop(self, interval):
         self.delete_old_messages_loop.cancel()
-        self.delete_old_messages_loop.change_interval(seconds=interval)
+        self.delete_old_messages_loop.change_interval(minutes=interval)
         try:
             self.delete_old_messages_loop.start()
         except RuntimeError:
