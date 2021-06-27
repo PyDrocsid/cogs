@@ -1,5 +1,6 @@
 import datetime
 
+import discord
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
 from PyDrocsid.database import db, select, db_wrapper
@@ -33,6 +34,9 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     async def delete_old_messages_loop(self):
         async for auto_delete in await db.stream(select(AutoDeleteMessage)):
             channel = self.bot.get_channel(auto_delete.channel)
+            if not channel:
+                await db.delete(auto_delete)
+                continue
             minutes = auto_delete.minutes
             async for message in channel.history(limit=None, oldest_first=True):
                 time_diff = (datetime.datetime.now() - message.created_at).total_seconds() // 60
@@ -68,7 +72,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
 
     async def start_loop(self, interval):
         self.delete_old_messages_loop.cancel()
-        self.delete_old_messages_loop.change_interval(hours=interval)
+        self.delete_old_messages_loop.change_interval(seconds=interval)
         try:
             self.delete_old_messages_loop.start()
         except RuntimeError:
