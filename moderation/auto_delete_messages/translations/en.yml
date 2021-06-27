@@ -11,3 +11,5 @@ commands:
 negative_value: The passed minutes are not allowed to be negative or zero
 not_deleted: I am sorry to inform you that i don't have `manage_messages` permission in {}.
 no_rule: Channel could not be removed because no rule has been added for it yet
+auto_delete_messages: AutoDeleteMessages
+no_auto_delete_message: It seems that no channel was configured for automatic deletion
