@@ -23,13 +23,13 @@ from discord import (
     User,
 )
 from discord.abc import Messageable
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
 
 from PyDrocsid.async_thread import gather_any, GatherAnyException
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply, confirm
-from PyDrocsid.database import filter_by, db, select, delete, db_context
+from PyDrocsid.database import filter_by, db, select, delete, db_context, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.multilock import MultiLock
@@ -41,6 +41,7 @@ from PyDrocsid.util import send_editable_log, check_role_assignable
 from .colors import Colors
 from .models import DynGroup, DynChannel, DynChannelMember, RoleVoiceLink
 from .permissions import VoiceChannelPermission
+from .settings import VoiceChannelSettings
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog, send_alert
 
@@ -180,22 +181,28 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         names = getenv("VOICE_CHANNEL_NAMES", "*")
         if names == "*":
-            names = [file.name.removesuffix(".txt") for file in Path(__file__).parent.joinpath("names").iterdir()]
+            name_lists = [file.name.removesuffix(".txt") for file in Path(__file__).parent.joinpath("names").iterdir()]
         else:
-            names = names.split(",")
+            name_lists = names.split(",")
 
-        self.names: set[str] = set()
-        for name_list in names:
+        self.names: dict[str, set[str]] = {}
+        for name_list in name_lists:
+            self.names[name_list] = set()
             with Path(__file__).parent.joinpath(f"names/{name_list}.txt").open() as file:
                 for name in file.readlines():
                     if name := name.strip():
-                        self.names.add(name)
+                        self.names[name_list].add(name)
 
     def prepare(self) -> bool:
         return bool(self.names)
 
-    def _random_channel_name(self, avoid: set[str]) -> Optional[str]:
-        allowed = list({*self.names} - avoid)
+    def _get_name_list(self, guild_id: int) -> str:
+        r = random.Random(f"{guild_id}{datetime.utcnow().date().isoformat()}")
+        return r.choice(sorted(self.names))
+
+    def _random_channel_name(self, guild_id: int, avoid: set[str]) -> Optional[str]:
+        names = self.names[self._get_name_list(guild_id)]
+        allowed = list({*names} - avoid)
         if allowed and random.randrange(100):
             return random.choice(allowed)
 
@@ -204,7 +211,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         return random.shuffle(b) or next((e for d in b if (e := a[d::c].strip()) not in avoid), None)
 
     async def get_channel_name(self, guild: Guild) -> str:
-        return self._random_channel_name({channel.name for channel in guild.voice_channels})
+        return self._random_channel_name(guild.id, {channel.name for channel in guild.voice_channels})
 
     async def is_teamler(self, member: Member) -> bool:
         return any(
@@ -481,6 +488,30 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         for member, (add, remove) in role_changes.items():
             asyncio.create_task(update_roles(member, add=add, remove=remove))
+
+        try:
+            self.vc_loop.start()
+        except RuntimeError:
+            self.vc_loop.restart()
+
+    @tasks.loop(minutes=10)
+    @db_wrapper
+    async def vc_loop(self):
+        guild: Guild = self.bot.guilds[0]
+        name_list: str = self._get_name_list(guild.id)
+        if await VoiceChannelSettings.name_list.get() == name_list:
+            return
+
+        await VoiceChannelSettings.name_list.set(name_list)
+        channel: DynChannel
+        async for channel in await db.stream(select(DynChannel)):
+            voice_channel: Optional[VoiceChannel] = guild.get_channel(channel.channel_id)
+            if not voice_channel:
+                await db.delete(channel)
+                continue
+
+            if not voice_channel.members:
+                asyncio.create_task(voice_channel.edit(name=await self.get_channel_name(guild)))
 
     async def lock_channel(self, member: Member, channel: DynChannel, voice_channel: VoiceChannel, *, hide: bool):
         locked = channel.locked
