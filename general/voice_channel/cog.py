@@ -5,7 +5,6 @@ from os import getenv
 from pathlib import Path
 from typing import Optional, Union
 
-import yaml
 from discord import (
     VoiceChannel,
     Embed,
@@ -47,7 +46,6 @@ from ...pubsub import send_to_changelog, send_alert
 
 tg = t.g
 t = t.voice_channel
-
 
 Overwrites = dict[Union[Member, Role], PermissionOverwrite]
 
@@ -180,11 +178,18 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         self._channel_lock = MultiLock()
         self._recent_kicks: set[tuple[Member, VoiceChannel]] = set()
 
-        names = map(str.lower, getenv("VOICE_CHANNEL_NAMES", "elements").split(","))
+        names = getenv("VOICE_CHANNEL_NAMES", "*")
+        if names == "*":
+            names = [file.name.removesuffix(".txt") for file in Path(__file__).parent.joinpath("names").iterdir()]
+        else:
+            names = names.split(",")
+
         self.names: set[str] = set()
-        for name in names:
-            with Path(__file__).parent.joinpath(f"names/{name}.yml").open() as file:
-                self.names.update(yaml.safe_load(file))
+        for name_list in names:
+            with Path(__file__).parent.joinpath(f"names/{name_list}.txt").open() as file:
+                for name in file.readlines():
+                    if name := name.strip():
+                        self.names.add(name)
 
     def prepare(self) -> bool:
         return bool(self.names)

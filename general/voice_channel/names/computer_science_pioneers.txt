@@ -1,0 +1,82 @@
+Franz Alt
+Marc Andreessen
+John Atanasoff
+Charles Babbage
+John W. Backus
+Rudolf Bayer
+Andreas von Bechtolsheim
+Alexander Graham Bell
+Tim Berners-Lee
+Clifford Berry
+Barry W. Boehm
+George Boole
+Karlheinz Brandenburg
+Vannevar Bush
+Peter Chen
+Noam Chomsky
+Edgar F. Codd
+Stephen A. Cook
+Fernando José Corbató
+Seymour Cray
+Ole-Johan Dahl
+Edsger W. Dijkstra
+John Presper Eckert
+Douglas C. Engelbart
+Michael Fagan
+Christiane Floyd
+Jay Wright Forrester
+Erich Gamma
+Wolfgang Giloi
+Kurt Gödel
+Marcel J. E. Golay
+Emanuel Goldberg
+Charles F. Goldfarb
+James Gosling
+John Guttag
+Richard Hamming
+Ralph Hartley
+Tony Hoare
+Herman Hollerith
+Grace Hopper
+David A. Huffman
+Bill Joy
+Alan Kay
+Brian W. Kernighan
+Alonzo Church
+Donald E. Knuth
+Lawrence Landweber
+Nikolaus Joachim Lehmann
+Gottfried Wilhelm Leibniz
+J. C. R. Licklider
+Marvin Lee Minsky
+John William Mauchly
+Frieder Nake
+John von Neumann
+Heinz Nixdorf
+Harry Nyquist
+Ada Lovelace
+Ken Olsen
+Pier Giorgio Perotto
+Carl Adam Petri
+Dennis Ritchie
+Claude Shannon
+Richard Stallman
+Karl Steinbuch
+Ivan Sutherland
+Bjarne Stroustrup
+Andrew S. Tanenbaum
+Ken Thompson
+Ray Tomlinson
+Linus Torvalds
+Alan Turing
+An Wang
+Mark Weiser
+Joseph Weizenbaum
+Adriaan van Wijngaarden
+Niklaus Wirth
+Heinz Zemanek
+Konrad Zuse
+Corrado Böhm
+Guido van Rossum
+Joan Daemen
+Vincent Rijmen
