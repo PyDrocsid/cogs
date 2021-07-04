@@ -45,7 +45,6 @@ VList
 Conc-tree list
 Xor linked list
 Zipper
-Doubly connected edge list
 Difference list
 Free list
 AA tree
@@ -54,14 +53,11 @@ Binary search tree
 Binary tree
 Cartesian tree
 Conc-tree list
-Left-child right-sibling binary tree
 Order statistic tree
 Pagoda
-Randomized binary search tree
 Red–black tree
 Rope
 Scapegoat tree
-Self-balancing binary search tree
 Splay tree
 T-tree
 Tango tree
@@ -149,10 +145,8 @@ Cover tree
 M-tree
 VP-tree
 BK-tree
-Bounding interval hierarchy
 Bounding volume hierarchy
 BSP tree
-Rapidly exploring random tree
 Abstract syntax tree
 Parse tree
 Decision tree
@@ -167,7 +161,6 @@ Bloom filter
 Count–min sketch
 Distributed hash table
 Double hashing
-Dynamic perfect hash table
 Hash array mapped trie
 Hash list
 Hash table
@@ -186,11 +179,9 @@ Graph-structured stack
 Scene graph
 Decision tree
 Binary decision diagram
-Zero-suppressed decision diagram
 And-inverter graph
 Directed graph
 Directed acyclic graph
-Propositional directed acyclic graph
 Multigraph
 Hypergraph
 Lightmap

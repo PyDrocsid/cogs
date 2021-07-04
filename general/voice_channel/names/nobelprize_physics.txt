@@ -11,7 +11,6 @@ Albert Abraham Michelson
 Gabriel Lippmann
 Karl Ferdinand Braun
 Guglielmo Marconi
-Johannes Diderik van der Waals
 Wilhelm Wien
 Gustaf Dalén
 Heike Kamerlingh Onnes
@@ -30,7 +29,6 @@ James Franck
 Gustav Ludwig Hertz
 Jean Baptiste Perrin
 Arthur Compton
-Charles Thomson Rees Wilson
 Owen Willans Richardson
 Louis de Broglie
 C. V. Raman
@@ -119,7 +117,6 @@ Nicolaas Bloembergen
 Arthur Leonard Schawlow
 Kai Siegbahn
 Kenneth G. Wilson
-Subrahmanyan Chandrasekhar
 William Alfred Fowler
 Carlo Rubbia
 Simon van der Meer
@@ -166,7 +163,6 @@ Carl Wieman
 Raymond Davis, Jr.
 Masatoshi Koshiba
 Riccardo Giacconi
-Alexei Alexeyevich Abrikosov
 Vitaly Ginzburg
 Anthony James Leggett
 David Gross
