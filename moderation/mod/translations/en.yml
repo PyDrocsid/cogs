@@ -36,6 +36,9 @@ image_link: "{} [[Go to image]]({})"
 no_dm: ":warning: User does not allow direct messages."
 reason_too_long: "Reason is too long. :pencil:"
 invalid_duration_inf: Invalid duration. Try `inf` instead.
+confirmation: Edit confirmation
+edit_canceled: ":x: Edit canceled"
+edit_confirmed: ":white_check_mark: Edit confirmed"
 
 report: ":speech_balloon: Report"
 cannot_report: This member cannot be reported.
@@ -50,6 +53,11 @@ warned:
   no_evidence: "{} just warned you on {}:```\n{}\n```"
 warned_response: "User warned successfully :white_check_mark:"
 log_warned: ":warning: Member warned"
+no_warn: No warn with this ID could be found
+confirm_warn_edit: "Are you sure you want to change this warns reason from ```\n{}\n```to```\n{}\n```?"
+warn_edited: "The warn reason has been changed from ```\n{}\n```to```\n{}\n```"
+warn_edited_response: ":white_check_mark: The warn reason has been edited"
+log_warn_edited: ":warning: Warn edited"
 
 mute: ":mute: Mute"
 unmute: ":loud_sound: Mute"

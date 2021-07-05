@@ -56,6 +56,12 @@ class Warn(db.Base):
         await db.add(row)
         return row
 
+    @staticmethod
+    async def edit(warn_id: int, mod: int, new_reason: str):
+        row = await db.get(Warn, id=warn_id)
+        row.mod = mod
+        row.reason = new_reason
+
 
 class Mute(db.Base):
     __tablename__ = "mute"

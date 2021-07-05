@@ -14,12 +14,13 @@ from discord.ext.commands import (
 )
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, UserCommandError
+from PyDrocsid.command import reply, UserCommandError, confirm
 from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
+from PyDrocsid.config import Config
 from .colors import Colors
 from .models import Mute, Ban, Report, Warn, Kick
 from .permissions import ModPermission
@@ -95,6 +96,16 @@ def show_evidence(evidence: Optional[str]) -> str:
     if evidence:
         return t.ulog.evidence(evidence)
     return ""
+
+
+async def compare_mod_level(mod1: Member, mod2: Member) -> bool:
+    print(mod1)
+    print(mod2)
+
+    lvl1 = await Config.PERMISSION_LEVELS.get_permission_level(mod1)
+    lvl2 = await Config.PERMISSION_LEVELS.get_permission_level(mod2)
+
+    return lvl1.level > lvl2.level or mod1 == mod1.guild.owner
 
 
 async def send_to_changelog_mod(
@@ -515,6 +526,57 @@ class ModCog(Cog, name="Mod Tools"):
         await Warn.create(user.id, str(user), ctx.author.id, reason, evidence.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason, evidence=evidence)
+
+    @commands.command()
+    @ModPermission.warn.check
+    @guild_only()
+    async def edit_warn(self, ctx: Context, warn_id: int, *, reason: str):
+        """
+        edit a warn
+        get the warn id from the users user log
+        """
+
+        warn = await db.get(Warn, id=warn_id)
+        if warn is None:
+            raise CommandError(t.no_warn)
+
+        if not await compare_mod_level(ctx.author, ctx.guild.get_member(warn.mod)):
+            raise CommandError(tg.permission_denied)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_warn_edit(warn.reason, reason),
+            color=Colors.ModTools
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        await Warn.edit(warn_id, ctx.author.id, reason)
+
+        user = self.bot.get_user(warn.member)
+
+        user_embed = Embed(
+            title=t.warn,
+            description=t.warn_edited(warn.reason, reason),
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(title=t.warn, description=t.warn_edited_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warn_edited, user, reason)
 
     @commands.command()
     @ModPermission.mute.check
