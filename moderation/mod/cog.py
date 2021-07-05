@@ -99,9 +99,6 @@ def show_evidence(evidence: Optional[str]) -> str:
 
 
 async def compare_mod_level(mod1: Member, mod2: Member) -> bool:
-    print(mod1)
-    print(mod2)
-
     lvl1 = await Config.PERMISSION_LEVELS.get_permission_level(mod1)
     lvl2 = await Config.PERMISSION_LEVELS.get_permission_level(mod2)
 
