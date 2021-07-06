@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 import discord
 from PyDrocsid.cog import Cog
@@ -36,7 +37,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
         embed = Embed(title=t.auto_delete_messages, colour=Colors.AutoDeleteMessages)
         out = []
         for auto_delete in await AutoDeleteMessage.all():
-            channel = self.bot.get_channel(auto_delete.channel)
+            channel: Optional[TextChannel] = self.bot.get_channel(auto_delete.channel)
             if not channel:
                 continue
             out.append(f"<#{auto_delete.channel}>: {auto_delete.minutes}")
