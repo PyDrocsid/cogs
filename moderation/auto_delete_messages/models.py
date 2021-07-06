@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from typing import Union
 
-from PyDrocsid.database import db, db_wrapper, select
+from PyDrocsid.database import db
+from PyDrocsid.database import select
 from sqlalchemy import Column, Integer, BigInteger
 
 
@@ -15,7 +18,7 @@ class AutoDeleteMessage(db.Base):
         return [adm async for adm in await db.stream(select(AutoDeleteMessage))]
 
     @staticmethod
-    async def create(channel: int, minutes: int):
+    async def create(channel: int, minutes: int) -> AutoDeleteMessage:
         row = AutoDeleteMessage(channel=channel, minutes=minutes)
         await db.add(row)
         return row
