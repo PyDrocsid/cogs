@@ -14,10 +14,6 @@ class AutoDeleteMessage(db.Base):
     minutes: Union[Column, int] = Column(Integer)
 
     @staticmethod
-    async def all() -> list[int]:
-        return [adm async for adm in await db.stream(select(AutoDeleteMessage))]
-
-    @staticmethod
     async def create(channel: int, minutes: int) -> AutoDeleteMessage:
         row = AutoDeleteMessage(channel=channel, minutes=minutes)
         await db.add(row)
