@@ -18,8 +18,7 @@ Required Permissions:
 
 ## `add`
 
-The `add` subcommand sets the media-only flag for a given text channel. 
-The "*/commands*" (slash-commands) are ignored by the bot, so they have to be disabled manually
+The `add` subcommand sets the media-only flag for a given text channel. The "*/commands*" (slash-commands) are ignored by the bot, so they have to be disabled manually
 
 ```css
 .mediaonly [add|a|+] <channel>
