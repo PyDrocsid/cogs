@@ -23,10 +23,10 @@ t = t.auto_delete_messages
 class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
 
-    @guild_only()
     @commands.group(aliases=["adm"])
-    @docs(t.commands.auto_delete_messages)
+    @guild_only()
     @AutoDeleteMessagesPermission.read.check
+    @docs(t.commands.auto_delete_messages)
     async def auto_delete_messages(self, ctx: Context):
         if ctx.subcommand_passed is not None:
             if ctx.invoked_subcommand is None:
@@ -67,9 +67,9 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
     async def on_ready(self):
         await self.start_loop(1)
 
-    @auto_delete_messages.command(aliases=["add"])
-    @docs(t.commands.add_channel)
     @AutoDeleteMessagesPermission.write.check
+    @docs(t.commands.add_channel)
+    @auto_delete_messages.command(aliases=["add"])
     async def set_channel_ttl(self, ctx: Context, channel: TextChannel, minutes: int):
         if minutes <= 0:
             raise CommandError(t.negative_value)
