@@ -23,17 +23,15 @@ EMOJIS = {
 
 
 class RemindMeCog(Cog, name="RemindMe"):
-    """
-    Adds a "Remind Me"-functionality by sending the user a message they reacted on.
-    """
+    """Add a "Remind Me"-functionality by sending the user a message they reacted on."""
 
     CONTRIBUTORS = [Contributor.Tristan]
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
         """
-        Checks, if the reaction is in a list of set emojis. If so, the message is sent via private message.
-        Removes the user reaction, if the user does not accept private messages.
-        Sends an alert in case of missing permissions.
+        Check, if the reaction is in a list of set emojis. If so, the message is sent as a direct message to the user.
+        Remove the user reaction, if the user does not accept direct messages.
+        Send an alert in case of missing permissions.
         """
 
         if message.guild is None and str(emoji) == name_to_emoji["wastebasket"] and message.author == self.bot.user:
