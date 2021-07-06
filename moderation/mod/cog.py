@@ -11,6 +11,7 @@ from discord.ext.commands import (
     CommandError,
     Converter,
     BadArgument,
+    UserInputError,
 )
 
 from PyDrocsid.cog import Cog
@@ -673,6 +674,65 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
+
+    @commands.group()
+    @ModPermission.mute.check
+    @guild_only()
+    async def edit_mute(self, ctx):
+        if ctx.invoked_subcommand is None:
+            raise UserInputError
+
+    @edit_mute.command(name="reason")
+    async def edit_mute_reason(self, ctx: Context, mute_id: int, *, reason: str):
+        """
+        edit a mute
+        get the mute id from the users user log
+        """
+
+        mute = await db.get(Mute, id=mute_id)
+        if mute is None:
+            raise CommandError(t.no_warn)
+
+        if not await compare_mod_level(ctx.author, ctx.guild.get_member(mute.mod)):
+            raise CommandError(tg.permission_denied)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_mute_edit.reason(mute.reason, reason),
+            color=Colors.ModTools
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        await Mute.edit(mute_id, ctx.author.id, reason)
+
+        user = self.bot.get_user(mute.member)
+
+        user_embed = Embed(
+            title=t.warn,
+            description=t.mute_edited.reason(mute.reason, reason),
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.mute, t.log_mute_edited, user, reason)
+
+
+
 
     @commands.command()
     @ModPermission.mute.check

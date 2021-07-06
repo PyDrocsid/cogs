@@ -76,6 +76,12 @@ log_unmuted_expired: "Unmuted automatically because the mute time for this user 
 unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
+confirm_mute_edit:
+  reason: "Are you sure you want to change this mutes reason from ```\n{}\n```to```\n{}\n```?"
+mute_edited:
+  reason: "The mute reason has been changed from ```\n{}\n```to```\n{}\n```"
+mute_edited_response: ":white_check_mark: The mute reason has been edited"
+log_mute_edited: ":mute: Mute edited"
 
 kick: ":x: Kick"
 kicked:

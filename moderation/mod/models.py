@@ -115,6 +115,16 @@ class Mute(db.Base):
         mute = await Mute.deactivate(ban_id, mod)
         mute.upgraded = True
 
+    @staticmethod
+    async def edit(mute_id: int, mod: int, new_reason: Optional[str] = None, new_duration: Optional[int] = None):
+        row = await db.get(Mute, id=mute_id)
+        row.mod = mod
+
+        if new_reason:
+            row.reason = new_reason
+        if new_duration:
+            row.minutes = new_duration
+
 
 class Kick(db.Base):
     __tablename__ = "kick"
