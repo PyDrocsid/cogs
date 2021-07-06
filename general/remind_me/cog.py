@@ -22,9 +22,9 @@ EMOJIS = {
 
 
 async def remove_member_reaction(emoji, member, message):
-    """Remove the 'RemindMe-Reaction' from a member, if he does not allow private messages."""
+    """Remove the RemindMe reaction from a member, if they do not allow private messages."""
     try:
-        await message.remove_member_reaction(emoji, member)
+        await message.remove_reaction(emoji, member)
         return
     except Forbidden:
         await send_alert(message.guild, t.cannot_send(message.jump_url))
@@ -32,7 +32,7 @@ async def remove_member_reaction(emoji, member, message):
 
 
 class RemindMeCog(Cog, name="RemindMe"):
-    """Add a "Remind Me"-functionality by sending the user a message they reacted on."""
+    """Add a "Remind Me"-functionality by sending the user a copy of the message they reacted on."""
 
     CONTRIBUTORS = [Contributor.Tristan]
 
