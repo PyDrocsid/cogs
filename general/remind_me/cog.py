@@ -4,7 +4,6 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
-from PyDrocsid.util import check_wastebasket
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
@@ -20,6 +19,16 @@ EMOJIS = {
     name_to_emoji["envelope_with_arrow"],
     name_to_emoji["floppy_disk"],
 }
+
+
+async def remove_member_reaction(emoji, member, message):
+    """Remove the 'RemindMe-Reaction' from a member, if he does not allow private messages."""
+    try:
+        await message.remove_member_reaction(emoji, member)
+        return
+    except Forbidden:
+        await send_alert(message.guild, t.cannot_send(message.jump_url))
+        return
 
 
 class RemindMeCog(Cog, name="RemindMe"):
@@ -41,6 +50,14 @@ class RemindMeCog(Cog, name="RemindMe"):
         if str(emoji) not in EMOJIS or member.bot or message.guild is None:
             return
 
+        if message.attachments:
+            try:
+                message_to_user = await member.send("\n".join(attachment.url for attachment in message.attachments))
+                await message_to_user.add_reaction(name_to_emoji["wastebasket"])
+            except Forbidden:
+                return await remove_member_reaction(emoji, member, message)
+
+
         embed = message.embeds[0] if message.embeds else None
 
         if message.content or embed:
@@ -48,7 +65,4 @@ class RemindMeCog(Cog, name="RemindMe"):
                 message_to_user = await member.send(message.content, embed=embed)
                 await message_to_user.add_reaction(name_to_emoji["wastebasket"])
             except Forbidden:
-                try:
-                    await message.remove_reaction(emoji, member)
-                except Forbidden:
-                    await send_alert(message.guild, t.cannot_send(message.jump_url))
+                return await remove_member_reaction(emoji, member, message)
