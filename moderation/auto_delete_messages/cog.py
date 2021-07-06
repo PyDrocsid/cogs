@@ -4,6 +4,7 @@ import discord
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
 from PyDrocsid.database import db, select, db_wrapper
+from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from discord import TextChannel, Forbidden, Embed
 from discord.ext import commands, tasks
@@ -12,7 +13,7 @@ from discord.ext.commands import Context, UserInputError, guild_only, CommandErr
 from .models import AutoDeleteMessage
 from .permissions import AutoDeleteMessagesPermission
 from ...contributor import Contributor
-from ...pubsub import send_alert
+from ...pubsub import send_alert, send_to_changelog
 from .colors import Colors
 
 tg = t.g
@@ -77,6 +78,8 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
             await AutoDeleteMessage.create(channel.id, minutes)
         else:
             row.minutes = minutes
+        await send_to_changelog(ctx.guild, t.channel_added(channel.name))
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @auto_delete_messages.command(aliases=["rm"])
     @docs(t.commands.remove_channel)
@@ -86,6 +89,8 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
         if not row:
             raise CommandError(t.no_rule)
         await db.delete(row)
+        await send_to_changelog(ctx.guild, t.channel_removed(channel.name))
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     async def start_loop(self, interval):
         self.delete_old_messages_loop.cancel()
