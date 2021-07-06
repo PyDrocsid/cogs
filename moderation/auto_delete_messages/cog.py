@@ -66,7 +66,10 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
                         await send_alert(message.guild, t.not_deleted(channel.name))
 
     async def on_ready(self):
-        await self.start_loop(1)
+        try:
+            self.delete_old_messages_loop.start()
+        except RuntimeError:
+            self.delete_old_messages_loop.restart()
 
     @AutoDeleteMessagesPermission.write.check
     @docs(t.commands.add_channel)
