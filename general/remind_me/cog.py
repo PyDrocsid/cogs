@@ -57,7 +57,6 @@ class RemindMeCog(Cog, name="RemindMe"):
             except Forbidden:
                 return await remove_member_reaction(emoji, member, message)
 
-
         embed = message.embeds[0] if message.embeds else None
 
         if message.content or embed:
