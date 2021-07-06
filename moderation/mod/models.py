@@ -78,12 +78,12 @@ class Mute(db.Base):
     deactivation_timestamp: Union[Column, Optional[datetime]] = Column(DateTime, nullable=True)
     unmute_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
     unmute_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
-    upgraded: Union[Column, bool] = Column(Boolean, default=False)
-    is_upgrade: Union[Column, bool] = Column(Boolean)
+    updated: Union[Column, bool] = Column(Boolean, default=False)
+    is_update: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
     async def create(member: int, member_name: str, mod: int, minutes: int, reason: str,
-                     evidence: Optional[str], is_upgrade: bool = False) -> Mute:
+                     evidence: Optional[str], is_update: bool = False) -> Mute:
         row = Mute(
             member=member,
             member_name=member_name,
@@ -96,7 +96,7 @@ class Mute(db.Base):
             deactivation_timestamp=None,
             unmute_mod=None,
             unmute_reason=None,
-            is_upgrade=is_upgrade,
+            is_update=is_update,
         )
         await db.add(row)
         return row
@@ -111,19 +111,17 @@ class Mute(db.Base):
         return row
 
     @staticmethod
-    async def upgrade(ban_id: int, mod: int):
+    async def update(ban_id: int, mod: int):
         mute = await Mute.deactivate(ban_id, mod)
-        mute.upgraded = True
+        mute.updated = True
 
     @staticmethod
-    async def edit(mute_id: int, mod: int, new_reason: Optional[str] = None, new_duration: Optional[int] = None):
+    async def edit(mute_id: int, mod: int, new_reason: str):
         row = await db.get(Mute, id=mute_id)
         row.mod = mod
 
         if new_reason:
             row.reason = new_reason
-        if new_duration:
-            row.minutes = new_duration
 
 
 class Kick(db.Base):

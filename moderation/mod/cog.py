@@ -299,8 +299,8 @@ class ModCog(Cog, name="Mod Tools"):
 
         mute: Mute
         async for mute in await db.stream(filter_by(Mute, member=user_id)):
-            if mute.is_upgrade:
-                text = t.ulog.muted.upgrade
+            if mute.is_update:
+                text = t.ulog.muted.update
                 mute.evidence = None
             else:
                 text = t.ulog.muted.first
@@ -340,7 +340,7 @@ class ModCog(Cog, name="Mod Tools"):
                         )
                     )
 
-            if not mute.active and not mute.upgraded:
+            if not mute.active and not mute.updated:
                 if mute.unmute_mod is None:
                     out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
                 else:
@@ -541,6 +541,9 @@ class ModCog(Cog, name="Mod Tools"):
         if not await compare_mod_level(ctx.author, ctx.guild.get_member(warn.mod)):
             raise CommandError(tg.permission_denied)
 
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
         conf_embed = Embed(
             title=t.confirmation,
             description=t.confirm_warn_edit(warn.reason, reason),
@@ -583,7 +586,7 @@ class ModCog(Cog, name="Mod Tools"):
         """
         mute a user
         time format: `ymwdhn`
-        set days to `inf` for a permanent mute
+        set time to `inf` for a permanent mute
         """
 
         user: Union[Member, User]
@@ -604,13 +607,8 @@ class ModCog(Cog, name="Mod Tools"):
             await user.move_to(None)
 
         active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
-        for mute in active_mutes:
-            if mute.minutes == -1:
-                raise UserCommandError(user, t.already_muted)
-
-            ts = mute.timestamp + timedelta(minutes=mute.minutes)
-            if minutes is not None and datetime.utcnow() + timedelta(minutes=minutes) <= ts:
-                raise UserCommandError(user, t.already_muted)
+        if active_mutes:
+            raise UserCommandError(user, t.already_muted)
 
         if attachments := ctx.message.attachments:
             evidence = attachments[0]
@@ -619,15 +617,12 @@ class ModCog(Cog, name="Mod Tools"):
             evidence = None
             evidence_url = None
 
-        for mute in active_mutes:
-            await Mute.upgrade(mute.id, ctx.author.id)
-
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if minutes is not None:
-            await Mute.create(user.id, str(user), ctx.author.id, minutes, reason, evidence_url, bool(active_mutes))
+            await Mute.create(user.id, str(user), ctx.author.id, minutes, reason, evidence_url)
             if evidence:
                 user_embed.description = t.muted.evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
                                                           reason, t.image_link(evidence.filename, evidence_url),
@@ -648,7 +643,7 @@ class ModCog(Cog, name="Mod Tools"):
                 evidence=evidence,
             )
         else:
-            await Mute.create(user.id, str(user), ctx.author.id, -1, reason, evidence_url, bool(active_mutes))
+            await Mute.create(user.id, str(user), ctx.author.id, -1, reason, evidence_url)
             if evidence:
                 user_embed.description = t.muted_inf.evidence(ctx.author.mention, ctx.guild.name, reason,
                                                               t.image_link(evidence.filename, evidence_url),
@@ -679,6 +674,10 @@ class ModCog(Cog, name="Mod Tools"):
     @ModPermission.mute.check
     @guild_only()
     async def edit_mute(self, ctx):
+        """
+        edit a mute
+        """
+
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
@@ -691,10 +690,13 @@ class ModCog(Cog, name="Mod Tools"):
 
         mute = await db.get(Mute, id=mute_id)
         if mute is None:
-            raise CommandError(t.no_warn)
+            raise CommandError(t.no_mute)
 
         if not await compare_mod_level(ctx.author, ctx.guild.get_member(mute.mod)):
             raise CommandError(tg.permission_denied)
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
 
         conf_embed = Embed(
             title=t.confirmation,
@@ -716,7 +718,7 @@ class ModCog(Cog, name="Mod Tools"):
         user = self.bot.get_user(mute.member)
 
         user_embed = Embed(
-            title=t.warn,
+            title=t.mute,
             description=t.mute_edited.reason(mute.reason, reason),
             colour=Colors.ModTools,
         )
@@ -730,6 +732,91 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.mute, t.log_mute_edited, user, reason)
+
+    @edit_mute.command(name="duration")
+    async def edit_mute_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
+        """
+        edit a mute duration
+        time format: `ymwdhn`
+        set time to `inf` for a permanent mute
+        """
+
+        user: Union[Member, User]
+        time: Optional[int]
+        minutes = time
+
+        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
+
+        if not active_mutes:
+            raise CommandError(t.not_muted)
+
+        mute = sorted(active_mutes, key=lambda active_mute: active_mute.timestamp)[0]
+
+        if not await compare_mod_level(ctx.author, ctx.guild.get_member(mute.mod)):
+            raise CommandError(tg.permission_denied)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            color=Colors.ModTools,
+        )
+
+        if minutes is None:
+            conf_embed.description = t.confirm_mute_edit.duration(time_to_units(mute.minutes), t.infinity)
+        else:
+            conf_embed.description = t.confirm_mute_edit.duration(time_to_units(mute.minutes), time_to_units(minutes))
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        for mute in active_mutes:
+            await Mute.update(mute.id, ctx.author.id)
+
+        user_embed = Embed(
+            title=t.mute,
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        if minutes is not None:
+            await Mute.create(user.id, str(user), ctx.author.id, minutes, mute.reason, mute.evidence, True)
+            user_embed.description = t.mute_edited.duration(time_to_units(mute.minutes), time_to_units(minutes))
+            await send_to_changelog_mod(
+                ctx.guild,
+                ctx.message,
+                Colors.mute,
+                t.log_mute_edited,
+                user,
+                mute.reason,
+                duration=time_to_units(minutes),
+            )
+
+        else:
+            await Mute.create(user.id, str(user), ctx.author.id, -1, mute.reason, mute.evidence, True)
+            user_embed.description = t.mute_edited.duration(time_to_units(mute.minutes), t.infinity)
+            await send_to_changelog_mod(
+                ctx.guild,
+                ctx.message,
+                Colors.mute,
+                t.log_mute_edited,
+                user, mute.reason,
+                duration=t.log_field.infinity,
+            )
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
+
+
 
 
 

@@ -39,6 +39,7 @@ invalid_duration_inf: Invalid duration. Try `inf` instead.
 confirmation: Edit confirmation
 edit_canceled: ":x: Edit canceled"
 edit_confirmed: ":white_check_mark: Edit confirmed"
+infinity: Permanent
 
 report: ":speech_balloon: Report"
 cannot_report: This member cannot be reported.
@@ -76,10 +77,13 @@ log_unmuted_expired: "Unmuted automatically because the mute time for this user 
 unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
+no_mute: No mute with this ID could be found
 confirm_mute_edit:
   reason: "Are you sure you want to change this mutes reason from ```\n{}\n```to```\n{}\n```?"
+  duration: "Are you sure you want to change the mute duration from ```\n{}\n```to```\n{}\n```?"
 mute_edited:
   reason: "The mute reason has been changed from ```\n{}\n```to```\n{}\n```"
+  duration: "The mute duration has been changed from ```\n{}\n```to```\n{}\n```"
 mute_edited_response: ":white_check_mark: The mute reason has been edited"
 log_mute_edited: ":mute: Mute edited"
 
@@ -146,13 +150,13 @@ ulog:
       inf:
         id_off: ":mute: **Muted** permanently by {} because of `{}`{}"
         id_on: ":mute: **Muted** permanently by {} because of `{}`\n`(ID: {})`{}"
-    upgrade:
+    update:
       temp:
-        id_off: ":mute: **Mute upgraded** by {} to {} because of `{}`"
-        id_on: ":mute: **Mute upgraded** by {} to {} because of `{}`\n`(ID: {})`"
+        id_off: ":mute: **Mute updated** by {} to {} because of `{}`"
+        id_on: ":mute: **Mute updated** by {} to {} because of `{}`\n`(ID: {})`"
       inf:
-        id_off: ":mute: **Mute upgraded** to permanent by {} because of `{}`"
-        id_on: ":mute: **Mute upgraded** to permanent by {} because of `{}`\n`(ID: {})`"
+        id_off: ":mute: **Mute updated** to permanent by {} because of `{}`"
+        id_on: ":mute: **Mute updated** to permanent by {} because of `{}`\n`(ID: {})`"
   unmuted:
     id_off: ":loud_sound: **Unmuted** by {} because of `{}`"
     id_on: ":loud_sound: **Unmuted** by {} because of `{}`\n`(ID: {})`"
