@@ -27,10 +27,8 @@ async def remove_member_reaction(emoji, member, message):
     """Remove the RemindMe reaction from a member, if they do not allow private messages."""
     try:
         await message.remove_reaction(emoji, member)
-        return
     except Forbidden:
         await send_alert(message.guild, t.cannot_send(message.jump_url, message.channel.mention))
-        return
 
 
 class RemindMeCog(Cog, name="RemindMe"):
@@ -57,7 +55,8 @@ class RemindMeCog(Cog, name="RemindMe"):
                 message_to_user = await member.send("\n".join(attachment.url for attachment in message.attachments))
                 await message_to_user.add_reaction(WASTEBASKET)
             except Forbidden:
-                return await remove_member_reaction(emoji, member, message)
+                await remove_member_reaction(emoji, member, message)
+                return
 
         embed = message.embeds[0] if message.embeds else None
 
@@ -66,4 +65,4 @@ class RemindMeCog(Cog, name="RemindMe"):
                 message_to_user = await member.send(message.content, embed=embed)
                 await message_to_user.add_reaction(WASTEBASKET)
             except Forbidden:
-                return await remove_member_reaction(emoji, member, message)
+                await remove_member_reaction(emoji, member, message)
