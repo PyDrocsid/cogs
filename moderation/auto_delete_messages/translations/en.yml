@@ -15,3 +15,8 @@ auto_delete_messages: AutoDeleteMessages
 no_auto_delete_message: It seems that no channel was configured for automatic deletion
 channel_removed: The channel `{}` has been removed from the automatic deletion
 channel_added: The channel `{}` has been added for the automatic deletion
+
+channels:
+  one: "Channel <#{}>: {cnt} minute"
+  many: "Channel <#{}>: {cnt} minutes"
+

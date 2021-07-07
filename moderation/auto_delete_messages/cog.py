@@ -40,7 +40,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
             channel: Optional[TextChannel] = self.bot.get_channel(auto_delete.channel)
             if not channel:
                 continue
-            out.append(f"<#{auto_delete.channel}>: {auto_delete.minutes}")
+            out.append(t.channels(auto_delete.channel, cnt=auto_delete.minutes))
         if not out:
             embed.description = t.no_auto_delete_message
             embed.colour = Colors.error
