@@ -148,6 +148,12 @@ class Kick(db.Base):
         await db.add(row)
         return row
 
+    @staticmethod
+    async def edit(kick_id: int, mod: int, new_reason: str):
+        row = await db.get(Kick, id=kick_id)
+        row.mod = mod
+        row.reason = new_reason
+
 
 class Ban(db.Base):
     __tablename__ = "ban"

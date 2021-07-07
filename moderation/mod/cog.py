@@ -684,7 +684,7 @@ class ModCog(Cog, name="Mod Tools"):
     @edit_mute.command(name="reason")
     async def edit_mute_reason(self, ctx: Context, mute_id: int, *, reason: str):
         """
-        edit a mute
+        edit a mute reason
         get the mute id from the users user log
         """
 
@@ -816,11 +816,6 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
 
-
-
-
-
-
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
@@ -911,6 +906,60 @@ class ModCog(Cog, name="Mod Tools"):
         await revoke_verification(member)
 
         await reply(ctx, embed=server_embed)
+
+    @commands.command()
+    @ModPermission.warn.check
+    @guild_only()
+    async def edit_kick(self, ctx: Context, kick_id: int, *, reason: str):
+        """
+        edit a kick
+        get the kick id from the users user log
+        """
+
+        kick = await db.get(Kick, id=kick_id)
+        if kick is None:
+            raise CommandError(t.no_kick)
+
+        if not await compare_mod_level(ctx.author, ctx.guild.get_member(kick.mod)):
+            raise CommandError(tg.permission_denied)
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_kick_edit(kick.reason, reason),
+            color=Colors.ModTools
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        await Kick.edit(kick_id, ctx.author.id, reason)
+
+        user = self.bot.get_user(kick.member)
+
+        user_embed = Embed(
+            title=t.kick,
+            description=t.kick_edited(kick.reason, reason),
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(title=t.kick, description=t.kick_edited_reponse, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kick_edited, user, reason)
 
     @commands.command()
     @ModPermission.ban.check
