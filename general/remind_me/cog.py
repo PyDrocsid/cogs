@@ -1,9 +1,9 @@
-from discord import Message, Member, PartialEmoji, Forbidden
-
 from PyDrocsid.cog import Cog
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
+from discord import Message, Member, PartialEmoji, Forbidden
+
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
@@ -20,6 +20,8 @@ EMOJIS = {
     name_to_emoji["floppy_disk"],
 }
 
+WASTEBASKET = name_to_emoji["wastebasket"]
+
 
 async def remove_member_reaction(emoji, member, message):
     """Remove the RemindMe reaction from a member, if they do not allow private messages."""
@@ -27,7 +29,7 @@ async def remove_member_reaction(emoji, member, message):
         await message.remove_reaction(emoji, member)
         return
     except Forbidden:
-        await send_alert(message.guild, t.cannot_send(message.jump_url))
+        await send_alert(message.guild, t.cannot_send(message.jump_url, message.channel.mention))
         return
 
 
@@ -43,7 +45,7 @@ class RemindMeCog(Cog, name="RemindMe"):
         Send an alert in case of missing permissions.
         """
 
-        if message.guild is None and str(emoji) == name_to_emoji["wastebasket"] and message.author == self.bot.user:
+        if not message.guild and str(emoji) == WASTEBASKET and message.author == self.bot.user != member:
             await message.delete()
             raise StopEventHandling
 
@@ -53,7 +55,7 @@ class RemindMeCog(Cog, name="RemindMe"):
         if message.attachments:
             try:
                 message_to_user = await member.send("\n".join(attachment.url for attachment in message.attachments))
-                await message_to_user.add_reaction(name_to_emoji["wastebasket"])
+                await message_to_user.add_reaction(WASTEBASKET)
             except Forbidden:
                 return await remove_member_reaction(emoji, member, message)
 
@@ -62,6 +64,6 @@ class RemindMeCog(Cog, name="RemindMe"):
         if message.content or embed:
             try:
                 message_to_user = await member.send(message.content, embed=embed)
-                await message_to_user.add_reaction(name_to_emoji["wastebasket"])
+                await message_to_user.add_reaction(WASTEBASKET)
             except Forbidden:
                 return await remove_member_reaction(emoji, member, message)
