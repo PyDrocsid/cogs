@@ -19,8 +19,6 @@ Required Permissions:
 ## `add`
 
 The `add` subcommand sets the media-only flag for a given text channel.
-!!! note
-    - The "*/commands*" (slash-commands) are ignored by the bot, so they have to be disabled manually
 
 ```css
 .mediaonly [add|a|+] <channel>
@@ -34,6 +32,9 @@ Required Permissions:
 
 - `mediaonly.read`
 - `mediaonly.write`
+
+!!! note
+    Responses to [slash commands](https://blog.discord.com/slash-commands-are-here-8db0a385d9e6){target=_blank} are ignored by the bot, so you should disable slash commands manually in media-only channels.
 
 
 ## `remove`
