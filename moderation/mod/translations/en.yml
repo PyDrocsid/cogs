@@ -119,6 +119,15 @@ not_banned: This member is not banned.
 unbanned_response: "User unbanned. :white_check_mark:"
 log_unbanned: ":white_check_mark: Member Unbanned"
 cannot_unban_permissions: User could not be unbanned because I don't have `ban_members` permission on this server.
+no_ban: No ban with this ID could be found
+confirm_ban_edit:
+  reason: "Are you sure you want to change this bans reason from ```\n{}\n```to```\n{}\n```?"
+  duration: "Are you sure you want to change the bans duration from ```\n{}\n```to```\n{}\n```?"
+ban_edited:
+  reason: "The ban reason has been changed from ```\n{}\n```to```\n{}\n```"
+  duration: "The ban duration has been changed from ```\n{}\n```to```\n{}\n```"
+ban_edited_response: ":white_check_mark: The ban reason has been edited"
+log_ban_edited: ":no_entry: Ban edited"
 
 reported_cnt: ":speech_balloon:  Reported"
 warned_cnt: ":warning:  Warned"

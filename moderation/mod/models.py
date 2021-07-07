@@ -119,9 +119,7 @@ class Mute(db.Base):
     async def edit(mute_id: int, mod: int, new_reason: str):
         row = await db.get(Mute, id=mute_id)
         row.mod = mod
-
-        if new_reason:
-            row.reason = new_reason
+        row.reason = new_reason
 
 
 class Kick(db.Base):
@@ -206,3 +204,9 @@ class Ban(db.Base):
     async def upgrade(ban_id: int, mod: int):
         ban = await Ban.deactivate(ban_id, mod)
         ban.upgraded = True
+
+    @staticmethod
+    async def edit(ban_id: int, mod: int, new_reason: str):
+        row = await db.get(Ban, id=ban_id)
+        row.mod = mod
+        row.reason = new_reason

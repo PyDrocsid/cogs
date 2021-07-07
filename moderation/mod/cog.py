@@ -713,8 +713,6 @@ class ModCog(Cog, name="Mod Tools"):
             if msg:
                 await msg.delete(delay=5)
 
-        await Mute.edit(mute_id, ctx.author.id, reason)
-
         user = self.bot.get_user(mute.member)
 
         user_embed = Embed(
@@ -724,6 +722,8 @@ class ModCog(Cog, name="Mod Tools"):
         )
         server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        await Mute.edit(mute_id, ctx.author.id, reason)
 
         try:
             await user.send(embed=user_embed)
@@ -1009,7 +1009,7 @@ class ModCog(Cog, name="Mod Tools"):
         for ban in active_bans:
             await Ban.upgrade(ban.id, ctx.author.id)
         async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
-            await Mute.upgrade(mute.id, ctx.author.id)
+            await Mute.update(mute.id, ctx.author.id)
 
         if attachments := ctx.message.attachments:
             evidence = attachments[0]
@@ -1072,6 +1072,69 @@ class ModCog(Cog, name="Mod Tools"):
         await revoke_verification(user)
 
         await reply(ctx, embed=server_embed)
+
+    @commands.group()
+    @ModPermission.mute.check
+    @guild_only()
+    async def edit_ban(self, ctx):
+        """
+        edit a ban
+        """
+
+        if ctx.invoked_subcommand is None:
+            raise UserInputError
+
+    @edit_ban.command(name="reason")
+    async def edit_ban_reason(self, ctx: Context, ban_id: int, *, reason: str):
+        """
+        edit a ban reason
+        get the ban id from the users user log
+        """
+
+        ban = await db.get(Ban, id=ban_id)
+        if ban is None:
+            raise CommandError(t.no_ban)
+
+        if not await compare_mod_level(ctx.author, ctx.guild.get_member(ban.mod)):
+            raise CommandError(tg.permission_denied)
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_ban_edit.reason(ban.reason, reason),
+            color=Colors.ModTools
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        user = self.bot.get_user(ban.member)
+
+        user_embed = Embed(
+            title=t.ban,
+            description=t.ban_edited.reason(ban.reason, reason),
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        await Ban.edit(ban_id, ctx.author.id, reason)
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.ban, t.log_ban_edited, user, reason)
 
     @commands.command()
     @ModPermission.ban.check
