@@ -1,7 +1,6 @@
 import datetime
 from typing import Optional
 
-import discord
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
 from PyDrocsid.database import db, select, db_wrapper
@@ -11,11 +10,12 @@ from discord import TextChannel, Forbidden, Embed
 from discord.ext import commands, tasks
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
 
+from PyDrocsid.embeds import send_long_embed
+from .colors import Colors
 from .models import AutoDeleteMessage
 from .permissions import AutoDeleteMessagesPermission
 from ...contributor import Contributor
 from ...pubsub import send_alert, send_to_changelog
-from .colors import Colors
 
 tg = t.g
 t = t.auto_delete_messages
@@ -46,7 +46,7 @@ class AutoDeleteMessagesCog(Cog, name="Auto Delete Messages"):
             embed.colour = Colors.error
         else:
             embed.description = "\n".join(out)
-        await ctx.send(embed=embed)
+        await send_long_embed(ctx, embed=embed)
 
     @tasks.loop(minutes=60)
     @db_wrapper
