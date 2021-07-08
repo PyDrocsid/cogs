@@ -27,7 +27,7 @@ async def contains_image(message: Message) -> bool:
     urls += re.findall(r"(https?://([a-zA-Z0-9\-_~]+\.)+[a-zA-Z0-9\-_~]+(/\S*)?)", message.content)
     for url, *_ in urls:
         try:
-            async with ClientSession() as session, session.head(url) as response:
+            async with ClientSession() as session, session.head(url, allow_redirects=True) as response:
                 mime = response.headers["Content-type"]
         except (KeyError, AttributeError, UnicodeError, ConnectionError, ClientError):
             break
