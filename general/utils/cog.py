@@ -9,7 +9,7 @@ from discord.utils import snowflake_time
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply
+from PyDrocsid.command import reply, docs
 from PyDrocsid.converter import Color
 from PyDrocsid.translations import t
 from PyDrocsid.util import measure_latency
@@ -49,11 +49,8 @@ class UtilsCog(Cog, name="Utils"):
     CONTRIBUTORS = [Contributor.Defelo]
 
     @commands.command()
+    @docs(t.commands.ping)
     async def ping(self, ctx: Context):
-        """
-        display bot latency
-        """
-
         latency: Optional[float] = measure_latency()
         embed = Embed(title=t.pong, colour=Colors.ping)
         if latency is not None:
@@ -61,11 +58,8 @@ class UtilsCog(Cog, name="Utils"):
         await reply(ctx, embed=embed)
 
     @commands.command(aliases=["sf", "time"])
+    @docs(t.commands.snowflake)
     async def snowflake(self, ctx: Context, arg: int):
-        """
-        display snowflake timestamp
-        """
-
         if arg < 0:
             raise CommandError(t.invalid_snowflake)
 
@@ -78,9 +72,8 @@ class UtilsCog(Cog, name="Utils"):
     @UtilsPermission.suggest_role_color.check
     @max_concurrency(1)
     @guild_only()
+    @docs(t.commands.suggest_role_color)
     async def suggest_role_color(self, ctx: Context, *avoid: Color):
-        """Suggest a new role color based on the colors of all existing roles"""
-
         avoid: tuple[int]
 
         colors = [hex(color)[2:].zfill(6) for role in ctx.guild.roles if (color := role.color.value)]
