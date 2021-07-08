@@ -33,6 +33,9 @@ Required Permissions:
 - `mediaonly.read`
 - `mediaonly.write`
 
+!!! note
+    Responses to [slash commands](https://blog.discord.com/slash-commands-are-here-8db0a385d9e6){target=_blank} are ignored by the bot, so you should disable slash commands manually in media-only channels.
+
 
 ## `remove`
 

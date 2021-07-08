@@ -12,3 +12,4 @@ help_usage: |
 required_permissions: Required Permissions
 required_permission_level: Required Permission Level
 optional_permissions: Optional Permissions
+documentation: Documentation
