@@ -21,28 +21,28 @@ tg = t.g
 t = t.utils
 
 
-def generate_color(colors: list[tuple[float, float, float]], n: int, a: float) -> Optional[tuple[float, float, float]]:
-    for _ in range(10):
-        guess = [random() for _ in range(3)]  # noqa: S311
-        last = None
-        for _ in range(n):
-            if tuple(guess) in colors:
-                break
-
-            new_guess = guess.copy()
+def generate_color(colors: list[tuple[float, float, float]], n: int, a: float) -> tuple[float, float, float]:
+    guess = [random() for _ in range(3)]  # noqa: S311
+    last = None
+    for _ in range(n):
+        new_guess = guess.copy()
+        for i in range(3):
+            mx = 0
             for c in colors:
-                for i in range(3):
-                    new_guess[i] += 2 * (guess[i] - c[i]) * (sum((p - q) ** 2 for p, q in zip(guess, c)) ** -2) * a
-            guess = [min(max(x, 0), 1) for x in new_guess]
+                b = 10 ** (-3 - sum(x in (0, 1) for x in c))
+                error = 1 / (b + sum((p - q) ** 2 for p, q in zip(guess, c)))
+                if error > mx:
+                    mx = error
+                    new_guess[i] = guess[i] + (
+                        2 * (guess[i] - c[i]) * ((b + sum((p - q) ** 2 for p, q in zip(guess, c))) ** -2) * a
+                    )
+        guess = [min(max(x, 0), 1) for x in new_guess]
 
-            if last == guess:
-                return guess[0], guess[1], guess[2]
-            last = guess.copy()
-
-        else:
+        if last == guess:
             return guess[0], guess[1], guess[2]
+        last = guess.copy()
 
-    return None
+    return guess[0], guess[1], guess[2]
 
 
 class UtilsCog(Cog, name="Utils"):
@@ -94,10 +94,7 @@ class UtilsCog(Cog, name="Utils"):
         colors = [[int(x, 16) / 255 for x in [c[:2], c[2:4], c[4:]]] for c in colors]
         colors += itertools.product(range(2), repeat=3)
 
-        color = await run_in_thread(generate_color, colors, 1000, 0.005)
-        if color is None:
-            raise CommandError(t.could_not_generate_color)
-
+        color = await run_in_thread(generate_color, colors, 2000, 5e-5)
         color = "%02X" * 3 % tuple([round(float(c) * 255) for c in color])
 
         embed = Embed(title="#" + color, color=int(color, 16))
