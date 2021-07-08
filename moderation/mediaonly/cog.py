@@ -55,6 +55,20 @@ async def delete_message(message: Message):
         await send_alert(message.guild, t.log_nomedia_not_deleted(message.author.mention, message.channel.mention))
 
 
+async def check_message(message: Message):
+    if message.guild is None or message.author.bot:
+        return
+    if await MediaOnlyPermission.bypass.check_permissions(message.author):
+        return
+    if not await MediaOnlyChannel.exists(message.channel.id):
+        return
+    if await contains_image(message):
+        return
+
+    await delete_message(message)
+    raise StopEventHandling
+
+
 class MediaOnlyCog(Cog, name="MediaOnly"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu]
 
@@ -63,17 +77,10 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
         return not await db.exists(filter_by(MediaOnlyChannel, channel=channel.id))
 
     async def on_message(self, message: Message):
-        if message.guild is None or message.author.bot:
-            return
-        if await MediaOnlyPermission.bypass.check_permissions(message.author):
-            return
-        if not await MediaOnlyChannel.exists(message.channel.id):
-            return
-        if await contains_image(message):
-            return
+        await check_message(message)
 
-        await delete_message(message)
-        raise StopEventHandling
+    async def on_message_edit(self, _, after: Message):
+        await check_message(after)
 
     @commands.group(aliases=["mo"])
     @MediaOnlyPermission.read.check
