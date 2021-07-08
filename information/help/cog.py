@@ -4,7 +4,7 @@ from discord import Message, Embed
 from discord.ext import commands
 from discord.ext.commands import Command, Group, CommandError, Context
 
-from PyDrocsid.cog import Cog
+from PyDrocsid.cog import Cog, get_documentation
 from PyDrocsid.command import can_run_command, docs, get_optional_permissions
 from PyDrocsid.config import Contributor
 from PyDrocsid.embeds import send_long_embed
@@ -43,6 +43,8 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
         cog: Optional[Cog] = ctx.bot.get_cog(command_name)
         if cog is not None:
             await add_commands(cog.qualified_name, cog.get_commands())
+            if doc_url := get_documentation(cog):
+                embed.add_field(name=t.documentation, value=doc_url, inline=False)
             return await send_long_embed(ctx, embed)
 
         command: Optional[Union[Command, Group]] = ctx.bot.get_command(command_name)
@@ -104,6 +106,9 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
             name=t.optional_permissions,
             value="\n".join(f":small_blue_diamond: `{p}`" for p in optional_permissions),
         )
+
+    if doc_url := get_documentation(cmd.cog):
+        embed.add_field(name=t.documentation, value=doc_url, inline=False)
 
     return await send_long_embed(ctx, embed)
 
