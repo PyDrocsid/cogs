@@ -38,6 +38,8 @@ class VerificationCog(Cog, name="Verification"):
         correct_password: str = await VerificationSettings.password.get()
         if correct_password is None:
             raise CommandError(t.verification_disabled)
+        if not await db.exists(select(VerificationRole)):
+            raise CommandError(t.verification_disabled)
 
         if password != correct_password:
             raise CommandError(t.password_incorrect)
