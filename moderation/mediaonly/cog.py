@@ -87,12 +87,11 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
     @guild_only()
     @docs(t.commands.mediaonly)
     async def mediaonly(self, ctx: Context):
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
+        if ctx.subcommand_passed is not None:
+            if ctx.invoked_subcommand is None:
+                raise UserInputError
+            return
 
-    @mediaonly.command(name="list", aliases=["l", "?"])
-    @docs(t.commands.list)
-    async def mediaonly_list(self, ctx: Context):
         guild: Guild = ctx.guild
         out = []
         async for channel in MediaOnlyChannel.stream():
