@@ -28,11 +28,12 @@ async def contains_image(message: Message) -> bool:
     for url, *_ in urls:
         try:
             async with ClientSession() as session, session.head(url, allow_redirects=True) as response:
+                content_length = int(response.headers["Content-length"])
                 mime = response.headers["Content-type"]
         except (KeyError, AttributeError, UnicodeError, ConnectionError, ClientError):
             break
 
-        if mime.startswith("image/"):
+        if mime.startswith("image/") and content_length >= 256:
             return True
 
     return False
