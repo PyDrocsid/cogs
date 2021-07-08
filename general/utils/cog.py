@@ -1,8 +1,8 @@
 import itertools
 from random import random
-from typing import Optional
+from typing import Optional, Union
 
-from discord import Embed
+from discord import Embed, User, Member
 from discord.ext import commands
 from discord.ext.commands import Context, CommandError, max_concurrency, guild_only
 from discord.utils import snowflake_time
@@ -10,7 +10,7 @@ from discord.utils import snowflake_time
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, docs
-from PyDrocsid.converter import Color
+from PyDrocsid.converter import Color, UserMemberConverter
 from PyDrocsid.translations import t
 from PyDrocsid.util import measure_latency
 from .colors import Colors
@@ -52,7 +52,7 @@ class UtilsCog(Cog, name="Utils"):
     @docs(t.commands.ping)
     async def ping(self, ctx: Context):
         latency: Optional[float] = measure_latency()
-        embed = Embed(title=t.pong, colour=Colors.ping)
+        embed = Embed(title=t.pong, colour=Colors.Utils)
         if latency is not None:
             embed.description = t.pong_latency(latency * 1000)
         await reply(ctx, embed=embed)
@@ -67,6 +67,19 @@ class UtilsCog(Cog, name="Utils"):
             await reply(ctx, snowflake_time(arg).strftime("%d.%m.%Y %H:%M:%S"))
         except (OverflowError, ValueError, OSError):
             raise CommandError(t.invalid_snowflake)
+
+    @commands.command(aliases=["enc"])
+    @docs(t.commands.encode)
+    async def encode(self, ctx: Context, *, user: UserMemberConverter):
+        user: Union[User, Member]
+
+        embed = Embed(color=Colors.Utils)
+        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.add_field(name=t.username, value=str(user.name.encode())[2:-1], inline=False)
+        if isinstance(user, Member) and user.nick:
+            embed.add_field(name=t.nickname, value=str(user.nick.encode())[2:-1], inline=False)
+
+        await reply(ctx, embed=embed)
 
     @commands.command(aliases=["rc"])
     @UtilsPermission.suggest_role_color.check

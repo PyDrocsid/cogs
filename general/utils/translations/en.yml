@@ -2,11 +2,14 @@ permissions:
   suggest_role_color: use the `suggest_role_color` command
 
 commands:
-  ping: display bot latency
-  snowflake: display snowflake timestamp
-  suggest_role_color: suggest a new role color based on the colors of all existing roles
+  ping: Display bot latency
+  snowflake: Display snowflake timestamp
+  encode: Apply Python's `str.encode()` function to a user's name
+  suggest_role_color: Suggest a new role color based on the colors of all existing roles
 
 pong: Pong!
 pong_latency: ":hourglass: {:.0f} ms"
 invalid_snowflake: Invalid snowflake!
 could_not_generate_color: Could not generate a new role color.
+username: Username
+nickname: Nickname
