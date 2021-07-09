@@ -2,4 +2,4 @@ from PyDrocsid.material_colors import MaterialColors
 
 
 class Colors(MaterialColors):
-    AutoDeleteMessages = MaterialColors.pink[900]
+    AutoClear = MaterialColors.pink[900]

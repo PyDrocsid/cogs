@@ -4,10 +4,10 @@ from PyDrocsid.permission import BasePermission
 from PyDrocsid.translations import t
 
 
-class AutoDeleteMessagesPermission(BasePermission):
+class AutoClearPermission(BasePermission):
     @property
     def description(self) -> str:
-        return t.auto_delete_messages.permissions[self.name]
+        return t.autoclear.permissions[self.name]
 
     read = auto()
     write = auto()
