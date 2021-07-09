@@ -9,8 +9,10 @@ commands:
 
 autoclear: AutoClear
 no_autoclear_channels: ":x: No AutoClear channels."
+cannot_read: >
+  AutoClear could not delete some messages in {} because I don't have `read_message_history` permission there.
 not_deleted: >
-  AutoClear could not delete a message in {} because I don't have `manage_messages` permission there.
+  AutoClear could not delete some messages in {} because I don't have `manage_messages` permission there.
 not_configured: AutoClear has not been configured for this channel.
 cannot_add: Channel could not be configured because I don't have `manage_messages` permission there.
 set:

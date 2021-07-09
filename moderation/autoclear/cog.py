@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 
-from discord import TextChannel, Forbidden, Embed, Message
+from discord import TextChannel, Forbidden, Embed, Message, NotFound
 from discord.ext import commands, tasks
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
 
@@ -23,6 +23,10 @@ t = t.autoclear
 
 
 async def clear_channel(channel: TextChannel, minutes: int, limit: Optional[int] = None):
+    if not channel.permissions_for(channel.guild.me).read_message_history:
+        await send_alert(channel.guild, t.cannot_read(channel.mention))
+        return
+
     message: Message
     async for message in channel.history(
         before=datetime.utcnow() - timedelta(minutes=minutes),
@@ -37,6 +41,8 @@ async def clear_channel(channel: TextChannel, minutes: int, limit: Optional[int]
         except Forbidden:
             await send_alert(message.guild, t.not_deleted(channel.mention))
             break
+        except NotFound:
+            pass
 
 
 class AutoClearCog(Cog, name="AutoClear"):
