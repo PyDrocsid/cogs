@@ -18,6 +18,7 @@ EMOJIS = {
     name_to_emoji["incoming_envelope"],
     name_to_emoji["envelope_with_arrow"],
     name_to_emoji["floppy_disk"],
+    name_to_emoji["bookmark"],
 }
 
 WASTEBASKET = name_to_emoji["wastebasket"]
