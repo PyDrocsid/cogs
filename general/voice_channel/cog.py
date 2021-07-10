@@ -747,56 +747,66 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if any(not m.bot for m in voice_channel.members):
             return
 
-        if text_channel:
+        async def delete_text():
+            if text_channel:
+                try:
+                    await text_channel.delete()
+                except Forbidden:
+                    await send_alert(text_channel.guild, t.could_not_delete_channel(text_channel.mention))
+                    return
+
+        async def delete_voice():
+            channel.owner_id = None
+            channel.owner_override = None
+            await db.exec(delete(DynChannelMember).filter_by(channel_id=voice_channel.id))
+            channel.members.clear()
+
             try:
-                await text_channel.delete()
+                await voice_channel.delete()
             except Forbidden:
-                await send_alert(text_channel.guild, t.could_not_delete_channel(text_channel.mention))
+                await send_alert(voice_channel.guild, t.could_not_delete_channel(voice_channel.mention))
                 return
+            else:
+                await db.delete(channel)
 
-        channel.owner_id = None
-        channel.owner_override = None
-        await db.exec(delete(DynChannelMember).filter_by(channel_id=voice_channel.id))
-        channel.members.clear()
+        async def create_new_channel() -> bool:
+            # check if there is at least one empty channel
+            if not all(
+                any(not m.bot for m in c.members)
+                for chnl in channel.group.channels
+                if chnl.channel_id != channel.channel_id and (c := self.bot.get_channel(chnl.channel_id))
+            ):
+                return True
 
-        try:
-            await voice_channel.delete()
-        except Forbidden:
-            await send_alert(voice_channel.guild, t.could_not_delete_channel(voice_channel.mention))
-            return
-        else:
-            await db.delete(channel)
+            guild: Guild = voice_channel.guild
+            category: Union[CategoryChannel, Guild] = voice_channel.category or guild
 
-        if not all(
-            any(not m.bot for m in c.members)
-            for chnl in channel.group.channels
-            if chnl.channel_id != channel.channel_id and (c := self.bot.get_channel(chnl.channel_id))
-        ):
-            return
+            overwrites = voice_channel.overwrites
+            if channel.locked:
+                overwrites = remove_lock_overrides(
+                    channel,
+                    voice_channel,
+                    overwrites,
+                    keep_members=False,
+                    reset_user_role=True,
+                )
+            try:
+                new_channel = await safe_create_voice_channel(
+                    category,
+                    channel,
+                    await self.get_channel_name(guild),
+                    overwrites,
+                )
+            except (Forbidden, HTTPException):
+                await send_alert(guild, t.could_not_create_voice_channel)
+                return False
+            else:
+                await DynChannel.create(new_channel.id, channel.group_id)
+                return True
 
-        guild: Guild = voice_channel.guild
-        category: Union[CategoryChannel, Guild] = voice_channel.category or guild
-
-        overwrites = voice_channel.overwrites
-        if channel.locked:
-            overwrites = remove_lock_overrides(
-                channel,
-                voice_channel,
-                overwrites,
-                keep_members=False,
-                reset_user_role=True,
-            )
-        try:
-            new_channel = await safe_create_voice_channel(
-                category,
-                channel,
-                await self.get_channel_name(guild),
-                overwrites,
-            )
-        except (Forbidden, HTTPException):
-            await send_alert(guild, t.could_not_create_voice_channel)
-        else:
-            await DynChannel.create(new_channel.id, channel.group_id)
+        await delete_text()
+        if await create_new_channel():
+            await delete_voice()
 
     async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
         if before.channel == after.channel:
