@@ -755,15 +755,23 @@ class ModCog(Cog, name="Mod Tools"):
         if not await compare_mod_level(ctx.author, ctx.guild.get_member(mute.mod)):
             raise CommandError(tg.permission_denied)
 
+        if mute.minutes == minutes or (mute.minutes == -1 and minutes is None):
+            raise CommandError(t.already_muted)
+
         conf_embed = Embed(
             title=t.confirmation,
             color=Colors.ModTools,
         )
 
-        if minutes is None:
-            conf_embed.description = t.confirm_mute_edit.duration(time_to_units(mute.minutes), t.infinity)
+        if mute.minutes == -1:
+            old_mute_minutes = t.infinity
         else:
-            conf_embed.description = t.confirm_mute_edit.duration(time_to_units(mute.minutes), time_to_units(minutes))
+            old_mute_minutes = time_to_units(mute.minutes)
+
+        if minutes is None:
+            conf_embed.description = t.confirm_mute_edit.duration(old_mute_minutes, t.infinity)
+        else:
+            conf_embed.description = t.confirm_mute_edit.duration(old_mute_minutes, time_to_units(minutes))
 
         async with confirm(ctx, conf_embed) as (result, msg):
             if not result:
@@ -1148,15 +1156,23 @@ class ModCog(Cog, name="Mod Tools"):
         if not await compare_mod_level(ctx.author, ctx.guild.get_member(ban.mod)):
             raise CommandError(tg.permission_denied)
 
+        if ban.minutes == minutes or (ban.minutes == -1 and minutes is None):
+            raise CommandError(t.already_banned)
+
         conf_embed = Embed(
             title=t.confirmation,
             color=Colors.ModTools,
         )
 
-        if minutes is None:
-            conf_embed.description = t.confirm_ban_edit.duration(time_to_units(ban.minutes), t.infinity)
+        if ban.minutes == -1:
+            old_ban_minutes = t.infinity
         else:
-            conf_embed.description = t.confirm_ban_edit.duration(time_to_units(ban.minutes), time_to_units(minutes))
+            old_ban_minutes = time_to_units(ban.minutes)
+
+        if minutes is None:
+            conf_embed.description = t.confirm_ban_edit.duration(old_ban_minutes, t.infinity)
+        else:
+            conf_embed.description = t.confirm_ban_edit.duration(old_ban_minutes, time_to_units(minutes))
 
         async with confirm(ctx, conf_embed) as (result, msg):
             if not result:
