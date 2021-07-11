@@ -168,12 +168,12 @@ class Ban(db.Base):
     deactivation_timestamp: Union[Column, Optional[datetime]] = Column(DateTime, nullable=True)
     unban_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
     unban_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
-    upgraded: Union[Column, bool] = Column(Boolean, default=False)
-    is_upgrade: Union[Column, bool] = Column(Boolean)
+    updated: Union[Column, bool] = Column(Boolean, default=False)
+    is_update: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
     async def create(member: int, member_name: str, mod: int, minutes: int, reason: str,
-                     evidence: Optional[str], is_upgrade: bool = False) -> Ban:
+                     evidence: Optional[str], is_update: bool = False) -> Ban:
         row = Ban(
             member=member,
             member_name=member_name,
@@ -186,7 +186,7 @@ class Ban(db.Base):
             deactivation_timestamp=None,
             unban_reason=None,
             unban_mod=None,
-            is_upgrade=is_upgrade,
+            is_update=is_update,
         )
         await db.add(row)
         return row
@@ -201,9 +201,9 @@ class Ban(db.Base):
         return row
 
     @staticmethod
-    async def upgrade(ban_id: int, mod: int):
+    async def update(ban_id: int, mod: int):
         ban = await Ban.deactivate(ban_id, mod)
-        ban.upgraded = True
+        ban.updated = True
 
     @staticmethod
     async def edit(ban_id: int, mod: int, new_reason: str):

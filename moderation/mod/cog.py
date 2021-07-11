@@ -381,8 +381,8 @@ class ModCog(Cog, name="Mod Tools"):
 
         ban: Ban
         async for ban in await db.stream(filter_by(Ban, member=user_id)):
-            if ban.is_upgrade:
-                text = t.ulog.banned.upgrade
+            if ban.is_update:
+                text = t.ulog.banned.update
                 ban.evidence = None
             else:
                 text = t.ulog.banned.first
@@ -421,7 +421,7 @@ class ModCog(Cog, name="Mod Tools"):
                         )
                     )
 
-            if not ban.active and not ban.upgraded:
+            if not ban.active and not ban.updated:
                 if ban.unban_mod is None:
                     out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
                 else:
@@ -998,18 +998,8 @@ class ModCog(Cog, name="Mod Tools"):
             raise UserCommandError(user, t.cannot_ban)
 
         active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=user.id))
-        for ban in active_bans:
-            if ban.minutes == -1:
-                raise UserCommandError(user, t.already_banned)
-
-            ts = ban.timestamp + timedelta(minutes=ban.minutes)
-            if minutes is not None and datetime.utcnow() + timedelta(minutes=minutes) <= ts:
-                raise UserCommandError(user, t.already_banned)
-
-        for ban in active_bans:
-            await Ban.upgrade(ban.id, ctx.author.id)
-        async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
-            await Mute.update(mute.id, ctx.author.id)
+        if active_bans:
+            raise UserCommandError(user, t.already_banned)
 
         if attachments := ctx.message.attachments:
             evidence = attachments[0]
@@ -1023,7 +1013,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if minutes is not None:
-            await Ban.create(user.id, str(user), ctx.author.id, minutes, reason, evidence_url, bool(active_bans))
+            await Ban.create(user.id, str(user), ctx.author.id, minutes, reason, evidence_url, False)
             if evidence:
                 user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
                                                            reason, t.image_link(evidence.filename, evidence_url)
@@ -1043,7 +1033,7 @@ class ModCog(Cog, name="Mod Tools"):
                 evidence=evidence,
             )
         else:
-            await Ban.create(user.id, str(user), ctx.author.id, -1, reason, evidence_url, bool(active_bans))
+            await Ban.create(user.id, str(user), ctx.author.id, -1, reason, evidence_url, False)
             if evidence:
                 user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, reason,
                                                            t.image_link(evidence.filename, evidence_url)
@@ -1068,7 +1058,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
 
-        await ctx.guild.ban(user, delete_message_days=delete_days, reason=reason)
+        # await ctx.guild.ban(user, delete_message_days=delete_days, reason=reason)
         await revoke_verification(user)
 
         await reply(ctx, embed=server_embed)
@@ -1135,6 +1125,90 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.ban, t.log_ban_edited, user, reason)
+
+    @edit_ban.command(name="duration")
+    async def edit_ban_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
+        """
+        edit a ban duration
+        time format: `ymwdhn`
+        set time to `inf` for a permanent ban
+        """
+
+        user: Union[Member, User]
+        time: Optional[int]
+        minutes = time
+
+        active_bans: List[Mute] = await db.all(filter_by(Ban, active=True, member=user.id))
+
+        if not active_bans:
+            raise CommandError(t.not_muted)
+
+        ban = sorted(active_bans, key=lambda active_ban: active_ban.timestamp)[0]
+
+        if not await compare_mod_level(ctx.author, ctx.guild.get_member(ban.mod)):
+            raise CommandError(tg.permission_denied)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            color=Colors.ModTools,
+        )
+
+        if minutes is None:
+            conf_embed.description = t.confirm_ban_edit.duration(time_to_units(ban.minutes), t.infinity)
+        else:
+            conf_embed.description = t.confirm_ban_edit.duration(time_to_units(ban.minutes), time_to_units(minutes))
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        for ban in active_bans:
+            await ban.update(ban.id, ctx.author.id)
+
+        user_embed = Embed(
+            title=t.ban,
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        if minutes is not None:
+            await Ban.create(user.id, str(user), ctx.author.id, minutes, ban.reason, ban.evidence, True)
+            user_embed.description = t.ban_edited.duration(time_to_units(ban.minutes), time_to_units(minutes))
+            await send_to_changelog_mod(
+                ctx.guild,
+                ctx.message,
+                Colors.mute,
+                t.log_ban_edited,
+                user,
+                ban.reason,
+                duration=time_to_units(minutes),
+            )
+
+        else:
+            await Ban.create(user.id, str(user), ctx.author.id, -1, ban.reason, ban.evidence, True)
+            user_embed.description = t.ban_edited.duration(time_to_units(ban.minutes), t.infinity)
+            await send_to_changelog_mod(
+                ctx.guild,
+                ctx.message,
+                Colors.mute,
+                t.log_ban_edited,
+                user,
+                ban.reason,
+                duration=t.log_field.infinity,
+            )
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
 
     @commands.command()
     @ModPermission.ban.check

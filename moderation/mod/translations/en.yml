@@ -189,13 +189,13 @@ ulog:
       inf:
         id_off: ":no_entry: **Banned** permanently by {} because of `{}`{}"
         id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`{}"
-    upgrade:
+    update:
       temp:
-        id_off: ":no_entry: **Ban upgraded** by {} to {} because of `{}`"
-        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`"
+        id_off: ":no_entry: **Ban updated** by {} to {} because of `{}`"
+        id_on: ":no_entry: **Ban updated** by {} to {} because of `{}`\n`(ID: {})`"
       inf:
-        id_off: ":no_entry: **Ban upgraded** to permanent by {} because of `{}`"
-        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`"
+        id_off: ":no_entry: **Ban updated** to permanent by {} because of `{}`"
+        id_on: ":no_entry: **Ban updated** to permanent by {} because of `{}`\n`(ID: {})`"
   unbanned:
     id_off: ":white_check_mark: **Unbanned** by {} because of `{}`"
     id_on: ":white_check_mark: **Unbanned** by {} because of `{}`\n`(ID: {})`"
