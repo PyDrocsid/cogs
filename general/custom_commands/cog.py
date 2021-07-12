@@ -1,16 +1,21 @@
+import base64
+import binascii
+import json
+import re
 from io import BytesIO
 from pathlib import Path
 from typing import Optional
 
+from aiohttp import ClientSession
 from discord import Embed, File, TextChannel, NotFound, Forbidden
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, UserInputError, Converter, BadArgument
+from discord.ext.commands import Context, guild_only, UserInputError, Converter, BadArgument, CommandError, Command
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs, confirm
+from PyDrocsid.command import reply, docs, confirm, no_documentation
 from PyDrocsid.command_edit import link_response
-from PyDrocsid.config import Contributor
-from PyDrocsid.database import db
+from PyDrocsid.config import Contributor, Config
+from PyDrocsid.database import db, select, filter_by
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.logger import get_logger
 from PyDrocsid.permission import BasePermission
@@ -28,74 +33,73 @@ t = t.custom_commands
 
 class CustomCommandConverter(Converter):
     async def convert(self, ctx: Context, argument: str) -> CustomCommand:
-        if cmd := await db.get(CustomCommand, name=argument):
+        if cmd := await db.get(CustomCommand, CustomCommand.aliases, name=argument):
             return cmd
-        if alias := await db.get(Alias, Alias.command, name=argument):
+        if alias := await db.get(Alias, [Alias.command, CustomCommand.aliases], name=argument):
             return alias.command
         raise BadArgument
 
 
-def create_custom_command(name: str, data: dict, permission: Optional[BasePermission]):
-    content = data.get("content", "")
-    file_name = None
-    file_content = None
-    embed = None
+def create_custom_command(custom_command: CustomCommand):
+    # content = data.get("content", "")
+    # file_name = None
+    # file_content = None
+    # embed = None
 
-    if file_data := data.get("file"):
-        path = Path(file_data)
-        file_name = path.name
-        file_content = path.read_bytes()
+    # if embed_data := data.get("embed"):
+    #     embed = Embed.from_dict(embed_data)
 
-    if embed_data := data.get("embed"):
-        embed = Embed.from_dict(embed_data)
+    # async def send_message(ctx: Context, channel: TextChannel):
+    #     check_message_send_permissions(channel, check_file=bool(file_content), check_embed=bool(embed))
+    #
+    #     if bool(data.get("requires_confirmation", permission is not None)):
+    #         conf_embed = Embed(title=t.confirmation, description=t.confirm(name, channel.mention))
+    #         async with confirm(ctx, conf_embed) as (result, msg):
+    #             if not result:
+    #                 conf_embed.description += "\n\n" + t.canceled
+    #                 return
+    #
+    #             conf_embed.description += "\n\n" + t.confirmed
+    #             if msg:
+    #                 await msg.delete(delay=5)
+    #
+    #     if delete_command := bool(data.get("delete_command", False)):
+    #         try:
+    #             await ctx.message.delete()
+    #         except (NotFound, Forbidden):
+    #             pass
+    #
+    #     if ctx.channel.id == channel.id:
+    #         if delete_command:
+    #             await ctx.send(content, embed=embed)
+    #         else:
+    #             await reply(ctx, content, embed=embed)
+    #     else:
+    #         msg = await channel.send(content, embed=embed)
+    #         if not delete_command:
+    #             await link_response(ctx, msg)
+    #             await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
-    async def send_message(ctx: Context, channel: TextChannel):
-        check_message_send_permissions(channel, check_file=bool(file_content), check_embed=bool(embed))
+    # async def with_channel_parameter(_, ctx: Context, channel: TextChannel):
+    #     await send_message(ctx, channel)
+    #
+    # async def without_channel_parameter(_, ctx: Context):
+    #     channel = ctx.bot.get_channel(channel_id) if (channel_id := data.get("channel")) else ctx.channel
+    #     await send_message(ctx, channel)
 
-        if bool(data.get("requires_confirmation", permission is not None)):
-            conf_embed = Embed(title=t.confirmation, description=t.confirm(name, channel.mention))
-            async with confirm(ctx, conf_embed) as (result, msg):
-                if not result:
-                    conf_embed.description += "\n\n" + t.canceled
-                    return
+    async def test(_, ctx: Context):
+        await ctx.send("test")
 
-                conf_embed.description += "\n\n" + t.confirmed
-                if msg:
-                    await msg.delete(delay=5)
-
-        if delete_command := bool(data.get("delete_command", False)):
-            try:
-                await ctx.message.delete()
-            except (NotFound, Forbidden):
-                pass
-
-        file = File(BytesIO(file_content), filename=file_name) if file_content else None
-        if ctx.channel.id == channel.id:
-            if delete_command:
-                await ctx.send(content, file=file, embed=embed)
-            else:
-                await reply(ctx, content, file=file, embed=embed)
-        else:
-            msg = await channel.send(content, file=file, embed=embed)
-            if not delete_command:
-                await link_response(ctx, msg)
-                await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
-    async def with_channel_parameter(_, ctx: Context, channel: TextChannel):
-        await send_message(ctx, channel)
-
-    async def without_channel_parameter(_, ctx: Context):
-        channel = ctx.bot.get_channel(channel_id) if (channel_id := data.get("channel")) else ctx.channel
-        await send_message(ctx, channel)
-
-    command = with_channel_parameter if data.get("channel_parameter", False) else without_channel_parameter
-    if description := data.get("description"):
+    # command = with_channel_parameter if data.get("channel_parameter", False) else without_channel_parameter
+    command = test
+    if description := custom_command.description:
         command = docs(description)(command)
 
-    if permission:
-        command = permission.check(command)
+    # if permission:
+    #     command = permission.check(command)
 
-    command = commands.command(name=name, aliases=data.get("aliases", []))(command)
+    command = no_documentation(command)
+    command = commands.command(name=custom_command.name, aliases=custom_command.alias_names)(command)
 
     return command
 
@@ -133,6 +137,33 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     #     )
     #
     #     self.__cog_commands__ = [create_custom_command(k, v, getattr(permission, k, None)) for k, v in cmds.items()]
+    def __init__(self):
+        self.__cog_commands__ = list(self.__cog_commands__)
+
+    async def on_ready(self):
+        custom_command: CustomCommand
+        async for custom_command in await db.stream(filter_by(CustomCommand, CustomCommand.aliases, disabled=False)):
+            self.load_command(custom_command)
+
+    def load_command(self, command: CustomCommand):
+        cmd = create_custom_command(command)
+        cmd.cog = self
+        self.bot.add_command(cmd)
+        self.__cog_commands__.append(cmd)
+
+    def unload_command(self, command: CustomCommand):
+        self.bot.remove_command(command.name)
+        self.__cog_commands__ = [x for x in self.__cog_commands__ if x.name != command.name]
+
+    def reload_command(self, command: CustomCommand):
+        self.unload_command(command)
+        self.load_command(command)
+
+    def test_command_already_exists(self, name: str):
+        cmd: Command
+        for cmd in self.bot.commands:
+            if name in [cmd.name, *cmd.aliases]:
+                raise CommandError(t.already_exists)
 
     @commands.group(aliases=["cc"])
     @CustomCommandsPermission.read.check
@@ -149,8 +180,35 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands.command(name="add", aliases=["a", "+"])
     @CustomCommandsPermission.write.check
     @docs(t.commands.add)
-    async def custom_commands_add(self, ctx: Context, name: str, disabled: bool = False):
-        pass
+    async def custom_commands_add(self, ctx: Context, name: str, discohook_url: str, disabled: bool = False):
+        self.test_command_already_exists(name)
+
+        if not re.match(r"^https://share.discohook.app/go/[a-zA-Z\d]+$", discohook_url):
+            raise CommandError(t.invalid_url_instructions)
+
+        async with ClientSession() as session, session.head(discohook_url, allow_redirects=True) as response:
+            if not response.ok:
+                raise CommandError(t.invalid_url)
+
+            discohook_url = str(response.url)
+
+        if not (match := re.match(r"^https://discohook.org/\?data=([a-zA-Z\d\-_]+)$", discohook_url)):
+            raise CommandError(t.invalid_url)
+
+        try:
+            messages = json.loads(base64.urlsafe_b64decode(match.group(1) + "=="))["messages"]
+        except (binascii.Error, json.JSONDecodeError, KeyError):
+            raise CommandError(t.invalid_url)
+
+        command = await CustomCommand.create(
+            name,
+            json.dumps(messages),
+            disabled,
+            await Config.PERMISSION_LEVELS.get_permission_level(ctx.author),
+        )
+        self.load_command(command)
+
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="show", aliases=["s", "view", "v", "?"])
     @docs(t.commands.show)
@@ -233,7 +291,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
     @custom_commands_edit.command(name="data", alises=["content", "text", "t"])
     @docs(t.commands.edit.data)
-    async def custom_commands_edit_data(self, ctx: Context, command: CustomCommandConverter):
+    async def custom_commands_edit_data(self, ctx: Context, command: CustomCommandConverter, discohook_url: str):
         pass
 
     @custom_commands.command(name="disable")
@@ -252,16 +310,33 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @CustomCommandsPermission.write.check
     @docs(t.commands.alias)
     async def custom_commands_alias(self, ctx: Context, command: CustomCommandConverter, alias: str):
-        pass
+        command: CustomCommand
+
+        self.test_command_already_exists(alias)
+        await command.add_alias(alias)
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="unalias")
     @CustomCommandsPermission.write.check
     @docs(t.commands.unalias)
     async def custom_commands_unalias(self, ctx: Context, alias: str):
-        pass
+        row: Optional[Alias] = await db.get(Alias, [Alias.command, CustomCommand.aliases], name=alias)
+        if not row:
+            raise CommandError(t.alias_not_found)
+
+        command: CustomCommand = row.command
+        await db.delete(row)
+        command.aliases.remove(row)
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="remove", aliases=["r", "del", "d", "-"])
     @CustomCommandsPermission.write.check
     @docs(t.commands.remove)
     async def custom_commands_remove(self, ctx: Context, command: CustomCommandConverter):
-        pass
+        command: CustomCommand
+
+        await db.delete(command)
+        self.unload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])

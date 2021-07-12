@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from typing import Union, Optional
+from uuid import uuid4
 
 from sqlalchemy import Column, Text, Boolean, BigInteger, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from PyDrocsid.database import db
+from PyDrocsid.permission import BasePermissionLevel
 
 
 class CustomCommand(db.Base):
@@ -22,6 +24,33 @@ class CustomCommand(db.Base):
     requires_confirmation: Union[Column, bool] = Column(Boolean)
     data: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     aliases: list[Alias] = relationship("Alias", back_populates="command", cascade="all, delete")
+
+    @staticmethod
+    async def create(name: str, data: str, disabled: bool, permission_level: BasePermissionLevel) -> CustomCommand:
+        row = CustomCommand(
+            id=str(uuid4()),
+            name=name,
+            description=None,
+            disabled=disabled,
+            channel_parameter=False,
+            channel_id=None,
+            delete_command=False,
+            permission_level=permission_level.level,
+            requires_confirmation=False,
+            data=data,
+        )
+        await db.add(row)
+        return row
+
+    @property
+    def alias_names(self) -> list[str]:
+        return [alias.name for alias in self.aliases]
+
+    async def add_alias(self, name: str) -> Alias:
+        alias = Alias(id=str(uuid4()), name=name, command_id=self.id)
+        self.aliases.append(alias)
+        await db.add(alias)
+        return alias
 
 
 class Alias(db.Base):
