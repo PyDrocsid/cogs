@@ -99,11 +99,13 @@ def show_evidence(evidence: Optional[str]) -> str:
     return ""
 
 
-async def compare_mod_level(mod1: Member, mod2: Member) -> bool:
-    lvl1 = await Config.PERMISSION_LEVELS.get_permission_level(mod1)
-    lvl2 = await Config.PERMISSION_LEVELS.get_permission_level(mod2)
+def get_mod_level(mod: Member):
+    lvl = await Config.PERMISSION_LEVELS.get_permission_level(mod)
+    return lvl.level
 
-    return lvl1.level > lvl2.level or mod1 == mod1.guild.owner
+
+async def compare_mod_level(mod: Member, mod_level: int) -> bool:
+    return get_mod_level(mod) > mod_level or mod == mod.guild.owner
 
 
 async def send_to_changelog_mod(
@@ -212,7 +214,7 @@ class ModCog(Cog, name="Mod Tools"):
 
     @log_auto_kick.subscribe
     async def handle_log_auto_kick(self, member: Member):
-        await Kick.create(member.id, str(member), None, None)
+        await Kick.create(member.id, str(member), None, None, None, None)
 
     @get_user_info_entries.subscribe
     async def handle_get_user_stats_entries(self, user_id: int) -> list[tuple[str, str]]:
@@ -521,7 +523,7 @@ class ModCog(Cog, name="Mod Tools"):
         except (Forbidden, HTTPException):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
-        await Warn.create(user.id, str(user), ctx.author.id, reason, evidence.url)
+        await Warn.create(user.id, str(user), ctx.author.id, get_mod_level(ctx.author), reason, evidence.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason, evidence=evidence)
 
@@ -538,7 +540,7 @@ class ModCog(Cog, name="Mod Tools"):
         if warn is None:
             raise CommandError(t.no_warn)
 
-        if not await compare_mod_level(ctx.author, ctx.guild.get_member(warn.mod)):
+        if not await compare_mod_level(ctx.author, warn.mod_level):
             raise CommandError(tg.permission_denied)
 
         if len(reason) > 900:
@@ -559,7 +561,7 @@ class ModCog(Cog, name="Mod Tools"):
             if msg:
                 await msg.delete(delay=5)
 
-        await Warn.edit(warn_id, ctx.author.id, reason)
+        await Warn.edit(warn_id, ctx.author.id, get_mod_level(ctx.author), reason)
 
         user = self.bot.get_user(warn.member)
 
@@ -622,7 +624,15 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if minutes is not None:
-            await Mute.create(user.id, str(user), ctx.author.id, minutes, reason, evidence_url)
+            await Mute.create(
+                user.id,
+                str(user),
+                ctx.author.id,
+                get_mod_level(ctx.author),
+                minutes,
+                reason,
+                evidence_url,
+            )
             if evidence:
                 user_embed.description = t.muted.evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
                                                           reason, t.image_link(evidence.filename, evidence_url),
@@ -643,7 +653,15 @@ class ModCog(Cog, name="Mod Tools"):
                 evidence=evidence,
             )
         else:
-            await Mute.create(user.id, str(user), ctx.author.id, -1, reason, evidence_url)
+            await Mute.create(
+                user.id,
+                str(user),
+                ctx.author.id,
+                get_mod_level(ctx.author),
+                -1,
+                reason,
+                evidence_url,
+            )
             if evidence:
                 user_embed.description = t.muted_inf.evidence(ctx.author.mention, ctx.guild.name, reason,
                                                               t.image_link(evidence.filename, evidence_url),
@@ -692,7 +710,7 @@ class ModCog(Cog, name="Mod Tools"):
         if mute is None:
             raise CommandError(t.no_mute)
 
-        if not await compare_mod_level(ctx.author, ctx.guild.get_member(mute.mod)):
+        if not await compare_mod_level(ctx.author, mute.mod_level):
             raise CommandError(tg.permission_denied)
 
         if len(reason) > 900:
@@ -723,7 +741,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
-        await Mute.edit(mute_id, ctx.author.id, reason)
+        await Mute.edit(mute_id, ctx.author.id, get_mod_level(ctx.author), reason)
 
         try:
             await user.send(embed=user_embed)
@@ -752,7 +770,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         mute = sorted(active_mutes, key=lambda active_mute: active_mute.timestamp)[0]
 
-        if not await compare_mod_level(ctx.author, ctx.guild.get_member(mute.mod)):
+        if not await compare_mod_level(ctx.author, mute.mod_level):
             raise CommandError(tg.permission_denied)
 
         if mute.minutes == minutes or (mute.minutes == -1 and minutes is None):
@@ -793,7 +811,16 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if minutes is not None:
-            await Mute.create(user.id, str(user), ctx.author.id, minutes, mute.reason, mute.evidence, True)
+            await Mute.create(
+                user.id,
+                str(user),
+                ctx.author.id,
+                get_mod_level(ctx.author),
+                minutes,
+                mute.reason,
+                mute.evidence,
+                True,
+            )
             user_embed.description = t.mute_edited.duration(time_to_units(mute.minutes), time_to_units(minutes))
             await send_to_changelog_mod(
                 ctx.guild,
@@ -806,7 +833,16 @@ class ModCog(Cog, name="Mod Tools"):
             )
 
         else:
-            await Mute.create(user.id, str(user), ctx.author.id, -1, mute.reason, mute.evidence, True)
+            await Mute.create(
+                user.id,
+                str(user),
+                ctx.author.id,
+                get_mod_level(ctx.author),
+                -1,
+                mute.reason,
+                mute.evidence,
+                True,
+            )
             user_embed.description = t.mute_edited.duration(time_to_units(mute.minutes), t.infinity)
             await send_to_changelog_mod(
                 ctx.guild,
@@ -845,6 +881,9 @@ class ModCog(Cog, name="Mod Tools"):
             await user.remove_roles(mute_role)
 
         async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
+            if not await compare_mod_level(ctx.author, mute.mod_level):
+                raise CommandError(tg.permission_denied)
+
             await Mute.deactivate(mute.id, ctx.author.id, reason)
             was_muted = True
         if not was_muted:
@@ -882,7 +921,7 @@ class ModCog(Cog, name="Mod Tools"):
             evidence = None
             evidence_url = None
 
-        await Kick.create(member.id, str(member), ctx.author.id, reason, evidence_url)
+        await Kick.create(member.id, str(member), ctx.author.id, get_mod_level(ctx.author), reason, evidence_url)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason,
                                     evidence=evidence)
 
@@ -928,7 +967,7 @@ class ModCog(Cog, name="Mod Tools"):
         if kick is None:
             raise CommandError(t.no_kick)
 
-        if not await compare_mod_level(ctx.author, ctx.guild.get_member(kick.mod)):
+        if not await compare_mod_level(ctx.author, kick.mod_level):
             raise CommandError(tg.permission_denied)
 
         if len(reason) > 900:
@@ -949,7 +988,7 @@ class ModCog(Cog, name="Mod Tools"):
             if msg:
                 await msg.delete(delay=5)
 
-        await Kick.edit(kick_id, ctx.author.id, reason)
+        await Kick.edit(kick_id, ctx.author.id, get_mod_level(ctx.author), reason)
 
         user = self.bot.get_user(kick.member)
 
@@ -1021,7 +1060,16 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if minutes is not None:
-            await Ban.create(user.id, str(user), ctx.author.id, minutes, reason, evidence_url, False)
+            await Ban.create(
+                user.id,
+                str(user),
+                ctx.author.id,
+                get_mod_level(ctx.author),
+                minutes,
+                reason,
+                evidence_url,
+                False,
+            )
             if evidence:
                 user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
                                                            reason, t.image_link(evidence.filename, evidence_url)
@@ -1041,7 +1089,16 @@ class ModCog(Cog, name="Mod Tools"):
                 evidence=evidence,
             )
         else:
-            await Ban.create(user.id, str(user), ctx.author.id, -1, reason, evidence_url, False)
+            await Ban.create(
+                user.id,
+                str(user),
+                ctx.author.id,
+                get_mod_level(ctx.author),
+                -1,
+                reason,
+                evidence_url,
+                False,
+            )
             if evidence:
                 user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, reason,
                                                            t.image_link(evidence.filename, evidence_url)
@@ -1093,7 +1150,7 @@ class ModCog(Cog, name="Mod Tools"):
         if ban is None:
             raise CommandError(t.no_ban)
 
-        if not await compare_mod_level(ctx.author, ctx.guild.get_member(ban.mod)):
+        if not await compare_mod_level(ctx.author, ban.mod_level):
             raise CommandError(tg.permission_denied)
 
         if len(reason) > 900:
@@ -1124,7 +1181,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
-        await Ban.edit(ban_id, ctx.author.id, reason)
+        await Ban.edit(ban_id, ctx.author.id, get_mod_level(ctx.author), reason)
 
         try:
             await user.send(embed=user_embed)
@@ -1153,7 +1210,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         ban = sorted(active_bans, key=lambda active_ban: active_ban.timestamp)[0]
 
-        if not await compare_mod_level(ctx.author, ctx.guild.get_member(ban.mod)):
+        if not await compare_mod_level(ctx.author, ban.mod_level):
             raise CommandError(tg.permission_denied)
 
         if ban.minutes == minutes or (ban.minutes == -1 and minutes is None):
@@ -1194,7 +1251,16 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
         if minutes is not None:
-            await Ban.create(user.id, str(user), ctx.author.id, minutes, ban.reason, ban.evidence, True)
+            await Ban.create(
+                user.id,
+                str(user),
+                ctx.author.id,
+                get_mod_level(ctx.author),
+                minutes,
+                ban.reason,
+                ban.evidence,
+                True,
+            )
             user_embed.description = t.ban_edited.duration(time_to_units(ban.minutes), time_to_units(minutes))
             await send_to_changelog_mod(
                 ctx.guild,
@@ -1207,7 +1273,16 @@ class ModCog(Cog, name="Mod Tools"):
             )
 
         else:
-            await Ban.create(user.id, str(user), ctx.author.id, -1, ban.reason, ban.evidence, True)
+            await Ban.create(
+                user.id,
+                str(user),
+                ctx.author.id,
+                get_mod_level(ctx.author),
+                -1,
+                ban.reason,
+                ban.evidence,
+                True,
+            )
             user_embed.description = t.ban_edited.duration(time_to_units(ban.minutes), t.infinity)
             await send_to_changelog_mod(
                 ctx.guild,
@@ -1249,8 +1324,11 @@ class ModCog(Cog, name="Mod Tools"):
             was_banned = False
 
         async for ban in await db.stream(filter_by(Ban, active=True, member=user.id)):
-            was_banned = True
+            if not await compare_mod_level(ctx.author, ban.mod_level):
+                raise CommandError(tg.permission_denied)
+
             await Ban.deactivate(ban.id, ctx.author.id, reason)
+            was_banned = True
         if not was_banned:
             raise UserCommandError(user, t.not_banned)
 
