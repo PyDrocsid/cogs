@@ -108,7 +108,7 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
             value="\n".join(f":small_blue_diamond: `{p}`" for p in optional_permissions),
         )
 
-    if doc_url := get_documentation(cmd.cog):
+    if (doc_url := get_documentation(cmd.cog)) and not getattr(cmd.callback, "no_documentation", False):
         embed.add_field(name=t.documentation, value=doc_url, inline=False)
 
     return await send_long_embed(ctx, embed)
