@@ -28,7 +28,18 @@ commands:
   remove: Delete a given custom command
 
 custom_commands: Custom Commands
+custom_command: Custom Command
 no_custom_commands: No custom commands have been created yet.
+message: Message
+name: Name
+aliases: Aliases
+description: Description
+channel: Channel
+parameter: chosen by the user via the `channel` parameter
+delete_command: Delete command after successful execution
+required_permission_level: Required Permission Level
+requires_confirmation: Confirmation Required
+
 alias_not_found: Alias does not exist!
 already_exists: Command already exists!
 invalid_url: Invalid Discohook URL!

@@ -224,7 +224,48 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands.command(name="show", aliases=["s", "view", "v", "?"])
     @docs(t.commands.show)
     async def custom_commands_show(self, ctx: Context, command: CustomCommandConverter):
-        pass
+        command: CustomCommand
+
+        embed = Embed(title=t.custom_command, colour=Colors.CustomCommands)
+
+        data = json.dumps({"messages": [{"data": msg} for msg in json.loads(command.data)]})
+        url = "https://discohook.org/?data=" + base64.urlsafe_b64encode(data.encode()).decode().rstrip("=")
+        async with ClientSession() as session, session.post(
+            "https://share.discohook.app/create",
+            json={"url": url},
+        ) as response:
+            data = await response.json()
+            url = data.get("url")
+            if response.ok and url:
+                embed.add_field(name=t.message, value=url, inline=False)
+
+        embed.add_field(name=tg.status, value=tg.disabled if command.disabled else tg.enabled)
+        embed.add_field(name=t.name, value=command.name)
+        if command.aliases:
+            embed.add_field(name=t.aliases, value=", ".join(f"`{alias}`" for alias in command.alias_names))
+        if command.description:
+            embed.add_field(name=t.description, value=command.description, inline=False)
+        if command.channel_parameter:
+            embed.add_field(name=t.channel, value=t.parameter)
+        elif channel := ctx.guild.get_channel(command.channel_id):
+            embed.add_field(name=t.channel, value=channel.mention)
+        embed.add_field(
+            name=t.requires_confirmation,
+            value=tg.enabled if command.requires_confirmation else tg.disabled,
+        )
+        embed.add_field(name=t.delete_command, value=tg.enabled if command.delete_command else tg.disabled)
+
+        level: BasePermissionLevel
+        for level in Config.PERMISSION_LEVELS:
+            if level.level == command.permission_level:
+                embed.add_field(
+                    name=t.required_permission_level,
+                    value=f":small_orange_diamond: **{level.description}**",
+                    inline=False,
+                )
+                break
+
+        await send_long_embed(ctx, embed=embed)
 
     @custom_commands.command(name="test", aliases=["t"])
     @docs(t.commands.test)
