@@ -13,12 +13,14 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, docs, confirm, no_documentation
 from PyDrocsid.command_edit import link_response
 from PyDrocsid.config import Contributor, Config
-from PyDrocsid.database import db, filter_by
+from PyDrocsid.database import db, filter_by, select
+from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.logger import get_logger
 from PyDrocsid.permission import BasePermissionLevel
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions
+from .colors import Colors
 from .models import CustomCommand, Alias
 from .permissions import CustomCommandsPermission
 from ...administration.permissions.cog import PermissionsCog, PermissionLevelConverter
@@ -150,6 +152,9 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
             self.load_command(custom_command)
 
     def load_command(self, command: CustomCommand):
+        if command.disabled:
+            return
+
         cmd = create_custom_command(command)
         cmd.cog = self
         self.bot.add_command(cmd)
@@ -163,11 +168,16 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         self.unload_command(command)
         self.load_command(command)
 
-    def test_command_already_exists(self, name: str):
+    async def test_command_already_exists(self, name: str):
         cmd: Command
         for cmd in self.bot.commands:
             if name in [cmd.name, *cmd.aliases]:
                 raise CommandError(t.already_exists)
+
+        if await db.exists(filter_by(CustomCommand, name=name)):
+            raise CommandError(t.already_exists)
+        if await db.exists(filter_by(Alias, name=name)):
+            raise CommandError(t.already_exists)
 
     @commands.group(aliases=["cc"])
     @CustomCommandsPermission.read.check
@@ -179,13 +189,27 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
                 raise UserInputError
             return
 
-        pass
+        embed = Embed(title=t.custom_commands, colour=Colors.CustomCommands)
+        out = []
+        custom_command: CustomCommand
+        async for custom_command in await db.stream(select(CustomCommand, CustomCommand.aliases)):
+            emoji = ":small_orange_diamond:" if not custom_command.disabled else ":small_blue_diamond:"
+            names = ", ".join(f"`{name}`" for name in [custom_command.name, *custom_command.alias_names])
+            out.append(f"{emoji} {names}")
+
+        if not out:
+            embed.description = t.no_custom_commands
+            embed.colour = Colors.error
+        else:
+            embed.description = "\n".join(out)
+
+        await send_long_embed(ctx, embed=embed)
 
     @custom_commands.command(name="add", aliases=["a", "+"])
     @CustomCommandsPermission.write.check
     @docs(t.commands.add)
     async def custom_commands_add(self, ctx: Context, name: str, discohook_url: str, disabled: bool = False):
-        self.test_command_already_exists(name)
+        await self.test_command_already_exists(name)
 
         command = await CustomCommand.create(
             name,
@@ -285,13 +309,27 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @CustomCommandsPermission.write.check
     @docs(t.commands.disable)
     async def custom_commands_disable(self, ctx: Context, command: CustomCommandConverter):
-        pass
+        command: CustomCommand
+
+        if command.disabled:
+            raise CommandError(t.already_disabled)
+
+        command.disabled = True
+        self.unload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="enable")
     @CustomCommandsPermission.write.check
     @docs(t.commands.enable)
     async def custom_commands_enable(self, ctx: Context, command: CustomCommandConverter):
-        pass
+        command: CustomCommand
+
+        if not command.disabled:
+            raise CommandError(t.not_disabled)
+
+        command.disabled = False
+        self.load_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="alias")
     @CustomCommandsPermission.write.check
@@ -299,7 +337,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     async def custom_commands_alias(self, ctx: Context, command: CustomCommandConverter, alias: str):
         command: CustomCommand
 
-        self.test_command_already_exists(alias)
+        await self.test_command_already_exists(alias)
         await command.add_alias(alias)
         self.reload_command(command)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
