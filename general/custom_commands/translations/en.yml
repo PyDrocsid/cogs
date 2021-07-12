@@ -3,25 +3,25 @@ permissions:
   write: Create, edit and delete custom commands
 
 commands:
-  custom_commands:
-  add:
-  show:
-  test:
-  edit_:
+  custom_commands: Manage custom commands
+  add: Create a new custom command
+  show: Show details about a given custom command
+  test: Send the message of a given custom command into the current channel without mentioning any user or role
+  edit_: Edit a given custom command
   edit:
-    name:
-    description:
-    channel_parameter_enabled:
-    channel:
-    delete_command:
-    permission_level:
-    requires_confirmation:
-    data:
-  enable:
-  disable:
-  alias:
-  unalias:
-  remove:
+    name: Change the name of a custom command
+    description: Change the description of a custom command
+    channel_parameter_enabled: Enable/disable the `channel` parameter of a custom command
+    channel: Specify a text channel into which the message of a custom command should be sent
+    delete_command: Delete the command message after the custom command has been executed successfully
+    permission_level: Set the minimum permission level required to execute this custom command
+    requires_confirmation: Enable/disable a confirmation message before sending the message of the custom command
+    data: Change the message content of this custom command
+  enable: Enable a previously disabled custom command
+  disable: Disable a given custom command
+  alias: Create an alias for a given custom command
+  unalias: Delete a given custom command alias
+  remove: Delete a given custom command
 
 confirmation: Confirmation
 confirm: Are you sure you want to execute the `{}` command in {}?
