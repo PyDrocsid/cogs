@@ -5,7 +5,7 @@ import re
 from typing import Optional
 
 from aiohttp import ClientSession
-from discord import Embed, TextChannel, NotFound, Forbidden
+from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException
 from discord.ext import commands
 from discord.ext.commands import Context, guild_only, UserInputError, Converter, BadArgument, CommandError, Command
 
@@ -64,17 +64,22 @@ def create_custom_command(custom_command: CustomCommand):
         for msg in messages:
             content = msg.get("content")
             for embed in msg.get("embeds") or [None]:
-                embed = Embed.from_dict(embed) if embed else None
-                if ctx.channel.id == channel.id:
-                    if custom_command.delete_command:
-                        await ctx.send(content, embed=embed)
+                if embed is not None:
+                    embed = Embed.from_dict(embed)
+
+                try:
+                    if ctx.channel.id == channel.id:
+                        if custom_command.delete_command:
+                            await ctx.send(content, embed=embed)
+                        else:
+                            await reply(ctx, content, embed=embed)
                     else:
-                        await reply(ctx, content, embed=embed)
-                else:
-                    msg = await channel.send(content, embed=embed)
-                    if not custom_command.delete_command:
-                        await link_response(ctx, msg)
-                        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+                        msg = await channel.send(content, embed=embed)
+                        if not custom_command.delete_command:
+                            await link_response(ctx, msg)
+                            await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+                except HTTPException:
+                    raise CommandError(t.could_not_send_message)
                 content = None
 
     async def with_channel_parameter(_, ctx: Context, channel: TextChannel):
@@ -117,6 +122,17 @@ async def load_discohook(url: str) -> str:
         messages = [msg["data"] for msg in json.loads(base64.urlsafe_b64decode(match.group(1) + "=="))["messages"]]
     except (binascii.Error, json.JSONDecodeError, KeyError):
         raise CommandError(t.invalid_url)
+
+    if not isinstance(messages, list):
+        raise CommandError(t.invalid_url)
+
+    for msg in messages:
+        if not isinstance(msg.get("content", ""), str):
+            raise CommandError(t.invalid_url)
+
+        for embed in msg.get("embeds") or []:
+            if not isinstance(embed, dict):
+                raise CommandError(t.invalid_url)
 
     return json.dumps(messages)
 
