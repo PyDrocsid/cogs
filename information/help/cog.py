@@ -25,7 +25,8 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
         desc: List[str] = []
         for cmd in sorted(cmds, key=lambda c: c.name):
             if not cmd.hidden and await can_run_command(cmd, ctx):
-                desc.append(format_command(cmd))
+                emoji = getattr(cmd._callback, "emoji", ":small_orange_diamond:")
+                desc.append(emoji + " " + format_command(cmd))
         if desc:
             embed.add_field(name=cog_name, value="\n".join(desc), inline=False)
 
