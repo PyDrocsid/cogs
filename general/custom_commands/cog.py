@@ -96,7 +96,7 @@ async def send_custom_command_message(
             elif not content:
                 break
 
-            try:
+            async def _send_message():
                 if test:
                     allowed_mentions = AllowedMentions(everyone=False, users=False, roles=False)
                     await reply(ctx, content, embed=embed, allowed_mentions=allowed_mentions)
@@ -110,8 +110,17 @@ async def send_custom_command_message(
                     if not custom_command.delete_command:
                         await link_response(ctx, msg)
                         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
+            try:
+                await _send_message()
             except HTTPException:
-                raise CommandError(t.could_not_send_message)
+                # embed could be empty
+                embed = None
+                try:
+                    await _send_message()
+                except HTTPException:
+                    raise CommandError(t.could_not_send_message)
+
             content = None
 
 
