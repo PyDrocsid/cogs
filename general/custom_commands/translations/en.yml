@@ -61,3 +61,29 @@ confirmation: Confirmation
 confirm: Are you sure you want to execute the `{}` command in {}?
 canceled: ":x: Canceled"
 confirmed: "Confirmed :white_check_mark:"
+
+log:
+  created: "**Custom command** `{}` has been **created**."
+  renamed: "**Custom command** `{}` has been **renamed** to `{}`."
+  description:
+    set: "**Description** of the **custom command** `{}` has been updated:\n\n{}"
+    unset: "**Description** of the **custom command** `{}` has been removed."
+  channel_parameter:
+    enabled: "**Channel parameter** of **custom command** `{}` has been **enabled**."
+    disabled: "**Channel parameter** of **custom command** `{}` has been **disabled**."
+  channel:
+    set: "**Messages** of **custom command** `{}` will now be **sent** to {}."
+    unset: "**Messages** of **custom command** `{}` will now be **sent** to the channel in which the **command was invoked**."
+  delete_command:
+    enabled: "After successful execution of the **custom command** `{}` the **command message** will be **deleted**."
+    disabled: "After successful execution of the **custom command** `{}` the **command message** will **not be deleted** anymore."
+  permission_level: "**Required permission level** of **custom command** `{}` has been **set** to `{}`."
+  requires_confirmation:
+    enabled: "**Confirmation message** has been **enabled** for **custom command** `{}`."
+    disabled: "**Confirmation message** has been **disabled** for **custom command** `{}`."
+  data: "**Message content** of **custom command** `{}` has been **updated**."
+  disabled: "**Custom command** `{}` has been **disabled**."
+  enabled: "**Custom command** `{}` has been **enabled**."
+  alias: "**Alias** `{}` has been **added** to **custom command** `{}`."
+  unalias: "**Alias** `{}` has been **removed** from **custom command** `{}`."
+  deleted: "**Custom command** `{}` has been **deleted**."

@@ -24,6 +24,7 @@ from .colors import Colors
 from .models import CustomCommand, Alias
 from .permissions import CustomCommandsPermission
 from ...administration.permissions.cog import PermissionsCog, PermissionLevelConverter
+from ...pubsub import send_to_changelog
 
 logger = get_logger(__name__)
 
@@ -248,6 +249,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         )
         self.load_command(command)
 
+        await send_to_changelog(ctx.guild, t.log.created(name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="show", aliases=["s", "view", "v", "?"])
@@ -316,9 +318,12 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     async def custom_commands_edit_name(self, ctx: Context, command: CustomCommandConverter, *, name: str):
         command: CustomCommand
 
+        old_name: str = command.name
+
         self.unload_command(command)
         command.name = name
         self.load_command(command)
+        await send_to_changelog(ctx.guild, t.log.renamed(old_name, name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="description", aliases=["desc", "d"])
@@ -334,6 +339,10 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.description = description
         self.reload_command(command)
+        if description:
+            await send_to_changelog(ctx.guild, t.log.description.set(command.name, description))
+        else:
+            await send_to_changelog(ctx.guild, t.log.description.unset(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="channel_parameter", aliases=["cp"])
@@ -353,6 +362,10 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.channel_parameter = enabled
         self.reload_command(command)
+        if enabled:
+            await send_to_changelog(ctx.guild, t.log.channel_parameter.enabled(command.name))
+        else:
+            await send_to_changelog(ctx.guild, t.log.channel_parameter.disabled(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="channel", aliases=["c"])
@@ -371,6 +384,10 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.channel_id = channel and channel.id
         self.reload_command(command)
+        if channel:
+            await send_to_changelog(ctx.guild, t.log.channel.set(command.name, channel.mention))
+        else:
+            await send_to_changelog(ctx.guild, t.log.channel.unset(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="delete_command", aliases=["dc"])
@@ -385,6 +402,10 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.delete_command = delete
         self.reload_command(command)
+        if delete:
+            await send_to_changelog(ctx.guild, t.log.delete_command.enabled(command.name))
+        else:
+            await send_to_changelog(ctx.guild, t.log.delete_command.disabled(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="permission_level", aliases=["pl"])
@@ -403,6 +424,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.permission_level = level.level
         self.reload_command(command)
+        await send_to_changelog(ctx.guild, t.log.permission_level(command.name, level.description))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="requires_confirmation", aliases=["rc"])
@@ -422,6 +444,10 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.requires_confirmation = enabled
         self.reload_command(command)
+        if enabled:
+            await send_to_changelog(ctx.guild, t.log.requires_confirmation.enabled(command.name))
+        else:
+            await send_to_changelog(ctx.guild, t.log.requires_confirmation.disabled(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="data", aliases=["content", "text", "t"])
@@ -431,6 +457,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.data = await load_discohook(discohook_url)
         self.reload_command(command)
+        await send_to_changelog(ctx.guild, t.log.data(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="disable")
@@ -444,6 +471,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.disabled = True
         self.unload_command(command)
+        await send_to_changelog(ctx.guild, t.log.disabled(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="enable")
@@ -457,6 +485,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.disabled = False
         self.load_command(command)
+        await send_to_changelog(ctx.guild, t.log.enabled(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="alias")
@@ -468,6 +497,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         await self.test_command_already_exists(alias)
         await command.add_alias(alias)
         self.reload_command(command)
+        await send_to_changelog(ctx.guild, t.log.alias(alias, command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="unalias")
@@ -482,6 +512,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         await db.delete(row)
         command.aliases.remove(row)
         self.reload_command(command)
+        await send_to_changelog(ctx.guild, t.log.unalias(alias, command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="remove", aliases=["r", "del", "d", "-"])
@@ -492,4 +523,5 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         await db.delete(command)
         self.unload_command(command)
+        await send_to_changelog(ctx.guild, t.log.deleted(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
