@@ -297,7 +297,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         ctx: Context,
         command: CustomCommandConverter,
         *,
-        description: str,
+        description: str = None,
     ):
         command: CustomCommand
 
@@ -331,9 +331,16 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         ctx: Context,
         command: CustomCommandConverter,
         *,
-        channel: TextChannel,
+        channel: TextChannel = None,
     ):
-        pass
+        command: CustomCommand
+
+        if command.channel_parameter:
+            raise CommandError(t.channel_parameter_enabled)
+
+        command.channel_id = channel and channel.id
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="delete_command", aliases=["dc"])
     @docs(t.commands.edit.delete_command)
