@@ -11,6 +11,7 @@ commands:
   test: Send the message of a given custom command into the current channel without mentioning any user or role
   edit_: Edit a given custom command
   edit:
+    enabled: Enable/disable a custom command
     name: Change the name of a custom command
     description: Change the description of a custom command
     channel_parameter_enabled: Enable/disable the `channel` parameter of a custom command
@@ -21,8 +22,6 @@ commands:
     data: |
       Change the message content of this custom command
       Go to {}, compose your message, click on `Share Message` and copy the link.
-  enable: Enable a previously disabled custom command
-  disable: Disable a given custom command
   alias: Create an alias for a given custom command
   unalias: Delete a given custom command alias
   remove: Delete a given custom command

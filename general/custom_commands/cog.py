@@ -235,16 +235,16 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         await send_long_embed(ctx, embed=embed)
 
-    @custom_commands.command(name="add", aliases=["a", "+"])
+    @custom_commands.command(name="add", aliases=["+"])
     @CustomCommandsPermission.write.check
     @docs(t.commands.add(DISCOHOOK_EMPTY_MESSAGE))
-    async def custom_commands_add(self, ctx: Context, name: str, discohook_url: str, disabled: bool = False):
+    async def custom_commands_add(self, ctx: Context, name: str, discohook_url: str, enabled: bool = True):
         await self.test_command_already_exists(name)
 
         command = await CustomCommand.create(
             name,
             await load_discohook(discohook_url),
-            disabled,
+            not enabled,
             await Config.PERMISSION_LEVELS.get_permission_level(ctx.author),
         )
         self.load_command(command)
@@ -312,6 +312,26 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     async def custom_commands_edit(self, ctx: Context):
         if ctx.invoked_subcommand is None:
             raise UserInputError
+
+    @custom_commands_edit.command(name="enabled", aliases=["e"])
+    @docs(t.commands.edit.enabled)
+    async def custom_commands_edit_enabled(self, ctx: Context, command: CustomCommandConverter, enabled: bool):
+        command: CustomCommand
+
+        if not command.disabled and enabled:
+            raise CommandError(t.already_enabled)
+        if command.disabled and not enabled:
+            raise CommandError(t.already_disabled)
+
+        command.disabled = not enabled
+        if enabled:
+            self.load_command(command)
+            await send_to_changelog(ctx.guild, t.log.enabled(command.name))
+        else:
+            self.unload_command(command)
+            await send_to_changelog(ctx.guild, t.log.disabled(command.name))
+
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="name", aliases=["n"])
     @docs(t.commands.edit.name)
@@ -450,7 +470,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
             await send_to_changelog(ctx.guild, t.log.requires_confirmation.disabled(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
-    @custom_commands_edit.command(name="data", aliases=["content", "text", "t"])
+    @custom_commands_edit.command(name="text", aliases=["t", "content", "data"])
     @docs(t.commands.edit.data(DISCOHOOK_EMPTY_MESSAGE))
     async def custom_commands_edit_data(self, ctx: Context, command: CustomCommandConverter, discohook_url: str):
         command: CustomCommand
@@ -460,35 +480,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         await send_to_changelog(ctx.guild, t.log.data(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
-    @custom_commands.command(name="disable")
-    @CustomCommandsPermission.write.check
-    @docs(t.commands.disable)
-    async def custom_commands_disable(self, ctx: Context, command: CustomCommandConverter):
-        command: CustomCommand
-
-        if command.disabled:
-            raise CommandError(t.cc_already_disabled)
-
-        command.disabled = True
-        self.unload_command(command)
-        await send_to_changelog(ctx.guild, t.log.disabled(command.name))
-        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
-    @custom_commands.command(name="enable")
-    @CustomCommandsPermission.write.check
-    @docs(t.commands.enable)
-    async def custom_commands_enable(self, ctx: Context, command: CustomCommandConverter):
-        command: CustomCommand
-
-        if not command.disabled:
-            raise CommandError(t.not_disabled)
-
-        command.disabled = False
-        self.load_command(command)
-        await send_to_changelog(ctx.guild, t.log.enabled(command.name))
-        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
-    @custom_commands.command(name="alias")
+    @custom_commands.command(name="alias", aliases=["a"])
     @CustomCommandsPermission.write.check
     @docs(t.commands.alias)
     async def custom_commands_alias(self, ctx: Context, command: CustomCommandConverter, alias: str):
@@ -500,7 +492,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         await send_to_changelog(ctx.guild, t.log.alias(alias, command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
-    @custom_commands.command(name="unalias")
+    @custom_commands.command(name="unalias", aliases=["u"])
     @CustomCommandsPermission.write.check
     @docs(t.commands.unalias)
     async def custom_commands_unalias(self, ctx: Context, alias: str):
