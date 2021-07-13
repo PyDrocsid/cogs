@@ -96,10 +96,11 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
         )
     if permission_levels:
         permission_level: BasePermissionLevel = max(permission_levels, key=lambda pl: pl.level)
-        embed.add_field(
-            name=t.required_permission_level,
-            value=f":small_orange_diamond: **{permission_level.description}**",
-        )
+        if permission_level.level > 0:
+            embed.add_field(
+                name=t.required_permission_level,
+                value=f":small_orange_diamond: **{permission_level.description}**",
+            )
 
     optional_permissions: list[str] = [permission.fullname for permission in get_optional_permissions(command)]
     if optional_permissions:
@@ -108,7 +109,7 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
             value="\n".join(f":small_blue_diamond: `{p}`" for p in optional_permissions),
         )
 
-    if doc_url := get_documentation(cmd.cog):
+    if (doc_url := get_documentation(cmd.cog)) and not getattr(cmd.callback, "no_documentation", False):
         embed.add_field(name=t.documentation, value=doc_url, inline=False)
 
     return await send_long_embed(ctx, embed)
