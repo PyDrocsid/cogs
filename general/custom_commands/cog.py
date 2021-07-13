@@ -32,12 +32,20 @@ t = t.custom_commands
 
 
 class CustomCommandConverter(Converter):
-    async def convert(self, ctx: Context, argument: str) -> CustomCommand:
+    @staticmethod
+    async def _get_command(argument: str) -> CustomCommand:
         if cmd := await db.get(CustomCommand, CustomCommand.aliases, name=argument):
             return cmd
         if alias := await db.get(Alias, [Alias.command, CustomCommand.aliases], name=argument):
             return alias.command
         raise BadArgument
+
+    async def convert(self, ctx: Context, argument: str) -> CustomCommand:
+        cmd = await CustomCommandConverter._get_command(argument)
+        if (await Config.PERMISSION_LEVELS.get_permission_level(ctx.author)).level < cmd.permission_level:
+            raise CommandError(t.not_allowed)
+
+        return cmd
 
 
 def create_custom_command(custom_command: CustomCommand):
@@ -189,10 +197,14 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
                 raise UserInputError
             return
 
+        permission_level: int = (await Config.PERMISSION_LEVELS.get_permission_level(ctx.author)).level
         embed = Embed(title=t.custom_commands, colour=Colors.CustomCommands)
         out = []
         custom_command: CustomCommand
         async for custom_command in await db.stream(select(CustomCommand, CustomCommand.aliases)):
+            if permission_level < custom_command.permission_level:
+                continue
+
             emoji = ":small_orange_diamond:" if not custom_command.disabled else ":small_blue_diamond:"
             names = ", ".join(f"`{name}`" for name in [custom_command.name, *custom_command.alias_names])
             out.append(f"{emoji} {names}")
@@ -364,7 +376,15 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         command: CustomCommandConverter,
         level: PermissionLevelConverter,
     ):
-        pass
+        command: CustomCommand
+        level: BasePermissionLevel
+
+        if not await level.check_permissions(ctx.author):
+            raise CommandError(t.not_allowed_permission_level)
+
+        command.permission_level = level.level
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="requires_confirmation", aliases=["rc"])
     @docs(t.commands.edit.requires_confirmation)

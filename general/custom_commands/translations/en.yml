@@ -29,6 +29,8 @@ commands:
 
 custom_commands: Custom Commands
 custom_command: Custom Command
+not_allowed: You are not allowed to manage this custom command!
+not_allowed_permission_level: You are not allowed to manage this permission level!
 no_custom_commands: No custom commands have been created yet.
 message: Message
 name: Name
