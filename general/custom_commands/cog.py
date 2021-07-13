@@ -289,7 +289,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         self.load_command(command)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
-    @custom_commands_edit.command(name="description", alises=["desc", "d"])
+    @custom_commands_edit.command(name="description", aliases=["desc", "d"])
     @docs(t.commands.edit.description)
     async def custom_commands_edit_description(
         self,
@@ -298,9 +298,13 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         *,
         description: str,
     ):
-        pass
+        command: CustomCommand
 
-    @custom_commands_edit.command(name="channel_parameter_enabled", alises=["cpe"])
+        command.description = description
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
+    @custom_commands_edit.command(name="channel_parameter_enabled", aliases=["cpe"])
     @docs(t.commands.edit.channel_parameter_enabled)
     async def custom_commands_edit_channel_parameter_enabled(
         self,
@@ -310,7 +314,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     ):
         pass
 
-    @custom_commands_edit.command(name="channel", alises=["c"])
+    @custom_commands_edit.command(name="channel", aliases=["c"])
     @docs(t.commands.edit.channel)
     async def custom_commands_edit_channel(
         self,
@@ -321,12 +325,12 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     ):
         pass
 
-    @custom_commands_edit.command(name="delete_command", alises=["dc"])
+    @custom_commands_edit.command(name="delete_command", aliases=["dc"])
     @docs(t.commands.edit.delete_command)
     async def custom_commands_edit_delete_command(self, ctx: Context, command: CustomCommandConverter, delete: bool):
         pass
 
-    @custom_commands_edit.command(name="permission_level", alises=["pl"])
+    @custom_commands_edit.command(name="permission_level", aliases=["pl"])
     @docs(t.commands.edit.permission_level)
     async def custom_commands_edit_permission_level(
         self,
@@ -336,7 +340,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     ):
         pass
 
-    @custom_commands_edit.command(name="requires_confirmation", alises=["rc"])
+    @custom_commands_edit.command(name="requires_confirmation", aliases=["rc"])
     @docs(t.commands.edit.requires_confirmation)
     async def custom_commands_edit_requires_confirmation(
         self,
@@ -346,7 +350,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     ):
         pass
 
-    @custom_commands_edit.command(name="data", alises=["content", "text", "t"])
+    @custom_commands_edit.command(name="data", aliases=["content", "text", "t"])
     @docs(t.commands.edit.data)
     async def custom_commands_edit_data(self, ctx: Context, command: CustomCommandConverter, discohook_url: str):
         pass
