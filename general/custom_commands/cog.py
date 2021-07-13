@@ -88,9 +88,14 @@ async def send_custom_command_message(
 
     for msg in messages:
         content = msg.get("content")
+        embed: Optional[dict]
         for embed in msg.get("embeds") or [None]:
             if embed is not None:
-                embed = Embed.from_dict(embed)
+                if embed.get("color", ...) is None:
+                    embed.pop("color")
+                embed: Embed = Embed.from_dict(embed)
+            elif not content:
+                break
 
             try:
                 if test:
@@ -157,7 +162,7 @@ async def load_discohook(url: str) -> str:
         raise CommandError(t.invalid_url)
 
     for msg in messages:
-        if not isinstance(msg.get("content", ""), str):
+        if not isinstance(msg.get("content") or "", str):
             raise CommandError(t.invalid_url)
 
         for embed in msg.get("embeds") or []:
