@@ -47,11 +47,13 @@ invalid_url_instructions: |
   Invalid Discohook URL!
   Please go to https://discohook.org/, compose your message, click on `Share Message` and copy the link.
 could_not_send_message: One or more messages could not be sent!
-already_disabled: Custom command has already been disabled!
+cc_already_disabled: Custom command has already been disabled!
 not_disabled: Custom command is not disabled!
 parameter_already_enabled: Channel parameter has already been enabled!
 parameter_already_disabled: Channel parameter has already been disabled!
 channel_parameter_enabled: Channel cannot be set while the `channel` parameter is enabled!
+already_enabled: Already enabled!
+already_disabled: Already disabled!
 
 confirmation: Confirmation
 confirm: Are you sure you want to execute the `{}` command in {}?

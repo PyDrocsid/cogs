@@ -305,9 +305,9 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         self.reload_command(command)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
-    @custom_commands_edit.command(name="channel_parameter_enabled", aliases=["cpe"])
+    @custom_commands_edit.command(name="channel_parameter", aliases=["cp"])
     @docs(t.commands.edit.channel_parameter_enabled)
-    async def custom_commands_edit_channel_parameter_enabled(
+    async def custom_commands_edit_channel_parameter(
         self,
         ctx: Context,
         command: CustomCommandConverter,
@@ -345,7 +345,16 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="delete_command", aliases=["dc"])
     @docs(t.commands.edit.delete_command)
     async def custom_commands_edit_delete_command(self, ctx: Context, command: CustomCommandConverter, delete: bool):
-        pass
+        command: CustomCommand
+
+        if command.delete_command and delete:
+            raise CommandError(t.already_enabled)
+        if not command.delete_command and not delete:
+            raise CommandError(t.already_disabled)
+
+        command.delete_command = delete
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="permission_level", aliases=["pl"])
     @docs(t.commands.edit.permission_level)
@@ -379,7 +388,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         command: CustomCommand
 
         if command.disabled:
-            raise CommandError(t.already_disabled)
+            raise CommandError(t.cc_already_disabled)
 
         command.disabled = True
         self.unload_command(command)
