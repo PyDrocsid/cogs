@@ -282,7 +282,12 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="name", aliases=["n"])
     @docs(t.commands.edit.name)
     async def custom_commands_edit_name(self, ctx: Context, command: CustomCommandConverter, *, name: str):
-        pass
+        command: CustomCommand
+
+        self.unload_command(command)
+        command.name = name
+        self.load_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="description", alises=["desc", "d"])
     @docs(t.commands.edit.description)
