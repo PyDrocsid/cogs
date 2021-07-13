@@ -374,7 +374,16 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         command: CustomCommandConverter,
         enabled: bool,
     ):
-        pass
+        command: CustomCommand
+
+        if command.requires_confirmation and enabled:
+            raise CommandError(t.already_enabled)
+        if not command.requires_confirmation and not enabled:
+            raise CommandError(t.already_disabled)
+
+        command.requires_confirmation = enabled
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="data", aliases=["content", "text", "t"])
     @docs(t.commands.edit.data)
