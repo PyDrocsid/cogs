@@ -245,10 +245,11 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
             embed.add_field(name=t.aliases, value=", ".join(f"`{alias}`" for alias in command.alias_names))
         if command.description:
             embed.add_field(name=t.description, value=command.description, inline=False)
-        if command.channel_parameter:
-            embed.add_field(name=t.channel, value=t.parameter)
-        elif channel := ctx.guild.get_channel(command.channel_id):
+
+        embed.add_field(name=t.channel_parameter, value=tg.enabled if command.channel_parameter else tg.disabled)
+        if (channel := ctx.guild.get_channel(command.channel_id)) and not command.channel_parameter:
             embed.add_field(name=t.channel, value=channel.mention)
+
         embed.add_field(
             name=t.requires_confirmation,
             value=tg.enabled if command.requires_confirmation else tg.disabled,
@@ -312,7 +313,16 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         command: CustomCommandConverter,
         enabled: bool,
     ):
-        pass
+        command: CustomCommand
+
+        if command.channel_parameter and enabled:
+            raise CommandError(t.parameter_already_enabled)
+        if not command.channel_parameter and not enabled:
+            raise CommandError(t.parameter_already_disabled)
+
+        command.channel_parameter = enabled
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="channel", aliases=["c"])
     @docs(t.commands.edit.channel)
