@@ -5,7 +5,7 @@ import re
 from typing import Optional
 
 from aiohttp import ClientSession
-from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException
+from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException, AllowedMentions
 from discord.ext import commands
 from discord.ext.commands import Context, guild_only, UserInputError, Converter, BadArgument, CommandError, Command
 
@@ -53,56 +53,68 @@ class CustomCommandConverter(Converter):
         return cmd
 
 
-def create_custom_command(custom_command: CustomCommand):
+async def send_custom_command_message(
+    ctx: Context,
+    custom_command: CustomCommand,
+    channel: TextChannel,
+    test: bool = False,
+):
+    if test and channel != ctx.channel:
+        raise ValueError
+
     messages = json.loads(custom_command.data)
 
-    async def send_message(ctx: Context, channel: TextChannel):
-        check_message_send_permissions(channel, check_embed=any(msg.get("embeds") for msg in messages))
+    check_message_send_permissions(channel, check_embed=any(msg.get("embeds") for msg in messages))
 
-        if custom_command.requires_confirmation:
-            conf_embed = Embed(title=t.confirmation, description=t.confirm(custom_command.name, channel.mention))
-            async with confirm(ctx, conf_embed) as (result, msg):
-                if not result:
-                    conf_embed.description += "\n\n" + t.canceled
-                    return
+    if custom_command.requires_confirmation and not test:
+        conf_embed = Embed(title=t.confirmation, description=t.confirm(custom_command.name, channel.mention))
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.canceled
+                return
 
-                conf_embed.description += "\n\n" + t.confirmed
-                if msg:
-                    await msg.delete(delay=5)
+            conf_embed.description += "\n\n" + t.confirmed
+            if msg:
+                await msg.delete(delay=5)
 
-        if custom_command.delete_command:
+    if custom_command.delete_command and not test:
+        try:
+            await ctx.message.delete()
+        except (NotFound, Forbidden):
+            pass
+
+    for msg in messages:
+        content = msg.get("content")
+        for embed in msg.get("embeds") or [None]:
+            if embed is not None:
+                embed = Embed.from_dict(embed)
+
             try:
-                await ctx.message.delete()
-            except (NotFound, Forbidden):
-                pass
-
-        for msg in messages:
-            content = msg.get("content")
-            for embed in msg.get("embeds") or [None]:
-                if embed is not None:
-                    embed = Embed.from_dict(embed)
-
-                try:
-                    if ctx.channel.id == channel.id:
-                        if custom_command.delete_command:
-                            await ctx.send(content, embed=embed)
-                        else:
-                            await reply(ctx, content, embed=embed)
+                if test:
+                    allowed_mentions = AllowedMentions(everyone=False, users=False, roles=False)
+                    await reply(ctx, content, embed=embed, allowed_mentions=allowed_mentions)
+                elif ctx.channel.id == channel.id:
+                    if custom_command.delete_command:
+                        await ctx.send(content, embed=embed)
                     else:
-                        msg = await channel.send(content, embed=embed)
-                        if not custom_command.delete_command:
-                            await link_response(ctx, msg)
-                            await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-                except HTTPException:
-                    raise CommandError(t.could_not_send_message)
-                content = None
+                        await reply(ctx, content, embed=embed)
+                else:
+                    msg = await channel.send(content, embed=embed)
+                    if not custom_command.delete_command:
+                        await link_response(ctx, msg)
+                        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+            except HTTPException:
+                raise CommandError(t.could_not_send_message)
+            content = None
 
+
+def create_custom_command(custom_command: CustomCommand):
     async def with_channel_parameter(_, ctx: Context, channel: TextChannel):
-        await send_message(ctx, channel)
+        await send_custom_command_message(ctx, custom_command, channel)
 
     async def without_channel_parameter(_, ctx: Context):
         channel = ctx.bot.get_channel(custom_command.channel_id) or ctx.channel
-        await send_message(ctx, channel)
+        await send_custom_command_message(ctx, custom_command, channel)
 
     command = with_channel_parameter if custom_command.channel_parameter else without_channel_parameter
     if description := custom_command.description:
@@ -288,7 +300,9 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands.command(name="test", aliases=["t"])
     @docs(t.commands.test)
     async def custom_commands_test(self, ctx: Context, command: CustomCommandConverter):
-        pass
+        command: CustomCommand
+
+        await send_custom_command_message(ctx, command, ctx.channel, test=True)
 
     @custom_commands.group(name="edit", aliases=["e"])
     @CustomCommandsPermission.write.check
