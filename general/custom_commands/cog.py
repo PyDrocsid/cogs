@@ -89,11 +89,10 @@ async def send_custom_command_message(
     for msg in messages:
         content = msg.get("content")
         embed: Optional[dict]
-        for embed in msg.get("embeds") or [None]:
-            if embed is not None:
-                if embed.get("color", ...) is None:
-                    embed.pop("color")
-                embed: Embed = Embed.from_dict(embed)
+        for embed_data in msg.get("embeds") or [None]:
+            embed = None
+            if embed_data is not None:
+                embed: Embed = type("", (), {"to_dict": lambda _: embed_data})()
             elif not content:
                 break
 
