@@ -19,6 +19,7 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.logger import get_logger
 from PyDrocsid.permission import BasePermissionLevel
+from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions
 from .colors import Colors
@@ -166,6 +167,25 @@ async def load_discohook(url: str) -> str:
     return json.dumps(messages)
 
 
+async def create_discohook_url(command: CustomCommand) -> Optional[str]:
+    if url := await redis.get(key := f"custom_command_discohook_url:{command.id}"):
+        return url
+
+    data = json.dumps({"messages": [{"data": msg} for msg in json.loads(command.data)]})
+    url = "https://discohook.org/?data=" + base64.urlsafe_b64encode(data.encode()).decode().rstrip("=")
+    async with ClientSession() as session, session.post(
+        "https://share.discohook.app/create",
+        json={"url": url},
+    ) as response:
+        url: Optional[str] = (await response.json()).get("url")
+        if not response.ok or not url:
+            return None
+
+    await redis.setex(key, 24 * 60 * 60, url)
+
+    return url
+
+
 def test_name(name: str):
     if not name:
         raise UserInputError
@@ -272,16 +292,8 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         embed = Embed(title=t.custom_command, colour=Colors.CustomCommands)
 
-        data = json.dumps({"messages": [{"data": msg} for msg in json.loads(command.data)]})
-        url = "https://discohook.org/?data=" + base64.urlsafe_b64encode(data.encode()).decode().rstrip("=")
-        async with ClientSession() as session, session.post(
-            "https://share.discohook.app/create",
-            json={"url": url},
-        ) as response:
-            data = await response.json()
-            url = data.get("url")
-            if response.ok and url:
-                embed.add_field(name=t.message, value=url, inline=False)
+        if url := await create_discohook_url(command):
+            embed.add_field(name=t.message, value=url, inline=False)
 
         embed.add_field(name=tg.status, value=tg.disabled if command.disabled else tg.enabled)
         embed.add_field(name=t.name, value=command.name)
@@ -496,6 +508,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         command.data = await load_discohook(discohook_url)
         self.reload_command(command)
+        await redis.delete(f"custom_command_discohook_url:{command.id}")
         await send_to_changelog(ctx.guild, t.log.data(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
