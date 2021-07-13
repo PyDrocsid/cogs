@@ -30,6 +30,11 @@ logger = get_logger(__name__)
 tg = t.g
 t = t.custom_commands
 
+DISCOHOOK_EMPTY_MESSAGE = (
+    "[https://discohook.org/]"
+    "(https://discohook.org/?data=eyJtZXNzYWdlcyI6W3siZGF0YSI6eyJjb250ZW50IjpudWxsLCJlbWJlZHMiOm51bGx9fV19)"
+)
+
 
 class CustomCommandConverter(Converter):
     @staticmethod
@@ -117,7 +122,7 @@ def create_custom_command(custom_command: CustomCommand):
 
 async def load_discohook(url: str) -> str:
     if not re.match(r"^https://share.discohook.app/go/[a-zA-Z\d]+$", url):
-        raise CommandError(t.invalid_url_instructions)
+        raise CommandError(t.invalid_url_instructions(DISCOHOOK_EMPTY_MESSAGE))
 
     async with ClientSession() as session, session.head(url, allow_redirects=True) as response:
         if not response.ok:
@@ -219,7 +224,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
     @custom_commands.command(name="add", aliases=["a", "+"])
     @CustomCommandsPermission.write.check
-    @docs(t.commands.add)
+    @docs(t.commands.add(DISCOHOOK_EMPTY_MESSAGE))
     async def custom_commands_add(self, ctx: Context, name: str, discohook_url: str, disabled: bool = False):
         await self.test_command_already_exists(name)
 
@@ -406,9 +411,13 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="data", aliases=["content", "text", "t"])
-    @docs(t.commands.edit.data)
+    @docs(t.commands.edit.data(DISCOHOOK_EMPTY_MESSAGE))
     async def custom_commands_edit_data(self, ctx: Context, command: CustomCommandConverter, discohook_url: str):
-        pass
+        command: CustomCommand
+
+        command.data = await load_discohook(discohook_url)
+        self.reload_command(command)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands.command(name="disable")
     @CustomCommandsPermission.write.check
