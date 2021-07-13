@@ -40,6 +40,9 @@ channel: Channel
 delete_command: Delete command after successful execution
 required_permission_level: Required Permission Level
 requires_confirmation: Confirmation Required
+invalid_length: Command names cannot contain more than 32 characters.
+invalid_chars: Command name contains invalid characters.
+invalid_length_description: Command descriptions cannot contain more than 256 characters.
 
 alias_not_found: Alias does not exist!
 already_exists: Command already exists!

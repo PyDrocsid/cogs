@@ -2,6 +2,7 @@ import base64
 import binascii
 import json
 import re
+import string
 from typing import Optional
 
 from aiohttp import ClientSession
@@ -165,6 +166,17 @@ async def load_discohook(url: str) -> str:
     return json.dumps(messages)
 
 
+def test_name(name: str):
+    if not name:
+        raise UserInputError
+    if len(name) > 32:
+        raise CommandError(t.invalid_length)
+
+    valid_chars = set(string.ascii_letters + string.digits + string.punctuation) - {"`"}
+    if set(name) - valid_chars:
+        raise CommandError(t.invalid_chars)
+
+
 class CustomCommandsCog(Cog, name="Custom Commands"):
     CONTRIBUTORS = [Contributor.Defelo]
     DEPENDENCIES = [PermissionsCog]
@@ -239,6 +251,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @CustomCommandsPermission.write.check
     @docs(t.commands.add(DISCOHOOK_EMPTY_MESSAGE))
     async def custom_commands_add(self, ctx: Context, name: str, discohook_url: str, enabled: bool = True):
+        test_name(name)
         await self.test_command_already_exists(name)
 
         command = await CustomCommand.create(
@@ -338,6 +351,9 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     async def custom_commands_edit_name(self, ctx: Context, command: CustomCommandConverter, *, name: str):
         command: CustomCommand
 
+        test_name(name)
+        await self.test_command_already_exists(name)
+
         old_name: str = command.name
 
         self.unload_command(command)
@@ -356,6 +372,9 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         description: str = None,
     ):
         command: CustomCommand
+
+        if description and len(description) > 256:
+            raise CommandError(t.invalid_length_description)
 
         command.description = description
         self.reload_command(command)
@@ -486,7 +505,9 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     async def custom_commands_alias(self, ctx: Context, command: CustomCommandConverter, alias: str):
         command: CustomCommand
 
+        test_name(alias)
         await self.test_command_already_exists(alias)
+
         await command.add_alias(alias)
         self.reload_command(command)
         await send_to_changelog(ctx.guild, t.log.alias(alias, command.name))
