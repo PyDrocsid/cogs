@@ -283,16 +283,17 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands.command(name="add", aliases=["+"])
     @CustomCommandsPermission.write.check
     @docs(t.commands.add(DISCOHOOK_EMPTY_MESSAGE))
-    async def custom_commands_add(self, ctx: Context, name: str, discohook_url: str, enabled: bool = True):
+    async def custom_commands_add(self, ctx: Context, name: str, discohook_url: str, public: bool = True):
         test_name(name)
         await self.test_command_already_exists(name)
 
-        command = await CustomCommand.create(
-            name,
-            await load_discohook(discohook_url),
-            not enabled,
-            await Config.PERMISSION_LEVELS.get_permission_level(ctx.author),
-        )
+        permission_level: BasePermissionLevel
+        if public:
+            permission_level = Config.PERMISSION_LEVELS.PUBLIC
+        else:
+            permission_level = await Config.PERMISSION_LEVELS.get_permission_level(ctx.author)
+
+        command = await CustomCommand.create(name, await load_discohook(discohook_url), False, permission_level)
         self.load_command(command)
 
         await send_to_changelog(ctx.guild, t.log.created(name))
