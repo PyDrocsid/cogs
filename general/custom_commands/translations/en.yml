@@ -22,6 +22,7 @@ commands:
     data: |
       Change the message content of this custom command
       Go to {}, compose your message, click on `Share Message` and copy the link.
+      To load the current message content, use the `cc show` command.
   alias: Create an alias for a given custom command
   unalias: Delete a given custom command alias
   remove: Delete a given custom command
