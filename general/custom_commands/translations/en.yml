@@ -27,6 +27,7 @@ commands:
   unalias: Delete a given custom command alias
   remove: Delete a given custom command
 
+not_found: Custom command does not exist!
 custom_commands: Custom Commands
 custom_command: Custom Command
 not_allowed: You are not allowed to manage this custom command!

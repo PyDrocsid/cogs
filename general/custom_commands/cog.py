@@ -53,7 +53,7 @@ class CustomCommandConverter(Converter):
             return cmd
         if alias := await db.get(Alias, [Alias.command, CustomCommand.aliases], name=argument):
             return alias.command
-        raise BadArgument
+        raise CommandError(t.not_found)
 
     async def convert(self, ctx: Context, argument: str) -> CustomCommand:
         cmd = await CustomCommandConverter._get_command(argument)
