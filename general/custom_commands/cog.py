@@ -123,19 +123,16 @@ async def send_custom_command_message(
             try:
                 await _send_message()
             except HTTPException:
-                # embed could be empty
-
-                if test and not content:
-                    await reply(ctx, embed=warning(t.empty_message(ctx.prefix, custom_command.name)))
+                embed = None
+                try:
+                    await _send_message()
+                except HTTPException:
+                    if test:
+                        raise CommandError(t.limits_exceeded(ctx.prefix, custom_command.name))
+                    raise CommandError(t.could_not_send_message)
                 else:
-                    embed = None
-                    try:
-                        await _send_message()
-                    except HTTPException:
-                        raise CommandError(t.could_not_send_message)
-                    else:
-                        if test:
-                            await reply(ctx, embed=warning(t.empty_embed(ctx.prefix, custom_command.name)))
+                    if test:
+                        await reply(ctx, embed=warning(t.empty_embed(ctx.prefix, custom_command.name)))
 
             content = None
 
