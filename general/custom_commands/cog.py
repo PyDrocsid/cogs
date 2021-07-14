@@ -9,7 +9,7 @@ import requests
 from aiohttp import ClientSession
 from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException, AllowedMentions
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, UserInputError, Converter, BadArgument, CommandError, Command
+from discord.ext.commands import Context, guild_only, UserInputError, Converter, CommandError, Command
 from urllib3.exceptions import LocationParseError
 
 from PyDrocsid.async_thread import run_in_thread
@@ -546,6 +546,9 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @docs(t.commands.alias)
     async def custom_commands_alias(self, ctx: Context, command: CustomCommandConverter, alias: str):
         command: CustomCommand
+
+        if len(command.aliases) >= 8:
+            raise CommandError(t.too_many_aliases)
 
         test_name(alias)
         await self.test_command_already_exists(alias)
