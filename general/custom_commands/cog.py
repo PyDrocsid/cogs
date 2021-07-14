@@ -5,11 +5,14 @@ import re
 import string
 from typing import Optional
 
+import requests
 from aiohttp import ClientSession
 from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException, AllowedMentions
 from discord.ext import commands
 from discord.ext.commands import Context, guild_only, UserInputError, Converter, BadArgument, CommandError, Command
+from urllib3.exceptions import LocationParseError
 
+from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, docs, confirm, no_documentation
 from PyDrocsid.command_edit import link_response
@@ -165,11 +168,10 @@ async def load_discohook(url: str) -> str:
     if not re.match(r"^https://share.discohook.app/go/[a-zA-Z\d]+$", url):
         raise CommandError(t.invalid_url_instructions(DISCOHOOK_EMPTY_MESSAGE))
 
-    async with ClientSession() as session, session.head(url, allow_redirects=True) as response:
-        if not response.ok:
-            raise CommandError(t.invalid_url)
-
-        url = str(response.url)
+    try:
+        url = await run_in_thread(lambda: requests.head(url, allow_redirects=True).url)
+    except (KeyError, AttributeError, requests.RequestException, UnicodeError, ConnectionError, LocationParseError):
+        raise CommandError(t.invalid_url)
 
     if not (match := re.match(r"^https://discohook.org/\?data=([a-zA-Z\d\-_]+)$", url)):
         raise CommandError(t.invalid_url)
