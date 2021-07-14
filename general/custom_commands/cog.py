@@ -225,6 +225,22 @@ def test_name(name: str):
         raise CommandError(t.invalid_chars)
 
 
+async def ask_cc_test(ctx: Context, command: CustomCommand):
+    embed = Embed(
+        title=t.test_custom_command.title,
+        description=t.test_custom_command.description(ctx.prefix),
+        color=Colors.CustomCommands,
+    )
+    async with confirm(ctx, embed) as (result, _):
+        if not result:
+            embed.description += "\n\n" + t.canceled
+            return
+
+        embed.description += "\n\n" + t.confirmed
+
+    await send_custom_command_message(ctx, command, ctx.channel, test=True)
+
+
 class CustomCommandsCog(Cog, name="Custom Commands"):
     CONTRIBUTORS = [Contributor.Defelo]
     DEPENDENCIES = [PermissionsCog]
@@ -313,6 +329,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         await send_to_changelog(ctx.guild, t.log.created(name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+        await ask_cc_test(ctx, command)
 
     @custom_commands.command(name="show", aliases=["s", "view", "v", "?"])
     @docs(t.commands.show)
@@ -540,6 +557,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         await redis.delete(f"custom_command_discohook_url:{command.id}")
         await send_to_changelog(ctx.guild, t.log.data(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+        await ask_cc_test(ctx, command)
 
     @custom_commands.command(name="alias", aliases=["a"])
     @CustomCommandsPermission.write.check

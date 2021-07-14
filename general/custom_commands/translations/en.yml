@@ -62,6 +62,10 @@ already_enabled: Already enabled!
 already_disabled: Already disabled!
 too_many_aliases: You cannot create more than 8 aliases for a custom command!
 
+test_custom_command:
+  title: Test Custom Command?
+  description: Would you like to test this custom command now? The message will be sent to this channel and mentioned users/roles will not be pinged. You can also test the custom command later by using the `{}cc test` command.
+
 confirmation: Confirmation
 confirm: Are you sure you want to execute the `{}` command in {}?
 canceled: ":x: Canceled"
