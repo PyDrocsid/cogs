@@ -7,7 +7,7 @@ from typing import Optional
 
 import requests
 from aiohttp import ClientSession
-from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException, AllowedMentions
+from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException, AllowedMentions, User
 from discord.ext import commands
 from discord.ext.commands import Context, guild_only, UserInputError, Converter, CommandError, Command
 from urllib3.exceptions import LocationParseError
@@ -68,11 +68,12 @@ async def send_custom_command_message(
     custom_command: CustomCommand,
     channel: TextChannel,
     test: bool = False,
+    mention_user: Optional[User] = None,
 ):
     if test and channel != ctx.channel:
         raise ValueError
 
-    messages = json.loads(custom_command.data)
+    messages: list[dict] = json.loads(custom_command.data)
 
     check_message_send_permissions(channel, check_embed=any(msg.get("embeds") for msg in messages))
 
@@ -92,6 +93,15 @@ async def send_custom_command_message(
             await ctx.message.delete()
         except (NotFound, Forbidden):
             pass
+
+    if messages and mention_user:
+        msg = messages[0]
+        content = msg.get("content") or ""
+        content = mention_user.mention + "\n" + content
+        if len(content) > 2000:
+            messages.insert(0, {"content": mention_user.mention})
+        else:
+            msg["content"] = content
 
     for msg in messages:
         content = msg.get("content")
@@ -138,14 +148,31 @@ async def send_custom_command_message(
 
 
 def create_custom_command(custom_command: CustomCommand):
-    async def with_channel_parameter(_, ctx: Context, channel: TextChannel):
-        await send_custom_command_message(ctx, custom_command, channel)
-
-    async def without_channel_parameter(_, ctx: Context):
+    async def cmd(_, ctx: Context):
         channel = ctx.bot.get_channel(custom_command.channel_id) or ctx.channel
         await send_custom_command_message(ctx, custom_command, channel)
 
-    command = with_channel_parameter if custom_command.channel_parameter else without_channel_parameter
+    async def cmd_channel(_, ctx: Context, channel: TextChannel):
+        await send_custom_command_message(ctx, custom_command, channel)
+
+    async def cmd_user(_, ctx: Context, user: Optional[User]):
+        channel = ctx.bot.get_channel(custom_command.channel_id) or ctx.channel
+        await send_custom_command_message(ctx, custom_command, channel, mention_user=user)
+
+    async def cmd_channel_user(_, ctx: Context, channel: TextChannel, user: Optional[User]):
+        await send_custom_command_message(ctx, custom_command, channel, mention_user=user)
+
+    if custom_command.channel_parameter:
+        if custom_command.user_parameter:
+            command = cmd_channel_user
+        else:
+            command = cmd_channel
+    else:
+        if custom_command.user_parameter:
+            command = cmd_user
+        else:
+            command = cmd
+
     if description := custom_command.description:
         command = docs(description)(command)
 
@@ -349,6 +376,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         if (channel := ctx.guild.get_channel(command.channel_id)) and not command.channel_parameter:
             embed.add_field(name=t.channel, value=channel.mention)
 
+        embed.add_field(name=t.user_parameter, value=tg.enabled if command.user_parameter else tg.disabled)
         embed.add_field(
             name=t.requires_confirmation,
             value=tg.enabled if command.requires_confirmation else tg.disabled,
@@ -542,6 +570,29 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
             await send_to_changelog(ctx.guild, t.log.requires_confirmation.enabled(command.name))
         else:
             await send_to_changelog(ctx.guild, t.log.requires_confirmation.disabled(command.name))
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
+    @custom_commands_edit.command(name="user_parameter", aliases=["up"])
+    @docs(t.commands.edit.user_parameter)
+    async def custom_commands_edit_user_parameter(
+        self,
+        ctx: Context,
+        command: CustomCommandConverter,
+        enabled: bool,
+    ):
+        command: CustomCommand
+
+        if command.user_parameter and enabled:
+            raise CommandError(t.already_enabled)
+        if not command.user_parameter and not enabled:
+            raise CommandError(t.already_disabled)
+
+        command.user_parameter = enabled
+        self.reload_command(command)
+        if enabled:
+            await send_to_changelog(ctx.guild, t.log.user_parameter.enabled(command.name))
+        else:
+            await send_to_changelog(ctx.guild, t.log.user_parameter.disabled(command.name))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @custom_commands_edit.command(name="text", aliases=["t", "content", "data"])

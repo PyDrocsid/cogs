@@ -19,6 +19,7 @@ commands:
     delete_command: Delete the command message after the custom command has been executed successfully
     permission_level: Set the minimum permission level required to execute this custom command
     requires_confirmation: Enable/disable a confirmation message before sending the message of the custom command
+    user_parameter: Enable/disable the `user` parameter of a custom command
     data: |
       Change the message content of this custom command
       Go to {}, compose your message, click on `Share Message` and copy the link.
@@ -42,6 +43,7 @@ channel: Channel
 delete_command: Delete command after successful execution
 required_permission_level: Required Permission Level
 requires_confirmation: Confirmation Required
+user_parameter: User Parameter
 invalid_length: Command names cannot contain more than 32 characters.
 invalid_chars: Command name contains invalid characters.
 invalid_length_description: Command descriptions cannot contain more than 256 characters.
@@ -95,6 +97,9 @@ log:
   requires_confirmation:
     enabled: "**Confirmation message** has been **enabled** for **custom command** `{}`."
     disabled: "**Confirmation message** has been **disabled** for **custom command** `{}`."
+  user_parameter:
+    enabled: "**User parameter** of **custom command** `{}` has been **enabled**."
+    disabled: "**User parameter** of **custom command** `{}` has been **disabled**."
   data: "**Message content** of **custom command** `{}` has been **updated**."
   disabled: "**Custom command** `{}` has been **disabled**."
   enabled: "**Custom command** `{}` has been **enabled**."

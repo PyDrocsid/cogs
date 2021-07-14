@@ -22,6 +22,7 @@ class CustomCommand(db.Base):
     delete_command: Union[Column, bool] = Column(Boolean)
     permission_level: Union[Column, bool] = Column(Integer)
     requires_confirmation: Union[Column, bool] = Column(Boolean)
+    user_parameter: Union[Column, bool] = Column(Boolean)
     data: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     aliases: list[Alias] = relationship(
         "Alias",
@@ -42,6 +43,7 @@ class CustomCommand(db.Base):
             delete_command=False,
             permission_level=permission_level.level,
             requires_confirmation=False,
+            user_parameter=True,
             data=data,
         )
         await db.add(row)
