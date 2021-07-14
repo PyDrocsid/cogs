@@ -39,6 +39,10 @@ DISCOHOOK_EMPTY_MESSAGE = (
 )
 
 
+def warning(text: str) -> Embed:
+    return Embed(title=t.warning, description=text, color=Colors.warning)
+
+
 class CustomCommandConverter(Converter):
     @staticmethod
     async def _get_command(argument: str) -> CustomCommand:
@@ -94,6 +98,8 @@ async def send_custom_command_message(
             if embed_data is not None:
                 embed: Embed = type("", (), {"to_dict": lambda _: embed_data})()
             elif not content:
+                if test:
+                    await reply(ctx, embed=warning(t.empty_message(ctx.prefix, custom_command.name)))
                 break
 
             async def _send_message():
@@ -115,11 +121,18 @@ async def send_custom_command_message(
                 await _send_message()
             except HTTPException:
                 # embed could be empty
-                embed = None
-                try:
-                    await _send_message()
-                except HTTPException:
-                    raise CommandError(t.could_not_send_message)
+
+                if test and not content:
+                    await reply(ctx, embed=warning(t.empty_message(ctx.prefix, custom_command.name)))
+                else:
+                    embed = None
+                    try:
+                        await _send_message()
+                    except HTTPException:
+                        raise CommandError(t.could_not_send_message)
+                    else:
+                        if test:
+                            await reply(ctx, embed=warning(t.empty_embed(ctx.prefix, custom_command.name)))
 
             content = None
 
