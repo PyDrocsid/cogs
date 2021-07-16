@@ -25,6 +25,7 @@ This subcommand is used to create new custom commands.
 |`discohook_link`|:heavy_check_mark:|Go to https://discohook.org/, compose your message, click on `Share Message` and copy the link.|
 |`public`||If set to `False` the permission level of the command will be set to the default permission level of the bot|
 
+
 ## `alias`
 
 This subcommand adds an alias to a command
@@ -37,6 +38,7 @@ This subcommand adds an alias to a command
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`alias`|:heavy_check_mark:|The alias which should be added to the command|
+
 
 ## `edit`
 
@@ -62,6 +64,7 @@ This command specifies a channel in which the commnand should be send by default
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`channel`||The channel in which the message should be send. If no channel is given the message will be send to the channel from the executed command|
 
+
 ### __`channel_parameter`__
 
 This command specifies a channel in which the commnand should be send by default.
@@ -74,6 +77,7 @@ This command specifies a channel in which the commnand should be send by default
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the `channel` parameter|
+
 
 ### __`delete_command`__
 
@@ -88,6 +92,7 @@ This command specifies if the command should be deleted after the execution.
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`delete`|:heavy_check_mark:|True/False to enable/disable the deletion|
 
+
 ### __`description`__
 
 This command sets an description for a custom command.
@@ -100,6 +105,7 @@ This command sets an description for a custom command.
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`description`||The text for the description. The discription can be removed by leaving the description param empty|
+
 
 ### __`enable`__
 
@@ -114,6 +120,7 @@ This command enables/disables the command.
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the command|
 
+
 ### __`name`__
 
 This command chnages the name of the custom command.
@@ -126,6 +133,7 @@ This command chnages the name of the custom command.
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`name`|:heavy_check_mark:|The new name for the command|
+
 
 ### __`permission_level`__
 
@@ -140,6 +148,7 @@ This command sets the requiered permission level to execute the custom command.
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`level`|:heavy_check_mark:|The new permission level (0-4)|
 
+
 ### __`requires_confirmation`__
 
 This command enables/disables a confirmation message before sending the message of the custom command.
@@ -153,6 +162,7 @@ This command enables/disables a confirmation message before sending the message 
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the confimation|
 
+
 ### __`text`__
 
 This command edits the content of the message.
@@ -165,6 +175,7 @@ This command edits the content of the message.
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
 |`text`|:heavy_check_mark:|Go to https://discohook.org/, compose your message, click on `Share Message` and copy the link.|
+
 
 ### __`user_parameter`__
 
@@ -192,6 +203,7 @@ This command removes a custom command.
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
 
+
 ## `show`
 
 This command shows all information about a custom command.
@@ -204,6 +216,7 @@ This command shows all information about a custom command.
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
 
+
 ## `test`
 
 This command send a preview of the message without mentioning roles/user. 
@@ -215,6 +228,7 @@ This command send a preview of the message without mentioning roles/user.
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
+
 
 ## `unalias`
 
