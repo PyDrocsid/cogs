@@ -183,6 +183,7 @@ def create_custom_command(custom_command: CustomCommand):
             break
 
     command = no_documentation(command)
+    command = guild_only()(command)
     command = commands.command(name=custom_command.name, aliases=custom_command.alias_names)(command)
 
     return command
