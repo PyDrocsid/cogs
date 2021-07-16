@@ -219,7 +219,7 @@ This command shows all information about a custom command.
 
 ## `test`
 
-This command send a preview of the message without mentioning roles/user. 
+This command send a preview of the message without mentioning roles/user.
 
 ```css
 .custom_commands [test|t] <command>
@@ -243,7 +243,7 @@ This command removes an alias from a custom command.
 |`alias`|:heavy_check_mark:|The name of the alias|
 
 
-# Execution of custom commands
+## Execution of custom commands
 
 ```css
 .<name|alias> <channel> [user]
