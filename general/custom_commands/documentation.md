@@ -22,7 +22,7 @@ This subcommand is used to create new custom commands.
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`name`|:heavy_check_mark:|The name of the custom command|
-|`discohook_link`|:heavy_check_mark:|Go to https://discohook.org/, compose your message, click on `Share Message` and copy the link.|
+|`discohook_link`|:heavy_check_mark:|Go to [this side](https://discohook.org/), compose your message, click on `Share Message` and copy the link.|
 |`public`||If set to `False` the permission level of the command will be set to the default permission level of the bot|
 
 
@@ -174,7 +174,7 @@ This command edits the content of the message.
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
-|`text`|:heavy_check_mark:|Go to https://discohook.org/, compose your message, click on `Share Message` and copy the link.|
+|`text`|:heavy_check_mark:|Go to [this side](https://discohook.org/), compose your message, click on `Share Message` and copy the link.|
 
 
 ### __`user_parameter`__
