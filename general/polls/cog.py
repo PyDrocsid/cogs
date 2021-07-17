@@ -8,6 +8,7 @@ from discord.ext import commands
 from discord.ext.commands import Context, guild_only, CommandError
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.embeds import EmbedLimits
 from PyDrocsid.emojis import name_to_emoji, emoji_to_name
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
@@ -42,6 +43,9 @@ async def send_poll(ctx: Context, args: str, field: Optional[Tuple[str, str]] = 
         raise CommandError(t.too_many_options(MAX_OPTIONS - allow_delete))
 
     options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
+
+    if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
+        raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
     embed = Embed(title=question, description=t.vote_explanation, color=Colors.Polls, timestamp=datetime.utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)

@@ -4,7 +4,7 @@ from typing import Optional
 import requests
 from discord import Invite, Member, Guild, Embed, Message, NotFound, Forbidden, HTTPException
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, Converter, BadArgument, UserInputError
+from discord.ext.commands import guild_only, Context, CommandError, Converter, UserInputError
 from urllib3.exceptions import LocationParseError
 
 from PyDrocsid.async_thread import run_in_thread
@@ -50,7 +50,7 @@ class AllowedServerConverter(Converter):
             if row.guild_name.lower().strip() == argument.lower().strip() or row.code == argument:
                 return row
 
-        raise BadArgument(t.allowed_server_not_found)
+        raise CommandError(t.allowed_server_not_found)
 
 
 def get_discord_invite(url) -> Optional[str]:
@@ -70,6 +70,18 @@ def get_discord_invite(url) -> Optional[str]:
         return match.group("code")
 
     return None
+
+
+def find_urls(text):
+    return {
+        url
+        for pattern in [
+            r"((https?://)?([a-zA-Z0-9\-_~]+\.)+[a-zA-Z0-9\-_~.]+(\S*[a-zA-Z0-9])?)",
+            r"((https?://)?([a-zA-Z0-9\-_~]+\.)+[a-zA-Z0-9\-_~.]+\S*)",
+            r"((discord\.gg/|discord(app)?\.com/invite/)[a-zA-Z0-9]+)",
+        ]
+        for url, *_ in re.findall(pattern, text)
+    }
 
 
 class InvitesCog(Cog, name="Allowed Discord Invites"):
@@ -94,7 +106,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
 
         forbidden = []
         legal_invite = False
-        for url, *_ in re.findall(r"((https?://)?([a-zA-Z0-9\-_~]+\.)+[a-zA-Z0-9\-_~.]+(/\S*)?)", message.content):
+        for url in find_urls(message.content):
             if (code := await run_in_thread(lambda: get_discord_invite(url))) is None:
                 continue
             try:

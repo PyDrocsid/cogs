@@ -1,73 +1,122 @@
 permissions:
-  private_owner: pretend to be the owner of a private voice channel
+  override_owner: pretend to be the owner of a dynamic voice channel
   dyn_read: read dynamic voice channel configuration
   dyn_write: write dynamic voice channel configuration
+  dyn_rename: rename a dynamic voice channel
   link_read: read voice channel links
   link_write: write voice channel links
 
-updating_voice_roles: Updating voice channel roles
-voice_init_done: Initialization complete
+commands:
+  voice: manage voice channels
+  voice_dynamic: manage dynamic voice channels
+  voice_dynamic_add: create a new dynamic voice channel group
+  voice_dynamic_remove: remove a dynamic voice channel group
+  voice_info: show information about a given dynamic voice channel
+  voice_rename: rename a dynamic voice channel
+  voice_owner: transfer voice channel ownership
+  voice_lock: lock a dynamic voice channel
+  voice_hide: hide a dynamic voice channel
+  voice_show: unhide a dynamic voice channel
+  voice_unlock: unlock a dynamic voice channel
+  voice_add: add a member to a dynamic voice channel
+  voice_remove: remove a member from a dynamic voice channel
+  voice_link: manage links between voice channels and roles
+  voice_link_add: link a voice channel with a role
+  voice_link_remove: delete the link between a voice channel and a role
+  help: show a list of voice channel commands
+
 no_links_created: No links have been created yet.
 link_already_exists: Link already exists.
-link_not_created_too_high: Link could not be created because <@&{}> is higher than <@&{}>.
-link_not_created_managed_role: Link could not be created because <@&{}> cannot be assigned manually.
 link_created: "Link has been created between voice channel `{}` and role <@&{}>. :white_check_mark:"
 log_link_created: "**Link** has been **created** between voice channel `{}` and role `@{}`."
 link_not_found: Link does not exist.
 link_deleted: "Link has been deleted. :white_check_mark:"
 log_link_deleted: "**Link** has been **deleted** between voice channel `{}` and role `@{}`."
+could_not_remove_roles: Could not remove role {} from {}.
+could_not_add_roles: Could not add role {} to {}.
 
 dyn_group_already_exists: This channel is already part of an existing voice channel group.
+invalid_user_role: The role {} does not have `view_channel` and `connect` permissions in this voice channel. Please either grant this role the required permissions in this channel or specify a (different) role which should have access to this voice channel group.
 dyn_group_created: "Dynamic voice channel group has been created successfully. :white_check_mark:"
-log_dyn_group_created: "**Dynamic voice channel group** `{}` has been **created**."
+log_dyn_group_created: "A new **dynamic voice channel group** has been **created**."
 dyn_group_not_found: This channel is not part of any voice channel group.
-group_list_entry: "{} {} ({} active channels)"
+cnt_channels:
+  one: "{cnt} channel"
+  many: "{cnt} channels"
 no_dyn_group: No dynamic voice channel groups have been created yet.
 dyn_group_removed: "Dynamic voice channel group has been removed successfully. :white_check_mark:"
-log_dyn_group_removed: "**Dynamic voice channel group** `{}` has been **removed**."
-dyn_voice_created: Channel has been created by {}.
-dyn_voice_joined: "{} joined this channel."
-dyn_voice_left: "{} left this channel."
-private_dyn_voice_help_title: Private Voice Channel Commands
-private_dyn_voice_help_content: |
-  `{prefix}vc invite <member>` - add a member to this voice channel
-  `{prefix}vc remove <member>` - kick and remove a member from this voice channel
-  `{prefix}vc owner [<member>]` - transfer ownership of this voice channel
-  `{prefix}vc info [<channel>]` - show information about a voice channel
-  `{prefix}vc close` - manually close this voice channel
+log_dyn_group_removed: "A **dynamic voice channel group** has been **removed**."
+dyn_voice_created: ":sparkles: Channel has been created by {}."
+dyn_voice_joined: ":tada: {} joined this channel."
+dyn_voice_left: ":door: {} left this channel."
+dyn_voice_help_title: Voice Channel Commands
+dyn_voice_help_content: |
+  :lock: `{prefix}vc lock` - lock this voice channel
+  :man_detective: `{prefix}vc hide` - lock and hide this voice channel
+  :eye: `{prefix}vc show` - unhide this voice channel
+  :unlock: `{prefix}vc unlock` - unlock and unhide this voice channel
+  :white_check_mark: `{prefix}vc add <member>` - add a member to this voice channel
+  :x: `{prefix}vc remove <member>` - kick and remove a member from this voice channel
+  :tools: `{prefix}vc owner <member>` - transfer ownership of this voice channel
+  :information_source: `{prefix}vc info [<channel>]` - show information about a voice channel
+  :grey_question: `{prefix}vc help` - show this embed
   Note that these commands can be used in any text channel.
-error_visibility: "`visibility` must either be `public` or `private`."
-not_in_voice: You have to be in a voice channel to use this command.
+not_in_voice: You have to be in a dynamic voice channel to use this command.
 user_not_in_voice: User is not in a dynamic voice channel.
-not_in_private_voice: You have to be in a private voice channel to use this command.
 private_voice_owner_required: You are not the owner of this voice channel.
-private_voice_closed: "Private voice channel has been closed successfully. :white_check_mark:"
-user_added_to_private_voice: "{} has been invited to join this private voice channel."
-user_added_to_private_voice_no_dm: >
-  {} has been invited to join this private voice channel but does not allow direct messages.
-user_added_to_private_voice_dm: "{} just invited you to join a private voice channel."
-user_added_to_private_voice_response: "User has been added to this private voice channel. :white_check_mark:"
-cannot_add_user: User {} could not be added.
-user_removed_from_private_voice: "{} has been removed from this private voice channel."
-user_removed_from_private_voice_response: "User has been removed from this private voice channel. :white_check_mark:"
-cannot_remove_member: The member {} could not be removed.
-member_could_not_be_kicked: You cannot remove a team member ({}) from this voice channel.
+user_added: ":white_check_mark: {} has been added to this voice channel."
+cannot_add_user: "{} could not be added."
+user_removed: ":x: {} has been removed from this voice channel."
+cannot_remove_user: "{} could not be removed."
+not_added: "{} has not been added to this voice channel."
 user_not_in_this_channel: User is not in the same private voice channel.
-owner_of_private_voice: "Owner of this private voice channel: {}"
 bot_no_owner_transfer: You cannot transfer ownership to a bot.
-private_voice_owner_changed: "{} is now the owner of this private voice channel. :white_check_mark:"
-private_voice_owner_changed_response: "Owner of this private voice channel has been changed. :white_check_mark:"
-link_on_dynamic_channel_not_created: >
-  Link could not be created for dynamic voice channel.
-  Specify the parent channel instead.
+already_owner: "{} is already the owner of this voice channel."
+voice_owner_changed: ":tools: {} is now the owner of this voice channel."
 voice_channel: Voice Channel
+already_locked: This voice channel is already locked.
+already_hidden: This voice channel is already hidden.
+locked: ":lock: {} has locked this voice channel."
+hidden: ":man_detective: {} has hidden this voice channel."
+visible: ":eye: {} has made this voice channel visible again, but it is still locked."
+already_unlocked: This voice channel is already unlocked.
+unlocked: ":unlock: {} has unlocked this voice channel."
+channel_not_locked: This voice channel is not locked.
+not_hidden: This voice channel is not hidden.
+could_not_overwrite_permissions: Could not modify permission overwrites in {}.
+no_text_channel: "{} has no associated text channel."
+could_not_send_voice_msg: Could not send message to {}.
+could_not_kick: Could not kick {} out of {}.
+text_channel_for: Text Channel for {}
+could_not_create_text_channel: Could not create text channel for {}.
+could_not_create_voice_channel: Could not create new voice channel.
+could_not_delete_channel: Could not delete {}.
+could_not_add_reactions: Could not add control reactions to [this message]({}) in {}.
+could_not_clear_reactions: Could not remove control reactions from [this message]({}) in {}.
+cannot_edit: I cannot edit this channel.
+renamed: ":label: {} has renamed this channel from `{}` to `{}`."
+rename_failed: Renaming this channel failed.
+rename_rate_limit: |
+  Thanks to [Discord's stupid channel edit rate limit](https://support.discord.com/hc/en-us/community/posts/360067755532-Increase-rate-limit-for-editing-channel-description), I can't rename this channel right now. :rolling_eyes:
+  Please try again later or create a new channel.
+rename_confirmation: Rename this Voice Channel?
+rename_description: A voice channel with this name already exists. Do you want to rename this voice channel anyway?
+canceled: ":x: Canceled"
+confirmed: "Confirmed :white_check_mark:"
 
 voice_info: "Voice Channel Information"
-voice_creator: "Creator"
 voice_owner: "Owner"
-voice_members: "Members"
-public: ":globe_with_meridians: Public"
-private: ":lock: Private"
-voice_visibility: "Visibility"
-voice_create_date: "Created at:"
+voice_members:
+  unlocked:
+    one: "{cnt} Member"
+    many: "{cnt} Members"
+  locked:
+    one: "{}/{cnt} Member"
+    many: "{}/{cnt} Members"
+voice_state: "State"
 voice_name: "Name"
+
+state:
+  unlocked: ":unlock: Unlocked"
+  locked: ":lock: Locked"
+  hidden: ":man_detective: Hidden"
