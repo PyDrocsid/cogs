@@ -66,6 +66,9 @@ warn_edited: "The warn reason has been changed from ```\n{}\n```to```\n{}\n```"
 warn_edited_response: ":white_check_mark: The warn reason has been edited"
 log_warn_edited: ":warning: Warn edited"
 confirm_warn_delete: "Are you sure you want to delete this warning for *{}*?\n`(ID: {})`"
+warn_deleted: "Your warn with the reason ```\n{}\n``` has been deleted"
+warn_deleted_response: ":white_check_mark: The warn has been deleted"
+log_warn_deleted: ":warning: Warn deleted"
 
 # mutes
 mute: ":mute: Mute"

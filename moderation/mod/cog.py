@@ -463,7 +463,6 @@ class ModCog(Cog, name="Mod Tools"):
         await ModSettings.send_delete_user_message.set(send)
         embed = Embed(title=t.modtools, description=t.configured_send_delete_message[send], color=Colors.ModTools)
         await reply(ctx, embed=embed)
-
         await send_to_changelog(ctx.guild, t.configured_send_delete_message[send])
 
     @commands.command()
@@ -594,6 +593,59 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warn_edited, user, reason)
+
+    @commands.command()
+    @ModPermission.warn.check
+    @guild_only()
+    async def delete_warn(self, ctx: Context, warn_id: int):
+        """
+        delete a warn
+        get the warn id from the users user log
+         """
+
+        warn = await db.get(Warn, id=warn_id)
+        if warn is None:
+            raise CommandError(t.no_warn)
+
+        if not await compare_mod_level(ctx.author, warn.mod_level):
+            raise CommandError(tg.permission_denied)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_warn_delete(warn.member_name, warn.id),
+            color=Colors.ModTools
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        await Warn.delete(warn_id)
+
+        user = self.bot.get_user(warn.member)
+        server_embed = Embed(title=t.warn, description=t.warn_deleted_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        if await ModSettings.send_delete_user_message.get():
+            user_embed = Embed(
+                title=t.warn,
+                description=t.warn_deleted(warn.reason),
+                colour=Colors.ModTools,
+            )
+
+            try:
+                await user.send(embed=user_embed)
+            except (Forbidden, HTTPException):
+                server_embed.description = t.no_dm + "\n\n" + server_embed.description
+                server_embed.colour = Colors.error
+
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warn_deleted, user, warn.reason)
 
     @commands.command()
     @ModPermission.mute.check

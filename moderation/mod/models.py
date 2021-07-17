@@ -66,6 +66,11 @@ class Warn(db.Base):
         row.mod_level = mod_level
         row.reason = new_reason
 
+    @staticmethod
+    async def delete(warn_id: int):
+        row = await db.get(Warn, id=warn_id)
+        await db.delete(row)
+
 
 class Mute(db.Base):
     __tablename__ = "mute"
