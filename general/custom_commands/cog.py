@@ -276,6 +276,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     async def on_ready(self):
         custom_command: CustomCommand
         async for custom_command in await db.stream(filter_by(CustomCommand, CustomCommand.aliases, disabled=False)):
+            self.unload_command(custom_command)
             self.load_command(custom_command)
 
     def load_command(self, command: CustomCommand):
