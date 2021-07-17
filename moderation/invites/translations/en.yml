@@ -35,3 +35,4 @@ log_invite_updated: "{} just **updated** the **invite link** for `{}`."
 invites: Invites
 ulog_invite_approved: ":+1:  **Invite approved** by {}: {}"
 ulog_invite_removed: ":-1:  **Invite removed** by {}: {}"
+ulog_illegal_post: ":no_entry_sign: **Posted an illegal invite** in {}: {}"
