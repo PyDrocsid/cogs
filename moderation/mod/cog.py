@@ -25,6 +25,7 @@ from PyDrocsid.config import Config
 from .colors import Colors
 from .models import Mute, Ban, Report, Warn, Kick
 from .permissions import ModPermission
+from .settings import ModSettings
 from ...contributor import Contributor
 from ...pubsub import (
     send_to_changelog,
@@ -99,13 +100,13 @@ def show_evidence(evidence: Optional[str]) -> str:
     return ""
 
 
-def get_mod_level(mod: Member):
+async def get_mod_level(mod: Member):
     lvl = await Config.PERMISSION_LEVELS.get_permission_level(mod)
     return lvl.level
 
 
 async def compare_mod_level(mod: Member, mod_level: int) -> bool:
-    return get_mod_level(mod) > mod_level or mod == mod.guild.owner
+    return await get_mod_level(mod) > mod_level or mod == mod.guild.owner
 
 
 async def send_to_changelog_mod(
@@ -453,6 +454,19 @@ class ModCog(Cog, name="Mod Tools"):
             await member.add_roles(mute_role)
 
     @commands.command()
+    @ModPermission.modtools_write.check
+    async def send_delete_message(self, ctx: Context, send: bool):
+        """
+        configure whether to send a warn/mute/kick/ban delete message to the concerned user
+        """
+
+        await ModSettings.send_delete_user_message.set(send)
+        embed = Embed(title=t.modtools, description=t.configured_send_delete_message[send], color=Colors.ModTools)
+        await reply(ctx, embed=embed)
+
+        await send_to_changelog(ctx.guild, t.configured_send_delete_message[send])
+
+    @commands.command()
     async def report(self, ctx: Context, user: UserMemberConverter, *, reason: str):
         """
         report a user
@@ -523,7 +537,7 @@ class ModCog(Cog, name="Mod Tools"):
         except (Forbidden, HTTPException):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
-        await Warn.create(user.id, str(user), ctx.author.id, get_mod_level(ctx.author), reason, evidence.url)
+        await Warn.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason, evidence=evidence)
 
@@ -561,7 +575,7 @@ class ModCog(Cog, name="Mod Tools"):
             if msg:
                 await msg.delete(delay=5)
 
-        await Warn.edit(warn_id, ctx.author.id, get_mod_level(ctx.author), reason)
+        await Warn.edit(warn_id, ctx.author.id, await get_mod_level(ctx.author), reason)
 
         user = self.bot.get_user(warn.member)
 
@@ -628,7 +642,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user.id,
                 str(user),
                 ctx.author.id,
-                get_mod_level(ctx.author),
+                await get_mod_level(ctx.author),
                 minutes,
                 reason,
                 evidence_url,
@@ -657,7 +671,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user.id,
                 str(user),
                 ctx.author.id,
-                get_mod_level(ctx.author),
+                await get_mod_level(ctx.author),
                 -1,
                 reason,
                 evidence_url,
@@ -741,7 +755,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
-        await Mute.edit(mute_id, ctx.author.id, get_mod_level(ctx.author), reason)
+        await Mute.edit(mute_id, ctx.author.id, await get_mod_level(ctx.author), reason)
 
         try:
             await user.send(embed=user_embed)
@@ -815,7 +829,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user.id,
                 str(user),
                 ctx.author.id,
-                get_mod_level(ctx.author),
+                await get_mod_level(ctx.author),
                 minutes,
                 mute.reason,
                 mute.evidence,
@@ -837,7 +851,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user.id,
                 str(user),
                 ctx.author.id,
-                get_mod_level(ctx.author),
+                await get_mod_level(ctx.author),
                 -1,
                 mute.reason,
                 mute.evidence,
@@ -921,7 +935,7 @@ class ModCog(Cog, name="Mod Tools"):
             evidence = None
             evidence_url = None
 
-        await Kick.create(member.id, str(member), ctx.author.id, get_mod_level(ctx.author), reason, evidence_url)
+        await Kick.create(member.id, str(member), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason,
                                     evidence=evidence)
 
@@ -988,7 +1002,7 @@ class ModCog(Cog, name="Mod Tools"):
             if msg:
                 await msg.delete(delay=5)
 
-        await Kick.edit(kick_id, ctx.author.id, get_mod_level(ctx.author), reason)
+        await Kick.edit(kick_id, ctx.author.id, await get_mod_level(ctx.author), reason)
 
         user = self.bot.get_user(kick.member)
 
@@ -1064,7 +1078,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user.id,
                 str(user),
                 ctx.author.id,
-                get_mod_level(ctx.author),
+                await get_mod_level(ctx.author),
                 minutes,
                 reason,
                 evidence_url,
@@ -1093,7 +1107,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user.id,
                 str(user),
                 ctx.author.id,
-                get_mod_level(ctx.author),
+                await get_mod_level(ctx.author),
                 -1,
                 reason,
                 evidence_url,
@@ -1181,7 +1195,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
 
-        await Ban.edit(ban_id, ctx.author.id, get_mod_level(ctx.author), reason)
+        await Ban.edit(ban_id, ctx.author.id, await get_mod_level(ctx.author), reason)
 
         try:
             await user.send(embed=user_embed)
@@ -1255,7 +1269,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user.id,
                 str(user),
                 ctx.author.id,
-                get_mod_level(ctx.author),
+                await get_mod_level(ctx.author),
                 minutes,
                 ban.reason,
                 ban.evidence,
@@ -1277,7 +1291,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user.id,
                 str(user),
                 ctx.author.id,
-                get_mod_level(ctx.author),
+                await get_mod_level(ctx.author),
                 -1,
                 ban.reason,
                 ban.evidence,
