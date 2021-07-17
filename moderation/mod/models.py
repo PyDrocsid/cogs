@@ -133,6 +133,11 @@ class Mute(db.Base):
         row.mod_level = mod_level
         row.reason = new_reason
 
+    @staticmethod
+    async def delete(mute_id: int):
+        row = await db.get(Mute, id=mute_id)
+        await db.delete(row)
+
 
 class Kick(db.Base):
     __tablename__ = "kick"

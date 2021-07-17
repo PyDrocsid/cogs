@@ -929,6 +929,92 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
+    async def delete_mute(self, ctx: Context, mute_id: int):
+        """
+        delete a warn
+        get the warn id from the users user log
+         """
+
+        mute = await db.get(Mute, id=mute_id)
+        if mute is None:
+            raise CommandError(t.no_mute)
+
+        if not await compare_mod_level(ctx.author, mute.mod_level):
+            raise CommandError(tg.permission_denied)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_mute_delete(mute.member_name, mute.id),
+            color=Colors.ModTools
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=mute.member))
+
+        if len(active_mutes) == 1 and mute in active_mutes:
+            user = ctx.guild.get_member(mute.member)
+            if user is not None:
+                if (mute_role := get_mute_role(ctx.guild)) in user.roles:
+                    await user.remove_roles(mute_role)
+
+        user = self.bot.get_user(mute.member)
+
+        await Mute.delete(mute_id)
+
+        server_embed = Embed(title=t.mute, description=t.mute_deleted_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        if await ModSettings.send_delete_user_message.get():
+            user_embed = Embed(
+                title=t.warn,
+                colour=Colors.ModTools,
+            )
+
+            if mute.minutes == -1:
+                user_embed.description = t.mute_deleted.inf(mute.reason)
+            else:
+                user_embed.description = t.mute_deleted.not_inf(time_to_units(mute.minutes), mute.reason)
+
+            try:
+                await user.send(embed=user_embed)
+            except (Forbidden, HTTPException):
+                server_embed.description = t.no_dm + "\n\n" + server_embed.description
+                server_embed.colour = Colors.error
+
+        await reply(ctx, embed=server_embed)
+
+        if mute.minutes == -1:
+            await send_to_changelog_mod(
+                ctx.guild,
+                ctx.message,
+                Colors.mute,
+                t.log_mute_deleted,
+                user,
+                mute.reason,
+                duration=t.log_field_infinity,
+            )
+        else:
+            await send_to_changelog_mod(
+                ctx.guild,
+                ctx.message,
+                Colors.mute,
+                t.log_mute_deleted,
+                user,
+                mute.reason,
+                duration=time_to_units(mute.minutes),
+            )
+
+    @commands.command()
+    @ModPermission.mute.check
+    @guild_only()
     async def unmute(self, ctx: Context, user: UserMemberConverter, *, reason: str):
         """
         unmute a user
