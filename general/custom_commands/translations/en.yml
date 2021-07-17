@@ -78,6 +78,8 @@ limits_exceeded: Message limits exceeded! Please edit the message content using 
 empty_embed: Message contains an empty embed! Please edit the message content using the `{}cc edit text {} <url>` command and remove the empty embed!
 empty_message: This custom command contains an empty message! Please edit the content of this custom command using the `{}cc edit text {} <url>` command and remove the empty message!
 
+cannot_delete: Could not delete [this message]({}) in {} because I don't have `manage_messages` permission there!
+
 log:
   created: "**Custom command** `{}` has been **created**."
   renamed: "**Custom command** `{}` has been **renamed** to `{}`."
