@@ -505,6 +505,9 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
         if command.channel_parameter:
             raise CommandError(t.channel_parameter_enabled)
 
+        if channel:
+            check_message_send_permissions(channel, check_embed=True)
+
         command.channel_id = channel and channel.id
         self.reload_command(command)
         if channel:
