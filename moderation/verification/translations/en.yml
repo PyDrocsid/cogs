@@ -26,6 +26,7 @@ verification_role_reverse: " - `@{}` ({}) (reverse)"
 private_only: This command can only be used in direct messages.
 already_verified: You are already verified.
 password_incorrect: Password is incorrect!
+too_soon: Wow, you must have read the rules pretty quickly! Maybe just read the rules again more thoroughly and try again later...
 verified: "Verified successfully :white_check_mark:"
 verification_role_already_set: Role already set.
 verification_role_not_set: Role not set.
