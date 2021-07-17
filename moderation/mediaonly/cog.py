@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import Optional
 
 from aiohttp import ClientSession, ClientError
@@ -13,10 +14,10 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
 from .colors import Colors
-from .models import MediaOnlyChannel
+from .models import MediaOnlyChannel, MediaOnlyDeletion
 from .permissions import MediaOnlyPermission
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, can_respond_on_reaction, send_alert
+from ...pubsub import send_to_changelog, can_respond_on_reaction, send_alert, get_userlog_entries
 
 tg = t.g
 t = t.mediaonly
@@ -47,6 +48,8 @@ async def delete_message(message: Message):
     else:
         deleted = True
 
+    await MediaOnlyDeletion.create(message.author.id, str(message.author), message.channel.id)
+
     embed = Embed(title=t.mediaonly, description=t.deleted_nomedia, colour=Colors.error)
     await message.channel.send(content=message.author.mention, embed=embed, delete_after=30)
 
@@ -76,6 +79,16 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
     @can_respond_on_reaction.subscribe
     async def handle_can_respond_on_reaction(self, channel: TextChannel) -> bool:
         return not await db.exists(filter_by(MediaOnlyChannel, channel=channel.id))
+
+    @get_userlog_entries.subscribe
+    async def handle_get_userlog_entries(self, user_id: int) -> list[tuple[datetime, str]]:
+        out: list[tuple[datetime, str]] = []
+
+        deletion: MediaOnlyDeletion
+        async for deletion in await db.stream(filter_by(MediaOnlyDeletion, member=user_id)):
+            out.append((deletion.timestamp, t.ulog_deletion(f"<#{deletion.channel}>")))
+
+        return out
 
     async def on_message(self, message: Message):
         await check_message(message)

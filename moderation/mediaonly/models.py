@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Union, AsyncIterable
 
-from sqlalchemy import Column, BigInteger
+from sqlalchemy import Column, BigInteger, Integer, Text, DateTime
 
 from PyDrocsid.database import db, filter_by, select, delete
 from PyDrocsid.environment import CACHE_TTL
@@ -42,3 +43,24 @@ class MediaOnlyChannel(db.Base):
     async def remove(channel: int):
         await redis.setex(f"mediaonly:channel={channel}", CACHE_TTL, 0)
         await db.exec(delete(MediaOnlyChannel).filter_by(channel=channel))
+
+
+class MediaOnlyDeletion(db.Base):
+    __tablename__ = "mediaonly_deletion"
+
+    id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
+    member: Union[Column, int] = Column(BigInteger)
+    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    channel: Union[Column, int] = Column(BigInteger)
+    timestamp: Union[Column, datetime] = Column(DateTime)
+
+    @staticmethod
+    async def create(member: int, member_name: str, channel: int) -> MediaOnlyDeletion:
+        row = MediaOnlyDeletion(
+            member=member,
+            member_name=member_name,
+            timestamp=datetime.utcnow(),
+            channel=channel,
+        )
+        await db.add(row)
+        return row
