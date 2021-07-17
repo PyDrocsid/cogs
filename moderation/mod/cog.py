@@ -206,12 +206,13 @@ class ModCog(Cog, name="Mod Tools"):
         return [(t.active_sanctions, status)]
 
     @get_userlog_entries.subscribe
-    async def handle_get_userlog_entries(self, user_id: int) -> list[tuple[datetime, str]]:
+    async def handle_get_userlog_entries(self, user_id: int, author: Member) -> list[tuple[datetime, str]]:
         out: list[tuple[datetime, str]] = []
 
-        report: Report
-        async for report in await db.stream(filter_by(Report, member=user_id)):
-            out.append((report.timestamp, t.ulog.reported(f"<@{report.reporter}>", report.reason)))
+        if await is_teamler(author):
+            report: Report
+            async for report in await db.stream(filter_by(Report, member=user_id)):
+                out.append((report.timestamp, t.ulog.reported(f"<@{report.reporter}>", report.reason)))
 
         warn: Warn
         async for warn in await db.stream(filter_by(Warn, member=user_id)):
