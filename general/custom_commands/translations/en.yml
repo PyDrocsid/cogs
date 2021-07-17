@@ -14,7 +14,10 @@ commands:
     enabled: Enable/disable a custom command
     name: Change the name of a custom command
     description: Change the description of a custom command
-    channel_parameter_enabled: Enable/disable the `channel` parameter of a custom command
+    channel_parameter_enabled: |
+      Enable/disable the `channel` parameter of a custom command
+
+      :warning: **Enabling this parameter allows any user who can execute this command to send the configured message to any channel in which the bot has `send_messages` permission!**
     channel: Specify a text channel into which the message of a custom command should be sent
     delete_command: Delete the command message after the custom command has been executed successfully
     permission_level: Set the minimum permission level required to execute this custom command
