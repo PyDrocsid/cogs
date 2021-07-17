@@ -34,7 +34,13 @@ async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optiona
     return None, None
 
 
-async def send_poll(ctx: Context, args: str, field: Optional[Tuple[str, str]] = None, allow_delete: bool = True):
+async def send_poll(
+    ctx: Context,
+    title: str,
+    args: str,
+    field: Optional[Tuple[str, str]] = None,
+    allow_delete: bool = True,
+):
     question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
 
     if not options:
@@ -47,7 +53,7 @@ async def send_poll(ctx: Context, args: str, field: Optional[Tuple[str, str]] = 
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
-    embed = Embed(title=question, description=t.vote_explanation, color=Colors.Polls, timestamp=datetime.utcnow())
+    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=datetime.utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
     if allow_delete:
         embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
@@ -63,10 +69,13 @@ async def send_poll(ctx: Context, args: str, field: Optional[Tuple[str, str]] = 
 
     poll: Message = await ctx.send(embed=embed)
 
-    for option in options:
-        await poll.add_reaction(option.emoji)
-    if allow_delete:
-        await poll.add_reaction(name_to_emoji["wastebasket"])
+    try:
+        for option in options:
+            await poll.add_reaction(option.emoji)
+        if allow_delete:
+            await poll.add_reaction(name_to_emoji["wastebasket"])
+    except Forbidden:
+        raise CommandError(t.could_not_add_reactions(ctx.channel.mention))
 
 
 class PollsCog(Cog, name="Polls"):
@@ -98,7 +107,7 @@ class PollsCog(Cog, name="Polls"):
 
         *teamlers, last = (x.mention for x in teamlers)
         teamlers: list[str]
-        return t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers))
+        return t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1)
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
         if member.bot or message.guild is None:
@@ -155,7 +164,7 @@ class PollsCog(Cog, name="Polls"):
         Starts a poll. Multiline options can be specified using a `\\` at the end of a line
         """
 
-        await send_poll(ctx, args)
+        await send_poll(ctx, t.poll, args)
 
     @commands.command(usage=t.poll_usage, aliases=["teamvote", "tp"])
     @PollsPermission.team_poll.check
@@ -166,7 +175,13 @@ class PollsCog(Cog, name="Polls"):
          Multiline options can be specified using a `\\` at the end of a line
         """
 
-        await send_poll(ctx, args, field=(tg.status, await self.get_reacted_teamlers()), allow_delete=False)
+        await send_poll(
+            ctx,
+            t.team_poll,
+            args,
+            field=(tg.status, await self.get_reacted_teamlers()),
+            allow_delete=False,
+        )
 
     @commands.command(aliases=["yn"])
     @guild_only()
@@ -178,9 +193,20 @@ class PollsCog(Cog, name="Polls"):
         if message is None or message.guild is None or text:
             message = ctx.message
 
-        if message.channel.permissions_for(ctx.author).add_reactions:
+        if message.author != ctx.author and not await is_teamler(ctx.author):
+            raise CommandError(t.foreign_message)
+
+        try:
             await message.add_reaction(name_to_emoji["thumbsup"])
             await message.add_reaction(name_to_emoji["thumbsdown"])
+        except Forbidden:
+            raise CommandError(t.could_not_add_reactions(message.channel.mention))
+
+        if message != ctx.message:
+            try:
+                await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+            except Forbidden:
+                pass
 
     @commands.command(aliases=["tyn"])
     @guild_only()
@@ -189,14 +215,17 @@ class PollsCog(Cog, name="Polls"):
         Starts a yes/no poll and shows, which teamler has not voted yet.
         """
 
-        embed = Embed(description=text, color=Colors.Polls, timestamp=datetime.utcnow())
+        embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=datetime.utcnow())
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 
         embed.add_field(name=tg.status, value=await self.get_reacted_teamlers(), inline=False)
 
         message: Message = await ctx.send(embed=embed)
-        await message.add_reaction(name_to_emoji["+1"])
-        await message.add_reaction(name_to_emoji["-1"])
+        try:
+            await message.add_reaction(name_to_emoji["+1"])
+            await message.add_reaction(name_to_emoji["-1"])
+        except Forbidden:
+            raise CommandError(t.could_not_add_reactions(message.channel.mention))
 
 
 class PollOption:
