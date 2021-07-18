@@ -931,8 +931,8 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     async def delete_mute(self, ctx: Context, mute_id: int):
         """
-        delete a warn
-        get the warn id from the users user log
+        delete a mute
+        get the mute id from the users user log
          """
 
         mute = await db.get(Mute, id=mute_id)
@@ -1165,8 +1165,8 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     async def delete_kick(self, ctx: Context, kick_id: int):
         """
-        delete a warn
-        get the warn id from the users user log
+        delete a kick
+        get the kick id from the users user log
          """
 
         kick = await db.get(Kick, id=kick_id)
@@ -1505,6 +1505,94 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
+
+    @commands.command()
+    @ModPermission.ban.check
+    @guild_only()
+    async def delete_ban(self, ctx: Context, ban_id: int):
+        """
+        delete a ban
+        get the ban id from the users user log
+         """
+
+        ban = await db.get(Ban, id=ban_id)
+        if ban is None:
+            raise CommandError(t.no_ban)
+
+        if not await compare_mod_level(ctx.author, ban.mod_level):
+            raise CommandError(tg.permission_denied)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_ban_delete(ban.member_name, ban.id),
+            color=Colors.ModTools
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=ban.member))
+
+        if len(active_bans) == 1 and ban in active_bans:
+            user = ctx.guild.get_member(ban.member)
+            if user is not None:
+                try:
+                    await ctx.guild.unban(user, reason="Ban deleted")
+                except HTTPException:
+                    pass
+
+        user = self.bot.get_user(ban.member)
+
+        await Ban.delete(ban_id)
+
+        server_embed = Embed(title=t.mute, description=t.ban_deleted_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        if await ModSettings.send_delete_user_message.get():
+            user_embed = Embed(
+                title=t.ban,
+                colour=Colors.ModTools,
+            )
+
+            if ban.minutes == -1:
+                user_embed.description = t.ban_deleted.inf(ban.reason)
+            else:
+                user_embed.description = t.ban_deleted.not_inf(time_to_units(ban.minutes), ban.reason)
+
+            try:
+                await user.send(embed=user_embed)
+            except (Forbidden, HTTPException):
+                server_embed.description = t.no_dm + "\n\n" + server_embed.description
+                server_embed.colour = Colors.error
+
+        await reply(ctx, embed=server_embed)
+
+        if ban.minutes == -1:
+            await send_to_changelog_mod(
+                ctx.guild,
+                ctx.message,
+                Colors.ban,
+                t.log_ban_deleted,
+                user,
+                ban.reason,
+                duration=t.log_field_infinity,
+            )
+        else:
+            await send_to_changelog_mod(
+                ctx.guild,
+                ctx.message,
+                Colors.ban,
+                t.log_ban_deleted,
+                user,
+                ban.reason,
+                duration=time_to_units(ban.minutes),
+            )
 
     @commands.command()
     @ModPermission.ban.check

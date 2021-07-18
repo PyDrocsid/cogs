@@ -238,3 +238,8 @@ class Ban(db.Base):
         row.mod = mod
         row.mod_level = mod_level
         row.reason = new_reason
+
+    @staticmethod
+    async def delete(ban_id: int):
+        row = await db.get(Ban, id=ban_id)
+        await db.delete(row)
