@@ -205,16 +205,26 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
     @reactionrole.command(name="remove", aliases=["r", "del", "d", "-"])
     @ReactionRolePermission.write.check
     @docs(t.commands.reactionrole_remove)
-    async def reactionrole_remove(self, ctx: Context, msg: Message, emoji: EmojiConverter):
+    async def reactionrole_remove(
+        self,
+        ctx: Context,
+        msg: Message,
+        emoji: EmojiConverter,
+        remove_reactions: bool = True,
+    ):
         emoji: PartialEmoji
 
         if not (link := await ReactionRole.get(msg.channel.id, msg.id, str(emoji))):
             raise CommandError(t.rr_link_not_found)
 
         await db.delete(link)
-        for reaction in msg.reactions:
-            if str(emoji) == str(reaction.emoji):
-                await reaction.clear()
+
+        if remove_reactions:
+            for reaction in msg.reactions:
+                if str(emoji) == str(reaction.emoji):
+                    await reaction.clear()
+                    break
+
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole, description=t.rr_link_removed)
         await reply(ctx, embed=embed)
         await send_to_changelog(
