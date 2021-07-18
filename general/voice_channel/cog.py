@@ -41,7 +41,6 @@ from PyDrocsid.util import send_editable_log, check_role_assignable
 from .colors import Colors
 from .models import DynGroup, DynChannel, DynChannelMember, RoleVoiceLink
 from .permissions import VoiceChannelPermission
-from .settings import VoiceChannelSettings
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog, send_alert
 
@@ -494,15 +493,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         except RuntimeError:
             self.vc_loop.restart()
 
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=30)
     @db_wrapper
     async def vc_loop(self):
         guild: Guild = self.bot.guilds[0]
-        name_list: str = self._get_name_list(guild.id)
-        if await VoiceChannelSettings.name_list.get() == name_list:
-            return
 
-        await VoiceChannelSettings.name_list.set(name_list)
         channel: DynChannel
         async for channel in await db.stream(select(DynChannel)):
             voice_channel: Optional[VoiceChannel] = guild.get_channel(channel.channel_id)
