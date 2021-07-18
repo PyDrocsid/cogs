@@ -118,6 +118,10 @@ confirm_kick_edit: "Are you sure you want to change this kicks reason from ```\n
 kick_edited: "The kick reason has been changed from ```\n{}\n```to```\n{}\n```"
 kick_edited_reponse: ":white_check_mark: The kick reason has been edited"
 log_kick_edited: ":x: Kick edited"
+confirm_kick_delete: "Are you sure you want to delete this kick of *{}*?\n`(ID: {})`"
+kick_deleted: "Your kick with the reason ```\n{}\n``` has been deleted"
+kick_deleted_response: ":white_check_mark: The kick has been deleted"
+log_kick_deleted: ":x: Kick deleted"
 
 # bans
 ban: ":no_entry: Ban"

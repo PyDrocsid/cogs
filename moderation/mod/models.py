@@ -172,6 +172,11 @@ class Kick(db.Base):
         row.mod_level = mod_level
         row.reason = new_reason
 
+    @staticmethod
+    async def delete(kick_id: int):
+        row = await db.get(Kick, id=kick_id)
+        await db.delete(row)
+
 
 class Ban(db.Base):
     __tablename__ = "ban"

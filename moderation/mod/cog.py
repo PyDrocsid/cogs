@@ -1161,6 +1161,59 @@ class ModCog(Cog, name="Mod Tools"):
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kick_edited, user, reason)
 
     @commands.command()
+    @ModPermission.kick.check
+    @guild_only()
+    async def delete_kick(self, ctx: Context, kick_id: int):
+        """
+        delete a warn
+        get the warn id from the users user log
+         """
+
+        kick = await db.get(Kick, id=kick_id)
+        if kick is None:
+            raise CommandError(t.no_kick)
+
+        if not await compare_mod_level(ctx.author, kick.mod_level):
+            raise CommandError(tg.permission_denied)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_kick_delete(kick.member_name, kick.id),
+            color=Colors.ModTools
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
+        await Kick.delete(kick_id)
+
+        user = self.bot.get_user(kick.member)
+        server_embed = Embed(title=t.warn, description=t.kick_deleted_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+
+        if await ModSettings.send_delete_user_message.get():
+            user_embed = Embed(
+                title=t.kick,
+                description=t.kick_deleted(kick.reason),
+                colour=Colors.ModTools,
+            )
+
+            try:
+                await user.send(embed=user_embed)
+            except (Forbidden, HTTPException):
+                server_embed.description = t.no_dm + "\n\n" + server_embed.description
+                server_embed.colour = Colors.error
+
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kick_deleted, user, kick.reason)
+
+    @commands.command()
     @ModPermission.ban.check
     @guild_only()
     async def ban(
