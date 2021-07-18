@@ -1033,7 +1033,7 @@ class ModCog(Cog, name="Mod Tools"):
             await user.remove_roles(mute_role)
 
         async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
-            if not await compare_mod_level(ctx.author, mute.mod_level):
+            if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
                 raise CommandError(tg.permission_denied)
 
             await Mute.deactivate(mute.id, ctx.author.id, reason)
@@ -1617,7 +1617,7 @@ class ModCog(Cog, name="Mod Tools"):
             was_banned = False
 
         async for ban in await db.stream(filter_by(Ban, active=True, member=user.id)):
-            if not await compare_mod_level(ctx.author, ban.mod_level):
+            if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
                 raise CommandError(tg.permission_denied)
 
             await Ban.deactivate(ban.id, ctx.author.id, reason)
