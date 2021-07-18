@@ -3,7 +3,20 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from typing import Optional, Union, List, Tuple, Generator
 
-from discord import Role, Guild, Member, Forbidden, HTTPException, User, Embed, NotFound, Message, Attachment
+from discord import (
+    Role,
+    Guild,
+    Member,
+    Forbidden,
+    HTTPException,
+    User,
+    Embed,
+    NotFound,
+    Message,
+    Attachment,
+    AuditLogAction,
+    AuditLogEntry,
+)
 from discord.ext import commands, tasks
 from discord.ext.commands import (
     guild_only,
@@ -29,6 +42,7 @@ from .settings import ModSettings
 from ...contributor import Contributor
 from ...pubsub import (
     send_to_changelog,
+    send_alert,
     log_auto_kick,
     get_userlog_entries,
     get_user_info_entries,
@@ -401,7 +415,7 @@ class ModCog(Cog, name="Mod Tools"):
                 else:
                     out.append(
                         (
-                            ban.timestamp, text.inf.id_off(f"<@{ban.mod}>", ban.reason)
+                            ban.timestamp, text.inf.id_off(f"<@{ban.mod}>", ban.reason, show_evidence(ban.evidence))
                         )
                     )
             else:
@@ -452,6 +466,41 @@ class ModCog(Cog, name="Mod Tools"):
 
         if await db.exists(filter_by(Mute, active=True, member=member.id)):
             await member.add_roles(mute_role)
+
+    async def on_member_ban(self, guild: Guild, member: Member):
+        try:
+            entry: AuditLogEntry
+            async for entry in guild.audit_logs(limit=1, action=AuditLogAction.ban):
+                if entry.user == self.bot.user:
+                    return
+
+                if entry.reason:
+                    await Ban.create(
+                        entry.target.id,
+                        str(entry.target),
+                        entry.user.id,
+                        await get_mod_level(entry.user),
+                        -1,
+                        entry.reason,
+                        None,
+                        False,
+                    )
+
+                    await send_to_changelog_mod(
+                        guild,
+                        None,
+                        Colors.ban,
+                        t.log_banned,
+                        entry.target,
+                        entry.reason,
+                        duration=t.log_field.infinity,
+                    )
+
+                else:
+                    await send_alert(guild, t.alert_member_banned(str(entry.target), str(entry.user)))
+
+        except Forbidden:
+            raise CommandError(t.cannot_fetch_audit_logs)
 
     @commands.command()
     @ModPermission.modtools_write.check
@@ -1305,11 +1354,11 @@ class ModCog(Cog, name="Mod Tools"):
                 False,
             )
             if evidence:
-                user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, reason,
+                user_embed.description = t.banned_inf.evidence(ctx.author.mention, ctx.guild.name, reason,
                                                            t.image_link(evidence.filename, evidence_url)
                                                            )
             else:
-                user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, reason)
+                user_embed.description = t.banned_inf.evidence(ctx.author.mention, ctx.guild.name, reason)
 
             await send_to_changelog_mod(
                 ctx.guild,
@@ -1328,7 +1377,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
 
-        # await ctx.guild.ban(user, delete_message_days=delete_days, reason=reason)
+        await ctx.guild.ban(user, delete_message_days=delete_days, reason=reason)
         await revoke_verification(user)
 
         await reply(ctx, embed=server_embed)

@@ -44,6 +44,7 @@ confirmation: Edit confirmation
 edit_canceled: ":x: Edit canceled"
 edit_confirmed: ":white_check_mark: Edit confirmed"
 infinity: Permanent
+cannot_fetch_audit_logs: A ban initiated through the server couldn't be added to the database because I don't have `view_audit_log` permissions on this server.
 
 # reports
 report: ":speech_balloon: Report"
@@ -157,6 +158,7 @@ ban_deleted:
   not_inf: "Your ban for {} with the reason ```\n{}\n``` has been deleted"
 ban_deleted_response: ":white_check_mark: The ban has been deleted"
 log_ban_deleted: ":white_check_mark: Ban deleted"
+alert_member_banned: "The member {} has been banned through discords ban system by {}"
 
 reported_cnt: ":speech_balloon:  Reported"
 warned_cnt: ":warning:  Warned"
@@ -219,7 +221,7 @@ ulog:
         id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`{}"
       inf:
         id_off: ":no_entry: **Banned** permanently by {} because of `{}`{}"
-        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`{}"
+        id_on: ":no_entry: **Banned** by permanently by {} because of `{}`\n`(ID: {})`{}"
     update:
       temp:
         id_off: ":no_entry: **Ban updated** by {} to {} because of `{}`"
