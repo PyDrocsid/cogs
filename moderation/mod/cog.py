@@ -553,7 +553,7 @@ class ModCog(Cog, name="Mod Tools"):
         if warn is None:
             raise CommandError(t.no_warn)
 
-        if not await compare_mod_level(ctx.author, warn.mod_level):
+        if not await compare_mod_level(ctx.author, warn.mod_level) or not ctx.author.id == warn.mod:
             raise CommandError(tg.permission_denied)
 
         if len(reason) > 900:
@@ -607,7 +607,7 @@ class ModCog(Cog, name="Mod Tools"):
         if warn is None:
             raise CommandError(t.no_warn)
 
-        if not await compare_mod_level(ctx.author, warn.mod_level):
+        if not await compare_mod_level(ctx.author, warn.mod_level) or not ctx.author.id == warn.mod:
             raise CommandError(tg.permission_denied)
 
         conf_embed = Embed(
@@ -776,7 +776,7 @@ class ModCog(Cog, name="Mod Tools"):
         if mute is None:
             raise CommandError(t.no_mute)
 
-        if not await compare_mod_level(ctx.author, mute.mod_level):
+        if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
             raise CommandError(tg.permission_denied)
 
         if len(reason) > 900:
@@ -836,7 +836,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         mute = sorted(active_mutes, key=lambda active_mute: active_mute.timestamp)[0]
 
-        if not await compare_mod_level(ctx.author, mute.mod_level):
+        if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
             raise CommandError(tg.permission_denied)
 
         if mute.minutes == minutes or (mute.minutes == -1 and minutes is None):
@@ -939,7 +939,7 @@ class ModCog(Cog, name="Mod Tools"):
         if mute is None:
             raise CommandError(t.no_mute)
 
-        if not await compare_mod_level(ctx.author, mute.mod_level):
+        if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
             raise CommandError(tg.permission_denied)
 
         conf_embed = Embed(
@@ -1119,7 +1119,7 @@ class ModCog(Cog, name="Mod Tools"):
         if kick is None:
             raise CommandError(t.no_kick)
 
-        if not await compare_mod_level(ctx.author, kick.mod_level):
+        if not await compare_mod_level(ctx.author, kick.mod_level) or not ctx.author.id == kick.mod:
             raise CommandError(tg.permission_denied)
 
         if len(reason) > 900:
@@ -1173,7 +1173,7 @@ class ModCog(Cog, name="Mod Tools"):
         if kick is None:
             raise CommandError(t.no_kick)
 
-        if not await compare_mod_level(ctx.author, kick.mod_level):
+        if not await compare_mod_level(ctx.author, kick.mod_level) or not ctx.author.id == kick.mod:
             raise CommandError(tg.permission_denied)
 
         conf_embed = Embed(
@@ -1355,7 +1355,7 @@ class ModCog(Cog, name="Mod Tools"):
         if ban is None:
             raise CommandError(t.no_ban)
 
-        if not await compare_mod_level(ctx.author, ban.mod_level):
+        if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
             raise CommandError(tg.permission_denied)
 
         if len(reason) > 900:
@@ -1415,7 +1415,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         ban = sorted(active_bans, key=lambda active_ban: active_ban.timestamp)[0]
 
-        if not await compare_mod_level(ctx.author, ban.mod_level):
+        if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
             raise CommandError(tg.permission_denied)
 
         if ban.minutes == minutes or (ban.minutes == -1 and minutes is None):
@@ -1519,7 +1519,7 @@ class ModCog(Cog, name="Mod Tools"):
         if ban is None:
             raise CommandError(t.no_ban)
 
-        if not await compare_mod_level(ctx.author, ban.mod_level):
+        if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
             raise CommandError(tg.permission_denied)
 
         conf_embed = Embed(
