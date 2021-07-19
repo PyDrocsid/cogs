@@ -87,7 +87,7 @@ class ToMinutes:
 
 def time_to_units(minutes: Union[int, float]) -> str:
     rd = relativedelta(
-        datetime.fromtimestamp(0) + timedelta(minutes=minutes), datetime.fromtimestamp(0)
+        datetime.fromtimestamp(0) + timedelta(minutes=minutes), datetime.fromtimestamp(0),
     )  # Workaround that should be improved later
 
     def generator() -> Generator:
@@ -316,8 +316,8 @@ class ModCog(Cog, name="Mod Tools"):
                 )
             else:
                 out.append(
-                    (warn.timestamp, t.ulog.warned.id_off(f"<@{warn.mod}>", warn.reason, show_evidence(warn.evidence)))
-                ),
+                    (warn.timestamp, t.ulog.warned.id_off(f"<@{warn.mod}>", warn.reason, show_evidence(warn.evidence))),
+                )
 
         mute: Mute
         async for mute in await db.stream(filter_by(Mute, member=user_id)):
