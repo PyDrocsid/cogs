@@ -5,6 +5,14 @@ This cog contains commands for server moderation purposes.
 
 ## `send_delete_message`
 
+```css
+.send_delete_message <send>
+```
+
+Required Permissions:
+
+- `modtools_write`
+
 The .send_delete_message command can be used to configure whether to send a warn/mute/kick/ban deletion message to the concerned user.
 
 |Argument|Required|Description|
@@ -36,6 +44,10 @@ The .warn command can be used to warn a member because of his misbehaviour.
 .warn <user> <reason>
 ```
 
+Required Permissions:
+
+- `warn`
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`user`|:heavy_check_mark:|The user who should be warned|
@@ -51,6 +63,10 @@ The .edit_warn command can be used to edit a warns reason.
 ```css
 .[edit_warn|warn_edit] <warn_id> <reason>
 ```
+
+Required Permissions:
+
+- `warn`
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
@@ -70,6 +86,10 @@ The .delete_warn command can be used to delete warns from the database.
 .[delete_warn|warn_delete] <warn_id>
 ```
 
+Required Permissions:
+
+- `warn`
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`user`|:heavy_check_mark:|The id of the warn which should be deleted|
@@ -86,6 +106,10 @@ The .mute command can be used to give a member a formerly configured mute role.
 .mute <user> <time> <reason>
 ```
 
+Required Permissions:
+
+- `mute`
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`user`|:heavy_check_mark:|The user who should be warned|
@@ -99,7 +123,11 @@ The reason cannot be longer than 900 characters.
 
 ## `edit_mute`
 
-The edit_mute command can be used to edit a mute. There are two subcommands:
+The edit_mute command can be used to edit a mute. There are two subcommands.
+
+Required Permissions:
+
+- `mute`
 
 
 ### `reason`
@@ -146,6 +174,10 @@ The .delete_mute command can be used to delete a mute from the database.
 .[delete_mute|mute_delete] <mute_id>
 ```
 
+Required Permissions:
+
+- `mute`
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`mute_id`|:heavy_check_mark:|The id of the mute which should be deleted|
@@ -162,6 +194,10 @@ The .unmute command can be used to unmute a user.
 ```css
 .unmute <user> <reason
 ```
+
+Required Permissions:
+
+- `mute`
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
@@ -180,6 +216,10 @@ The .kick command can be used to kick a user from the server.
 .kick <user> <reason>
 ```
 
+Required Permissions:
+
+- `kick`
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`user`|:heavy_check_mark:|The user who should be kicked|
@@ -195,6 +235,10 @@ The .edit_kick command can be used to edit a kick reason.
 ```css
 .[edit_kick|kick_edit] <kick_id> <reason>
 ```
+
+Required Permissions:
+
+- `kick`
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
@@ -214,6 +258,10 @@ The .delete_kick command can be used to delete warns from the database.
 .[delete_kick|kick_delete] <kick_id>
 ```
 
+Required Permissions:
+
+- `kick`
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`user`|:heavy_check_mark:|The id of the kick which should be deleted|
@@ -230,6 +278,10 @@ The .ban command can be used to ban a user from the server.
 .ban <user> <time> <delete_days> <reason>
 ```
 
+Required Permissions:
+
+- `ban`
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`user`|:heavy_check_mark:|The user who should be banned|
@@ -245,7 +297,11 @@ The reason cannot be longer than 900 characters.
 
 ## `edit_ban`
 
-The .edit_ban command can be used to edit a ban. There are two subcommands:
+The .edit_ban command can be used to edit a ban. There are two subcommands.
+
+Required Permissions:
+
+- `ban`
 
 
 ### `reason`
@@ -292,6 +348,10 @@ The .delete_ban command can be used to delete a ban from the database.
 .[delete_ban|ban_delete] <ban_id>
 ```
 
+Required Permissions:
+
+- `ban`
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`ban_id`|:heavy_check_mark:|The id of the ban which should be deleted|
@@ -308,6 +368,10 @@ The .unban command can be used to unban a user.
 ```css
 .unban <user> <reason
 ```
+
+Required Permissions:
+
+- `ban`
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
