@@ -95,14 +95,14 @@ class Mute(db.Base):
 
     @staticmethod
     async def create(
-            member: int,
-            member_name: str,
-            mod: int,
-            mod_level: int,
-            minutes: int,
-            reason: str,
-            evidence: Optional[str],
-            is_update: bool = False
+        member: int,
+        member_name: str,
+        mod: int,
+        mod_level: int,
+        minutes: int,
+        reason: str,
+        evidence: Optional[str],
+        is_update: bool = False,
     ) -> Mute:
         row = Mute(
             member=member,
@@ -163,12 +163,12 @@ class Kick(db.Base):
 
     @staticmethod
     async def create(
-            member: int,
-            member_name: str,
-            mod: Optional[int],
-            mod_level: Optional[int],
-            reason: Optional[str],
-            evidence: Optional[str]
+        member: int,
+        member_name: str,
+        mod: Optional[int],
+        mod_level: Optional[int],
+        reason: Optional[str],
+        evidence: Optional[str],
     ) -> Kick:
         row = Kick(
             member=member,
@@ -216,14 +216,14 @@ class Ban(db.Base):
 
     @staticmethod
     async def create(
-            member: int,
-            member_name: str,
-            mod: int,
-            mod_level: int,
-            minutes: int,
-            reason: str,
-            evidence: Optional[str],
-            is_update: bool = False
+        member: int,
+        member_name: str,
+        mod: int,
+        mod_level: int,
+        minutes: int,
+        reason: str,
+        evidence: Optional[str],
+        is_update: bool = False,
     ) -> Ban:
         row = Ban(
             member=member,
