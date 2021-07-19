@@ -46,16 +46,18 @@ class Warn(db.Base):
     evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
     @staticmethod
-    async def create(member: int, member_name: str, mod: int, mod_level: int, reason: str,
-                     evidence: Optional[str]) -> Warn:
-        row = Warn(member=member,
-                   member_name=member_name,
-                   mod=mod,
-                   mod_level=mod_level,
-                   timestamp=datetime.utcnow(),
-                   reason=reason,
-                   evidence=evidence,
-                   )
+    async def create(
+        member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
+    ) -> Warn:
+        row = Warn(
+            member=member,
+            member_name=member_name,
+            mod=mod,
+            mod_level=mod_level,
+            timestamp=datetime.utcnow(),
+            reason=reason,
+            evidence=evidence,
+        )
         await db.add(row)
         return row
 
@@ -92,8 +94,16 @@ class Mute(db.Base):
     is_update: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    async def create(member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str,
-                     evidence: Optional[str], is_update: bool = False) -> Mute:
+    async def create(
+            member: int,
+            member_name: str,
+            mod: int,
+            mod_level: int,
+            minutes: int,
+            reason: str,
+            evidence: Optional[str],
+            is_update: bool = False
+    ) -> Mute:
         row = Mute(
             member=member,
             member_name=member_name,
@@ -152,16 +162,23 @@ class Kick(db.Base):
     evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
     @staticmethod
-    async def create(member: int, member_name: str, mod: Optional[int], mod_level: Optional[int],
-                     reason: Optional[str], evidence: Optional[str]) -> Kick:
-        row = Kick(member=member,
-                   member_name=member_name,
-                   mod=mod,
-                   mod_level=mod_level,
-                   timestamp=datetime.utcnow(),
-                   reason=reason,
-                   evidence=evidence,
-                   )
+    async def create(
+            member: int,
+            member_name: str,
+            mod: Optional[int],
+            mod_level: Optional[int],
+            reason: Optional[str],
+            evidence: Optional[str]
+    ) -> Kick:
+        row = Kick(
+            member=member,
+            member_name=member_name,
+            mod=mod,
+            mod_level=mod_level,
+            timestamp=datetime.utcnow(),
+            reason=reason,
+            evidence=evidence,
+        )
         await db.add(row)
         return row
 
@@ -198,8 +215,16 @@ class Ban(db.Base):
     is_update: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    async def create(member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str,
-                     evidence: Optional[str], is_update: bool = False) -> Ban:
+    async def create(
+            member: int,
+            member_name: str,
+            mod: int,
+            mod_level: int,
+            minutes: int,
+            reason: str,
+            evidence: Optional[str],
+            is_update: bool = False
+    ) -> Ban:
         row = Ban(
             member=member,
             member_name=member_name,

@@ -86,15 +86,18 @@ class ToMinutes:
 
 
 def time_to_units(minutes: Union[int, float]) -> str:
-    rd = relativedelta(datetime.fromtimestamp(0) + timedelta(minutes=minutes),
-                       datetime.fromtimestamp(0))  # Workaround that should be improved later
+    rd = relativedelta(
+        datetime.fromtimestamp(0) + timedelta(minutes=minutes),datetime.fromtimestamp(0)
+    )  # Workaround that should be improved later
 
     def generator() -> Generator:
-        for unit in [t.times.years(cnt=rd.years),
-                     t.times.months(cnt=rd.months),
-                     t.times.days(cnt=rd.days),
-                     t.times.hours(cnt=rd.hours),
-                     t.times.minutes(cnt=rd.minutes)]:
+        for unit in [
+            t.times.years(cnt=rd.years),
+            t.times.months(cnt=rd.months),
+            t.times.days(cnt=rd.days),
+            t.times.hours(cnt=rd.hours),
+            t.times.minutes(cnt=rd.minutes),
+        ]:
             if not str(unit).startswith("0"):
                 yield str(unit)
 
@@ -284,17 +287,19 @@ class ModCog(Cog, name="Mod Tools"):
         async for report in await db.stream(filter_by(Report, member=user_id)):
             if show_ids:
                 out.append(
-                    (report.timestamp,
-                     t.ulog.reported.id_on(f"<@{report.reporter}>", report.reason, report.id,
-                                           show_evidence(report.evidence)
-                                           )
-                     )
+                    (
+                        report.timestamp,
+                        t.ulog.reported.id_on(
+                            f"<@{report.reporter}>", report.reason, report.id, show_evidence(report.evidence)
+                        ),
+                    )
                 )
             else:
                 out.append(
-                    (report.timestamp,
-                     t.ulog.reported.id_off(f"<@{report.reporter}>", report.reason, show_evidence(report.evidence))
-                     )
+                    (
+                        report.timestamp,
+                        t.ulog.reported.id_off(f"<@{report.reporter}>", report.reason, show_evidence(report.evidence)),
+                    )
                 )
 
         warn: Warn
@@ -303,15 +308,12 @@ class ModCog(Cog, name="Mod Tools"):
                 out.append(
                     (
                         warn.timestamp,
-                        t.ulog.warned.id_on(f"<@{warn.mod}>", warn.reason, warn.id, show_evidence(warn.evidence))
+                        t.ulog.warned.id_on(f"<@{warn.mod}>", warn.reason, warn.id, show_evidence(warn.evidence)),
                     )
                 )
             else:
                 out.append(
-                    (
-                        warn.timestamp,
-                        t.ulog.warned.id_off(f"<@{warn.mod}>", warn.reason, show_evidence(warn.evidence))
-                    )
+                    (warn.timestamp, t.ulog.warned.id_off(f"<@{warn.mod}>", warn.reason, show_evidence(warn.evidence)))
                 )
 
         mute: Mute
@@ -327,33 +329,34 @@ class ModCog(Cog, name="Mod Tools"):
                     out.append(
                         (
                             mute.timestamp,
-                            text.inf.id_on(f"<@{mute.mod}>", mute.reason, mute.id, show_evidence(mute.evidence))
+                            text.inf.id_on(f"<@{mute.mod}>", mute.reason, mute.id, show_evidence(mute.evidence)),
                         )
                     )
                 else:
                     out.append(
-                        (
-                            mute.timestamp,
-                            text.inf.id_off(f"<@{mute.mod}>", mute.reason, show_evidence(mute.evidence))
-                        )
+                        (mute.timestamp, text.inf.id_off(f"<@{mute.mod}>", mute.reason, show_evidence(mute.evidence)))
                     )
             else:
                 if show_ids:
                     out.append(
                         (
                             mute.timestamp,
-                            text.temp.id_on(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason, mute.id,
-                                            show_evidence(mute.evidence)
-                                            )
+                            text.temp.id_on(
+                                f"<@{mute.mod}>",
+                                time_to_units(mute.minutes),
+                                mute.reason,
+                                mute.id,
+                                show_evidence(mute.evidence),
+                            ),
                         )
                     )
                 else:
                     out.append(
                         (
                             mute.timestamp,
-                            text.temp.id_off(f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason,
-                                             show_evidence(mute.evidence)
-                                             )
+                            text.temp.id_off(
+                                f"<@{mute.mod}>", time_to_units(mute.minutes), mute.reason, show_evidence(mute.evidence)
+                            ),
                         )
                     )
 
@@ -383,14 +386,14 @@ class ModCog(Cog, name="Mod Tools"):
                     out.append(
                         (
                             kick.timestamp,
-                            t.ulog.kicked.id_on(f"<@{kick.mod}>", kick.reason, kick.id, show_evidence(kick.evidence))
+                            t.ulog.kicked.id_on(f"<@{kick.mod}>", kick.reason, kick.id, show_evidence(kick.evidence)),
                         )
                     )
                 else:
                     out.append(
                         (
                             kick.timestamp,
-                            t.ulog.kicked.id_off(f"<@{kick.mod}>", kick.reason, show_evidence(kick.evidence))
+                            t.ulog.kicked.id_off(f"<@{kick.mod}>", kick.reason, show_evidence(kick.evidence)),
                         )
                     )
             else:
@@ -409,32 +412,34 @@ class ModCog(Cog, name="Mod Tools"):
                     out.append(
                         (
                             ban.timestamp,
-                            text.inf.id_on(f"<@{ban.mod}>", ban.reason, ban.id, show_evidence(ban.evidence))
+                            text.inf.id_on(f"<@{ban.mod}>", ban.reason, ban.id, show_evidence(ban.evidence)),
                         )
                     )
                 else:
                     out.append(
-                        (
-                            ban.timestamp, text.inf.id_off(f"<@{ban.mod}>", ban.reason, show_evidence(ban.evidence))
-                        )
+                        (ban.timestamp, text.inf.id_off(f"<@{ban.mod}>", ban.reason, show_evidence(ban.evidence)))
                     )
             else:
                 if show_ids:
                     out.append(
                         (
                             ban.timestamp,
-                            text.temp.id_on(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason, ban.id,
-                                            show_evidence(ban.evidence)
-                                            )
+                            text.temp.id_on(
+                                f"<@{ban.mod}>",
+                                time_to_units(ban.minutes),
+                                ban.reason,
+                                ban.id,
+                                show_evidence(ban.evidence),
+                            ),
                         )
                     )
                 else:
                     out.append(
                         (
                             ban.timestamp,
-                            text.temp.id_off(f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason,
-                                             show_evidence(ban.evidence)
-                                             )
+                            text.temp.id_off(
+                                f"<@{ban.mod}>", time_to_units(ban.minutes), ban.reason, show_evidence(ban.evidence)
+                            ),
                         )
                     )
 
@@ -541,8 +546,9 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild,
-                                    ctx.message, Colors.report, t.log_reported, user, reason, evidence=evidence)
+        await send_to_changelog_mod(
+            ctx.guild, ctx.message, Colors.report, t.log_reported, user, reason, evidence=evidence
+        )
 
     @commands.command()
     @ModPermission.warn.check
@@ -572,9 +578,12 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.ModTools,
         )
         if evidence:
-            user_embed.description = t.warned.evidence(ctx.author.mention, ctx.guild.name, reason,
-                                                       t.image_link(evidence.filename, evidence_url),
-                                                       )
+            user_embed.description = t.warned.evidence(
+                ctx.author.mention,
+                ctx.guild.name,
+                reason,
+                t.image_link(evidence.filename, evidence_url),
+            )
         else:
             user_embed.description = t.warned.no_evidence(ctx.author.mention, ctx.guild.name, reason)
 
@@ -609,9 +618,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.reason_too_long)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm_warn_edit(warn.reason, reason),
-            color=Colors.ModTools
+            title=t.confirmation, description=t.confirm_warn_edit(warn.reason, reason), color=Colors.ModTools
         )
 
         async with confirm(ctx, conf_embed) as (result, msg):
@@ -650,7 +657,7 @@ class ModCog(Cog, name="Mod Tools"):
         """
         delete a warn
         get the warn id from the users user log
-         """
+        """
 
         warn = await db.get(Warn, id=warn_id)
         if warn is None:
@@ -660,9 +667,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(tg.permission_denied)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm_warn_delete(warn.member_name, warn.id),
-            color=Colors.ModTools
+            title=t.confirmation, description=t.confirm_warn_delete(warn.member_name, warn.id), color=Colors.ModTools
         )
 
         async with confirm(ctx, conf_embed) as (result, msg):
@@ -749,13 +754,20 @@ class ModCog(Cog, name="Mod Tools"):
                 evidence_url,
             )
             if evidence:
-                user_embed.description = t.muted.evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
-                                                          reason, t.image_link(evidence.filename, evidence_url),
-                                                          )
+                user_embed.description = t.muted.evidence(
+                    ctx.author.mention,
+                    ctx.guild.name,
+                    time_to_units(minutes),
+                    reason,
+                    t.image_link(evidence.filename, evidence_url),
+                )
             else:
-                user_embed.description = t.muted.no_evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
-                                                             reason,
-                                                             )
+                user_embed.description = t.muted.no_evidence(
+                    ctx.author.mention,
+                    ctx.guild.name,
+                    time_to_units(minutes),
+                    reason,
+                )
 
             await send_to_changelog_mod(
                 ctx.guild,
@@ -778,9 +790,12 @@ class ModCog(Cog, name="Mod Tools"):
                 evidence_url,
             )
             if evidence:
-                user_embed.description = t.muted_inf.evidence(ctx.author.mention, ctx.guild.name, reason,
-                                                              t.image_link(evidence.filename, evidence_url),
-                                                              )
+                user_embed.description = t.muted_inf.evidence(
+                    ctx.author.mention,
+                    ctx.guild.name,
+                    reason,
+                    t.image_link(evidence.filename, evidence_url),
+                )
             else:
                 user_embed.description = t.muted_inf.no_evidence(ctx.author.mention, ctx.guild.name, reason)
 
@@ -832,9 +847,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.reason_too_long)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm_mute_edit.reason(mute.reason, reason),
-            color=Colors.ModTools
+            title=t.confirmation, description=t.confirm_mute_edit.reason(mute.reason, reason), color=Colors.ModTools
         )
 
         async with confirm(ctx, conf_embed) as (result, msg):
@@ -964,7 +977,8 @@ class ModCog(Cog, name="Mod Tools"):
                 ctx.message,
                 Colors.mute,
                 t.log_mute_edited,
-                user, mute.reason,
+                user,
+                mute.reason,
                 duration=t.log_field.infinity,
             )
 
@@ -982,7 +996,7 @@ class ModCog(Cog, name="Mod Tools"):
         """
         delete a mute
         get the mute id from the users user log
-         """
+        """
 
         mute = await db.get(Mute, id=mute_id)
         if mute is None:
@@ -992,9 +1006,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(tg.permission_denied)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm_mute_delete(mute.member_name, mute.id),
-            color=Colors.ModTools
+            title=t.confirmation, description=t.confirm_mute_delete(mute.member_name, mute.id), color=Colors.ModTools
         )
 
         async with confirm(ctx, conf_embed) as (result, msg):
@@ -1123,8 +1135,9 @@ class ModCog(Cog, name="Mod Tools"):
             evidence_url = None
 
         await Kick.create(member.id, str(member), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason,
-                                    evidence=evidence)
+        await send_to_changelog_mod(
+            ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason, evidence=evidence
+        )
 
         user_embed = Embed(
             title=t.kick,
@@ -1132,9 +1145,12 @@ class ModCog(Cog, name="Mod Tools"):
         )
 
         if evidence:
-            user_embed.description = t.kicked.evidence(ctx.author.mention, ctx.guild.name, reason,
-                                                       t.image_link(evidence.filename, evidence_url),
-                                                       )
+            user_embed.description = t.kicked.evidence(
+                ctx.author.mention,
+                ctx.guild.name,
+                reason,
+                t.image_link(evidence.filename, evidence_url),
+            )
         else:
             user_embed.description = t.kicked.no_evidence(ctx.author.mention, ctx.guild.name, reason)
 
@@ -1175,9 +1191,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.reason_too_long)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm_kick_edit(kick.reason, reason),
-            color=Colors.ModTools
+            title=t.confirmation, description=t.confirm_kick_edit(kick.reason, reason), color=Colors.ModTools
         )
 
         async with confirm(ctx, conf_embed) as (result, msg):
@@ -1216,7 +1230,7 @@ class ModCog(Cog, name="Mod Tools"):
         """
         delete a kick
         get the kick id from the users user log
-         """
+        """
 
         kick = await db.get(Kick, id=kick_id)
         if kick is None:
@@ -1226,9 +1240,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(tg.permission_denied)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm_kick_delete(kick.member_name, kick.id),
-            color=Colors.ModTools
+            title=t.confirmation, description=t.confirm_kick_delete(kick.member_name, kick.id), color=Colors.ModTools
         )
 
         async with confirm(ctx, conf_embed) as (result, msg):
@@ -1325,13 +1337,17 @@ class ModCog(Cog, name="Mod Tools"):
                 False,
             )
             if evidence:
-                user_embed.description = t.banned.evidence(ctx.author.mention, ctx.guild.name, time_to_units(minutes),
-                                                           reason, t.image_link(evidence.filename, evidence_url)
-                                                           )
+                user_embed.description = t.banned.evidence(
+                    ctx.author.mention,
+                    ctx.guild.name,
+                    time_to_units(minutes),
+                    reason,
+                    t.image_link(evidence.filename, evidence_url),
+                )
             else:
-                user_embed.description = t.banned.no_evidence(ctx.author.mention, ctx.guild.name,
-                                                              time_to_units(minutes), reason
-                                                              )
+                user_embed.description = t.banned.no_evidence(
+                    ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason
+                )
             await send_to_changelog_mod(
                 ctx.guild,
                 ctx.message,
@@ -1354,9 +1370,9 @@ class ModCog(Cog, name="Mod Tools"):
                 False,
             )
             if evidence:
-                user_embed.description = t.banned_inf.evidence(ctx.author.mention, ctx.guild.name, reason,
-                                                           t.image_link(evidence.filename, evidence_url)
-                                                           )
+                user_embed.description = t.banned_inf.evidence(
+                    ctx.author.mention, ctx.guild.name, reason, t.image_link(evidence.filename, evidence_url)
+                )
             else:
                 user_embed.description = t.banned_inf.evidence(ctx.author.mention, ctx.guild.name, reason)
 
@@ -1368,7 +1384,7 @@ class ModCog(Cog, name="Mod Tools"):
                 user,
                 reason,
                 duration=t.log_field.infinity,
-                evidence=evidence
+                evidence=evidence,
             )
 
         try:
@@ -1411,9 +1427,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.reason_too_long)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm_ban_edit.reason(ban.reason, reason),
-            color=Colors.ModTools
+            title=t.confirmation, description=t.confirm_ban_edit.reason(ban.reason, reason), color=Colors.ModTools
         )
 
         async with confirm(ctx, conf_embed) as (result, msg):
@@ -1562,7 +1576,7 @@ class ModCog(Cog, name="Mod Tools"):
         """
         delete a ban
         get the ban id from the users user log
-         """
+        """
 
         ban = await db.get(Ban, id=ban_id)
         if ban is None:
@@ -1572,9 +1586,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(tg.permission_denied)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm_ban_delete(ban.member_name, ban.id),
-            color=Colors.ModTools
+            title=t.confirmation, description=t.confirm_ban_delete(ban.member_name, ban.id), color=Colors.ModTools
         )
 
         async with confirm(ctx, conf_embed) as (result, msg):
