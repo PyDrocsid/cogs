@@ -87,7 +87,8 @@ class ToMinutes:
 
 def time_to_units(minutes: Union[int, float]) -> str:
     rd = relativedelta(
-        datetime.fromtimestamp(0) + timedelta(minutes=minutes), datetime.fromtimestamp(0),
+        datetime.fromtimestamp(0) + timedelta(minutes=minutes),
+        datetime.fromtimestamp(0),
     )  # Workaround that should be improved later
 
     def generator() -> Generator:

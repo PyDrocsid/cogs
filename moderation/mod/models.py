@@ -47,7 +47,12 @@ class Warn(db.Base):
 
     @staticmethod
     async def create(
-        member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
+        member: int,
+        member_name: str,
+        mod: int,
+        mod_level: int,
+        reason: str,
+        evidence: Optional[str],
     ) -> Warn:
         row = Warn(
             member=member,
