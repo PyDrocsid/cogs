@@ -589,7 +589,7 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason, evidence=evidence)
 
-    @commands.command()
+    @commands.command(aliases=["warn_edit"])
     @ModPermission.warn.check
     @guild_only()
     async def edit_warn(self, ctx: Context, warn_id: int, *, reason: str):
@@ -643,7 +643,7 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warn_edited, user, reason)
 
-    @commands.command()
+    @commands.command(aliases=["warn_delete"])
     @ModPermission.warn.check
     @guild_only()
     async def delete_warn(self, ctx: Context, warn_id: int):
@@ -803,7 +803,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         await reply(ctx, embed=server_embed)
 
-    @commands.group()
+    @commands.group(aliases=["mute_edit"])
     @ModPermission.mute.check
     @guild_only()
     async def edit_mute(self, ctx):
@@ -814,7 +814,7 @@ class ModCog(Cog, name="Mod Tools"):
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
-    @edit_mute.command(name="reason")
+    @edit_mute.command(name="reason", aliases=["r"])
     async def edit_mute_reason(self, ctx: Context, mute_id: int, *, reason: str):
         """
         edit a mute reason
@@ -866,7 +866,7 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.mute, t.log_mute_edited, user, reason)
 
-    @edit_mute.command(name="duration")
+    @edit_mute.command(name="duration", aliases=["d"])
     async def edit_mute_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
         """
         edit a mute duration
@@ -975,7 +975,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
 
-    @commands.command()
+    @commands.command(aliases=["mute_delete"])
     @ModPermission.mute.check
     @guild_only()
     async def delete_mute(self, ctx: Context, mute_id: int):
@@ -1155,7 +1155,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         await reply(ctx, embed=server_embed)
 
-    @commands.command()
+    @commands.command(aliases=["kick_edit"])
     @ModPermission.warn.check
     @guild_only()
     async def edit_kick(self, ctx: Context, kick_id: int, *, reason: str):
@@ -1209,7 +1209,7 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kick_edited, user, reason)
 
-    @commands.command()
+    @commands.command(aliases=["kick_delete"])
     @ModPermission.kick.check
     @guild_only()
     async def delete_kick(self, ctx: Context, kick_id: int):
@@ -1382,7 +1382,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         await reply(ctx, embed=server_embed)
 
-    @commands.group()
+    @commands.group(aliases=["ban_edit"])
     @ModPermission.mute.check
     @guild_only()
     async def edit_ban(self, ctx):
@@ -1393,7 +1393,7 @@ class ModCog(Cog, name="Mod Tools"):
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
-    @edit_ban.command(name="reason")
+    @edit_ban.command(name="reason", aliases=["r"])
     async def edit_ban_reason(self, ctx: Context, ban_id: int, *, reason: str):
         """
         edit a ban reason
@@ -1445,7 +1445,7 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.ban, t.log_ban_edited, user, reason)
 
-    @edit_ban.command(name="duration")
+    @edit_ban.command(name="duration", aliases=["d"])
     async def edit_ban_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
         """
         edit a ban duration
@@ -1555,7 +1555,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
 
-    @commands.command()
+    @commands.command(aliases=["ban_delete"])
     @ModPermission.ban.check
     @guild_only()
     async def delete_ban(self, ctx: Context, ban_id: int):
