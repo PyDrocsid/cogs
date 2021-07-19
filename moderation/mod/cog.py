@@ -1277,7 +1277,7 @@ class ModCog(Cog, name="Mod Tools"):
         """
         ban a user
         time format: `ymwdhn`
-        set ban_days to `inf` for a permanent ban
+        set time to `inf` for a permanent ban
         """
 
         time: Optional[int]
