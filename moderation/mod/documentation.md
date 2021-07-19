@@ -2,6 +2,14 @@
 
 This cog contains commands for server moderation purposes.
 
+## `send_delete_message`
+
+The .send_delete_message command can be used to configure whether to send a warn/mute/kick/ban deletion message to the concerned user.
+
+|Argument|Required|Description|
+|:------:|:------:|:----------|
+|`send`|:heavy_check_mark:|Whether to send a deletion message or not|
+
 ## `report`
 
 The .report command can be used to report misbehaviour of other server members.
