@@ -2,6 +2,7 @@
 
 This cog contains commands for server moderation purposes.
 
+
 ## `send_delete_message`
 
 The .send_delete_message command can be used to configure whether to send a warn/mute/kick/ban deletion message to the concerned user.
@@ -9,6 +10,7 @@ The .send_delete_message command can be used to configure whether to send a warn
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`send`|:heavy_check_mark:|Whether to send a deletion message or not|
+
 
 ## `report`
 
@@ -24,6 +26,7 @@ The .report command can be used to report misbehaviour of other server members.
 |`reason`|:heavy_check_mark:|A description of the users misbehaviour|
 
 The reason cannot be longer than 900 characters.
+
 
 ## `warn`
 
@@ -58,6 +61,7 @@ You can obtain the warn id from a users user log.
 The reason cannot be longer than 900 characters.
 To perform these changes, you need to be the moderator who created the original warn, have a higher moderation level or be the server owner.
 
+
 ## `delete_warn`
 
 The .delete_warn command can be used to delete warns from the database.
@@ -72,6 +76,7 @@ The .delete_warn command can be used to delete warns from the database.
 
 You can obtain the warn id from a users user log.
 To perform these changes, you need to be the moderator who created the original warn, have a higher moderation level or be the server owner.
+
 
 ## `mute`
 
@@ -91,9 +96,11 @@ The time must be provided as `[years]y[months]m[weeks]w[days]d[hours]h[minutes]n
 Set the duration to `inf` to mute a user permanently.
 The reason cannot be longer than 900 characters.
 
+
 ## `edit_mute`
 
 The edit_mute command can be used to edit a mute. There are two subcommands:
+
 
 ### `reason`
 
@@ -112,6 +119,7 @@ You can obtain the mute id from a users user log.
 To perform these changes, you need to be the moderator who created the original mute, have a higher moderation level or be the server owner.
 The reason cannot be longer than 900 characters.
 
+
 ### `duration`
 
 You can edit a mute duration by using:
@@ -129,6 +137,7 @@ The time format required is the same as before.
 To perform these changes, you need to be the moderator who created the original mute, have a higher moderation level or be the server owner.
 You can only edit the duration of active mutes.
 
+
 ## `delete_mute`
 
 The .delete_mute command can be used to delete a mute from the database.
@@ -145,6 +154,7 @@ You can obtain a mute id from a users user log.
 To perform these changes, you need to be the moderator who created the mute, have a higher moderation level or be the server owner.
 If the mute id is linked to an active mute, the mute role will be removed from the user.
 
+
 ## `unmute`
 
 The .unmute command can be used to unmute a user.
@@ -160,6 +170,7 @@ The .unmute command can be used to unmute a user.
 
 To perform these changes, you need to be the moderator who created the mute, have a higher moderation level or be the server owner.
 The mute role will be removed from the user instantly.
+
 
 ## `kick`
 
@@ -194,6 +205,7 @@ You can obtain the kick id from a users user log.
 The reason cannot be longer than 900 characters.
 To perform these changes, you need to be the moderator who created the original kick, have a higher moderation level or be the server owner.
 
+
 ## `delete_kick`
 
 The .delete_kick command can be used to delete warns from the database.
@@ -208,6 +220,7 @@ The .delete_kick command can be used to delete warns from the database.
 
 You can obtain the kick id from a users user log.
 To perform these changes, you need to be the moderator who created the original kick, have a higher moderation level or be the server owner.
+
 
 ## `ban`
 
@@ -229,9 +242,11 @@ Set the duration to `inf` to ban a user permanently.
 The amount of delete days must be between zero and seven.
 The reason cannot be longer than 900 characters.
 
+
 ## `edit_ban`
 
 The .edit_ban command can be used to edit a ban. There are two subcommands:
+
 
 ### `reason`
 
@@ -250,6 +265,7 @@ You can obtain the ban id from a users user log.
 To perform these changes, you need to be the moderator who created the original ban, have a higher moderation level or be the server owner.
 The reason cannot be longer than 900 characters.
 
+
 ### `duration`
 
 You can edit a ban duration by using:
@@ -267,6 +283,7 @@ The time format required is the same as before.
 To perform these changes, you need to be the moderator who created the original ban, have a higher moderation level or be the server owner.
 You can only edit the duration of active bans.
 
+
 ## `delete_ban`
 
 The .delete_ban command can be used to delete a ban from the database.
@@ -282,6 +299,7 @@ The .delete_ban command can be used to delete a ban from the database.
 You can obtain a ban id from a users user log.
 To perform these changes, you need to be the moderator who created the ban, have a higher moderation level or be the server owner.
 If the ban id is linked to an active ban, the user will be unbanned.
+
 
 ## `unban`
 
