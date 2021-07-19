@@ -16,6 +16,7 @@ from discord import (
     Attachment,
     AuditLogAction,
     AuditLogEntry,
+    TextChannel,
 )
 from discord.ext import commands, tasks
 from discord.ext.commands import (
@@ -556,15 +557,28 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.avatar_url)
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            ctx.guild,
-            ctx.message,
-            Colors.report,
-            t.log_reported,
-            user,
-            reason,
-            evidence=evidence,
+
+        alert_embed = Embed(
+            title=t.report,
+            description=t.alert_report(ctx.author.mention, user.mention, reason),
+            color=Colors.report,
+            timestamp=datetime.utcnow(),
         )
+
+        if type(ctx.channel) is TextChannel:
+            alert_embed.add_field(
+                name=t.log_field.channel,
+                value=t.jump_url(ctx.channel.mention, ctx.message.jump_url),
+                inline=True,
+            )
+        if evidence:
+            alert_embed.add_field(
+                name=t.log_field.evidence,
+                value=t.image_link(evidence.filename, evidence_url),
+                inline=True,
+            )
+
+        await send_alert(self.bot.guilds[0], alert_embed)
 
     @commands.command()
     @ModPermission.warn.check
