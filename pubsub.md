@@ -118,6 +118,7 @@ Returns: A list of `(datetime, log_entry)` tuples
 Subscriptions:
 
 - [Invite Whitelist](/cogs/moderation/invites)
+- [MediaOnly](/cogs/moderation/mediaonly)
 - [Mod Tools](/cogs/moderation/mod)
 
 
