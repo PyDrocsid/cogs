@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Union
 
+from sqlalchemy import Column, String, BigInteger, DateTime, Boolean, Integer, Text
+
 from PyDrocsid.database import db
-from sqlalchemy import Column, String, BigInteger, DateTime, Boolean, Integer
 
 
 class AllowedInvite(db.Base):
@@ -57,6 +58,29 @@ class InviteLog(db.Base):
             mod=mod,
             timestamp=datetime.utcnow(),
             approved=approved,
+        )
+        await db.add(row)
+        return row
+
+
+class IllegalInvitePost(db.Base):
+    __tablename__ = "illegal_invite_post"
+
+    id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
+    member: Union[Column, int] = Column(BigInteger)
+    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    channel: Union[Column, int] = Column(BigInteger)
+    name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    timestamp: Union[Column, datetime] = Column(DateTime)
+
+    @staticmethod
+    async def create(member: int, member_name: str, channel: int, name: str) -> IllegalInvitePost:
+        row = IllegalInvitePost(
+            member=member,
+            member_name=member_name,
+            timestamp=datetime.utcnow(),
+            channel=channel,
+            name=name,
         )
         await db.add(row)
         return row

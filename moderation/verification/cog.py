@@ -49,7 +49,7 @@ class VerificationCog(Cog, name="Verification"):
 
         delay: int = await VerificationSettings.delay.get()
         if delay != -1 and (datetime.utcnow() - member.joined_at).total_seconds() < delay:
-            raise CommandError(t.password_incorrect)
+            raise CommandError(t.too_soon)
 
         add: List[Role] = []
         remove: List[Role] = []

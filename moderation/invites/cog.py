@@ -18,7 +18,7 @@ from PyDrocsid.logger import get_logger
 from PyDrocsid.prefix import get_prefix
 from PyDrocsid.translations import t
 from .colors import Colors
-from .models import InviteLog, AllowedInvite
+from .models import InviteLog, AllowedInvite, IllegalInvitePost
 from .permissions import InvitesPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog, get_userlog_entries, send_alert
@@ -90,11 +90,17 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
     @get_userlog_entries.subscribe
     async def handle_get_ulog_entries(self, user_id: int, _):
         out = []
+
         async for log in await db.stream(filter_by(InviteLog, applicant=user_id)):  # type: InviteLog
             if log.approved:
                 out.append((log.timestamp, t.ulog_invite_approved(f"<@{log.mod}>", log.guild_name)))
             else:
                 out.append((log.timestamp, t.ulog_invite_removed(f"<@{log.mod}>", log.guild_name)))
+
+        post: IllegalInvitePost
+        async for post in await db.stream(filter_by(IllegalInvitePost, member=user_id)):
+            out.append((post.timestamp, t.ulog_illegal_post(f"<#{post.channel}>", post.name)))
+
         return out
 
     async def check_message(self, message: Message) -> bool:
@@ -109,6 +115,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         for url in find_urls(message.content):
             if (code := await run_in_thread(lambda: get_discord_invite(url))) is None:
                 continue
+
             try:
                 invite = await self.bot.fetch_invite(code)
             except NotFound:
@@ -116,19 +123,26 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             except Forbidden:
                 forbidden.append(f"`{code}` (banned from this server)")
                 continue
+
             if invite.guild is None:
                 continue
             if invite.guild == message.guild:
                 legal_invite = True
                 continue
+
             if await db.get(AllowedInvite, guild_id=invite.guild.id) is None:
                 forbidden.append(f"`{invite.code}` ({invite.guild.name})")
             else:
                 legal_invite = True
+
         if forbidden:
             can_delete = message.channel.permissions_for(message.guild.me).manage_messages
             if can_delete:
                 await message.delete()
+
+            for name in set(forbidden):
+                await IllegalInvitePost.create(author.id, str(author), message.channel.id, name)
+
             prefix = await get_prefix()
             embed = Embed(
                 title=t.invites,
