@@ -50,6 +50,7 @@ cannot_fetch_audit_logs: A ban initiated through the server couldn't be added to
 report: ":speech_balloon: Report"
 cannot_report: This member cannot be reported.
 no_self_report: You cannot report yourself.
+confirm_report: "Are you sure you want to report {} for ```\n{}```\n"
 reported_response: "User reported successfully :white_check_mark:"
 alert_report: "{} reported {} because of ```\n{}\n```"
 
@@ -62,7 +63,7 @@ warned:
 warned_response: "User warned successfully :white_check_mark:"
 log_warned: ":warning: Member warned"
 no_warn: No warn with this ID could be found
-confirm_warn_edit: "Are you sure you want to change this warns reason from ```\n{}\n```to```\n{}\n```?"
+confirm_warn_edit: "Are you sure you want to change this warns reason from ```\n{}\n```to```\n{}\n```"
 warn_edited: "The warn reason has been changed from ```\n{}\n```to```\n{}\n```"
 warn_edited_response: ":white_check_mark: The warn reason has been edited"
 log_warn_edited: ":warning: Warn edited"
@@ -91,8 +92,8 @@ log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
 no_mute: No mute with this ID could be found
 confirm_mute_edit:
-  reason: "Are you sure you want to change this mutes reason from ```\n{}\n```to```\n{}\n```?"
-  duration: "Are you sure you want to change the mute duration from ```\n{}\n```to```\n{}\n```?"
+  reason: "Are you sure you want to change this mutes reason from ```\n{}\n```to```\n{}\n```"
+  duration: "Are you sure you want to change the mute duration from ```\n{}\n```to```\n{}\n```"
 mute_edited:
   reason: "The mute reason has been changed from ```\n{}\n```to```\n{}\n```"
   duration: "The mute duration has been changed from ```\n{}\n```to```\n{}\n```"
@@ -115,7 +116,7 @@ log_kicked: ":x: Member kicked"
 cannot_kick: This member cannot be kicked.
 cannot_kick_permissions: User could not be kicked because I don't have `kick_members` permission on this server.
 no_kick: No kick with this ID could be found
-confirm_kick_edit: "Are you sure you want to change this kicks reason from ```\n{}\n```to```\n{}\n```?"
+confirm_kick_edit: "Are you sure you want to change this kicks reason from ```\n{}\n```to```\n{}\n```"
 kick_edited: "The kick reason has been changed from ```\n{}\n```to```\n{}\n```"
 kick_edited_reponse: ":white_check_mark: The kick reason has been edited"
 log_kick_edited: ":x: Kick edited"
@@ -145,8 +146,8 @@ log_unbanned: ":white_check_mark: Member Unbanned"
 cannot_unban_permissions: User could not be unbanned because I don't have `ban_members` permission on this server.
 no_ban: No ban with this ID could be found
 confirm_ban_edit:
-  reason: "Are you sure you want to change this bans reason from ```\n{}\n```to```\n{}\n```?"
-  duration: "Are you sure you want to change the bans duration from ```\n{}\n```to```\n{}\n```?"
+  reason: "Are you sure you want to change this bans reason from ```\n{}\n```to```\n{}\n```"
+  duration: "Are you sure you want to change the bans duration from ```\n{}\n```to```\n{}\n```"
 ban_edited:
   reason: "The ban reason has been changed from ```\n{}\n```to```\n{}\n```"
   duration: "The ban duration has been changed from ```\n{}\n```to```\n{}\n```"

@@ -546,6 +546,21 @@ class ModCog(Cog, name="Mod Tools"):
         if user == ctx.author:
             raise UserCommandError(user, t.no_self_report)
 
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=t.confirm_report(user.mention, reason),
+            color=Colors.ModTools,
+        )
+
+        async with confirm(ctx, conf_embed) as (result, msg):
+            if not result:
+                conf_embed.description += "\n\n" + t.edit_canceled
+                return
+
+            conf_embed.description += "\n\n" + t.edit_confirmed
+            if msg:
+                await msg.delete(delay=5)
+
         if attachments := ctx.message.attachments:
             evidence = attachments[0]
             evidence_url = evidence.url
