@@ -135,4 +135,3 @@ Disables a channel
 .logging {Log-Channel} [disable|d]
 ```
 
-
