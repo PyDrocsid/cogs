@@ -1,4 +1,4 @@
-# Mod Tools
+# Mod tools
 
 This cog contains commands for server moderation purposes.
 
@@ -135,7 +135,7 @@ Required Permissions:
 You can edit a mute reason by using:
 
 ```css
-.[edit_mute|mute_edit] [reason|r] <mute_id> <reason>
+.edit_mute [reason|r] <mute_id> <reason>
 ```
 
 |Argument|Required|Description|
@@ -153,7 +153,7 @@ The reason cannot be longer than 900 characters.
 You can edit a mute duration by using:
 
 ```css
-.[edit_mute|mute_edit] [duration|d] <user> <time>
+.edit_mute [duration|d] <user> <time>
 ```
 
 |Argument|Required|Description|
@@ -309,7 +309,7 @@ Required Permissions:
 You can edit a ban reason by using:
 
 ```css
-.[edit_ban|ban_edit] [reason|r] <ban_id> <reason>
+.edit_ban [reason|r] <ban_id> <reason>
 ```
 
 |Argument|Required|Description|
@@ -327,7 +327,7 @@ The reason cannot be longer than 900 characters.
 You can edit a ban duration by using:
 
 ```css
-.[edit_ban|ban_edit] [duration|d] <user> <time>
+.edit_ban [duration|d] <user> <time>
 ```
 
 |Argument|Required|Description|
