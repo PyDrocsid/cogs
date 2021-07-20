@@ -1,13 +1,13 @@
 # Verification
 
-This Cog is used to add a Verification System.
+This Cog is used to add a verification system.
 
 
 ## add
 
 
-With the `add` subcommand you can a Verification Role.
-You can set `reverse` to `true` then the Role will get removed from the user and not added.
+With the `add` subcommand you can add a verification role.
+If you set `reverse` to `true`, the role will be removed from the user instead of added.
 
 ```css
 .verification [add|a|+] <role> [reverse=False]
@@ -15,10 +15,10 @@ You can set `reverse` to `true` then the Role will get removed from the user and
 
 Argument | Required            | Description
 ---------|---------------------|------------
-role     | :heavy_check_mark:  | The Verification Role
-reverse  |                     | The Role assignment will be reversed => Role will get removed
+role     | :heavy_check_mark:  | The verification role
+reverse  |                     | The role assignment will be reversed => role will be removed
 
-Required Permissions:
+Required permissions:
 
 - `settings.change_prefix`
 
@@ -26,7 +26,7 @@ Required Permissions:
 ## delay
 
 
-Set the Time you have to be on the Server until you can Verify.
+Set the time a user has to be on the server until they can verify.
 
 ```css
 .verification [delay|d] <seconds>
@@ -34,13 +34,13 @@ Set the Time you have to be on the Server until you can Verify.
 
 Argument | Required            | Description
 ---------|---------------------|------------
-delay    | :heavy_check_mark:  | The Time in Seconds
+delay    | :heavy_check_mark:  | The time in seconds
 
 
 ## password
 
 
-Sets the *Secret* Password you'll need to Verify.
+Sets the *secret* password the user will need to verify.
 
 ```css
 .verification [password|p] <password>
@@ -48,16 +48,16 @@ Sets the *Secret* Password you'll need to Verify.
 
 Argument | Required            | Description
 ---------|---------------------|------------
-password | :heavy_check_mark:  | The Password as string
+password | :heavy_check_mark:  | The password as string
 
 !!! note
-    Password has a Max-Length of 256 Chars
+    The password has a max-length of 256 characters.
 
 
 ## remove
 
 
-Removes an existing Verification.
+Removes an existing verification.
 
 ```css
 .verification [remove|r|-] <role>
@@ -65,4 +65,4 @@ Removes an existing Verification.
 
 Argument | Required            | Description
 ---------|---------------------|------------
-role     | :heavy_check_mark:  | The Verification Role
+role     | :heavy_check_mark:  | The verification role
