@@ -2,7 +2,7 @@ from typing import Optional, Union, Dict, List
 
 from discord import Role, Embed, Member, Status, Guild, NotFound, User, Forbidden
 from discord.ext import commands
-from discord.ext.commands import CommandError, Context, guild_only, UserInputError
+from discord.ext.commands import CommandError, Context, guild_only, UserInputError, Group
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, docs
@@ -79,6 +79,16 @@ async def reassign(member: Member, role: Role):
         )
 
 
+def add_role_command(roles_config: Group, name: str, title: str, check_assignable: bool):
+    @roles_config.command(name=name)
+    @RolesPermission.config_write.check
+    @docs(t.configure_role(title.lower()))
+    async def inner(_, ctx: Context, *, role: Role):
+        await configure_role(ctx, name, role, check_assignable)
+
+    return inner
+
+
 class RolesCog(Cog, name="Roles"):
     CONTRIBUTORS = [Contributor.Defelo]
 
@@ -86,18 +96,6 @@ class RolesCog(Cog, name="Roles"):
         super().__init__()
 
         self.removed_perma_roles: set[tuple[int, int]] = set()
-
-        def set_role(role_name: str, assignable: bool):
-            @RolesPermission.config_write.check
-            async def inner(ctx: Context, *, role: Role):
-                await configure_role(ctx, role_name, role, assignable)
-
-            return inner
-
-        for name, (title, check_assignable) in Config.ROLES.items():
-            self.roles_config.command(name=name, help=t.configure_role(title.lower()))(
-                set_role(name, check_assignable),
-            )
 
     async def on_member_role_remove(self, member: Member, role: Role):
         if (member.id, role.id) in self.removed_perma_roles:
@@ -156,6 +154,10 @@ class RolesCog(Cog, name="Roles"):
             val = role.mention if role is not None else t.role_not_set
             embed.add_field(name=title, value=val, inline=True)
         await reply(ctx, embed=embed)
+
+    for i, (name, (title, check_assignable)) in enumerate(Config.ROLES.items()):
+        set_cmd = add_role_command(roles_config, name, title, check_assignable)
+        exec(f"rc_set_{i} = set_cmd")  # noqa: S102
 
     @roles.group(name="auth")
     @RolesPermission.auth_read.check
