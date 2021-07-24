@@ -114,7 +114,7 @@ The enable is used to enable/disable the command.
 ```css
 .custom_commands edit [enabled|e] <command> <enabled>
 ```
-  
+
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`command`|:heavy_check_mark:|The name of the custom command|
