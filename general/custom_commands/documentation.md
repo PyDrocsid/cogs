@@ -1,6 +1,6 @@
 # custom commands
 
-This cog contains the `custom_commands` command. The command can be used to create own commands which can be called.
+This cog contains the `custom_commands` command. The command can be used to create own commands which can be called. 
 
 This command contains different sub commands to create/edit/delete custom commands.
 
@@ -13,7 +13,7 @@ If no subcommand is given a list of all avaiable custom commands with aliasses w
 
 ## `add`
 
-This subcommand is used to create new custom commands.
+This command is used to create new custom commands.
 
 ```css
 .custom_commands [add|+] <name> <discohook_url> [public=True]
@@ -22,13 +22,13 @@ This subcommand is used to create new custom commands.
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`name`|:heavy_check_mark:|The name of the custom command|
-|`discohook_link`|:heavy_check_mark:|Go to [this side](https://discohook.org/), compose your message, click on `Share Message` and copy the link.|
+|`discohook_url`|:heavy_check_mark:|Go to [this side](https://discohook.org/), compose your message, click on `Share Message` and copy the link.|
 |`public`||If set to `False` the permission level of the command will be set to the default permission level of the bot|
 
 
 ## `alias`
 
-This subcommand adds an alias to a command
+The alias command is used to add an alias to a command
 
 ```css
 .custom_commands [alias|a] <command> <alias>
@@ -42,18 +42,18 @@ This subcommand adds an alias to a command
 
 ## `edit`
 
-This subcommand has some own subcommands to edit different things.
+The edit command is used to edit different things.
 
 ```css
 .custom_commands [edit|e] [subcommand] 
 ```
 
-If no subcommand is given a list oif all subcommands for `edit` will be send
+If no subcommand is given a list of all subcommands for `edit` will be send.
 
 
 ### __`channel`__
 
-This command specifies a channel in which the commnand should be send by default
+The channel is used to specifie a channel in which the commnand should be send by default.
 
 ```css
 .custom_commands edit [channel|c] <command> [channel]
@@ -67,7 +67,7 @@ This command specifies a channel in which the commnand should be send by default
 
 ### __`channel_parameter`__
 
-This command specifies a channel in which the commnand should be send by default.
+The channel_parameter is used to specifie a channel in which the commnand should be send by default.
 
 ```css
 .custom_commands edit [channel_parameter|cp] <command> <enabled>
@@ -81,7 +81,7 @@ This command specifies a channel in which the commnand should be send by default
 
 ### __`delete_command`__
 
-This command specifies if the command should be deleted after the execution.
+The delete_command is used to specifie if the command should be deleted after the execution.
 
 ```css
 .custom_commands edit [delete_command|dc] <command> <delete>
@@ -95,7 +95,7 @@ This command specifies if the command should be deleted after the execution.
 
 ### __`description`__
 
-This command sets an description for a custom command.
+The description is used to set an description for a custom command.
 
 ```css
 .custom_commands edit [description|desc|d] <command> [description]
@@ -109,7 +109,7 @@ This command sets an description for a custom command.
 
 ### __`enable`__
 
-This command enables/disables the command.
+The enable is used to enable/disable the command.
 
 ```css
 .custom_commands edit [enabled|e] <command> <enabled>
@@ -123,7 +123,7 @@ This command enables/disables the command.
 
 ### __`name`__
 
-This command chnages the name of the custom command.
+The name is used to change the name of the custom command.
 
 ```css
 .custom_commands edit [name|n] <command> <name>
@@ -137,7 +137,7 @@ This command chnages the name of the custom command.
 
 ### __`permission_level`__
 
-This command sets the requiered permission level to execute the custom command.
+The permission_level is used to set the requiered permission level to execute the custom command.
 
 ```css
 .custom_commands edit [permission_level|pl] <command> <level>
@@ -151,7 +151,7 @@ This command sets the requiered permission level to execute the custom command.
 
 ### __`requires_confirmation`__
 
-This command enables/disables a confirmation message before sending the message of the custom command.
+The requires_confirmation is used to specifie whether to send a confirmation message before sending the message of the custom command.
 
 ```css
 .custom_commands edit [requires_confirmation|rc] <command> <enabled>
@@ -165,7 +165,7 @@ This command enables/disables a confirmation message before sending the message 
 
 ### __`text`__
 
-This command edits the content of the message.
+The text is used to edit the content of the message.
 
 ```css
 .custom_commands edit [text|t|content|data] <command> <discohook_url>
@@ -179,7 +179,7 @@ This command edits the content of the message.
 
 ### __`user_parameter`__
 
-This command enables/disables the mention of a user on top of the message.
+The user_parameter is used to enable/disable the mention of a user on top of the message.
 
 ```css
 .custom_commands edit [user_parameter|up] <command> <enabled>
@@ -193,7 +193,7 @@ This command enables/disables the mention of a user on top of the message.
 
 ## `remove`
 
-This command removes a custom command.
+The remove command is used to remove a custom command.
 
 ```css
 .custom_commands [remove|r|del|d|-] <command>
@@ -206,7 +206,7 @@ This command removes a custom command.
 
 ## `show`
 
-This command shows all information about a custom command.
+The show command is used to show all information about a custom command.
 
 ```css
 .custom_commands [show|s|view|v|?] <command>
@@ -219,7 +219,7 @@ This command shows all information about a custom command.
 
 ## `test`
 
-This command send a preview of the message without mentioning roles/user.
+The test command is used to send a preview of the message without mentioning roles/user.
 
 ```css
 .custom_commands [test|t] <command>
@@ -232,7 +232,7 @@ This command send a preview of the message without mentioning roles/user.
 
 ## `unalias`
 
-This command removes an alias from a custom command.
+The unalias command is used to remove an alias from a custom command.
 
 ```css
 .custom_commands [unalias|u] <alias>
