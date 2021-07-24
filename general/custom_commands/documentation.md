@@ -1,6 +1,6 @@
 # custom commands
 
-This cog contains the `custom_commands` command. The command can be used to create own commands which can be called. 
+This cog contains the `custom_commands` command. The command can be used to create own commands which can be called.
 
 This command contains different sub commands to create/edit/delete custom commands.
 
