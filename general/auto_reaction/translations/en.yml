@@ -1,0 +1,9 @@
+permissions:
+  read: read autoreaction
+  write: Create a new autoreaction
+
+commands:
+  auto_reaction: Auto Reaction
+  auto_reaction_add: Add a reaction if a message is sent in the specified channel
+
+too_many_reactions : You can specify a maximum of 20 reactions per message
