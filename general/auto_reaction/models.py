@@ -10,13 +10,9 @@ from sqlalchemy.orm import relationship
 class AutoReactionChannel(db.Base):
     __tablename__ = "auto_reaction_channel"
 
-    id: Union[Column, int] = Column(
-        BigInteger, primary_key=True, unique=True, autoincrement=True
-    )
+    id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True, autoincrement=True)
     channel: Union[Column, int] = Column(BigInteger)
-    reactions = relationship(
-        "AutoReaction", secondary="auto_reaction_link", back_populates="channels"
-    )
+    reactions = relationship("AutoReaction", secondary="auto_reaction_link", back_populates="channels")
 
     @staticmethod
     async def create(channel_id: int) -> AutoReactionChannel:
@@ -30,9 +26,7 @@ class AutoReactionChannel(db.Base):
 class AutoReaction(db.Base):
     __tablename__ = "auto_reaction"
 
-    id: Union[Column, int] = Column(
-        BigInteger, primary_key=True, unique=True, autoincrement=True
-    )
+    id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True, autoincrement=True)
     reaction: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     channels = relationship(
         "AutoReactionChannel",
@@ -51,9 +45,7 @@ class AutoReaction(db.Base):
 
 class AutoReactionLink(db.Base):
     __tablename__ = "auto_reaction_link"
-    id: Union[Column, int] = Column(
-        BigInteger, primary_key=True, unique=True, autoincrement=True
-    )
+    id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True, autoincrement=True)
 
     channel_id = Column(BigInteger, ForeignKey("auto_reaction_channel.id"))
 

@@ -32,15 +32,15 @@ class AutoreactionCog(Cog, name="Autoreaction"):
     @AutoReactionPermission.write.check
     @docs(t.commands.auto_reaction_add)
     async def autoreaction_add(self, ctx: Context, channel: TextChannel, reactions: str):
-        reactions = re.sub(r'<:\w*:\d*>', '', reactions)
+        reactions = re.sub(r"<:\w*:\d*>", "", reactions)
 
-        channel_exists: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel,
-                                                                     channel=channel.id) is not None
+        channel_exists: Optional[AutoReactionChannel] = (
+            await db.get(AutoReactionChannel, channel=channel.id) is not None
+        )
         if not channel_exists:
             await AutoReactionChannel.create(channel.id)
 
-        db_channel: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel,
-                                                                 channel=channel.id)
+        db_channel: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel, channel=channel.id)
         for reaction in reactions:
             if not reaction.strip():
                 continue
@@ -54,7 +54,12 @@ class AutoreactionCog(Cog, name="Autoreaction"):
         channel = message.channel
         db_channel: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel, channel=channel.id)
         if db_channel:
-            async for link_reaction in await db.stream(select(AutoReactionLink).filter_by(
-                    channel_id=db_channel.id)):
+            async for link_reaction in await db.stream(select(AutoReactionLink).filter_by(channel_id=db_channel.id)):
                 auto_reaction = await db.get(AutoReaction, id=link_reaction.autoreaction_id)
                 await message.add_reaction(auto_reaction.reaction)
+
+    @auto_reaction.command(name="remove", aliases=["r", "-"])
+    @AutoReactionPermission.write.check
+    @docs(t.commands.auto_reaction_remove)
+    async def autoreaction_remove(self, ctx: Context, channel: TextChannel, reactions: str):
+        pass
