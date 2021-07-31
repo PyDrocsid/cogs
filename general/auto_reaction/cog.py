@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from PyDrocsid.cog import Cog
@@ -30,10 +31,8 @@ class AutoreactionCog(Cog, name="Autoreaction"):
     @auto_reaction.command(name="add", aliases=["a", "+"])
     @AutoReactionPermission.write.check
     @docs(t.commands.auto_reaction_add)
-    async def autoreaction_add(self, ctx: Context, channel: TextChannel, *, reaction: str):
-        reactions = [char for char in reaction if char.strip()]
-        if len(reactions) > 20:
-            raise CommandError(t.too_many_reactions)
+    async def autoreaction_add(self, ctx: Context, channel: TextChannel, reactions: str):
+        reactions = re.sub(r'<:\w*:\d*>', '', reactions)
 
         channel_exists: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel,
                                                                      channel=channel.id) is not None
@@ -43,6 +42,8 @@ class AutoreactionCog(Cog, name="Autoreaction"):
         db_channel: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel,
                                                                  channel=channel.id)
         for reaction in reactions:
+            if not reaction.split():
+                continue
             reaction_exists: Optional[AutoReaction] = await db.get(AutoReaction, reaction=reaction) is not None
             if not reaction_exists:
                 await AutoReaction.create(reaction)
@@ -54,6 +55,6 @@ class AutoreactionCog(Cog, name="Autoreaction"):
         db_channel: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel, channel=channel.id)
         if db_channel:
             async for link_reaction in await db.stream(select(AutoReactionLink).filter_by(
-                         channel_id=db_channel.id)):
+                    channel_id=db_channel.id)):
                 auto_reaction = await db.get(AutoReaction, id=link_reaction.autoreaction_id)
                 await message.add_reaction(auto_reaction.reaction)
