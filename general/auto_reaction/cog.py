@@ -42,7 +42,7 @@ class AutoreactionCog(Cog, name="Autoreaction"):
         db_channel: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel,
                                                                  channel=channel.id)
         for reaction in reactions:
-            if not reaction.split():
+            if not reaction.strip():
                 continue
             reaction_exists: Optional[AutoReaction] = await db.get(AutoReaction, reaction=reaction) is not None
             if not reaction_exists:
