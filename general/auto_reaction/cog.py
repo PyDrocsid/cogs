@@ -31,7 +31,7 @@ class AutoreactionCog(Cog, name="Autoreaction"):
     @AutoReactionPermission.write.check
     @docs(t.commands.auto_reaction_add)
     async def autoreaction_add(self, ctx: Context, channel: TextChannel, *, reaction: str):
-        reactions = reaction.split()
+        reactions = [char for char in reaction if char.strip()]
         if len(reactions) > 20:
             raise CommandError(t.too_many_reactions)
 
