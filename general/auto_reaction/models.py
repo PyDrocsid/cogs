@@ -62,3 +62,4 @@ class AutoReactionLink(db.Base):
         link = AutoReactionLink(channel_id=channel_id, autoreaction_id=autoreaction_id)
         await db.add(link)
         return link
+    

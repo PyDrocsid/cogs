@@ -57,8 +57,3 @@ class AutoreactionCog(Cog, name="Autoreaction"):
                          channel_id=db_channel.id)):
                 auto_reaction = await db.get(AutoReaction, id=link_reaction.autoreaction_id)
                 await message.add_reaction(auto_reaction.reaction)
-
-
-
-
-
