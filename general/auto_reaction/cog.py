@@ -62,4 +62,12 @@ class AutoreactionCog(Cog, name="Autoreaction"):
     @AutoReactionPermission.write.check
     @docs(t.commands.auto_reaction_remove)
     async def autoreaction_remove(self, ctx: Context, channel: TextChannel, reactions: str):
-        pass
+        db_channel = await db.get(AutoReactionChannel, channel=channel.id)
+        for reaction in reactions:
+            reaction_db: Optional[AutoReaction] = await db.get(AutoReaction, reaction=reaction)
+            if reaction_db and db_channel:
+                auto_reaction_link = await db.get(AutoReactionLink, autoreaction_id=reaction_db.id,
+                                                  channel_id=db_channel.id)
+                if auto_reaction_link:
+                    await db.delete(auto_reaction_link)
+                    await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
