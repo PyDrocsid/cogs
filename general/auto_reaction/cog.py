@@ -4,6 +4,7 @@ from typing import Optional
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
 from PyDrocsid.database import db, select
+from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from discord import Message, TextChannel
 from discord.ext import commands
@@ -35,7 +36,7 @@ class AutoreactionCog(Cog, name="Autoreaction"):
         reactions = re.sub(r"<:\w*:\d*>", "", reactions)
 
         channel_exists: Optional[AutoReactionChannel] = (
-            await db.get(AutoReactionChannel, channel=channel.id) is not None
+                await db.get(AutoReactionChannel, channel=channel.id) is not None
         )
         if not channel_exists:
             await AutoReactionChannel.create(channel.id)
@@ -49,6 +50,7 @@ class AutoreactionCog(Cog, name="Autoreaction"):
                 await AutoReaction.create(reaction)
             db_reaction: Optional[AutoReaction] = await db.get(AutoReaction, reaction=reaction)
             await AutoReactionLink.create(db_channel.id, db_reaction.id)
+            await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     async def on_message(self, message: Message):
         channel = message.channel
