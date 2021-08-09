@@ -1,16 +1,39 @@
-from typing import Union
+from typing import Union, Optional
 
 from PyDrocsid.database import db
-from sqlalchemy import Column, BigInteger
+from sqlalchemy import Column, BigInteger, String, Integer, ForeignKey, Boolean
 
 
-class BTPRole(db.Base):
-    __tablename__ = "btp_role"
+class BTPTopic(db.Base):
+    __tablename__ = "btp_topic"
 
-    role_id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
+    id: Union[Column, int] = Column(Integer, primary_key=True)
+    name: Union[Column, str] = Column(String(255))
+    parent: Union[Column, int] = Column(Integer)
+    role_id: Union[Column, int] = Column(BigInteger)
+    assignable: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
-    async def create(role_id: int) -> "BTPRole":
-        row = BTPRole(role_id=role_id)
+    async def create(
+        name: str,
+        role_id: Union[int, None],
+        assignable: bool,
+        parent: Optional[Union[int, None]],
+    ) -> "BTPTopic":
+        row = BTPTopic(name=name, role_id=role_id, parent=parent, assignable=assignable)
+        await db.add(row)
+        return row
+
+
+class BTPUser(db.Base):
+    __tablename__ = "btp_users"
+
+    id: Union[Column, int] = Column(Integer, primary_key=True)
+    user_id: Union[Column, int] = Column(BigInteger)
+    topic: Union[Column, int] = Column(Integer, ForeignKey(BTPTopic.id))
+
+    @staticmethod
+    async def create(user_id: int, topic: int) -> "BTPUser":
+        row = BTPUser(user_id=user_id, topic=topic)
         await db.add(row)
         return row

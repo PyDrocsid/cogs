@@ -1,18 +1,20 @@
 import string
-from typing import List
+from collections import Counter
+from typing import List, Union, Optional, Dict
 
-from discord import Role, Guild, Member, Embed
-from discord.ext import commands
+from discord import Member, Embed, Role, Message
+from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
-from PyDrocsid.database import db, select
+from PyDrocsid.database import db, select, db_wrapper
 from PyDrocsid.embeds import send_long_embed
+from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
-from PyDrocsid.util import calculate_edit_distance, check_role_assignable
+from PyDrocsid.util import calculate_edit_distance
 from .colors import Colors
-from .models import BTPRole
+from .models import BTPUser, BTPTopic
 from .permissions import BeTheProfessionalPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
@@ -20,99 +22,120 @@ from ...pubsub import send_to_changelog
 tg = t.g
 t = t.betheprofessional
 
+logger = get_logger(__name__)
+
 
 def split_topics(topics: str) -> List[str]:
     return [topic for topic in map(str.strip, topics.replace(";", ",").split(",")) if topic]
 
 
-async def parse_topics(guild: Guild, topics: str, author: Member) -> List[Role]:
-    roles: List[Role] = []
-    all_topics: List[Role] = await list_topics(guild)
-    for topic in split_topics(topics):
-        for role in guild.roles:
-            if role.name.lower() == topic.lower():
-                if role in all_topics:
-                    break
-                if not role.managed and role >= guild.me.top_role:
-                    raise CommandError(t.youre_not_the_first_one(topic, author.mention))
-        else:
-            if all_topics:
+async def split_parents(topics: List[str], assignable: bool) -> List[tuple[str, bool, Optional[list[BTPTopic]]]]:
+    result: List[tuple[str, bool, Optional[list[BTPTopic]]]] = []
+    for topic in topics:
+        topic_tree = topic.split("/")
 
-                def dist(name: str) -> int:
-                    return calculate_edit_distance(name.lower(), topic.lower())
+        parents: List[Union[BTPTopic, None, CommandError]] = [
+            await db.first(select(BTPTopic).filter_by(name=topic))
+            if await db.exists(select(BTPTopic).filter_by(name=topic))
+            else CommandError(t.parent_not_exists(topic))
+            for topic in topic_tree[:-1]
+        ]
 
-                best_match = min([r.name for r in all_topics], key=dist)
+        parents = [parent for parent in parents if parent is not None]
+        for parent in parents:
+            if isinstance(parent, CommandError):
+                raise parent
+
+        topic = topic_tree[-1]
+        result.append((topic, assignable, parents))
+    return result
+
+
+async def parse_topics(topics_str: str) -> List[BTPTopic]:
+    topics: List[BTPTopic] = []
+    all_topics: List[BTPTopic] = await get_topics()
+    for topic in split_topics(topics_str):
+        query = select(BTPTopic).filter_by(name=topic)
+        topic_db = await db.first(query)
+        if not (await db.exists(query)) and len(all_topics) > 0:
+
+            def dist(name: str) -> int:
+                return calculate_edit_distance(name.lower(), topic.lower())
+
+            best_match = min([r.name for r in all_topics], key=dist)
+            if best_match:
                 raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
-            raise CommandError(t.topic_not_found(topic))
-        roles.append(role)
-    return roles
+            else:
+                raise CommandError(t.topic_not_found(topic))
+        elif not (await db.exists(query)):
+            raise CommandError(t.no_topics_registered)
+        topics.append(topic_db)
+    return topics
 
 
-async def list_topics(guild: Guild) -> List[Role]:
-    roles: List[Role] = []
-    async for btp_role in await db.stream(select(BTPRole)):
-        if (role := guild.get_role(btp_role.role_id)) is None:
-            await db.delete(btp_role)
-        else:
-            roles.append(role)
-    return roles
-
-
-async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
-    guild: Guild = ctx.guild
-    roles: List[Role] = []
-    btp_roles: List[BTPRole] = []
-    names = split_topics(topics)
-    if not names:
-        raise UserInputError
-
-    for topic in names:
-        for role in guild.roles:
-            if role.name.lower() == topic.lower():
-                break
-        else:
-            raise CommandError(t.topic_not_registered(topic))
-        if (btp_role := await db.first(select(BTPRole).filter_by(role_id=role.id))) is None:
-            raise CommandError(t.topic_not_registered(topic))
-
-        roles.append(role)
-        btp_roles.append(btp_role)
-
-    for role, btp_role in zip(roles, btp_roles):
-        if delete_roles:
-            check_role_assignable(role)
-            await role.delete()
-        await db.delete(btp_role)
-
-    embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-    embed.description = t.topics_unregistered(cnt=len(roles))
-    await send_to_changelog(
-        ctx.guild,
-        t.log_topics_unregistered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
-    )
-    await send_long_embed(ctx, embed)
+async def get_topics() -> List[BTPTopic]:
+    topics: List[BTPTopic] = []
+    async for topic in await db.stream(select(BTPTopic)):
+        topics.append(topic)
+    return topics
 
 
 class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.MaxiHuHe04, Contributor.AdriBloober]
 
+    async def on_ready(self):
+        self.update_roles.start()
+
     @commands.command(name="?")
     @guild_only()
-    async def list_topics(self, ctx: Context):
+    async def list_topics(self, ctx: Context, parent_topic: Optional[str]):
         """
         list all registered topics
         """
+        parent: Union[BTPTopic, None, CommandError] = (
+            None
+            if parent_topic is None
+            else await db.first(select(BTPTopic).filter_by(name=parent_topic))
+            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+        )
+        if isinstance(parent, CommandError):
+            raise parent
 
         embed = Embed(title=t.available_topics_header, colour=Colors.BeTheProfessional)
-        out = [role.name for role in await list_topics(ctx.guild)]
-        if not out:
+        sorted_topics: Dict[str, List[str]] = {}
+        topics: List[BTPTopic] = await db.all(select(BTPTopic).filter_by(parent=None if parent is None else parent.id))
+        if not topics:
             embed.colour = Colors.error
             embed.description = t.no_topics_registered
             await reply(ctx, embed=embed)
             return
 
-        out.sort(key=str.lower)
-        embed.description = ", ".join(f"`{topic}`" for topic in out)
+        topics.sort(key=lambda btp_topic: btp_topic.name.lower())
+        root_topic: Union[BTPTopic, None] = (
+            None if parent_topic is None else await db.first(select(BTPTopic).filter_by(name=parent_topic))
+        )
+        for topic in topics:
+            if (root_topic.name if root_topic is not None else "Topics") not in sorted_topics.keys():
+                sorted_topics[root_topic.name if root_topic is not None else "Topics"] = [f"{topic.name}"]
+            else:
+                sorted_topics[root_topic.name if root_topic is not None else "Topics"].append(f"{topic.name}")
+
+        for root_topic in sorted_topics.keys():
+            embed.add_field(
+                name=root_topic.title(),
+                value=", ".join(
+                    [
+                        f"`{topic.name}"
+                        + (  # noqa: W503
+                            f" ({c})`"
+                            if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id))) > 0
+                            else "`"
+                        )
+                        for topic in topics
+                    ],
+                ),
+                inline=False,
+            )
         await send_long_embed(ctx, embed)
 
     @commands.command(name="+")
@@ -123,16 +146,17 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         """
 
         member: Member = ctx.author
-        roles: List[Role] = [r for r in await parse_topics(ctx.guild, topics, ctx.author) if r not in member.roles]
-
-        for role in roles:
-            check_role_assignable(role)
-
-        await member.add_roles(*roles)
-
+        topics: List[BTPTopic] = [
+            topic
+            for topic in await parse_topics(topics)
+            if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
+            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+        ]
+        for topic in topics:
+            await BTPUser.create(member.id, topic.id)
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-        embed.description = t.topics_added(cnt=len(roles))
-        if not roles:
+        embed.description = t.topics_added(cnt=len(topics))
+        if not topics:
             embed.colour = Colors.error
 
         await reply(ctx, embed=embed)
@@ -143,68 +167,67 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         """
         remove one or more topics (use * to remove all topics)
         """
-
         member: Member = ctx.author
         if topics.strip() == "*":
-            roles: List[Role] = await list_topics(ctx.guild)
+            topics: List[BTPTopic] = await get_topics()
         else:
-            roles: List[Role] = await parse_topics(ctx.guild, topics, ctx.author)
-        roles = [r for r in roles if r in member.roles]
+            topics: List[BTPTopic] = await parse_topics(topics)
+        affected_topics: List[BTPTopic] = []
+        for topic in topics:
+            if await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)):
+                affected_topics.append(topic)
 
-        for role in roles:
-            check_role_assignable(role)
-
-        await member.remove_roles(*roles)
+        for topic in affected_topics:
+            await db.delete(await db.first(select(BTPUser).filter_by(topic=topic.id)))
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-        embed.description = t.topics_removed(cnt=len(roles))
+        embed.description = t.topics_removed(cnt=len(affected_topics))
         await reply(ctx, embed=embed)
 
     @commands.command(name="*")
     @BeTheProfessionalPermission.manage.check
     @guild_only()
-    async def register_topics(self, ctx: Context, *, topics: str):
+    async def register_topics(self, ctx: Context, *, topics: str, assignable: bool = True):
         """
         register one or more new topics
         """
 
-        guild: Guild = ctx.guild
         names = split_topics(topics)
-        if not names:
+        topics: List[tuple[str, bool, Optional[list[BTPTopic]]]] = await split_parents(names, assignable)
+        if not names or not topics:
             raise UserInputError
 
         valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_`{|}~")
-        to_be_created: List[str] = []
-        roles: List[Role] = []
-        for topic in names:
-            if any(c not in valid_chars for c in topic):
+        registered_topics: List[tuple[str, bool, Optional[list[BTPTopic]]]] = []
+        for topic in topics:
+            if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
 
-            for role in guild.roles:
-                if role.name.lower() == topic.lower():
-                    break
+            if await db.exists(
+                select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
+            ):
+                raise CommandError(
+                    t.topic_already_registered(f"{topic[1]}/{topic[2][-1].name + '/' if topic[1] else ''}{topic[0]}"),
+                )
             else:
-                to_be_created.append(topic)
-                continue
+                registered_topics.append(topic)
 
-            if await db.exists(select(BTPRole).filter_by(role_id=role.id)):
-                raise CommandError(t.topic_already_registered(topic))
-
-            check_role_assignable(role)
-
-            roles.append(role)
-
-        for name in to_be_created:
-            roles.append(await guild.create_role(name=name, mentionable=True))
-
-        for role in roles:
-            await BTPRole.create(role.id)
+        for registered_topic in registered_topics:
+            await BTPTopic.create(
+                registered_topic[0],
+                None,
+                True,
+                registered_topic[2][-1].id if len(registered_topic[2]) > 0 else None,
+            )
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
-        embed.description = t.topics_registered(cnt=len(roles))
+        embed.description = t.topics_registered(cnt=len(registered_topics))
         await send_to_changelog(
             ctx.guild,
-            t.log_topics_registered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
+            t.log_topics_registered(
+                cnt=len(registered_topics),
+                topics=", ".join(f"`{r[0]}`" for r in registered_topics),
+            ),
         )
         await reply(ctx, embed=embed)
 
@@ -216,14 +239,81 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         delete one or more topics
         """
 
-        await unregister_roles(ctx, topics, delete_roles=True)
+        topics: List[str] = split_topics(topics)
 
-    @commands.command(name="%")
-    @BeTheProfessionalPermission.manage.check
+        delete_topics: list[BTPTopic] = []
+
+        for topic in topics:
+            if not await db.exists(select(BTPTopic).filter_by(name=topic)):
+                raise CommandError(t.topic_not_registered(topic))
+            else:
+                btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
+                delete_topics.append(btp_topic)
+                for child_topic in await db.all(
+                    select(BTPTopic).filter_by(parent=btp_topic.id),
+                ):  # TODO Recursive? Fix more level childs
+                    delete_topics.insert(0, child_topic)
+        for topic in delete_topics:
+            if topic.role_id is not None:
+                role: Role = ctx.guild.get_role(topic.role_id)
+                await role.delete()
+            for user_topic in await db.all(select(BTPUser).filter_by(topic=topic.id)):
+                await db.delete(user_topic)
+                await db.commit()
+            await db.delete(topic)
+
+        embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
+        embed.description = t.topics_unregistered(cnt=len(delete_topics))
+        await send_to_changelog(
+            ctx.guild,
+            t.log_topics_unregistered(cnt=len(delete_topics), topics=", ".join(f"`{r}`" for r in delete_topics)),
+        )
+        await send_long_embed(ctx, embed)
+
+    @commands.command()
     @guild_only()
-    async def unregister_topics(self, ctx: Context, *, topics: str):
-        """
-        unregister one or more topics without deleting the roles
-        """
+    async def topic(self, ctx: Context, topic_name: str, message: Optional[Message]):
+        topic: BTPTopic = await db.first(select(BTPTopic).filter_by(name=topic_name))
+        mention: str
+        if topic is None:
+            raise CommandError(t.topic_not_found(topic_name))
+        if topic.role_id is not None:
+            mention = ctx.guild.get_role(topic.role_id).mention
+        else:
+            topic_members: List[BTPUser] = await db.all(select(BTPUser).filter_by(topic=topic.id))
+            members: List[Member] = [ctx.guild.get_member(member.user_id) for member in topic_members]
+            mention = ", ".join(map(lambda m: m.mention, members))
 
-        await unregister_roles(ctx, topics, delete_roles=False)
+        if mention == "":
+            raise CommandError(t.nobody_has_topic(topic_name))
+        if message is None:
+            await ctx.send(mention)
+        else:
+            await message.reply(mention)
+
+    @commands.command(aliases=["topic_update", "update_roles"])
+    @guild_only()
+    @BeTheProfessionalPermission.manage.check
+    async def topic_update_roles(self, ctx: Context):
+        await self.update_roles()
+        await reply(ctx, "Updated Topic Roles")
+
+    @tasks.loop(hours=24)
+    @db_wrapper
+    async def update_roles(self):
+        logger.info("Started Update Role Loop")
+        topic_count: Dict[int, int] = {}
+        for topic in await db.all(select(BTPTopic)):
+            topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic=topic.id))
+        top_topics: List[int] = []
+        for topic_id in sorted(topic_count, key=lambda x: topic_count[x], reverse=True)[
+            : (100 if len(topic_count) >= 100 else len(topic_count))
+        ]:
+            top_topics.append(topic_id)
+        for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id != None)):  # noqa: E711
+            if topic.id not in top_topics:
+                await self.bot.guilds[0].get_role(topic.role_id).delete()
+        for top_topic in top_topics:
+            if (topic := await db.first(select(BTPTopic).filter_by(id=top_topic, role_id=None))) is not None:
+                topic.role_id = (await self.bot.guilds[0].create_role(name=topic.name)).id
+        logger.info("Created Top Topic Roles")
