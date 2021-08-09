@@ -6,13 +6,14 @@ from PyDrocsid.command import docs
 from PyDrocsid.database import db, select
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
-from discord import Message, TextChannel
+from discord import Message, TextChannel, Forbidden
 from discord.ext import commands
 from discord.ext.commands import Context, guild_only, UserInputError, CommandError
 
 from .models import AutoReactionChannel, AutoReaction, AutoReactionLink
 from .permission import AutoReactionPermission
 from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 tg = t.g
 t = t.auto_reaction
@@ -58,7 +59,10 @@ class AutoreactionCog(Cog, name="Autoreaction"):
         if db_channel:
             async for link_reaction in await db.stream(select(AutoReactionLink).filter_by(channel_id=db_channel.id)):
                 auto_reaction = await db.get(AutoReaction, id=link_reaction.autoreaction_id)
-                await message.add_reaction(auto_reaction.reaction)
+                try:
+                    await message.add_reaction(auto_reaction.reaction)
+                except Forbidden:
+                    await send_to_changelog(message.guild, t.no_permissions(message.channel))
 
     @auto_reaction.command(name="remove", aliases=["r", "-"])
     @AutoReactionPermission.write.check
