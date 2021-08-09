@@ -296,20 +296,20 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
     @BeTheProfessionalPermission.manage.check
     async def topic_update_roles(self, ctx: Context):
         await self.update_roles()
-        await reply(ctx, 'Updated Topic Roles')
+        await reply(ctx, "Updated Topic Roles")
 
     @tasks.loop(hours=24)
     @db_wrapper
     async def update_roles(self):
         logger.info("Started Update Role Loop")
-        topic_count: List[int] = []
+        topic_count: Dict[int, int] = {}
         for topic in await db.all(select(BTPTopic)):
-            for _ in range(await db.count(select(BTPUser).filter_by(topic=topic.id))):
-                topic_count.append(topic.id)
-        topic_count: Counter = Counter(topic_count)
+            topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic=topic.id))
         top_topics: List[int] = []
-        for topic_count in sorted(topic_count)[: (100 if len(topic_count) >= 100 else len(topic_count))]:
-            top_topics.append(topic_count)
+        for topic_id in sorted(topic_count, key=lambda x: topic_count[x], reverse=True)[
+            : (100 if len(topic_count) >= 100 else len(topic_count))
+        ]:
+            top_topics.append(topic_id)
         for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id != None)):  # noqa: E711
             if topic.id not in top_topics:
                 await self.bot.guilds[0].get_role(topic.role_id).delete()
