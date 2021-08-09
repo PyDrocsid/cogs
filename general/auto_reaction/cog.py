@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 
+from PyDrocsid.emojis import emoji_to_name
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
 from PyDrocsid.database import db, select
@@ -8,7 +9,7 @@ from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from discord import Message, TextChannel, Forbidden
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, UserInputError, CommandError
+from discord.ext.commands import Context, guild_only, UserInputError
 
 from .models import AutoReactionChannel, AutoReaction, AutoReactionLink
 from .permission import AutoReactionPermission
@@ -34,7 +35,6 @@ class AutoreactionCog(Cog, name="Autoreaction"):
     @AutoReactionPermission.write.check
     @docs(t.commands.auto_reaction_add)
     async def autoreaction_add(self, ctx: Context, channel: TextChannel, reactions: str):
-        reactions = re.sub(r"<:\w*:\d*>", "", reactions)
 
         channel_exists: Optional[AutoReactionChannel] = (
                 await db.get(AutoReactionChannel, channel=channel.id) is not None
@@ -44,7 +44,7 @@ class AutoreactionCog(Cog, name="Autoreaction"):
 
         db_channel: Optional[AutoReactionChannel] = await db.get(AutoReactionChannel, channel=channel.id)
         for reaction in reactions:
-            if not reaction.strip():
+            if not reaction.strip() or reaction not in emoji_to_name:
                 continue
             reaction_exists: Optional[AutoReaction] = await db.get(AutoReaction, reaction=reaction) is not None
             if not reaction_exists:
