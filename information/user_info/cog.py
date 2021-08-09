@@ -199,7 +199,7 @@ class UserInfoCog(Cog, name="User Information"):
                 else:
                     out.append((verification.timestamp, t.ulog.verification.revoked))
 
-        responses = await get_userlog_entries(user_id)
+        responses = await get_userlog_entries(user_id, ctx.author)
         for response in responses:
             out += response
 

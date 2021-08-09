@@ -12,3 +12,4 @@ When a user reacts on a message with one of the following emojis, the bot sends 
 |:incoming_envelope:|`:incoming_envelope:`|
 |:envelope_with_arrow:|`:envelope_with_arrow:`|
 |:floppy_disk:|`:floppy_disk:`|
+|:bookmark:|`:bookmark:`|

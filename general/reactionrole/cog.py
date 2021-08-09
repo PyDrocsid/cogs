@@ -5,9 +5,9 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import reply, docs, add_reactions
 from PyDrocsid.converter import EmojiConverter
-from PyDrocsid.database import db, select
+from PyDrocsid.database import db, select, filter_by
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.logger import get_logger
@@ -205,19 +205,59 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
     @reactionrole.command(name="remove", aliases=["r", "del", "d", "-"])
     @ReactionRolePermission.write.check
     @docs(t.commands.reactionrole_remove)
-    async def reactionrole_remove(self, ctx: Context, msg: Message, emoji: EmojiConverter):
+    async def reactionrole_remove(
+        self,
+        ctx: Context,
+        msg: Message,
+        emoji: EmojiConverter,
+        remove_reactions: bool = True,
+    ):
         emoji: PartialEmoji
 
         if not (link := await ReactionRole.get(msg.channel.id, msg.id, str(emoji))):
             raise CommandError(t.rr_link_not_found)
 
         await db.delete(link)
-        for reaction in msg.reactions:
-            if str(emoji) == str(reaction.emoji):
-                await reaction.clear()
+
+        if remove_reactions:
+            for reaction in msg.reactions:
+                if str(emoji) == str(reaction.emoji):
+                    await reaction.clear()
+                    break
+
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole, description=t.rr_link_removed)
         await reply(ctx, embed=embed)
         await send_to_changelog(
             ctx.guild,
             t.log_rr_link_removed(emoji, link.role_id, msg.jump_url, msg.channel.mention),
         )
+
+    @reactionrole.command(name="reinitialize", aliases=["reinit"])
+    @ReactionRolePermission.write.check
+    @docs(t.commands.reactionrole_reinialize)
+    async def reactionrole_reinialize(self, ctx: Context, msg: Message, emoji: Optional[EmojiConverter]):
+        if emoji:
+            emoji: PartialEmoji
+
+            if not await ReactionRole.get(msg.channel.id, msg.id, str(emoji)):
+                raise CommandError(t.rr_link_not_found)
+
+            for reaction in msg.reactions:
+                if str(reaction) == str(emoji):
+                    await reaction.clear()
+                    break
+
+            await msg.add_reaction(emoji)
+
+            await add_reactions(ctx, "white_check_mark")
+            return
+
+        links: list[ReactionRole] = await db.all(filter_by(ReactionRole, channel_id=msg.channel.id, message_id=msg.id))
+        if not links:
+            raise CommandError(t.rr_link_not_found)
+
+        await msg.clear_reactions()
+        for link in links:
+            await msg.add_reaction(link.emoji)
+
+        await add_reactions(ctx, "white_check_mark")
