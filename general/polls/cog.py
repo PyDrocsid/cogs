@@ -209,6 +209,7 @@ class PollsCog(Cog, name="Polls"):
                 pass
 
     @commands.command(aliases=["tyn"])
+    @PollsPermission.team_poll.check
     @guild_only()
     async def team_yesno(self, ctx: Context, *, text: str):
         """
