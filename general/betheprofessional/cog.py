@@ -41,10 +41,14 @@ async def parse_topics(guild: Guild, topics: str, author: Member) -> List[Role]:
                 def dist(name: str) -> int:
                     return calculate_edit_distance(name.lower(), topic.lower())
 
-                best_match = min([r.name for r in all_topics], key=dist)
-                raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
+                best_dist, best_match = min((dist(r.name), r.name) for r in all_topics)
+                if best_dist <= 5:
+                    raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
+
             raise CommandError(t.topic_not_found(topic))
+
         roles.append(role)
+
     return roles
 
 
