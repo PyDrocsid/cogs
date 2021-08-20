@@ -8,7 +8,7 @@ from discord.ext.commands import guild_only, Context, CommandError, max_concurre
 
 from PyDrocsid.async_thread import semaphore_gather, run_as_task
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply
+from PyDrocsid.command import reply, optional_permissions
 from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, db_wrapper
 from PyDrocsid.embeds import send_long_embed
@@ -191,6 +191,7 @@ class InactivityCog(Cog, name="Inactivity"):
 
     @commands.command(aliases=["indur"])
     @InactivityPermission.read.check
+    @optional_permissions(InactivityPermission.write)
     @guild_only()
     async def inactive_duration(self, ctx: Context, days: Optional[int]):
         """

@@ -9,7 +9,7 @@ from urllib3.exceptions import LocationParseError
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply
+from PyDrocsid.command import reply, optional_permissions
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -264,6 +264,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         await send_to_changelog(ctx.guild, t.log_server_whitelisted(guild.name))
 
     @invites.command(name="update", aliases=["u"])
+    @optional_permissions(InvitesPermission.manage)
     async def invites_update(self, ctx: Context, invite: Invite):
         """
         update the invite link of an allowed discord server

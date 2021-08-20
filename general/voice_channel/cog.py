@@ -28,7 +28,7 @@ from discord.ext.commands import guild_only, Context, UserInputError, CommandErr
 
 from PyDrocsid.async_thread import gather_any, GatherAnyException
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply, confirm
+from PyDrocsid.command import docs, reply, confirm, optional_permissions
 from PyDrocsid.database import filter_by, db, select, delete, db_context, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -1041,6 +1041,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
     @voice.command(name="rename")
     @VoiceChannelPermission.dyn_rename.check
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_rename)
     async def voice_rename(self, ctx: Context, *, name: str):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1070,6 +1071,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="owner", aliases=["o"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_owner)
     async def voice_owner(self, ctx: Context, member: Member):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1087,6 +1089,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="lock", aliases=["l"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_lock)
     async def voice_lock(self, ctx: Context):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1097,6 +1100,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="hide", aliases=["h"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_hide)
     async def voice_hide(self, ctx: Context):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1109,6 +1113,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="show", aliases=["s", "unhide"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_show)
     async def voice_show(self, ctx: Context):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1120,6 +1125,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="unlock", aliases=["u"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_unlock)
     async def voice_unlock(self, ctx: Context):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1130,6 +1136,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="add", aliases=["a", "+", "invite"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_add)
     async def voice_add(self, ctx: Context, *members: Greedy[Member]):
         if not members:
@@ -1146,6 +1153,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="remove", aliases=["r", "-", "kick", "k"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_remove)
     async def voice_remove(self, ctx: Context, *members: Greedy[Member]):
         if not members:
