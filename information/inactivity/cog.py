@@ -206,7 +206,7 @@ class InactivityCog(Cog, name="Inactivity"):
         if not await InactivityPermission.write.check_permissions(ctx.author):
             raise CommandError(tg.not_allowed)
 
-        if days <= 0:
+        if days not in range(1, 10001):
             raise CommandError(tg.invalid_duration)
 
         await InactivitySettings.inactive_days.set(days)
