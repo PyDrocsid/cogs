@@ -63,7 +63,8 @@ class DurationConverter(Converter):
             raise BadArgument(tg.invalid_duration)
 
         years, months, weeks, days, hours, minutes = [
-            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 7)]
+            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 7)
+        ]
 
         days += years * 365
         days += months * 30
