@@ -63,9 +63,7 @@ class DurationConverter(Converter):
             raise BadArgument(tg.invalid_duration)
 
         years, months, weeks, days, hours, minutes = [
-            0 if (value := match.group(i)) is None else int(value[:-1])
-            for i in range(1, 7)
-        ]
+            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 7)]
 
         days += years * 365
         days += months * 30
@@ -93,11 +91,7 @@ def time_to_units(minutes: Union[int, float]) -> str:
         func = getattr(t.times, key)
         return func(cnt=value)
 
-    return ", ".join(
-        get_func(key, time)
-        for key in _keys
-        if (time := getattr(rd, key)) != 0
-    )
+    return ", ".join(get_func(key, time) for key in _keys if (time := getattr(rd, key)) != 0)
 
 
 async def get_mute_role(guild: Guild) -> Role:
