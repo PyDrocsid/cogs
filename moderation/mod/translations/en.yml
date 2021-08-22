@@ -3,6 +3,24 @@ permissions:
   mute: mute a user
   kick: kick a user
   ban: ban a user
+  modtools_write: write mod tools configuration
+
+times:
+  years:
+    one: "{cnt} year"
+    many: "{cnt} years"
+  months:
+    one: "{cnt} month"
+    many: "{cnt} months"
+  days:
+    one: "{cnt} day"
+    many: "{cnt} days"
+  hours:
+    one: "{cnt} hour"
+    many: "{cnt} hours"
+  minutes:
+    one: "{cnt} minute"
+    many: "{cnt} minutes"
 
 log_field:
   member: ":bust_in_silhouette: Member"
@@ -10,60 +28,118 @@ log_field:
   channel: ":compass: Channel"
   duration: ":clock2: Duration"
   reason: ":scroll: Reason"
-  days:
-    one: "{cnt} day"
-    many: "{cnt} days"
-  days_infinity: "*Permanent*"
+  infinity: "*Permanent*"
+  evidence: ":file_cabinet: Evidence image"
 
+not_found:
+  warn: No warn with this ID could be found
+  mute: No mute with this ID could be found
+  kick: No kick with this ID could be found
+  ban: No ban with this ID could be found
+
+modtools: Mod tools
+configured_send_delete_message:
+  off: "Sending a message to a user after a warn/mute/kick/ban concerning him has been set to `off`"
+  on: "Sending a message to a user after a warn/mute/kick/ban concerning him has been set to `on`"
 jump_url: "{} [[Jump]]({})"
+image_link: "{} [[Go to image]]({})"
 no_dm: ":warning: User does not allow direct messages."
 reason_too_long: "Reason is too long. :pencil:"
 invalid_duration_inf: Invalid duration. Try `inf` instead.
+confirmation: Edit confirmation
+edit_canceled: ":x: Edit canceled"
+edit_confirmed: ":white_check_mark: Edit confirmed"
+infinity: Permanent
+cannot_fetch_audit_logs: A ban initiated through the server couldn't be added to the database because I don't have `view_audit_log` permissions on this server.
 
+# reports
 report: ":speech_balloon: Report"
 cannot_report: This member cannot be reported.
 no_self_report: You cannot report yourself.
+confirm_report: "Are you sure you want to report {} for ```\n{}```\n"
 reported_response: "User reported successfully :white_check_mark:"
-log_reported: ":speech_balloon: Member reported"
+alert_report: "{} reported {} because of ```\n{}\n```"
 
+# warns
 warn: ":warning: Warn"
 cannot_warn: This member cannot be warned.
-warned: "{} just warned you on {}:```\n{}\n```"
+warned:
+  evidence: "{} just warned you on {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just warned you on {}:```\n{}\n```"
 warned_response: "User warned successfully :white_check_mark:"
 log_warned: ":warning: Member warned"
+confirm_warn_edit: "Are you sure you want to change this warns reason from ```\n{}\n```to```\n{}\n```"
+warn_edited: "The warn reason has been changed from ```\n{}\n```to```\n{}\n```"
+warn_edited_response: ":white_check_mark: The warn reason has been edited"
+log_warn_edited: ":warning: Warn edited"
+confirm_warn_delete: "Are you sure you want to delete this warning for *{}*?\n`(ID: {})`"
+warn_deleted: "Your warn with the reason ```\n{}\n``` has been deleted"
+warn_deleted_response: ":white_check_mark: The warn has been deleted"
+log_warn_deleted: ":warning: Warn deleted"
 
+# mutes
 mute: ":mute: Mute"
 unmute: ":loud_sound: Mute"
 mute_role_not_set: User could not be muted because no mute role is configured.
 cannot_mute: This member cannot be muted.
 already_muted: User is already muted for the given period of time.
 muted:
-  one: "{} just muted you on {} for {cnt} day:```\n{}\n```"
-  many: "{} just muted you on {} for {cnt} days:```\n{}\n```"
-muted_inf: "{} just muted you on {}:```\n{}\n```"
+  evidence: "{} just muted you on {} for {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just muted you on {} for {}:```\n{}\n```"
+muted_inf:
+  evidence: "{} just muted you on {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just muted you on {}:```\n{}\n```"
 muted_response: "User muted successfully :white_check_mark:"
 log_muted: ":mute: Member muted"
 log_unmuted_expired: "Unmuted automatically because the mute time for this user has expired."
 unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
+confirm_mute_edit:
+  reason: "Are you sure you want to change this mutes reason from ```\n{}\n```to```\n{}\n```"
+  duration: "Are you sure you want to change the mute duration from ```\n{}\n```to```\n{}\n```"
+mute_edited:
+  reason: "The mute reason has been changed from ```\n{}\n```to```\n{}\n```"
+  duration: "The mute duration has been changed from ```\n{}\n```to```\n{}\n```"
+mute_edited_response: ":white_check_mark: The mute reason has been edited"
+log_mute_edited: ":mute: Mute edited"
+confirm_mute_delete: "Are you sure you want to delete this mute for *{}*?\n`(ID: {})`"
+mute_deleted:
+  inf: "Your mute with the reason ```\n{}\n``` has been deleted"
+  not_inf: "Your mute for {} with the reason ```\n{}\n``` has been deleted"
+mute_deleted_response: ":white_check_mark: The mute has been deleted"
+log_mute_deleted: ":loud_sound: Mute deleted"
 
+# kicks
 kick: ":x: Kick"
-kicked: "{} just kicked you from {}:```\n{}\n```"
+kicked:
+  evidence: "{} just kicked you from {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just kicked you from {}:```\n{}\n```"
 kicked_response: "User kicked successfully :white_check_mark:"
 log_kicked: ":x: Member kicked"
 cannot_kick: This member cannot be kicked.
 cannot_kick_permissions: User could not be kicked because I don't have `kick_members` permission on this server.
+confirm_kick_edit: "Are you sure you want to change this kicks reason from ```\n{}\n```to```\n{}\n```"
+kick_edited: "The kick reason has been changed from ```\n{}\n```to```\n{}\n```"
+kick_edited_reponse: ":white_check_mark: The kick reason has been edited"
+log_kick_edited: ":x: Kick edited"
+confirm_kick_delete: "Are you sure you want to delete this kick of *{}*?\n`(ID: {})`"
+kick_deleted: "Your kick with the reason ```\n{}\n``` has been deleted"
+kick_deleted_response: ":white_check_mark: The kick has been deleted"
+log_kick_deleted: ":x: Kick deleted"
 
+# bans
 ban: ":no_entry: Ban"
 unban: ":white_check_mark: Ban"
 cannot_ban: This member cannot be banned.
 already_banned: This member is already banned for the given period of time.
 cannot_ban_permissions: User could not be banned because I don't have `ban_members` permission on this server.
 banned:
-  one: "{} just banned you from {} for {cnt} day:```\n{}\n```"
-  many: "{} just banned you from {} for {cnt} days:```\n{}\n```"
-banned_inf: "{} just banned you from {}:```\n{}\n```"
+  evidence: "{} just banned you from {} for {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just banned you from {} for {}:```\n{}\n```"
+banned_inf:
+  evidence: "{} just banned you from {}:```\n{}\n```Evidence: {}"
+  no_evidence: "{} just banned you from {}:```\n{}\n```"
 banned_response: "User banned successfully :white_check_mark:"
 log_banned: ":no_entry: Member Banned"
 log_unbanned_expired: "Unbanned automatically because the ban time for this user has expired."
@@ -71,6 +147,21 @@ not_banned: This member is not banned.
 unbanned_response: "User unbanned. :white_check_mark:"
 log_unbanned: ":white_check_mark: Member Unbanned"
 cannot_unban_permissions: User could not be unbanned because I don't have `ban_members` permission on this server.
+confirm_ban_edit:
+  reason: "Are you sure you want to change this bans reason from ```\n{}\n```to```\n{}\n```"
+  duration: "Are you sure you want to change the bans duration from ```\n{}\n```to```\n{}\n```"
+ban_edited:
+  reason: "The ban reason has been changed from ```\n{}\n```to```\n{}\n```"
+  duration: "The ban duration has been changed from ```\n{}\n```to```\n{}\n```"
+ban_edited_response: ":white_check_mark: The ban reason has been edited"
+log_ban_edited: ":no_entry: Ban edited"
+confirm_ban_delete: "Are you sure you want to delete this ban of *{}*?\n`(ID: {})`"
+ban_deleted:
+  inf: "Your ban with the reason ```\n{}\n``` has been deleted"
+  not_inf: "Your ban for {} with the reason ```\n{}\n``` has been deleted"
+ban_deleted_response: ":white_check_mark: The ban has been deleted"
+log_ban_deleted: ":white_check_mark: Ban deleted"
+alert_member_banned: "The member {} has been banned through discords ban system by {}"
 
 reported_cnt: ":speech_balloon:  Reported"
 warned_cnt: ":warning:  Warned"
@@ -82,48 +173,66 @@ autokicks:
   one: "(plus `{cnt}` autokick)"
   many: "(plus `{cnt}` autokicks)"
 
+# user stats
 active_sanctions: Active Punishments
 none: None
 status_banned: ":no_entry: User is banned from this server."
-status_banned_days:
-  one: ":no_entry: User is banned for {cnt} day from this server ({left} left)."
-  many: ":no_entry: User is banned for {cnt} days from this server ({left} left)."
+status_banned_time: ":no_entry: User is banned for {} from this server ({} left)."
 status_muted: ":mute: User is muted on this server."
-status_muted_days:
-  one: ":mute: User is muted for {cnt} day on this server ({left} left)."
-  many: ":mute: User is muted for {cnt} days on this server ({left} left)."
+status_muted_time: ":mute: User is muted for {} on this server ({} left)."
 
+# user log
 ulog:
-  reported: ":speech_balloon: **Reported** by {} because of `{}`"
-  warned: ":warning: **Warned** by {} because of `{}`"
+  evidence: "\n[[Evidence]]({})"
+
+  reported:
+    id_off: ":speech_balloon: **Reported** by {} because of `{}`{}"
+    id_on: ":speech_balloon: **Reported** by {} because of `{}`\n`(ID: {})`{}"
+  warned:
+    id_off: ":warning: **Warned** by {} because of `{}`{}"
+    id_on: ":warning: **Warned** by {} because of `{}`\n`(ID: {})`{}"
 
   muted:
     first:
       temp:
-        one: ":mute: **Muted** by {} for {cnt} day because of `{}`"
-        many: ":mute: **Muted** by {} for {cnt} days because of `{}`"
-      inf: ":mute: **Muted** permanently by {} because of `{}`"
-    upgrade:
+        id_off: ":mute: **Muted** by {} for {} because of `{}`{}"
+        id_on: ":mute: **Muted** by {} for {} because of `{}`\n`(ID: {})`{}"
+      inf:
+        id_off: ":mute: **Muted** permanently by {} because of `{}`{}"
+        id_on: ":mute: **Muted** permanently by {} because of `{}`\n`(ID: {})`{}"
+    update:
       temp:
-        one: ":mute: **Mute upgraded** by {} to {cnt} day because of `{}`"
-        many: ":mute: **Mute upgraded** by {} to {cnt} days because of `{}`"
-      inf: ":mute: **Mute upgraded** to permanent by {} because of `{}`"
-  unmuted: ":loud_sound: **Unmuted** by {} because of `{}`"
+        id_off: ":mute: **Mute updated** by {} to {} because of `{}`"
+        id_on: ":mute: **Mute updated** by {} to {} because of `{}`\n`(ID: {})`"
+      inf:
+        id_off: ":mute: **Mute updated** to permanent by {} because of `{}`"
+        id_on: ":mute: **Mute updated** to permanent by {} because of `{}`\n`(ID: {})`"
+  unmuted:
+    id_off: ":loud_sound: **Unmuted** by {} because of `{}`"
+    id_on: ":loud_sound: **Unmuted** by {} because of `{}`\n`(ID: {})`"
   unmuted_expired: ":loud_sound: **Unmuted** because the mute time has expired."
 
-  kicked: ":x: **Kicked** by {} because of `{}`"
+  kicked:
+    id_off: ":x: **Kicked** by {} because of `{}`{}"
+    id_on: ":x: **Kicked** by {} because of `{}`\n`(ID: {})`{}"
   autokicked: ":hourglass: **Kicked** automatically."
 
   banned:
     first:
       temp:
-        one: ":no_entry: **Banned** by {} for {cnt} day because of `{}`"
-        many: ":no_entry: **Banned** by {} for {cnt} days because of `{}`"
-      inf: ":no_entry: **Banned** permanently by {} because of `{}`"
-    upgrade:
+        id_off: ":no_entry: **Banned** by {} for {} because of `{}`{}"
+        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`{}"
+      inf:
+        id_off: ":no_entry: **Banned** permanently by {} because of `{}`{}"
+        id_on: ":no_entry: **Banned** by permanently by {} because of `{}`\n`(ID: {})`{}"
+    update:
       temp:
-        one: ":no_entry: **Ban upgraded** by {} to {cnt} day because of `{}`"
-        many: ":no_entry: **Ban upgraded** by {} to {cnt} days because of `{}`"
-      inf: ":no_entry: **Ban upgraded** to permanent by {} because of `{}`"
-  unbanned: ":white_check_mark: **Unbanned** by {} because of `{}`"
+        id_off: ":no_entry: **Ban updated** by {} to {} because of `{}`"
+        id_on: ":no_entry: **Ban updated** by {} to {} because of `{}`\n`(ID: {})`"
+      inf:
+        id_off: ":no_entry: **Ban updated** to permanent by {} because of `{}`"
+        id_on: ":no_entry: **Ban updated** to permanent by {} because of `{}`\n`(ID: {})`"
+  unbanned:
+    id_off: ":white_check_mark: **Unbanned** by {} because of `{}`"
+    id_on: ":white_check_mark: **Unbanned** by {} because of `{}`\n`(ID: {})`"
   unbanned_expired: ":white_check_mark: **Unbanned** because the ban time has expired."
