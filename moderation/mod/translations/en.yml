@@ -31,6 +31,12 @@ log_field:
   infinity: "*Permanent*"
   evidence: ":file_cabinet: Evidence image"
 
+not_found:
+  warn: No warn with this ID could be found
+  mute: No mute with this ID could be found
+  kick: No kick with this ID could be found
+  ban: No ban with this ID could be found
+
 modtools: Mod tools
 configured_send_delete_message:
   off: "Sending a message to a user after a warn/mute/kick/ban concerning him has been set to `off`"
@@ -62,7 +68,6 @@ warned:
   no_evidence: "{} just warned you on {}:```\n{}\n```"
 warned_response: "User warned successfully :white_check_mark:"
 log_warned: ":warning: Member warned"
-no_warn: No warn with this ID could be found
 confirm_warn_edit: "Are you sure you want to change this warns reason from ```\n{}\n```to```\n{}\n```"
 warn_edited: "The warn reason has been changed from ```\n{}\n```to```\n{}\n```"
 warn_edited_response: ":white_check_mark: The warn reason has been edited"
@@ -90,7 +95,6 @@ log_unmuted_expired: "Unmuted automatically because the mute time for this user 
 unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
-no_mute: No mute with this ID could be found
 confirm_mute_edit:
   reason: "Are you sure you want to change this mutes reason from ```\n{}\n```to```\n{}\n```"
   duration: "Are you sure you want to change the mute duration from ```\n{}\n```to```\n{}\n```"
@@ -115,7 +119,6 @@ kicked_response: "User kicked successfully :white_check_mark:"
 log_kicked: ":x: Member kicked"
 cannot_kick: This member cannot be kicked.
 cannot_kick_permissions: User could not be kicked because I don't have `kick_members` permission on this server.
-no_kick: No kick with this ID could be found
 confirm_kick_edit: "Are you sure you want to change this kicks reason from ```\n{}\n```to```\n{}\n```"
 kick_edited: "The kick reason has been changed from ```\n{}\n```to```\n{}\n```"
 kick_edited_reponse: ":white_check_mark: The kick reason has been edited"
@@ -144,7 +147,6 @@ not_banned: This member is not banned.
 unbanned_response: "User unbanned. :white_check_mark:"
 log_unbanned: ":white_check_mark: Member Unbanned"
 cannot_unban_permissions: User could not be unbanned because I don't have `ban_members` permission on this server.
-no_ban: No ban with this ID could be found
 confirm_ban_edit:
   reason: "Are you sure you want to change this bans reason from ```\n{}\n```to```\n{}\n```"
   duration: "Are you sure you want to change the bans duration from ```\n{}\n```to```\n{}\n```"

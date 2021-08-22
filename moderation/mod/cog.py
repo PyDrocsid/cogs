@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from typing import Optional, Union, List, Tuple, Generator
+from typing import Optional, Union, List, Tuple
 
 from discord import (
     Role,
@@ -62,48 +62,42 @@ class DurationConverter(Converter):
         if (match := re.match(r"^(\d+y)?(\d+m)?(\d+w)?(\d+d)?(\d+h)?(\d+n)?$", argument)) is None:
             raise BadArgument(tg.invalid_duration)
 
-        minutes = ToMinutes.convert(*[ToMinutes.toint(match.group(i)) for i in range(1, 7)])
+        years, months, weeks, days, hours, minutes = [
+            0 if (value := match.group(i)) is None else int(value[:-1])
+            for i in range(1, 7)
+        ]
 
-        if minutes <= 0:
-            raise BadArgument(tg.invalid_duration)
-        if minutes >= (1 << 31):
-            raise BadArgument(t.invalid_duration_inf)
-        return minutes
-
-
-class ToMinutes:
-    @staticmethod
-    def toint(value: str) -> int:
-        return 0 if value is None else int(value[:-1])
-
-    @staticmethod
-    def convert(years: int, months: int, weeks: int, days: int, hours: int, minutes: int) -> int:
         days += years * 365
         days += months * 30
         days += weeks * 7
 
         td = timedelta(days=days, hours=hours, minutes=minutes)
-        return int(td.total_seconds() / 60)
+        duration = int(td.total_seconds() / 60)
+
+        if duration <= 0:
+            raise BadArgument(tg.invalid_duration)
+        if duration >= (1 << 31):
+            raise BadArgument(t.invalid_duration_inf)
+        return duration
 
 
 def time_to_units(minutes: Union[int, float]) -> str:
+    _keys = ("years", "months", "days", "minutes")
+
     rd = relativedelta(
         datetime.fromtimestamp(0) + timedelta(minutes=minutes),
         datetime.fromtimestamp(0),
     )  # Workaround that should be improved later
 
-    def generator() -> Generator:
-        for unit in [
-            t.times.years(cnt=rd.years),
-            t.times.months(cnt=rd.months),
-            t.times.days(cnt=rd.days),
-            t.times.hours(cnt=rd.hours),
-            t.times.minutes(cnt=rd.minutes),
-        ]:
-            if not str(unit).startswith("0"):
-                yield str(unit)
+    def get_func(key, value):
+        func = getattr(t.times, key)
+        return func(cnt=value)
 
-    return ", ".join(generator())
+    return ", ".join(
+        get_func(key, time)
+        for key in _keys
+        if (time := getattr(rd, key)) != 0
+    )
 
 
 async def get_mute_role(guild: Guild) -> Role:
@@ -114,18 +108,26 @@ async def get_mute_role(guild: Guild) -> Role:
 
 
 def show_evidence(evidence: Optional[str]) -> str:
-    if evidence:
-        return t.ulog.evidence(evidence)
-    return ""
+    return t.ulog.evidence(evidence) if evidence else ""
 
 
-async def get_mod_level(mod: Member):
-    lvl = await Config.PERMISSION_LEVELS.get_permission_level(mod)
-    return lvl.level
+async def get_mod_level(mod: Member) -> int:
+    return (await Config.PERMISSION_LEVELS.get_permission_level(mod)).level
 
 
 async def compare_mod_level(mod: Member, mod_level: int) -> bool:
     return await get_mod_level(mod) > mod_level or mod == mod.guild.owner
+
+
+async def get_and_compare_entry(entry_format: db.Base, entry_id: int, mod: Member):
+    entry = await db.get(Warn, id=entry_id)
+    if entry is None:
+        raise CommandError(getattr(t.not_found, entry_format.__tablename__))
+
+    if not await compare_mod_level(mod, entry.mod_level) or not mod.id == entry.mod:
+        raise CommandError(tg.permission_denied)
+
+    return entry
 
 
 async def send_to_changelog_mod(
@@ -561,12 +563,9 @@ class ModCog(Cog, name="Mod Tools"):
             if msg:
                 await msg.delete(delay=5)
 
-        if attachments := ctx.message.attachments:
-            evidence = attachments[0]
-            evidence_url = evidence.url
-        else:
-            evidence = None
-            evidence_url = None
+        attachments = ctx.message.attachments
+        evidence = attachments[0] if attachments else None
+        evidence_url = evidence.url if attachments else None
 
         await Report.create(user.id, str(user), ctx.author.id, reason, evidence_url)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
@@ -611,12 +610,9 @@ class ModCog(Cog, name="Mod Tools"):
         if user == self.bot.user:
             raise UserCommandError(user, t.cannot_warn)
 
-        if attachments := ctx.message.attachments:
-            evidence = attachments[0]
-            evidence_url = evidence.url
-        else:
-            evidence = None
-            evidence_url = None
+        attachments = ctx.message.attachments
+        evidence = attachments[0] if attachments else None
+        evidence_url = evidence.url if attachments else None
 
         user_embed = Embed(
             title=t.warn,
@@ -639,7 +635,7 @@ class ModCog(Cog, name="Mod Tools"):
         except (Forbidden, HTTPException):
             server_embed.description = t.no_dm + "\n\n" + server_embed.description
             server_embed.colour = Colors.error
-        await Warn.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence.url)
+        await Warn.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason, evidence=evidence)
 
@@ -652,12 +648,7 @@ class ModCog(Cog, name="Mod Tools"):
         get the warn id from the users user log
         """
 
-        warn = await db.get(Warn, id=warn_id)
-        if warn is None:
-            raise CommandError(t.no_warn)
-
-        if not await compare_mod_level(ctx.author, warn.mod_level) or not ctx.author.id == warn.mod:
-            raise CommandError(tg.permission_denied)
+        warn = await get_and_compare_entry(Warn, warn_id, ctx.author)
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -706,12 +697,7 @@ class ModCog(Cog, name="Mod Tools"):
         get the warn id from the users user log
         """
 
-        warn = await db.get(Warn, id=warn_id)
-        if warn is None:
-            raise CommandError(t.no_warn)
-
-        if not await compare_mod_level(ctx.author, warn.mod_level) or not ctx.author.id == warn.mod:
-            raise CommandError(tg.permission_denied)
+        warn = await get_and_compare_entry(Warn, warn_id, ctx.author)
 
         conf_embed = Embed(
             title=t.confirmation,
@@ -781,12 +767,9 @@ class ModCog(Cog, name="Mod Tools"):
         if active_mutes:
             raise UserCommandError(user, t.already_muted)
 
-        if attachments := ctx.message.attachments:
-            evidence = attachments[0]
-            evidence_url = evidence.url
-        else:
-            evidence = None
-            evidence_url = None
+        attachments = ctx.message.attachments
+        evidence = attachments[0] if attachments else None
+        evidence_url = evidence.url if attachments else None
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
@@ -885,12 +868,7 @@ class ModCog(Cog, name="Mod Tools"):
         get the mute id from the users user log
         """
 
-        mute = await db.get(Mute, id=mute_id)
-        if mute is None:
-            raise CommandError(t.no_mute)
-
-        if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
-            raise CommandError(tg.permission_denied)
+        mute = await get_and_compare_entry(Mute, mute_id, ctx.author)
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -960,10 +938,7 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        if mute.minutes == -1:
-            old_mute_minutes = t.infinity
-        else:
-            old_mute_minutes = time_to_units(mute.minutes)
+        old_mute_minutes = t.infinity if mute.minutes == -1 else time_to_units(mute.minutes)
 
         if minutes is None:
             conf_embed.description = t.confirm_mute_edit.duration(old_mute_minutes, t.infinity)
@@ -1049,12 +1024,7 @@ class ModCog(Cog, name="Mod Tools"):
         get the mute id from the users user log
         """
 
-        mute = await db.get(Mute, id=mute_id)
-        if mute is None:
-            raise CommandError(t.no_mute)
-
-        if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
-            raise CommandError(tg.permission_denied)
+        mute = await get_and_compare_entry(Mute, mute_id, ctx.author)
 
         conf_embed = Embed(
             title=t.confirmation,
@@ -1180,12 +1150,9 @@ class ModCog(Cog, name="Mod Tools"):
         if member.top_role >= ctx.guild.me.top_role or member.id == ctx.guild.owner_id:
             raise UserCommandError(member, t.cannot_kick)
 
-        if attachments := ctx.message.attachments:
-            evidence = attachments[0]
-            evidence_url = evidence.url
-        else:
-            evidence = None
-            evidence_url = None
+        attachments = ctx.message.attachments
+        evidence = attachments[0] if attachments else None
+        evidence_url = evidence.url if attachments else None
 
         await Kick.create(member.id, str(member), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
         await send_to_changelog_mod(
@@ -1239,12 +1206,7 @@ class ModCog(Cog, name="Mod Tools"):
         get the kick id from the users user log
         """
 
-        kick = await db.get(Kick, id=kick_id)
-        if kick is None:
-            raise CommandError(t.no_kick)
-
-        if not await compare_mod_level(ctx.author, kick.mod_level) or not ctx.author.id == kick.mod:
-            raise CommandError(tg.permission_denied)
+        kick = await get_and_compare_entry(Kick, kick_id, ctx.author)
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -1293,12 +1255,7 @@ class ModCog(Cog, name="Mod Tools"):
         get the kick id from the users user log
         """
 
-        kick = await db.get(Kick, id=kick_id)
-        if kick is None:
-            raise CommandError(t.no_kick)
-
-        if not await compare_mod_level(ctx.author, kick.mod_level) or not ctx.author.id == kick.mod:
-            raise CommandError(tg.permission_denied)
+        kick = await get_and_compare_entry(Kick, kick_id, ctx.author)
 
         conf_embed = Embed(
             title=t.confirmation,
@@ -1377,12 +1334,9 @@ class ModCog(Cog, name="Mod Tools"):
         if active_bans:
             raise UserCommandError(user, t.already_banned)
 
-        if attachments := ctx.message.attachments:
-            evidence = attachments[0]
-            evidence_url = evidence.url
-        else:
-            evidence = None
-            evidence_url = None
+        attachments = ctx.message.attachments
+        evidence = attachments[0] if attachments else None
+        evidence_url = evidence.url if attachments else None
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
@@ -1485,12 +1439,7 @@ class ModCog(Cog, name="Mod Tools"):
         get the ban id from the users user log
         """
 
-        ban = await db.get(Ban, id=ban_id)
-        if ban is None:
-            raise CommandError(t.no_ban)
-
-        if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
-            raise CommandError(tg.permission_denied)
+        ban = await get_and_compare_entry(Ban, ban_id, ctx.author)
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -1560,10 +1509,7 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        if ban.minutes == -1:
-            old_ban_minutes = t.infinity
-        else:
-            old_ban_minutes = time_to_units(ban.minutes)
+        old_ban_minutes = t.infinity if ban.minutes == -1 else time_to_units(ban.minutes)
 
         if minutes is None:
             conf_embed.description = t.confirm_ban_edit.duration(old_ban_minutes, t.infinity)
@@ -1649,12 +1595,7 @@ class ModCog(Cog, name="Mod Tools"):
         get the ban id from the users user log
         """
 
-        ban = await db.get(Ban, id=ban_id)
-        if ban is None:
-            raise CommandError(t.no_ban)
-
-        if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
-            raise CommandError(tg.permission_denied)
+        ban = await get_and_compare_entry(Ban, ban_id, ctx.author)
 
         conf_embed = Embed(
             title=t.confirmation,
