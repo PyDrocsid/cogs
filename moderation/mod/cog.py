@@ -9,7 +9,6 @@ from discord.ext.commands import (
     Context,
     CommandError,
     Converter,
-    BadArgument,
 )
 
 from PyDrocsid.cog import Cog
@@ -41,11 +40,11 @@ class DurationConverter(Converter):
         if argument.lower() in ("inf", "perm", "permanent", "-1", "∞"):
             return None
         if (match := re.match(r"^(\d+)d?$", argument)) is None:
-            raise BadArgument(tg.invalid_duration)
+            raise CommandError(tg.invalid_duration)
         if (days := int(match.group(1))) <= 0:
-            raise BadArgument(tg.invalid_duration)
+            raise CommandError(tg.invalid_duration)
         if days >= (1 << 31):
-            raise BadArgument(t.invalid_duration_inf)
+            raise CommandError(t.invalid_duration_inf)
         return days
 
 
