@@ -31,6 +31,69 @@ def status_icon(status: Status) -> str:
     }[status]
 
 
+@run_as_task
+async def scan(ctx: Context, days: int):
+    async def update_msg(m: Message, content):
+        embed.description = content
+        embed.timestamp = datetime.utcnow()
+        await ignore_message_edit(m)
+        try:
+            await m.edit(embed=embed)
+        except NotFound:
+            return await reply(ctx, embed=embed)
+        return m
+
+    embed = Embed(title=t.scanning, timestamp=datetime.utcnow())
+    message: list[Message] = [await reply(ctx, embed=embed)]
+    guild: Guild = ctx.guild
+    members: dict[Member, datetime] = {}
+    active: dict[TextChannel, int] = {}
+    completed: list[TextChannel] = []
+
+    async def update_progress_message():
+        while len(completed) < len(channels):
+            content = t.scanning_channel(len(completed), len(channels), cnt=len(active))
+            for a, d in active.items():
+                channel_age = (datetime.utcnow() - a.created_at).days
+                content += f"\n:small_orange_diamond: {a.mention} ({d} / {min(channel_age, days)})"
+            message[0] = await update_msg(message[0], content)
+            await asyncio.sleep(2)
+
+    async def update_members(c: TextChannel):
+        active[c] = 0
+
+        async for msg in c.history(limit=None, oldest_first=False):
+            s = (datetime.utcnow() - msg.created_at).total_seconds()
+            if s > days * 24 * 60 * 60:
+                break
+            members[msg.author] = max(members.get(msg.author, msg.created_at), msg.created_at)
+            active[c] = int(s / (24 * 60 * 60))
+
+        del active[c]
+        completed.append(c)
+
+    channels: list[TextChannel] = []
+    for channel in guild.text_channels:
+        permissions: Permissions = channel.permissions_for(ctx.me)
+        if permissions.read_messages and permissions.read_message_history:
+            channels.append(channel)
+
+    task = asyncio.create_task(update_progress_message())
+    try:
+        await semaphore_gather(10, *map(update_members, channels))
+    finally:
+        task.cancel()
+
+    await update_msg(message[0], t.scan_complete(cnt=len(guild.text_channels)))
+
+    embed = Embed(title=t.updating_members)
+    message: Message = await reply(ctx, embed=embed)
+
+    await semaphore_gather(50, *[Activity.update(m.id, ts) for m, ts in members.items()])
+
+    await update_msg(message, t.updated_members(cnt=len(members)))
+
+
 class InactivityCog(Cog, name="Inactivity"):
     CONTRIBUTORS = [Contributor.Defelo]
 
@@ -48,7 +111,6 @@ class InactivityCog(Cog, name="Inactivity"):
     @InactivityPermission.scan.check
     @max_concurrency(1)
     @guild_only()
-    @run_as_task
     async def scan(self, ctx: Context, days: int):
         """
         scan all channels for latest message of each user
@@ -57,65 +119,7 @@ class InactivityCog(Cog, name="Inactivity"):
         if days <= 0:
             raise CommandError(tg.invalid_duration)
 
-        async def update_msg(m: Message, content):
-            embed.description = content
-            embed.timestamp = datetime.utcnow()
-            await ignore_message_edit(m)
-            try:
-                await m.edit(embed=embed)
-            except NotFound:
-                return await reply(ctx, content)
-            return m
-
-        embed = Embed(title=t.scanning, timestamp=datetime.utcnow())
-        message: list[Message] = [await reply(ctx, embed=embed)]
-        guild: Guild = ctx.guild
-        members: dict[Member, datetime] = {}
-        active: dict[TextChannel, int] = {}
-        completed: list[TextChannel] = []
-
-        async def update_progress_message():
-            while len(completed) < len(channels):
-                content = t.scanning_channel(len(completed), len(channels), cnt=len(active))
-                for a, d in active.items():
-                    channel_age = (datetime.utcnow() - a.created_at).days
-                    content += f"\n:small_orange_diamond: {a.mention} ({d} / {min(channel_age, days)})"
-                message[0] = await update_msg(message[0], content)
-                await asyncio.sleep(2)
-
-        async def update_members(c: TextChannel):
-            active[c] = 0
-
-            async for msg in c.history(limit=None, oldest_first=False):
-                s = (datetime.utcnow() - msg.created_at).total_seconds()
-                if s > days * 24 * 60 * 60:
-                    break
-                members[msg.author] = max(members.get(msg.author, msg.created_at), msg.created_at)
-                active[c] = int(s / (24 * 60 * 60))
-
-            del active[c]
-            completed.append(c)
-
-        channels: list[TextChannel] = []
-        for channel in guild.text_channels:
-            permissions: Permissions = channel.permissions_for(ctx.me)
-            if permissions.read_messages and permissions.read_message_history:
-                channels.append(channel)
-
-        task = asyncio.create_task(update_progress_message())
-        try:
-            await semaphore_gather(10, *map(update_members, channels))
-        finally:
-            task.cancel()
-
-        await update_msg(message[0], t.scan_complete(cnt=len(guild.text_channels)))
-
-        embed = Embed(title=t.updating_members)
-        message: Message = await reply(ctx, embed=embed)
-
-        await semaphore_gather(50, *[Activity.update(m.id, ts) for m, ts in members.items()])
-
-        await update_msg(message, t.updated_members(cnt=len(members)))
+        await scan(ctx, days)
 
     @get_user_status_entries.subscribe
     async def handle_get_user_status_entries(self, user_id) -> list[tuple[str, str]]:
