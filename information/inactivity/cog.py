@@ -150,7 +150,7 @@ class InactivityCog(Cog, name="Inactivity"):
 
         if days is None:
             days = await InactivitySettings.inactive_days.get()
-        elif days <= 0:
+        elif days not in range(1, 10001):
             raise CommandError(tg.invalid_duration)
 
         now = datetime.utcnow()
