@@ -196,8 +196,11 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
         check_role_assignable(role)
 
+        try:
+            await msg.add_reaction(emoji)
+        except Forbidden:
+            raise CommandError(t.could_not_add_reactions)
         await ReactionRole.create(msg.channel.id, msg.id, str(emoji), role.id, reverse, auto_remove)
-        await msg.add_reaction(emoji)
         embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole, description=t.rr_link_created)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_rr_link_created(emoji, role.id, msg.jump_url, msg.channel.mention))
