@@ -219,13 +219,17 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
         await db.delete(link)
 
+        embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole, description=t.rr_link_removed)
+
         if remove_reactions:
             for reaction in msg.reactions:
                 if str(emoji) == str(reaction.emoji):
-                    await reaction.clear()
+                    try:
+                        await reaction.clear()
+                    except Forbidden:
+                        embed.description += "\n\n:warning: " + t.could_not_remove_reactions
                     break
 
-        embed = Embed(title=t.reactionrole, colour=Colors.ReactionRole, description=t.rr_link_removed)
         await reply(ctx, embed=embed)
         await send_to_changelog(
             ctx.guild,
@@ -244,10 +248,16 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
             for reaction in msg.reactions:
                 if str(reaction) == str(emoji):
-                    await reaction.clear()
+                    try:
+                        await reaction.clear()
+                    except Forbidden:
+                        raise CommandError(t.could_not_remove_reactions)
                     break
 
-            await msg.add_reaction(emoji)
+            try:
+                await msg.add_reaction(emoji)
+            except Forbidden:
+                raise CommandError(t.could_not_add_reactions)
 
             await add_reactions(ctx, "white_check_mark")
             return
@@ -256,8 +266,15 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
         if not links:
             raise CommandError(t.rr_link_not_found)
 
-        await msg.clear_reactions()
+        try:
+            await msg.clear_reactions()
+        except Forbidden:
+            raise CommandError(t.could_not_remove_reactions)
+
         for link in links:
-            await msg.add_reaction(link.emoji)
+            try:
+                await msg.add_reaction(link.emoji)
+            except Forbidden:
+                raise CommandError(t.could_not_add_reactions)
 
         await add_reactions(ctx, "white_check_mark")
