@@ -1,0 +1,15 @@
+permissions:
+  read: read role notification links
+  write: write role notification links
+
+rn_created: Role notification link has been created.
+log_rn_created: Role notification link `@{}` -> {} has been created.
+rn_removed: Role notification link has been removed.
+log_rn_removed: Role notification link `@{}` -> {} has been removed.
+rn_links: Role Notification Links
+rn_no_links: No role notification links have been created yet.
+rn_role_added: Role {} has been added to {}.
+rn_role_removed: Role {} has been removed from {}.
+rn_ping_role: ping role
+rn_ping_user: ping user
+cannot_send: RoleNotifications cannot send messages to {}.

@@ -1,0 +1,34 @@
+permissions:
+  read: list inactive users and read inactivity configuration
+  write: write inactivity configuration
+  scan: scan all channels for latest message of each user
+
+scanning: "Scanning..."
+scanning_channel:
+  one: "Scanning {cnt} channel ({} / {} done):"
+  many: "Scanning {cnt} channels ({} / {} done):"
+scan_complete:
+  one: "Scanned {cnt} channel."
+  many: "Scanned {cnt} channels."
+updating_members: "Updating members..."
+updated_members:
+  one: "Updated {cnt} member."
+  many: "Updated {cnt} members."
+activity: Activity
+status:
+  active:
+    one: ":white_check_mark: Active ({cnt} day ago)"
+    many: ":white_check_mark: Active ({cnt} days ago)"
+  inactive: ":warning: Inactive"
+  inactive_since: ":warning: Inactive since {}"
+inactive_users: Inactive Users
+inactive_users_cnt: Inactive Users ({})
+no_inactive_users: "No inactive users :white_check_mark:"
+user_inactive: "{} {} ({})"
+user_inactive_since: "{} {} ({}, since {})"
+inactive_duration:
+  one: Users that have not sent a message for {cnt} day are marked as inactive.
+  many: Users that have not sent a message for {cnt} days are marked as inactive.
+inactive_duration_set:
+  one: Inactivity duration has been set to {cnt} day.
+  many: Inactivity duration has been set to {cnt} days.

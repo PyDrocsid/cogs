@@ -1,0 +1,37 @@
+permissions:
+  admininfo: view admininfo
+
+commands:
+  github: return the github link
+  version: show version
+  info: show information about the bot
+  admininfo: show information about the bot (admin view)
+  contributors: show list of contributors
+  cogs: show list of enabled cogs
+
+author_title: Author
+cnt_contributors:
+  one: "{cnt} Contributor"
+  many: "{cnt} Contributors"
+github_title: GitHub Repository
+version_title: Version
+prefix_title: Prefix
+help_command_title: Help Command
+bugs_features_title: Bug Reports / Feature Requests
+
+profile_status:
+  - Developed by Defelo#2022
+  - github.com/PyDrocsid
+
+bot_description: Default Bot Description
+bugs_features: Please [create an issue]({repo}/issues/new) in the GitHub repository.
+
+enabled_cogs: Enabled Cogs
+cnt_cogs_enabled:
+  one: "{cnt} Cog"
+  many: "{cnt} Cogs"
+
+pydrocsid: PyDrocsid
+pydrocsid_info: |
+  **Discord Server:** https://discord.gg/{code}
+  **GitHub Organization:** https://github.com/PyDrocsid

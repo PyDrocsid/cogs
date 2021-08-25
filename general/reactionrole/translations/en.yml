@@ -1,0 +1,29 @@
+permissions:
+  read: read reactionrole configuration
+  write: write reactionrole configuration
+
+commands:
+  reactionrole: manage reactionrole
+  reactionrole_list: list configured reactionrole links for a specific message
+  reactionrole_add: add a new reactionrole link
+  reactionrole_remove: remove a reactionrole link
+  reactionrole_reinialize: reinialize reactions on a reactionrole message
+
+reactionrole: ReactionRole
+no_reactionrole_links: No ReactionRole links have been created yet.
+no_reactionrole_links_for_msg: No ReactionRole links have been created yet for this message.
+rr_link_already_exists: A link already exists for this reaction on this message.
+rr_link_created: "Link has been created successfully. :white_check_mark:"
+rr_link_not_created_no_permissions: >
+  Link could not be created because I don't have `add_reactions` permission in this channel.
+log_rr_link_created: "**ReactionRole link** for {} -> <@&{}> has been **created** on [this message]({}) in {}"
+rr_link_not_found: Such a link does not exist.
+rr_link_removed: "Link has been removed successfully. :white_check_mark:"
+could_not_add_reactions: "Could not add reaction to message!"
+could_not_remove_reactions: "Could not remove reaction from message!"
+log_rr_link_removed: "**ReactionRole link** for {} -> <@&{}> has been **deleted** on [this message]({}) in {}"
+rr_link: "{} -> {}"
+auto_remove: auto remove
+reverse: reverse
+manage_role_error: "ReactionRole could not manage role {role.mention} on {member.mention} ({member.id}) on [this message]({message.jump_url})."
+remove_emoji_error: "ReactionRole could not remove {emoji} reaction from [this message]({message.jump_url})."

@@ -1,0 +1,26 @@
+permissions:
+  team_poll: start a team poll
+  delete: delete polls
+
+poll: Poll
+team_poll: Team Poll
+vote_explanation: Vote using the reactions below!
+too_many_options: You specified too many options. The maximum amount is {}.
+option_too_long: Options are limited to {} characters.
+missing_options: Missing options
+option_duplicated: You may not use the same emoji twice!
+empty_option: Empty option
+poll_usage: |
+  <question>
+  [emoji1] <option1>
+  [emojiX] [optionX]
+team_role_not_set: Team role is not set.
+team_role_no_members: The team role has no members.
+teampoll_all_voted: "All teamlers voted :white_check_mark:"
+teamlers_missing:
+  one: "{last} hasn't voted yet."
+  many: "{teamlers} and {last} haven't voted yet."
+created_by: Created by @{} ({})
+can_not_use_wastebucket_as_option: "You can not use :wastebasket: as option"
+foreign_message: "You are not allowed to add yes/no reactions to foreign messages!"
+could_not_add_reactions: Could not add reactions because I don't have `add_reactions` permission in {}.

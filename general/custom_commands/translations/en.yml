@@ -1,0 +1,113 @@
+permissions:
+  read: List and view custom commands
+  write: Create, edit and delete custom commands
+
+commands:
+  custom_commands: Manage custom commands
+  add: |
+    Create a new custom command
+    Go to {}, compose your message, click on `Share Message` and copy the link.
+  show: Show details about a given custom command
+  test: Send the message of a given custom command into the current channel without mentioning any user or role
+  edit_: Edit a given custom command
+  edit:
+    enabled: Enable/disable a custom command
+    name: Change the name of a custom command
+    description: Change the description of a custom command
+    channel_parameter_enabled: |
+      Enable/disable the `channel` parameter of a custom command
+
+      :warning: **Enabling this parameter allows any user who can execute this command to send the configured message to any channel in which the bot has `send_messages` permission!**
+    channel: Specify a text channel into which the message of a custom command should be sent
+    delete_command: Delete the command message after the custom command has been executed successfully
+    permission_level: Set the minimum permission level required to execute this custom command
+    requires_confirmation: Enable/disable a confirmation message before sending the message of the custom command
+    user_parameter: Enable/disable the `user` parameter of a custom command
+    data: |
+      Change the message content of this custom command
+      Go to {}, compose your message, click on `Share Message` and copy the link.
+      To load the current message content, use the `cc show` command.
+  alias: Create an alias for a given custom command
+  unalias: Delete a given custom command alias
+  remove: Delete a given custom command
+
+not_found: Custom command does not exist!
+custom_commands: Custom Commands
+custom_command: Custom Command
+not_allowed: You are not allowed to manage this custom command!
+not_allowed_permission_level: You are not allowed to manage this permission level!
+no_custom_commands: No custom commands have been created yet.
+message: Message
+name: Name
+aliases: Aliases
+description: Description
+channel_parameter: Channel Parameter
+channel: Channel
+delete_command: Delete command after successful execution
+required_permission_level: Required Permission Level
+requires_confirmation: Confirmation Required
+user_parameter: User Parameter
+invalid_length: Command names cannot contain more than 32 characters.
+invalid_chars: Command name contains invalid characters.
+invalid_length_description: Command descriptions cannot contain more than 256 characters.
+
+alias_not_found: Alias does not exist!
+already_exists: Command already exists!
+invalid_url: Invalid Discohook URL!
+invalid_url_instructions: |
+  Invalid Discohook URL!
+  Please go to {}, compose your message, click on `Share Message` and copy the link.
+could_not_send_message: One or more messages could not be sent!
+cc_already_disabled: Custom command has already been disabled!
+not_disabled: Custom command is not disabled!
+parameter_already_enabled: Channel parameter has already been enabled!
+parameter_already_disabled: Channel parameter has already been disabled!
+channel_parameter_enabled: Channel cannot be set while the `channel` parameter is enabled!
+already_enabled: Already enabled!
+already_disabled: Already disabled!
+too_many_aliases: You cannot create more than 8 aliases for a custom command!
+
+test_custom_command:
+  title: Test Custom Command?
+  description: Would you like to test this custom command now? The message will be sent to this channel and mentioned users/roles will not be pinged. You can also test the custom command later by using the `{}cc test` command.
+
+confirmation: Confirmation
+confirm: Are you sure you want to execute the `{}` command in {}?
+canceled: ":x: Canceled"
+confirmed: "Confirmed :white_check_mark:"
+
+warning: ":warning: Warning"
+limits_exceeded: Message limits exceeded! Please edit the message content using the `{}cc edit text {} <url>` command and make sure to remove any empty embeds!
+empty_embed: Message contains an empty embed! Please edit the message content using the `{}cc edit text {} <url>` command and remove the empty embed!
+empty_message: This custom command contains an empty message! Please edit the content of this custom command using the `{}cc edit text {} <url>` command and remove the empty message!
+
+cannot_delete: Could not delete [this message]({}) in {} because I don't have `manage_messages` permission there!
+
+log:
+  created: "**Custom command** `{}` has been **created**."
+  renamed: "**Custom command** `{}` has been **renamed** to `{}`."
+  description:
+    set: "**Description** of the **custom command** `{}` has been updated:\n\n{}"
+    unset: "**Description** of the **custom command** `{}` has been removed."
+  channel_parameter:
+    enabled: "**Channel parameter** of **custom command** `{}` has been **enabled**."
+    disabled: "**Channel parameter** of **custom command** `{}` has been **disabled**."
+  channel:
+    set: "**Messages** of **custom command** `{}` will now be **sent** to {}."
+    unset: "**Messages** of **custom command** `{}` will now be **sent** to the channel in which the **command was invoked**."
+  delete_command:
+    enabled: "After successful execution of the **custom command** `{}` the **command message** will be **deleted**."
+    disabled: "After successful execution of the **custom command** `{}` the **command message** will **not be deleted** anymore."
+  permission_level: "**Required permission level** of **custom command** `{}` has been **set** to `{}`."
+  requires_confirmation:
+    enabled: "**Confirmation message** has been **enabled** for **custom command** `{}`."
+    disabled: "**Confirmation message** has been **disabled** for **custom command** `{}`."
+  user_parameter:
+    enabled: "**User parameter** of **custom command** `{}` has been **enabled**."
+    disabled: "**User parameter** of **custom command** `{}` has been **disabled**."
+  data: "**Message content** of **custom command** `{}` has been **updated**."
+  disabled: "**Custom command** `{}` has been **disabled**."
+  enabled: "**Custom command** `{}` has been **enabled**."
+  alias: "**Alias** `{}` has been **added** to **custom command** `{}`."
+  unalias: "**Alias** `{}` has been **removed** from **custom command** `{}`."
+  deleted: "**Custom command** `{}` has been **deleted**."

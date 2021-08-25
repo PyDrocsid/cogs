@@ -1,0 +1,24 @@
+permissions:
+  view_own: view own permissions
+  view_all: view all permissions
+  manage: manage permissions
+
+commands:
+  permissions: manage bot permissions
+  permissions_list: list all permissions
+  permissions_my: list all permissions granted to the user
+  permissions_set: configure bot permissions
+  permissions_permission_levels: list all permission levels
+
+no_permissions: No priviliges granted.
+invalid_permission_level: Invalid permission level.
+invalid_permission: Invalid permission.
+cannot_manage_permission_level: You are not allowed to manage this permission level.
+permission_set: "Permission `{}` has been granted to `>= {}` :white_check_mark:"
+log_permission_set: "**Permission** `{}` has been **granted** to `>= {}` :white_check_mark:"
+permissions_title: Permissions
+my_permissions_title: My Permissions
+permission_levels: Permission Levels
+aliases: "Aliases: {}"
+level: "Level: `{}`"
+granted_by: "Granted by:"
