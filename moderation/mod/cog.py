@@ -148,7 +148,8 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             check_role_assignable(mute_role)
         except CommandError:
-            raise PermissionError(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
+            await send_alert(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
+            return
 
         async for mute in await db.stream(filter_by(Mute, active=True)):
             if mute.days != -1 and datetime.utcnow() >= mute.timestamp + timedelta(days=mute.days):
