@@ -181,6 +181,8 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         to_be_created: List[str] = []
         roles: List[Role] = []
         for topic in names:
+            if len(topic) > 100:
+                raise CommandError(t.topic_too_long(topic))
             if any(c not in valid_chars for c in topic):
                 raise CommandError(t.topic_invalid_chars(topic))
 
