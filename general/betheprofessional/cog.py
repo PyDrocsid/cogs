@@ -177,7 +177,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         if not names:
             raise UserInputError
 
-        valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_`{|}~")
+        valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_{|}~")
         to_be_created: List[str] = []
         roles: List[Role] = []
         for topic in names:
