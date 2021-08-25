@@ -17,7 +17,7 @@ from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import is_teamler
+from PyDrocsid.util import is_teamler, check_role_assignable
 from .colors import Colors
 from .models import Mute, Ban, Report, Warn, Kick
 from .permissions import ModPermission
@@ -29,6 +29,7 @@ from ...pubsub import (
     get_user_info_entries,
     get_user_status_entries,
     revoke_verification,
+    send_alert,
 )
 
 tg = t.g
@@ -121,9 +122,15 @@ class ModCog(Cog, name="Mod Tools"):
                 await Ban.deactivate(ban.id)
 
                 try:
-                    await guild.unban(user := await self.bot.fetch_user(ban.member))
+                    user = await self.bot.fetch_user(ban.member)
                 except NotFound:
                     user = ban.member, ban.member_name
+
+                if isinstance(user, User):
+                    try:
+                        await guild.unban(user)
+                    except Forbidden:
+                        await send_alert(guild, t.cannot_unban_user_permissions(user.mention, user.id))
 
                 await send_to_changelog_mod(
                     guild,
@@ -137,6 +144,11 @@ class ModCog(Cog, name="Mod Tools"):
         mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
             return
+
+        try:
+            check_role_assignable(mute_role)
+        except CommandError:
+            raise PermissionError(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
 
         async for mute in await db.stream(filter_by(Mute, active=True)):
             if mute.days != -1 and datetime.utcnow() >= mute.timestamp + timedelta(days=mute.days):
@@ -351,6 +363,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise UserCommandError(user, t.cannot_mute)
 
         if isinstance(user, Member):
+            check_role_assignable(mute_role)
             await user.add_roles(mute_role)
             await user.move_to(None)
 
@@ -421,6 +434,7 @@ class ModCog(Cog, name="Mod Tools"):
         was_muted = False
         if isinstance(user, Member) and mute_role in user.roles:
             was_muted = True
+            check_role_assignable(mute_role)
             await user.remove_roles(mute_role)
 
         async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
