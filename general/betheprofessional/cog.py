@@ -97,7 +97,7 @@ async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
     await send_long_embed(ctx, embed)
 
 
-class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
+class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.MaxiHuHe04, Contributor.AdriBloober]
 
     @commands.command(name="?")
