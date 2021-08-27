@@ -120,7 +120,7 @@ class UserInfoCog(Cog, name="User Information"):
     async def handle_revoke_verification(self, member: Member):
         await Verification.create(member.id, str(member), False)
 
-    @commands.command(aliases=["user", "uinfo", "userstats"])
+    @commands.command(aliases=["user", "uinfo", "ui", "userstats", "stats"])
     @optional_permissions(UserInfoPermission.view_userinfo)
     async def userinfo(self, ctx: Context, user: Optional[Union[User, int]] = None):
         """
