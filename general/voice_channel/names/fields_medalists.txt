@@ -1,0 +1,59 @@
+Akshay Venkatesh
+Alain Connes
+Alan Baker
+Alessio Figalli
+Alexander Grothendieck
+Andrei Okounkov
+Artur Avila
+Atle Selberg
+Caucher Birkar
+Cédric Villani
+Charles Louis Fefferman
+Curtis T. Mcmullen
+Daniel G. Quillen
+David Bryant Mumford
+Edward Witten
+Efim Zelmanov
+Elon Lindenstrauss
+Enrico Bombieri
+Gerd Faltings
+Gregori Alexandrovitch Margulis
+Heisuke Hironaka
+Jean Bourgain
+Jean-Christophe Yoccoz
+Jean-Pierre Serre
+Jesse Douglas
+John Griggs Thompson
+John Willard Milnor
+Klaus Friedrich Roth
+Kunihiko Kodaira
+Lars Hörmander
+Lars Valerian Ahlfors
+Laurent Lafforgue
+Laurent Schwartz
+Manjul Bhargava
+Martin Hairer
+Maryam Mirzakhani
+Maxim Kontsevich
+Michael Francis Atiyah
+Michael H. Freedman
+Ngô Bào Châu
+Paul Joseph Cohen
+Peter Scholze
+Pierre René Deligne
+Pierre-Louis Lions
+René Thom
+Richard E. Borcherds
+Serge Novikov
+Shigefumi Mori
+Shing-Tung Yau
+Simon K. Donaldson
+Stanislav Smirnov
+Stephen Smale
+Terence Tao
+Vaughan F.R. Jones
+Vladimir Drinfeld
+Vladimir Voevodsky
+W. Timothy Gowers
+Wendelin Werner
+William P. Thurston

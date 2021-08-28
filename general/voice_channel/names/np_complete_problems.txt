@@ -1,0 +1,77 @@
+1-planarity
+3-dim matching
+3-partition
+3SAT
+achromatic number
+bandwidth problem
+berth allocation problem
+betweenness
+bin packing
+bipartite dim
+block sorting
+capacitated MST
+circuit SAT
+clique
+clique cover
+closest string
+conjunctive Boolean query
+cyclic ordering
+degree-constrained ST
+domatic number
+dominating set
+exact cover
+feedback arc set
+feedback vertex set
+flow shop scheduling
+graph coloring
+graph homomorphism
+graph intersection number
+graph partition
+Hamiltonian completion
+Hamiltonian path
+integer programming
+k-Chinese postman
+knapsack problem
+Latin squares
+longest common subsequence
+longest path
+maximum 2-SAT
+maximum cut
+maximum independent set
+maximum induced path
+maximum volume submatrix
+metric graph dimension
+metric k-center
+min max independent set
+minimum degree ST
+minimum k-cut
+minimum k-ST
+modal logic S5-SAT
+modularity maximization
+monochromatic triangle
+open-shop scheduling
+pancake sorting distance
+partition problem
+pathwidth
+post correspondence
+quadratic assignment
+quadratic programming
+rank coloring
+route inspection
+SAT
+second order instantiation
+set cover
+set packing
+set splitting
+shortest common supersequence
+slope number two testing
+sparse approximation
+Steiner tree
+subgraph isomorphism problem
+subset sum
+traveling salesman
+treewidth
+treewidth
+upward planarity testing
+vehicle routing
+vertex cover
