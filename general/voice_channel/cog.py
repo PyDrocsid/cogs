@@ -167,7 +167,14 @@ async def safe_create_voice_channel(
 
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.Florian, Contributor.wolflu, Contributor.TNT2k]
+    CONTRIBUTORS = [
+        Contributor.Defelo,
+        Contributor.Florian,
+        Contributor.wolflu,
+        Contributor.TNT2k,
+        Contributor.Scriptim,
+        Contributor.MarcelCoding,
+    ]
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles

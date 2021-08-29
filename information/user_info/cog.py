@@ -1,22 +1,38 @@
+import asyncio
 import time
+from asyncio import Event
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Optional, Union
-
-from dateutil.relativedelta import relativedelta
-from discord import User, NotFound, Embed, Guild, Forbidden, HTTPException, Member, Role
-from discord.ext import commands
-from discord.ext.commands import Context, UserInputError, CommandError, max_concurrency, guild_only
-from discord.utils import snowflake_time
 
 from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, optional_permissions
-from PyDrocsid.config import Contributor, Config
-from PyDrocsid.database import db, filter_by, db_wrapper
+from PyDrocsid.config import Contributor
+from PyDrocsid.database import db, filter_by, db_wrapper, db_context
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
+from PyDrocsid.logger import get_logger
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
+from dateutil.relativedelta import relativedelta
+from discord import (
+    User,
+    NotFound,
+    Embed,
+    Guild,
+    Forbidden,
+    HTTPException,
+    Member,
+    Role,
+    Message,
+    MessageType,
+    TextChannel,
+)
+from discord.ext import commands
+from discord.ext.commands import Context, UserInputError, CommandError, max_concurrency, guild_only
+from discord.utils import snowflake_time
+
 from .colors import Colors
 from .models import Join, Leave, UsernameUpdate, Verification
 from .permissions import UserInfoPermission
@@ -25,7 +41,10 @@ from ...pubsub import (
     get_user_info_entries,
     get_user_status_entries,
     revoke_verification,
+    send_alert,
 )
+
+logger = get_logger(__name__)
 
 tg = t.g
 t = t.user_info
@@ -72,11 +91,35 @@ async def get_user(
 class UserInfoCog(Cog, name="User Information"):
     CONTRIBUTORS = [Contributor.Defelo]
 
-    async def on_member_join(self, member: Member):
-        await Join.create(member.id, str(member))
+    def __init__(self):
+        self.join_events: dict[int, Event] = defaultdict(Event)
+        self.join_id: dict[int, int] = {}
 
-        if "verified" not in Config.ROLES or not Config.ROLES["verified"][1]:
+    async def on_message(self, message: Message):
+        if message.type != MessageType.new_member:
             return
+
+        member_id: int = message.author.id
+        await self.join_events[member_id].wait()
+        self.join_events[member_id].clear()
+        self.join_events.pop(member_id)
+
+        async with db_context():
+            join: Join = await db.get(Join, id=self.join_id.pop(member_id))
+            join.join_msg_channel_id = message.channel.id
+            join.join_msg_id = message.id
+
+    async def on_member_join(self, member: Member):
+        self.join_events[member.id].clear()
+
+        join: Join = await Join.create(member.id, str(member), member.joined_at.replace(microsecond=0))
+
+        async def trigger_join_event():
+            await db.wait_for_close_event()
+            self.join_id[member.id] = join.id
+            self.join_events[member.id].set()
+
+        asyncio.create_task(trigger_join_event())
 
         last_verification: Optional[Verification] = await db.first(
             filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
@@ -89,6 +132,8 @@ class UserInfoCog(Cog, name="User Information"):
             await member.add_roles(role)
 
     async def on_member_remove(self, member: Member):
+        self.join_events.pop(member.id, None)
+        self.join_id.pop(member.id, None)
         await Leave.create(member.id, str(member))
 
     async def on_member_nick_update(self, before: Member, after: Member):
@@ -100,9 +145,46 @@ class UserInfoCog(Cog, name="User Information"):
 
         await UsernameUpdate.create(before.id, str(before), str(after), False)
 
+    async def update_verification_reaction(self, member: Member, add: bool):
+        guild: Guild = member.guild
+
+        for _ in range(10):
+            async with db_context():
+                join: Optional[Join] = await db.get(
+                    Join,
+                    member=member.id,
+                    timestamp=member.joined_at.replace(microsecond=0),
+                )
+                if not join or not join.join_msg_id or not join.join_msg_channel_id:
+                    await asyncio.sleep(2)
+                    continue
+
+                channel_id: int = join.join_msg_channel_id
+                message_id: int = join.join_msg_id
+                break
+        else:
+            return
+
+        channel: Optional[TextChannel] = self.bot.get_channel(channel_id)
+        if not channel:
+            return
+
+        try:
+            message: Message = await channel.fetch_message(message_id)
+        except (NotFound, Forbidden, HTTPException):
+            return
+
+        try:
+            await message.remove_reaction(name_to_emoji["x" if add else "white_check_mark"], guild.me)
+            await message.add_reaction(name_to_emoji["white_check_mark" if add else "x"])
+        except Forbidden:
+            await send_alert(guild, tg.could_not_add_reaction(message.channel.mention))
+
     async def on_member_role_add(self, member: Member, role: Role):
         if role.id != await RoleSettings.get("verified"):
             return
+
+        asyncio.create_task(self.update_verification_reaction(member, add=True))
 
         last_verification: Optional[Verification] = await db.first(
             filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
@@ -113,14 +195,18 @@ class UserInfoCog(Cog, name="User Information"):
         await Verification.create(member.id, str(member), True)
 
     async def on_member_role_remove(self, member: Member, role: Role):
-        if role.id == await RoleSettings.get("verified"):
-            await Verification.create(member.id, str(member), False)
+        if role.id != await RoleSettings.get("verified"):
+            return
+
+        asyncio.create_task(self.update_verification_reaction(member, add=False))
+
+        await Verification.create(member.id, str(member), False)
 
     @revoke_verification.subscribe
     async def handle_revoke_verification(self, member: Member):
         await Verification.create(member.id, str(member), False)
 
-    @commands.command(aliases=["user", "uinfo", "userstats"])
+    @commands.command(aliases=["user", "uinfo", "ui", "userstats", "stats"])
     @optional_permissions(UserInfoPermission.view_userinfo)
     async def userinfo(self, ctx: Context, user: Optional[Union[User, int]] = None):
         """

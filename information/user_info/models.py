@@ -14,11 +14,14 @@ class Join(db.Base):
     member: Union[Column, int] = Column(BigInteger)
     member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     timestamp: Union[Column, datetime] = Column(DateTime)
+    join_msg_channel_id: Union[Column, int] = Column(BigInteger, nullable=True)
+    join_msg_id: Union[Column, int] = Column(BigInteger, nullable=True)
 
     @staticmethod
     async def create(member: int, member_name: str, timestamp: Optional[datetime] = None) -> Join:
         row = Join(member=member, member_name=member_name, timestamp=timestamp or datetime.utcnow())
         await db.add(row)
+        await db.session.flush()
         return row
 
     @staticmethod
