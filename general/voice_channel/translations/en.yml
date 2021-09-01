@@ -57,6 +57,7 @@ dyn_voice_help_content: |
   :unlock: `{prefix}vc unlock` - unlock and unhide this voice channel
   :white_check_mark: `{prefix}vc add <member>` - add a member to this voice channel
   :x: `{prefix}vc remove <member>` - kick and remove a member from this voice channel
+  :label: `{prefix}vc rename [<name>]` - rename this voice channel
   :tools: `{prefix}vc owner <member>` - transfer ownership of this voice channel
   :information_source: `{prefix}vc info [<channel>]` - show information about a voice channel
   :grey_question: `{prefix}vc help` - show this embed
@@ -98,11 +99,12 @@ renamed: ":label: {} has renamed this channel from `{}` to `{}`."
 rename_failed: Renaming this channel failed.
 rename_rate_limit: |
   Thanks to [Discord's stupid channel edit rate limit](https://support.discord.com/hc/en-us/community/posts/360067755532-Increase-rate-limit-for-editing-channel-description), I can't rename this channel right now. :rolling_eyes:
-  Please try again later or create a new channel.
+  Please try again later.
 rename_confirmation: Rename this Voice Channel?
 rename_description: A voice channel with this name already exists. Do you want to rename this voice channel anyway?
 canceled: ":x: Canceled"
 confirmed: "Confirmed :white_check_mark:"
+no_custom_name: You are not allowed to set a custom channel name! Omit the `name` parameter to choose a random name or pick a name from [theses lists](https://github.com/PyDrocsid/cogs/tree/develop/general/voice_channel/names)!
 
 voice_info: "Voice Channel Information"
 voice_owner: "Owner"

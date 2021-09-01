@@ -199,6 +199,16 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                     if name := name.strip():
                         self.names[name_list].add(name)
 
+        self.allowed_names: set[str] = set()
+        for path in Path(__file__).parent.joinpath("names").iterdir():
+            if not path.name.endswith(".txt"):
+                continue
+
+            with path.open() as file:
+                for name in file.readlines():
+                    if name := name.strip():
+                        self.allowed_names.add(name.lower())
+
     def prepare(self) -> bool:
         return bool(self.names)
 
@@ -1047,13 +1057,18 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await self.update_control_message(channel, messages[-1])
 
     @voice.command(name="rename")
-    @VoiceChannelPermission.dyn_rename.check
-    @optional_permissions(VoiceChannelPermission.override_owner)
+    @optional_permissions(VoiceChannelPermission.dyn_rename, VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_rename)
-    async def voice_rename(self, ctx: Context, *, name: str):
+    async def voice_rename(self, ctx: Context, *, name: Optional[str]):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
         text_channel: TextChannel = self.get_text_channel(channel)
         old_name = voice_channel.name
+
+        if not name:
+            name = await self.get_channel_name(ctx.guild)
+        elif name.lower() not in self.allowed_names:
+            if not await VoiceChannelPermission.dyn_rename.check_permissions(ctx.author):
+                raise CommandError(t.no_custom_name)
 
         if any(c.id != voice_channel.id and name == c.name for c in voice_channel.guild.voice_channels):
             conf_embed = Embed(title=t.rename_confirmation, description=t.rename_description, color=Colors.Voice)
