@@ -1,13 +1,16 @@
 # Verification
 
-This Cog is used to add a verification system.
+This cog is used to add a verification system that adds or removes certain roles from a user when they send the bot a command with a pre-set password via direct messages.
 
 
-## add
+## `verification`
+
+The `.verification` command shows the current verification configuration. This includes the roles that will be added or removed from the user (verification roles), the configured password and the amount of time a user has to be a member of the server before they can verify.
 
 
-With the `add` subcommand you can add a verification role.
-If you set `reverse` to `true`, the role will be removed from the user instead of added.
+### `add`
+
+The `add` subcommand adds a verification role. If you set `reverse` to `true`, the role will be removed from the user instead of being added. Note that verification will fail if the user does not have all reverse verification roles!
 
 ```css
 .verification [add|a|+] <role> [reverse=False]
@@ -15,49 +18,18 @@ If you set `reverse` to `true`, the role will be removed from the user instead o
 
 Argument | Required            | Description
 ---------|---------------------|------------
-role     | :heavy_check_mark:  | The verification role
-reverse  |                     | The role assignment will be reversed => role will be removed
+`role`     | :heavy_check_mark:  | The verification role
+`reverse`  |                     | Remove this role instead of adding it to the user.
 
 Required permissions:
 
-- `settings.change_prefix`
+- `verification.read`
+- `verification.write`
 
 
-## delay
+### `remove`
 
-
-Set the time a user has to be on the server until they can verify.
-
-```css
-.verification [delay|d] <seconds>
-```
-
-Argument | Required            | Description
----------|---------------------|------------
-delay    | :heavy_check_mark:  | The time in seconds
-
-
-## password
-
-
-Sets the *secret* password the user will need to verify.
-
-```css
-.verification [password|p] <password>
-```
-
-Argument | Required            | Description
----------|---------------------|------------
-password | :heavy_check_mark:  | The password as string
-
-!!! note
-    The password has a max-length of 256 characters.
-
-
-## remove
-
-
-Removes an existing verification.
+The `remove` subcommand removes an existing verification role.
 
 ```css
 .verification [remove|r|-] <role>
@@ -65,4 +37,68 @@ Removes an existing verification.
 
 Argument | Required            | Description
 ---------|---------------------|------------
-role     | :heavy_check_mark:  | The verification role
+`role`     | :heavy_check_mark:  | The verification role
+
+Required permissions:
+
+- `verification.read`
+- `verification.write`
+
+
+### `password`
+
+The `password` subcommand sets the *secret* password the user will need to verify.
+
+```css
+.verification [password|p] <password>
+```
+
+Argument | Required            | Description
+---------|---------------------|------------
+`password` | :heavy_check_mark:  | The password as string
+
+Required permissions:
+
+- `verification.read`
+- `verification.write`
+
+!!! note
+    The password has a maximum length of 256 characters.
+
+
+### `delay`
+
+The `delay` subcommand sets the amount of time a user has to be on the server before they can verify.
+
+```css
+.verification [delay|d] <seconds>
+```
+
+Argument | Required            | Description
+---------|---------------------|------------
+`delay`    | :heavy_check_mark:  | The amount of time in seconds
+
+Required permissions:
+
+- `verification.read`
+- `verification.write`
+
+
+## `verify`
+
+The `verify` command is used by server members to verify themselves. If the specified password is correct and the configured delay has elapsed, the configured verification roles will be added or removed from the member.
+
+```css
+verify <password>
+```
+
+Argument | Required            | Description
+---------|---------------------|------------
+`password` | :heavy_check_mark:  | The verification password
+
+!!! note
+    As this command can only be used in private messages, it does not start with the configured bot prefix! So, for example, if the configured password is `Tr0ub4dor&3` a user would have to send this exact message to the bot to complete verification:
+    <!-- markdownlint-disable-next-line MD038 -->
+    ```
+    verify Tr0ub4dor&3
+    ```
