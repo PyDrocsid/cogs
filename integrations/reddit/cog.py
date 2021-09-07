@@ -56,10 +56,14 @@ async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]
 
         data = (await response.json())["data"]
 
+    filter_nsfw = await RedditSettings.filter_nsfw.get()
     posts: List[dict] = []
     for post in data["children"]:
         # t3 = link
         if post["kind"] == "t3" and post["data"].get("post_hint") == "image":
+            if post["data"]["over_18"] and filter_nsfw:
+                continue
+
             posts.append(
                 {
                     "id": post["data"]["id"],
