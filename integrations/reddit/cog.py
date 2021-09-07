@@ -243,6 +243,23 @@ class RedditCog(Cog, name="Reddit"):
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_limit_set(limit))
 
+    @reddit.command(name="nsfw_filter", aliases=["nsfw"])
+    @RedditPermission.write.check
+    async def reddit_nsfw_filter(self, ctx: Context, enabled: bool):
+        """
+        enable/disable nsfw filter for posts
+        """
+
+        embed = Embed(title=t.reddit, colour=Colors.Reddit)
+        await RedditSettings.nsfw_filter.set(enabled)
+        if enabled:
+            embed.description = t.nsfw_filter_now_enabled
+            await send_to_changelog(ctx.guild, t.log_nsfw_filter_now_enabled)
+        else:
+            embed.description = t.nsfw_filter_now_disabled
+            await send_to_changelog(ctx.guild, t.log_nsfw_filter_now_disabled)
+        await reply(ctx, embed=embed)
+
     @reddit.command(name="trigger", aliases=["t"])
     @RedditPermission.trigger.check
     async def reddit_trigger(self, ctx: Context):
