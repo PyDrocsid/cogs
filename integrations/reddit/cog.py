@@ -251,7 +251,7 @@ class RedditCog(Cog, name="Reddit"):
         """
 
         embed = Embed(title=t.reddit, colour=Colors.Reddit)
-        await RedditSettings.nsfw_filter.set(enabled)
+        await RedditSettings.filter_nsfw.set(enabled)
         if enabled:
             embed.description = t.nsfw_filter_now_enabled
             await send_to_changelog(ctx.guild, t.log_nsfw_filter_now_enabled)
