@@ -35,6 +35,7 @@ reddit_limit_set: "Reddit limit has been updated. :white_check_mark:"
 log_reddit_limit_set: "**Reddit limit** has been **set** to {}."
 could_not_fetch: Could not fetch reddit posts of r/{}.
 cannot_send: Reddit integration cannot send messages to {}.
+nsfw_filter: "NSFW filter"
 nsfw_filter_now_enabled: "Reddit NSFW filter has been enabled."
 log_nsfw_filter_now_enabled: "**Reddit NSFW filter** has been **enabled**."
 nsfw_filter_now_disabled: "Reddit NSFW filter has been disabled."

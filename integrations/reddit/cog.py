@@ -162,6 +162,9 @@ class RedditCog(Cog, name="Reddit"):
         limit = await RedditSettings.limit.get()
         embed.add_field(name=t.limit, value=str(limit))
 
+        filter_nsfw = await RedditSettings.filter_nsfw.get()
+        embed.add_field(name=t.nsfw_filter, value=tg.enabled if filter_nsfw else tg.disabled, inline=False)
+
         out = []
         async for reddit_channel in await db.stream(select(RedditChannel)):  # type: RedditChannel
             text_channel: Optional[TextChannel] = self.bot.get_channel(reddit_channel.channel)
