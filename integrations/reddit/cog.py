@@ -1,6 +1,6 @@
 from datetime import datetime
 from platform import system as platform
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from aiohttp import ClientSession
 from discord import Embed, TextChannel
@@ -58,10 +58,12 @@ async def get_subreddit_name(subreddit: str) -> str:
         return (await response.json())["data"]["display_name"]
 
 
-async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]:
+async def fetch_reddit_posts(subreddits: Union[str, List[str]], limit: int) -> Optional[List[dict]]:
+    subreddits_str = subreddits if isinstance(subreddits, str) else "+".join(subreddits)
+
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
-        f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1",
+        f"https://www.reddit.com/r/{subreddits_str}/hot.json?raw_json=1",
         headers={"User-agent": user_agent()},
         params={"limit": str(limit)},
     ) as response:
