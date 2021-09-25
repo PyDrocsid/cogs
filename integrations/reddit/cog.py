@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import groupby
 from platform import system as platform
 from typing import Optional, List, Union
 
@@ -122,10 +123,16 @@ class RedditCog(Cog, name="Reddit"):
     async def pull_hot_posts(self):
         logger.info("pulling hot reddit posts")
         limit = await RedditSettings.limit.get()
-        async for reddit_channel in await db.stream(select(RedditChannel)):  # type: RedditChannel
-            text_channel: Optional[TextChannel] = self.bot.get_channel(reddit_channel.channel)
+
+        def text_channel_key(reddit_channel: RedditChannel) -> Optional[TextChannel]:
+            return self.bot.get_channel(reddit_channel.channel)
+
+        reddit_channels = sorted(await db.all(select(RedditChannel)), key=text_channel_key)
+
+        for text_channel, reddit_channel_group in groupby(reddit_channels, text_channel_key):
             if text_channel is None:
-                await db.delete(reddit_channel)
+                for reddit_channel in reddit_channel_group:
+                    await db.delete(reddit_channel)
                 continue
 
             try:
@@ -134,9 +141,11 @@ class RedditCog(Cog, name="Reddit"):
                 await send_alert(self.bot.guilds[0], t.cannot_send(text_channel.mention))
                 continue
 
-            posts = await fetch_reddit_posts(reddit_channel.subreddit, limit)
+            subreddits = [reddit_channel.subreddit for reddit_channel in reddit_channel_group]
+
+            posts = await fetch_reddit_posts(subreddits, limit)
             if posts is None:
-                await send_alert(self.bot.guilds[0], t.could_not_fetch(reddit_channel.subreddit))
+                await send_alert(self.bot.guilds[0], t.could_not_fetch(",".join(subreddits)))
                 continue
 
             for post in posts:
