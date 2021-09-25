@@ -1,4 +1,5 @@
 from datetime import datetime
+from platform import system as platform
 from typing import Optional, List
 
 from aiohttp import ClientSession
@@ -26,11 +27,24 @@ t = t.reddit
 logger = get_logger(__name__)
 
 
+async def user_agent() -> str:
+    """
+    construct a user agent string in accordance with the Reddit API rules:
+    <https://github.com/reddit-archive/reddit/wiki/API#rules>
+    """
+    author = f"/u/{await RedditSettings.author.get()}"
+    target_platform = platform.lower()
+    app_id = Config.NAME.replace(" ", "").lower()
+    version_string = f"v{Config.VERSION}"
+
+    return f"{target_platform}:{app_id}:{version_string} (by {author})"
+
+
 async def exists_subreddit(subreddit: str) -> bool:
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
-        headers={"User-agent": f"{Config.NAME}/{Config.VERSION}"},
+        headers={"User-agent": user_agent()},
     ) as response:
         return response.ok
 
@@ -39,7 +53,7 @@ async def get_subreddit_name(subreddit: str) -> str:
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
-        headers={"User-agent": f"{Config.NAME}/{Config.VERSION}"},
+        headers={"User-agent": user_agent()},
     ) as response:
         return (await response.json())["data"]["display_name"]
 
@@ -48,7 +62,7 @@ async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1",
-        headers={"User-agent": f"{Config.NAME}/{Config.VERSION}"},
+        headers={"User-agent": user_agent()},
         params={"limit": str(limit)},
     ) as response:
         if response.status != 200:
