@@ -253,6 +253,18 @@ class RedditCog(Cog, name="Reddit"):
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_limit_set(limit))
 
+    @reddit.command(name="author", aliases=["user"])
+    @RedditPermission.write.check
+    async def reddit_ua_author(self, ctx: Context, author: str):
+        """
+        set author (Reddit username) for user agent string
+        """
+
+        await RedditSettings.author.set(author)
+        embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_author_set)
+        await send_to_changelog(ctx.guild, t.t.log_reddit_author_set(author))
+        await reply(ctx, embed=embed)
+
     @reddit.command(name="trigger", aliases=["t"])
     @RedditPermission.trigger.check
     async def reddit_trigger(self, ctx: Context):
