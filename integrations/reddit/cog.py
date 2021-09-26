@@ -45,7 +45,7 @@ async def exists_subreddit(subreddit: str) -> bool:
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
-        headers={"User-agent": user_agent()},
+        headers={"User-agent": await user_agent()},
     ) as response:
         return response.ok
 
@@ -54,7 +54,7 @@ async def get_subreddit_name(subreddit: str) -> str:
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
-        headers={"User-agent": user_agent()},
+        headers={"User-agent": await user_agent()},
     ) as response:
         return (await response.json())["data"]["display_name"]
 
@@ -65,7 +65,7 @@ async def fetch_reddit_posts(subreddits: Union[str, List[str]], limit: int) -> O
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddits_str}/hot.json?raw_json=1",
-        headers={"User-agent": user_agent()},
+        headers={"User-agent": await user_agent()},
         params={"limit": str(limit)},
     ) as response:
         if response.status != 200:
