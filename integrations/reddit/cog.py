@@ -1,6 +1,6 @@
 from datetime import datetime
 from itertools import groupby
-from platform import system as platform
+from sys import platform
 from typing import Optional, List, Union
 
 from aiohttp import ClientSession
@@ -34,7 +34,7 @@ async def user_agent() -> str:
     <https://github.com/reddit-archive/reddit/wiki/API#rules>
     """
     author = f"/u/{await RedditSettings.author.get()}"
-    target_platform = platform.lower()
+    target_platform = platform
     app_id = Config.NAME.replace(" ", "").lower()
     version_string = f"v{Config.VERSION}"
 
