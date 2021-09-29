@@ -108,6 +108,12 @@ def create_embed(post: dict) -> Embed:
     return embed
 
 
+async def is_author_set() -> bool:
+    """return whether a Reddit author username has been specified in the cog settings"""
+    author = await RedditSettings.author.get()
+    return bool(author)
+
+
 class RedditCog(Cog, name="Reddit"):
     CONTRIBUTORS = [Contributor.Scriptim, Contributor.Defelo, Contributor.wolflu, Contributor.Anorak]
 
@@ -155,6 +161,10 @@ class RedditCog(Cog, name="Reddit"):
         await RedditPost.clean()
 
     async def start_loop(self, interval):
+        if not await is_author_set():
+            logger.warning(t.log_no_reddit_author_set)
+            return
+
         self.reddit_loop.cancel()
         self.reddit_loop.change_interval(hours=interval)
         try:
@@ -273,7 +283,7 @@ class RedditCog(Cog, name="Reddit"):
 
         await RedditSettings.author.set(author)
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_author_set)
-        await send_to_changelog(ctx.guild, t.t.log_reddit_author_set(author))
+        await send_to_changelog(ctx.guild, t.log_reddit_author_set(author))
         await reply(ctx, embed=embed)
 
     @reddit.command(name="trigger", aliases=["t"])
@@ -282,6 +292,9 @@ class RedditCog(Cog, name="Reddit"):
         """
         pull hot posts now and reset the timer
         """
+
+        if not await is_author_set():
+            raise CommandError(t.no_reddit_author_set)
 
         await self.start_loop(await RedditSettings.interval.get())
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.done)

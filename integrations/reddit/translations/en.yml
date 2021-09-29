@@ -37,3 +37,5 @@ could_not_fetch: Could not fetch reddit posts of r/{}.
 cannot_send: Reddit integration cannot send messages to {}.
 reddit_author_set: "Reddit author username has been updated. :white_check_mark:"
 log_reddit_author_set: "**Reddit author username** has been **set** to u/{}."
+no_reddit_author_set: "Please set a Reddit author username."
+log_no_reddit_author_set: "Reddit loop has been disabled because no **Reddit author username** is specified."
