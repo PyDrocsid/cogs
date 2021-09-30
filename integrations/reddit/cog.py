@@ -162,7 +162,7 @@ class RedditCog(Cog, name="Reddit"):
 
     async def start_loop(self, interval):
         if not await is_author_set():
-            logger.warning(t.log_no_reddit_author_set)
+            await send_alert(t.log_no_reddit_author_set)
             return
 
         self.reddit_loop.cancel()
