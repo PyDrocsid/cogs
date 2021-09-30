@@ -219,7 +219,7 @@ class UserInfoCog(Cog, name="User Information"):
         if isinstance(user, int):
             embed.set_author(name=str(user))
         else:
-            embed.set_author(name=f"{user} ({user_id})", icon_url=user.avatar_url)
+            embed.set_author(name=f"{user} ({user_id})", icon_url=user.display_avatar.url)
 
         for response in await get_user_info_entries(user_id):
             for name, value in response:
@@ -294,7 +294,7 @@ class UserInfoCog(Cog, name="User Information"):
         if isinstance(user, int):
             embed.set_author(name=str(user))
         else:
-            embed.set_author(name=f"{user} ({user_id})", icon_url=user.avatar_url)
+            embed.set_author(name=f"{user} ({user_id})", icon_url=user.display_avatar.url)
         for row in out:
             name = row[0].strftime("%d.%m.%Y %H:%M:%S")
             value = row[1]
