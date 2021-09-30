@@ -212,6 +212,9 @@ class RedditCog(Cog, name="Reddit"):
         create a link between a subreddit and a channel
         """
 
+        if not await is_author_set():
+            raise CommandError(t.no_reddit_author_set)
+
         if not await exists_subreddit(subreddit):
             raise CommandError(t.subreddit_not_found)
 
@@ -232,6 +235,9 @@ class RedditCog(Cog, name="Reddit"):
         """
         remove a reddit link
         """
+
+        if not await is_author_set():
+            raise CommandError(t.no_reddit_author_set)
 
         subreddit = await get_subreddit_name(subreddit)
         link: Optional[RedditChannel] = await db.get(RedditChannel, subreddit=subreddit, channel=channel.id)
