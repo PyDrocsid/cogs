@@ -1,11 +1,11 @@
 import re
 import string
-from datetime import datetime
 from typing import Optional, Tuple
 
 from discord import Embed, Message, PartialEmoji, Member, Forbidden, Guild
 from discord.ext import commands
 from discord.ext.commands import Context, guild_only, CommandError
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.embeds import EmbedLimits
@@ -53,7 +53,7 @@ async def send_poll(
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
-    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=datetime.utcnow())
+    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
     if allow_delete:
         embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
@@ -216,7 +216,7 @@ class PollsCog(Cog, name="Polls"):
         Starts a yes/no poll and shows, which teamler has not voted yet.
         """
 
-        embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=datetime.utcnow())
+        embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=utcnow())
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
 
         embed.add_field(name=tg.status, value=await self.get_reacted_teamlers(), inline=False)
