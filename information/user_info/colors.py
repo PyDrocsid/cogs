@@ -5,4 +5,4 @@ class Colors(MaterialColors):
     UserInfo = MaterialColors.green[800]
     stats = MaterialColors.green
     userlog = MaterialColors.green["a400"]
-    joined = MaterialColors.green["a800"]
+    joined = 0x339204
