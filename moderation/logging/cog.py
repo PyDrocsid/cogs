@@ -183,7 +183,7 @@ class LoggingCog(Cog, name="Logging"):
         embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=datetime.utcnow())
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
-        embed.add_field(name=t.message_id, value=message.id)
+        embed.add_field(name=t.message_id, value=before.message.id)
         embed.add_field(name=t.url, value=before.jump_url, inline=False)
         add_field(embed, t.old_content, old_message)
         add_field(embed, t.new_content, after.content)
