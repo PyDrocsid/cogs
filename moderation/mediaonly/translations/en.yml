@@ -26,3 +26,4 @@ channel_not_media_only_anymore: "Channel is not a media only channel anymore. :w
 log_channel_not_media_only_anymore: "**Channel** {} has been **removed** from the list of **media only channels**."
 media_only_not_changed_no_permissions: >
   Media only channel could not be added because I don't have `manage_messages` permission there.
+ulog_deletion: ":frame_photo: **Sent** a message without a picture to the mediaonly channel {}."

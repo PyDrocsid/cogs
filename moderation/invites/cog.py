@@ -4,12 +4,12 @@ from typing import Optional
 import requests
 from discord import Invite, Member, Guild, Embed, Message, NotFound, Forbidden, HTTPException
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, Converter, BadArgument, UserInputError
+from discord.ext.commands import guild_only, Context, CommandError, Converter, UserInputError
 from urllib3.exceptions import LocationParseError
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply
+from PyDrocsid.command import reply, optional_permissions
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -18,7 +18,7 @@ from PyDrocsid.logger import get_logger
 from PyDrocsid.prefix import get_prefix
 from PyDrocsid.translations import t
 from .colors import Colors
-from .models import InviteLog, AllowedInvite
+from .models import InviteLog, AllowedInvite, IllegalInvitePost
 from .permissions import InvitesPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog, get_userlog_entries, send_alert
@@ -50,7 +50,7 @@ class AllowedServerConverter(Converter):
             if row.guild_name.lower().strip() == argument.lower().strip() or row.code == argument:
                 return row
 
-        raise BadArgument(t.allowed_server_not_found)
+        raise CommandError(t.allowed_server_not_found)
 
 
 def get_discord_invite(url) -> Optional[str]:
@@ -72,17 +72,35 @@ def get_discord_invite(url) -> Optional[str]:
     return None
 
 
+def find_urls(text):
+    return {
+        url
+        for pattern in [
+            r"((https?://)?([a-zA-Z0-9\-_~]+\.)+[a-zA-Z0-9\-_~.]+(\S*[a-zA-Z0-9])?)",
+            r"((https?://)?([a-zA-Z0-9\-_~]+\.)+[a-zA-Z0-9\-_~.]+\S*)",
+            r"((discord\.gg/|discord(app)?\.com/invite/)[a-zA-Z0-9]+)",
+        ]
+        for url, *_ in re.findall(pattern, text)
+    }
+
+
 class InvitesCog(Cog, name="Allowed Discord Invites"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.TNT2k, Contributor.Florian]
 
     @get_userlog_entries.subscribe
-    async def handle_get_ulog_entries(self, user_id: int):
+    async def handle_get_ulog_entries(self, user_id: int, _):
         out = []
+
         async for log in await db.stream(filter_by(InviteLog, applicant=user_id)):  # type: InviteLog
             if log.approved:
                 out.append((log.timestamp, t.ulog_invite_approved(f"<@{log.mod}>", log.guild_name)))
             else:
                 out.append((log.timestamp, t.ulog_invite_removed(f"<@{log.mod}>", log.guild_name)))
+
+        post: IllegalInvitePost
+        async for post in await db.stream(filter_by(IllegalInvitePost, member=user_id)):
+            out.append((post.timestamp, t.ulog_illegal_post(f"<#{post.channel}>", post.name)))
+
         return out
 
     async def check_message(self, message: Message) -> bool:
@@ -94,9 +112,10 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
 
         forbidden = []
         legal_invite = False
-        for url, *_ in re.findall(r"((https?://)?([a-zA-Z0-9\-_~]+\.)+[a-zA-Z0-9\-_~.]+(/\S*)?)", message.content):
+        for url in find_urls(message.content):
             if (code := await run_in_thread(lambda: get_discord_invite(url))) is None:
                 continue
+
             try:
                 invite = await self.bot.fetch_invite(code)
             except NotFound:
@@ -104,19 +123,26 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             except Forbidden:
                 forbidden.append(f"`{code}` (banned from this server)")
                 continue
+
             if invite.guild is None:
                 continue
             if invite.guild == message.guild:
                 legal_invite = True
                 continue
+
             if await db.get(AllowedInvite, guild_id=invite.guild.id) is None:
                 forbidden.append(f"`{invite.code}` ({invite.guild.name})")
             else:
                 legal_invite = True
+
         if forbidden:
             can_delete = message.channel.permissions_for(message.guild.me).manage_messages
             if can_delete:
                 await message.delete()
+
+            for name in set(forbidden):
+                await IllegalInvitePost.create(author.id, str(author), message.channel.id, name)
+
             prefix = await get_prefix()
             embed = Embed(
                 title=t.invites,
@@ -238,6 +264,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         await send_to_changelog(ctx.guild, t.log_server_whitelisted(guild.name))
 
     @invites.command(name="update", aliases=["u"])
+    @optional_permissions(InvitesPermission.manage)
     async def invites_update(self, ctx: Context, invite: Invite):
         """
         update the invite link of an allowed discord server

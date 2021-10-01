@@ -47,6 +47,7 @@ log_unmuted_expired: "Unmuted automatically because the mute time for this user 
 unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
+cannot_assign_mute_role: Cannot manage mute role `@{}` ({})
 
 kick: ":x: Kick"
 kicked: "{} just kicked you from {}:```\n{}\n```"
@@ -71,6 +72,7 @@ not_banned: This member is not banned.
 unbanned_response: "User unbanned. :white_check_mark:"
 log_unbanned: ":white_check_mark: Member Unbanned"
 cannot_unban_permissions: User could not be unbanned because I don't have `ban_members` permission on this server.
+cannot_unban_user_permissions: User {} ({}) could not be unbanned because I don't have `ban_members` permission on this server.
 
 reported_cnt: ":speech_balloon:  Reported"
 warned_cnt: ":warning:  Warned"

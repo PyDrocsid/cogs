@@ -216,7 +216,7 @@ class RedditCog(Cog, name="Reddit"):
         """
 
         if not 0 < hours < (1 << 31):
-            raise CommandError(tg.invalid_interval)
+            raise CommandError(t.invalid_interval)
 
         await RedditSettings.interval.set(hours)
         await self.start_loop(hours)

@@ -4,7 +4,7 @@ from discord import Message, Embed
 from discord.ext import commands
 from discord.ext.commands import Command, Group, CommandError, Context
 
-from PyDrocsid.cog import Cog
+from PyDrocsid.cog import Cog, get_documentation
 from PyDrocsid.command import can_run_command, docs, get_optional_permissions
 from PyDrocsid.config import Contributor
 from PyDrocsid.embeds import send_long_embed
@@ -25,7 +25,8 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
         desc: List[str] = []
         for cmd in sorted(cmds, key=lambda c: c.name):
             if not cmd.hidden and await can_run_command(cmd, ctx):
-                desc.append(format_command(cmd))
+                emoji = getattr(cmd._callback, "emoji", ":small_orange_diamond:")
+                desc.append(emoji + " " + format_command(cmd))
         if desc:
             embed.add_field(name=cog_name, value="\n".join(desc), inline=False)
 
@@ -43,6 +44,8 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
         cog: Optional[Cog] = ctx.bot.get_cog(command_name)
         if cog is not None:
             await add_commands(cog.qualified_name, cog.get_commands())
+            if doc_url := get_documentation(cog):
+                embed.add_field(name=t.documentation, value=doc_url, inline=False)
             return await send_long_embed(ctx, embed)
 
         command: Optional[Union[Command, Group]] = ctx.bot.get_command(command_name)
@@ -90,20 +93,27 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
         embed.add_field(
             name=t.required_permissions,
             value="\n".join(f":small_orange_diamond: `{p}`" for p in permissions),
+            inline=False,
         )
     if permission_levels:
         permission_level: BasePermissionLevel = max(permission_levels, key=lambda pl: pl.level)
-        embed.add_field(
-            name=t.required_permission_level,
-            value=f":small_orange_diamond: **{permission_level.description}**",
-        )
+        if permission_level.level > 0:
+            embed.add_field(
+                name=t.required_permission_level,
+                value=f":small_orange_diamond: **{permission_level.description}**",
+                inline=False,
+            )
 
     optional_permissions: list[str] = [permission.fullname for permission in get_optional_permissions(command)]
     if optional_permissions:
         embed.add_field(
             name=t.optional_permissions,
             value="\n".join(f":small_blue_diamond: `{p}`" for p in optional_permissions),
+            inline=False,
         )
+
+    if (doc_url := get_documentation(cmd.cog)) and not getattr(cmd.callback, "no_documentation", False):
+        embed.add_field(name=t.documentation, value=doc_url, inline=False)
 
     return await send_long_embed(ctx, embed)
 

@@ -7,6 +7,7 @@ commands:
   reactionrole_list: list configured reactionrole links for a specific message
   reactionrole_add: add a new reactionrole link
   reactionrole_remove: remove a reactionrole link
+  reactionrole_reinialize: reinialize reactions on a reactionrole message
 
 reactionrole: ReactionRole
 no_reactionrole_links: No ReactionRole links have been created yet.
@@ -18,6 +19,8 @@ rr_link_not_created_no_permissions: >
 log_rr_link_created: "**ReactionRole link** for {} -> <@&{}> has been **created** on [this message]({}) in {}"
 rr_link_not_found: Such a link does not exist.
 rr_link_removed: "Link has been removed successfully. :white_check_mark:"
+could_not_add_reactions: "Could not add reaction to message!"
+could_not_remove_reactions: "Could not remove reaction from message!"
 log_rr_link_removed: "**ReactionRole link** for {} -> <@&{}> has been **deleted** on [this message]({}) in {}"
 rr_link: "{} -> {}"
 auto_remove: auto remove

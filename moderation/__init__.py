@@ -1,3 +1,4 @@
+from .autoclear import AutoClearCog
 from .automod import AutoModCog
 from .autorole import AutoRoleCog
 from .invites import InvitesCog
