@@ -203,6 +203,7 @@ class LoggingCog(Cog, name="Logging"):
         embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=utcnow())
         embed.add_field(name=t.channel, value=channel.mention)
         if message is not None:
+            embed.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
             embed.add_field(name=t.author, value=message.author.mention)
             embed.add_field(name=t.message_id, value=message.id)
             embed.add_field(name=t.url, value=message.jump_url, inline=False)
