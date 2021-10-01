@@ -185,6 +185,7 @@ class LoggingCog(Cog, name="Logging"):
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
         embed.add_field(name=t.url, value=before.jump_url, inline=False)
+        embed.add_field(name=t.author_id, value=before.author.id)
         add_field(embed, t.old_content, old_message)
         add_field(embed, t.new_content, after.content)
         await edit_channel.send(embed=embed)
@@ -222,6 +223,7 @@ class LoggingCog(Cog, name="Logging"):
         embed.set_author(name=str(message.author), icon_url=message.author.avatar_url)
         embed.add_field(name=t.channel, value=message.channel.mention)
         embed.add_field(name=t.author, value=message.author.mention)
+        embed.add_field(name=t.author_id, value=message.author.id)
         add_field(embed, t.old_content, message.content)
         if message.attachments:
             out = []
