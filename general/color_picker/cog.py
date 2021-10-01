@@ -1,6 +1,7 @@
 import colorsys
 import io
 import re
+from typing import Any
 
 from PIL import ImageColor, Image
 from discord import Embed, Colour, File
@@ -25,25 +26,33 @@ class ColorPickerCog(Cog, name="Color Picker"):
 
     @commands.command(name="color_picker", aliases=["cp", "color"])
     async def color_picker(self, ctx: Context, *, color: str):
+        def _to_int(colors: tuple[Any, Any, Any]) -> tuple[int, ...]:
+            return tuple(map(int, colors))
+
+        color_hex: str
+        rgb: tuple[int, ...]
+        hsv: tuple[int, ...]
+        hsl: tuple[int, ...]
+
         if color_re := self.RE_HEX.match(color):
             color_hex = color_re.group(1)
-            rgb: tuple[int] = ImageColor.getcolor(color, "RGB")
-            hsv: tuple[int] = ImageColor.getcolor(color, "HSV")
-            hsl = tuple(map(int, colorsys.rgb_to_hls(*rgb)))  # skipcq: PYL-E1120
+            rgb = ImageColor.getcolor(color, "RGB")
+            hsv = ImageColor.getcolor(color, "HSV")
+            hsl = _to_int(colorsys.rgb_to_hls(*rgb))
         elif color_re := self.RE_RGB.match(color):
-            rgb = (int(color_re.group(1)), int(color_re.group(2)), int(color_re.group(3)))
+            rgb = _to_int((color_re.group(1), color_re.group(2), color_re.group(3)))
             color_hex = "%02x%02x%02x" % rgb
-            hsv: tuple[int] = ImageColor.getcolor(f"#{color_hex}", "HSV")
-            hsl = tuple(map(int, colorsys.rgb_to_hls(*rgb)))  # skipcq: PYL-E1120
+            hsv = ImageColor.getcolor(f"#{color_hex}", "HSV")
+            hsl = _to_int(colorsys.rgb_to_hls(*rgb))
         elif color_re := self.RE_HSV.match(color):
-            hsv: tuple[int] = (int(color_re.group(1)), int(color_re.group(2)), int(color_re.group(3)))
-            rgb = tuple(map(int, colorsys.hsv_to_rgb(*hsv)))  # skipcq: PYL-E1120
+            hsv = _to_int((color_re.group(1), color_re.group(2), color_re.group(3)))
+            rgb = _to_int(colorsys.hsv_to_rgb(*hsv))
             color_hex = "%02x%02x%02x" % rgb
-            hsl = tuple(map(int, colorsys.rgb_to_hls(*rgb)))  # skipcq: PYL-E1120
+            hsl = _to_int(colorsys.rgb_to_hls(*rgb))
         elif color_re := self.RE_HSL.match(color):
-            hsl: tuple[int] = (int(color_re.group(1)), int(color_re.group(2)), int(color_re.group(3)))
-            rgb = tuple(map(int, colorsys.hls_to_rgb(*hsl)))  # skipcq: PYL-E1120
-            hsv = tuple(map(int, colorsys.rgb_to_hsv(*rgb)))  # skipcq: PYL-E1120
+            hsl = _to_int((color_re.group(1), color_re.group(2), color_re.group(3)))
+            rgb = _to_int(colorsys.hls_to_rgb(*hsl))
+            hsv = _to_int(colorsys.rgb_to_hsv(*rgb))
             color_hex = "%02x%02x%02x" % rgb
         else:
             embed: Embed = Embed(title=t.error_parse_color_title(color), description=t.error_parse_color_example)
