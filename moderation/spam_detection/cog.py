@@ -50,7 +50,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         embed = Embed(title=t.channel_hopping, color=Colors.SpamDetection, description=t.hops_in_last_minute(cnt=hops))
         embed.add_field(name=tg.member, value=member.mention)
         embed.add_field(name=t.member_id, value=member.id)
-        embed.set_author(name=str(member), icon_url=member.avatar_url)
+        embed.set_author(name=str(member), icon_url=member.display_avatar.url)
         if after.channel:
             embed.add_field(name=t.current_channel, value=after.channel.name)
 

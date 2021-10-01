@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
+import re
 
 from aiohttp import ClientSession
 from discord import Embed, TextChannel
@@ -27,6 +28,7 @@ logger = get_logger(__name__)
 
 
 async def exists_subreddit(subreddit: str) -> bool:
+    subreddit = re.sub("^(/r/|r/)", "", subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
@@ -36,6 +38,7 @@ async def exists_subreddit(subreddit: str) -> bool:
 
 
 async def get_subreddit_name(subreddit: str) -> str:
+    subreddit = re.sub("^(/r/|r/)", "", subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
@@ -45,6 +48,7 @@ async def get_subreddit_name(subreddit: str) -> str:
 
 
 async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]:
+    subreddit = re.sub("^(/r/|r/)", "", subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1",
