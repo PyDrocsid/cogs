@@ -183,6 +183,7 @@ class LoggingCog(Cog, name="Logging"):
         embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=utcnow())
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
+        embed.add_field(name=t.message_id, value=before.id)
         embed.add_field(name=t.url, value=before.jump_url, inline=False)
         add_field(embed, t.old_content, old_message)
         add_field(embed, t.new_content, after.content)
@@ -202,6 +203,7 @@ class LoggingCog(Cog, name="Logging"):
         embed.add_field(name=t.channel, value=channel.mention)
         if message is not None:
             embed.add_field(name=t.author, value=message.author.mention)
+            embed.add_field(name=t.message_id, value=message.id)
             embed.add_field(name=t.url, value=message.jump_url, inline=False)
             add_field(embed, t.new_content, message.content)
         await edit_channel.send(embed=embed)
@@ -220,6 +222,7 @@ class LoggingCog(Cog, name="Logging"):
         embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=utcnow())
         embed.add_field(name=t.channel, value=message.channel.mention)
         embed.add_field(name=t.author, value=message.author.mention)
+        embed.add_field(name=t.message_id, value=message.id)
         add_field(embed, t.old_content, message.content)
         if message.attachments:
             out = []
