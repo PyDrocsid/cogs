@@ -328,6 +328,7 @@ class UserInfoCog(Cog, name="User Information"):
             title=t.userinfo,
             description=f"{member.mention} {date_diff_to_str(datetime.today(), ts)}",
         )
+        embed.set_thumbnail(url=member.avatar_url)
         await reply(ctx, embed=embed)
 
     @commands.command()
