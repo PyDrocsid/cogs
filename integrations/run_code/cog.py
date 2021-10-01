@@ -78,6 +78,6 @@ class RunCodeCog(Cog, name="Run Code"):
         if api_result["stderr"] and not api_result["stdout"]:
             embed.colour = MaterialColors.error
 
-        embed.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
+        embed.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
 
         await send_long_embed(ctx, embed)

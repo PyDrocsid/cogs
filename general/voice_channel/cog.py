@@ -1,6 +1,5 @@
 import asyncio
 import random
-from datetime import datetime
 from os import getenv
 from pathlib import Path
 from typing import Optional, Union
@@ -25,6 +24,7 @@ from discord import (
 from discord.abc import Messageable
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
+from discord.utils import utcnow
 
 from PyDrocsid.async_thread import gather_any, GatherAnyException
 from PyDrocsid.cog import Cog
@@ -213,7 +213,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         return bool(self.names)
 
     def _get_name_list(self, guild_id: int) -> str:
-        r = random.Random(f"{guild_id}{datetime.utcnow().date().isoformat()}")
+        r = random.Random(f"{guild_id}{utcnow().date().isoformat()}")
         return r.choice(sorted(self.names))
 
     def _random_channel_name(self, guild_id: int, avoid: set[str]) -> Optional[str]:
@@ -277,7 +277,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 text_channel,
                 title,
                 "",
-                datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S"),
+                utcnow().strftime("%d.%m.%Y %H:%M:%S"),
                 msg,
                 colour=color,
                 force_new_embed=force_new_embed,
