@@ -3,9 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Union, AsyncIterable
 
-from sqlalchemy import Column, BigInteger, Integer, Text, DateTime
+from discord.utils import utcnow
+from sqlalchemy import Column, BigInteger, Integer, Text
 
-from PyDrocsid.database import db, filter_by, select, delete
+from PyDrocsid.database import db, filter_by, select, delete, UTCDateTime
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 
@@ -52,14 +53,14 @@ class MediaOnlyDeletion(db.Base):
     member: Union[Column, int] = Column(BigInteger)
     member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     channel: Union[Column, int] = Column(BigInteger)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
     async def create(member: int, member_name: str, channel: int) -> MediaOnlyDeletion:
         row = MediaOnlyDeletion(
             member=member,
             member_name=member_name,
-            timestamp=datetime.utcnow(),
+            timestamp=utcnow(),
             channel=channel,
         )
         await db.add(row)

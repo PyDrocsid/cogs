@@ -31,7 +31,7 @@ from discord import (
 )
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, CommandError, max_concurrency, guild_only
-from discord.utils import snowflake_time
+from discord.utils import snowflake_time, utcnow
 
 from .colors import Colors
 from .models import Join, Leave, UsernameUpdate, Verification
@@ -219,7 +219,7 @@ class UserInfoCog(Cog, name="User Information"):
         if isinstance(user, int):
             embed.set_author(name=str(user))
         else:
-            embed.set_author(name=f"{user} ({user_id})", icon_url=user.avatar_url)
+            embed.set_author(name=f"{user} ({user_id})", icon_url=user.display_avatar.url)
 
         for response in await get_user_info_entries(user_id):
             for name, value in response:
@@ -294,7 +294,7 @@ class UserInfoCog(Cog, name="User Information"):
         if isinstance(user, int):
             embed.set_author(name=str(user))
         else:
-            embed.set_author(name=f"{user} ({user_id})", icon_url=user.avatar_url)
+            embed.set_author(name=f"{user} ({user_id})", icon_url=user.display_avatar.url)
         for row in out:
             name = row[0].strftime("%d.%m.%Y %H:%M:%S")
             value = row[1]
@@ -326,8 +326,10 @@ class UserInfoCog(Cog, name="User Information"):
 
         embed = Embed(
             title=t.userinfo,
-            description=f"{member.mention} {date_diff_to_str(datetime.today(), ts)}",
+            description=f"{member.mention} {date_diff_to_str(utcnow(), ts)}",
+            color=Colors.joined,
         )
+        embed.set_author(name=str(member), icon_url=member.display_avatar.url)
         await reply(ctx, embed=embed)
 
     @commands.command()

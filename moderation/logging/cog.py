@@ -1,17 +1,18 @@
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional, Union
 
-from PyDrocsid.logger import get_logger
 from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member, Forbidden
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Group, Command
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, docs
 from PyDrocsid.database import db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.environment import CACHE_TTL
+from PyDrocsid.logger import get_logger
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, check_message_send_permissions
@@ -21,7 +22,6 @@ from .permissions import LoggingPermission
 from .settings import LoggingSettings
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction, ignore_message_edit
-
 
 logger = get_logger(__name__)
 
@@ -152,7 +152,7 @@ class LoggingCog(Cog, name="Logging"):
         if days == -1:
             return
 
-        timestamp = datetime.utcnow() - timedelta(days=days)
+        timestamp = utcnow() - timedelta(days=days)
         for setting in [LoggingSettings.edit_channel, LoggingSettings.delete_channel]:
             channel: Optional[TextChannel] = await self.get_logging_channel(setting)
             if channel is None:
@@ -180,7 +180,7 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(after.channel.id):
             return
         await redis.delete(key)
-        embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=datetime.utcnow())
+        embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=utcnow())
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
         embed.add_field(name=t.message_id, value=before.message.id)
@@ -199,7 +199,7 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(message.channel.id):
             return
 
-        embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=datetime.utcnow())
+        embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=utcnow())
         embed.add_field(name=t.channel, value=channel.mention)
         if message is not None:
             embed.add_field(name=t.author, value=message.author.mention)
@@ -219,7 +219,7 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(message.channel.id):
             return
 
-        embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=datetime.utcnow())
+        embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=utcnow())
         embed.add_field(name=t.channel, value=message.channel.mention)
         embed.add_field(name=t.author, value=message.author.mention)
         embed.add_field(name=t.message_id, value=message.id)
@@ -245,7 +245,7 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(event.channel_id):
             return
 
-        embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=datetime.utcnow())
+        embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=utcnow())
         channel: Optional[TextChannel] = self.bot.get_channel(event.channel_id)
         if channel is not None:
             if await is_logging_channel(channel):

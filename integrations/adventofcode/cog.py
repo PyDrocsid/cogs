@@ -336,7 +336,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             progress = f"{completed}/{unlocked} ({full}{completed / unlocked * 100:.1f}%{full})"
 
         embed = Embed(title=f"Advent of Code {AOCConfig.YEAR}", colour=Colors.AdventOfCode)
-        icon_url = member.avatar_url if member else "https://adventofcode.com/favicon.png"
+        icon_url = member.display_avatar.url if member else "https://adventofcode.com/favicon.png"
         embed.set_author(name=name, icon_url=icon_url)
 
         linked = f"<@{member.id}>" + " (unverified)" * (not link) if member else "Not Linked"
