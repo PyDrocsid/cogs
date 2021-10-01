@@ -181,6 +181,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         await redis.delete(key)
         embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=datetime.utcnow())
+        embed.set_author(name=str(before.author), icon_url=before.author.avatar_url)
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
         embed.add_field(name=t.url, value=before.jump_url, inline=False)
@@ -218,6 +219,7 @@ class LoggingCog(Cog, name="Logging"):
             return
 
         embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=datetime.utcnow())
+        embed.set_author(name=str(message.author), icon_url=message.author.avatar_url)
         embed.add_field(name=t.channel, value=message.channel.mention)
         embed.add_field(name=t.author, value=message.author.mention)
         add_field(embed, t.old_content, message.content)
