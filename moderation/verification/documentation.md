@@ -16,10 +16,10 @@ The `add` subcommand adds a verification role. If you set `reverse` to `true`, t
 .verification [add|a|+] <role> [reverse=False]
 ```
 
-Argument|Required|Description
+|Argument|Required|Description|
 |:------:|:------:|:----------|
-`role`|:heavy_check_mark:|The verification role
-`reverse`|       |Remove this role instead of adding it to the user.
+|`role`|:heavy_check_mark:|The verification role|
+|`reverse`|       |Remove this role instead of adding it to the user.|
 
 Required permissions:
 
@@ -35,9 +35,9 @@ The `remove` subcommand removes an existing verification role.
 .verification [remove|r|-] <role>
 ```
 
-Argument|Required|Description
+|Argument|Required|Description|
 |:------:|:------:|:----------|
-`role`|:heavy_check_mark:|The verification role
+|`role`|:heavy_check_mark:|The verification role|
 
 Required permissions:
 
@@ -53,9 +53,9 @@ The `password` subcommand sets the *secret* password the user will need to verif
 .verification [password|p] <password>
 ```
 
-Argument|Required|Description
+|Argument|Required|Description|
 |:------:|:------:|:----------|
-`password`|:heavy_check_mark:|The password
+|`password`|:heavy_check_mark:|The password|
 
 Required permissions:
 
@@ -74,9 +74,9 @@ The `delay` subcommand sets the amount of time a member has to be in the server 
 .verification [delay|d] <seconds>
 ```
 
-Argument|Required|Description
+|Argument|Required|Description|
 |:------:|:------:|:----------|
-`delay`|:heavy_check_mark:|The amount of time in seconds
+|`delay`|:heavy_check_mark:|The amount of time in seconds|
 
 Required permissions:
 
@@ -92,9 +92,9 @@ The `verify` command is used by server members to verify themselves. If the spec
 verify <password>
 ```
 
-Argument|Required|Description
+|Argument|Required|Description|
 |:------:|:------:|:----------|
-`password`|:heavy_check_mark:|The verification password
+|`password`|:heavy_check_mark:|The verification password|
 
 !!! note
     As this command can only be used in direct messages, it does not start with the configured bot prefix! So, for example, if the configured password is `Tr0ub4dor&3`, a member would have to send this exact message to the bot to complete verification:
