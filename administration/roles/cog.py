@@ -361,7 +361,7 @@ class RolesCog(Cog, name="Roles"):
             out.append(f":grey_question: <@{member_id}> (@{member_name}) :shield:")
 
         if out:
-            embed = Embed(title=t.member_list_cnt(len(out)), colour=0x256BE6, description="\n".join(out))
+            embed = Embed(title=t.member_list_cnt(role.name, cnt=len(out)), colour=0x256BE6, description="\n".join(out))
         else:
             embed = Embed(title=t.member_list, colour=0xCF0606, description=t.no_members)
         await send_long_embed(ctx, embed, paginate=True)
