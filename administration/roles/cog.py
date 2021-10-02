@@ -1,6 +1,5 @@
 from typing import Optional, Union, Dict, List
 
-import discord.ext.commands
 from discord import Role, Embed, Member, Status, Guild, NotFound, User, Forbidden, Permissions
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, guild_only, UserInputError, Group
@@ -243,35 +242,41 @@ class RolesCog(Cog, name="Roles"):
         await member.add_roles(role)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
-    @roles.command(name="clone", aliases=["cl", "%"])
+    @roles.command(name="clone", aliases=["cl"])
     @RolesPermission.roles_clone.check
     @docs(t.commands.roles_clone)
-    async def roles_clone(self, ctx: Context, role: Role):
+    async def roles_clone(self, ctx: Context, *, role: Role):
+        if not ctx.me.guild_permissions.manage_roles:
+            raise CommandError(t.clone_no_permission)
 
-        missing_perms = []
+        cloned_permissions = role.permissions.value & ctx.me.guild_permissions.value
 
-        params = discord.Permissions()
-        bot_member_object = ctx.guild.me
-
-        for permission, _ in Permissions.all():
-            if (
-                    getattr(bot_member_object.guild_permissions,
-                            permission
-                            ) == getattr(role.permissions, permission)
-                    is True
-            ):
-                params.update(**{permission: True})
-            else:
-                missing_perms.append(permission)
+        missing_permissions = "\n".join(
+            f":small_blue_diamond: `{permission}`"
+            for permission, value in Permissions(role.permissions.value & ~ctx.me.guild_permissions.value)
+            if value
+        )
 
         await ctx.guild.create_role(
-            name=role.name, color=role.color, permissions=params, hoist=role.hoist, mentionable=role.mentionable,
+            name=role.name,
+            color=role.color,
+            permissions=Permissions(cloned_permissions),
+            hoist=role.hoist,
+            mentionable=role.mentionable,
         )
+
+        if missing_permissions:
+            await send_long_embed(
+                ctx,
+                Embed(
+                    title=t.failed_to_clone_role_permissions,
+                    description=missing_permissions,
+                    color=Colors.MissingPermissions,
+                ),
+                paginate=True,
+            )
+
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-        if missing_perms:
-            descrip = "`" + "`\n`".join(missing_perms) + "`"
-            em = Embed(title=t.failed_to_clone_role_permissions, description=descrip, color=Colors.MissingPermissions)
-            await send_long_embed(ctx, em, paginate=True)
 
     @roles.command(name="remove", aliases=["r", "del", "d", "-"])
     @optional_permissions(RolesPermission.auth_write)
