@@ -39,8 +39,8 @@ log_role_auth_removed: Role assignment authorization `@{}` -> `@{}` has been rem
 role_not_authorized: You are not allowed to manage this role.
 member_list: Member List
 member_list_cnt:
-  one: Member List of @{} ({} Member)
-  many: Member List of @{} ({} Members)
+  one: "Member List of @{} ({cnt} Member)"
+  many: "Member List of @{} ({cnt} Members)"
 member_list_line: ":small_orange_diamond: {} ({})"
 no_members: No member was found with this role.
 role_already_assigned: Role has already been assigned to this member.
