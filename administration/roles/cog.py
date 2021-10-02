@@ -250,43 +250,70 @@ class RolesCog(Cog, name="Roles"):
         if not await is_authorized(ctx.author, role, perma=False):
             raise CommandError(t.role_not_authorized)
 
-        permission_list = ["add_reactions", "administrator", "attach_files", "ban_members", "change_nickname",
-                           "connect", "create_instant_invite", "deafen_members", "embed_links", "external_emojis",
-                           "kick_members", "manage_channels", "manage_emojis", "manage_guild", "manage_messages",
-                           "manage_nicknames", "manage_permissions", "manage_roles", "manage_webhooks",
-                           "mention_everyone", "move_members", "mute_members", "priority_speaker",
-                           "read_message_history", "read_messages", "request_to_speak", "send_messages",
-                           "send_tts_messages", "speak", "stream", "use_external_emojis", "use_slash_commands",
-                           "use_voice_activation", "value", "view_audit_log", "view_channel", "view_guild_insights"]
+        permission_list = [
+            "add_reactions",
+            "administrator",
+            "attach_files",
+            "ban_members",
+            "change_nickname",
+            "connect",
+            "create_instant_invite",
+            "deafen_members",
+            "embed_links",
+            "external_emojis",
+            "kick_members",
+            "manage_channels",
+            "manage_emojis",
+            "manage_guild",
+            "manage_messages",
+            "manage_nicknames",
+            "manage_permissions",
+            "manage_roles",
+            "manage_webhooks",
+            "mention_everyone",
+            "move_members",
+            "mute_members",
+            "priority_speaker",
+            "read_message_history",
+            "read_messages",
+            "request_to_speak",
+            "send_messages",
+            "send_tts_messages",
+            "speak",
+            "stream",
+            "use_external_emojis",
+            "use_slash_commands",
+            "use_voice_activation",
+            "value",
+            "view_audit_log",
+            "view_channel",
+            "view_guild_insights",
+        ]
 
         missing_perms = []
         params = discord.Permissions()
         bot_member_object = ctx.guild.get_member(self.bot.user.id)
 
         for permission in permission_list:
-            if getattr(bot_member_object.guild_permissions, permission) == getattr(role.permissions,
-                                                                                   permission) is True:
+            if (
+                    getattr(bot_member_object.guild_permissions,
+                            permission
+                            ) == getattr(role.permissions, permission)
+                    is True
+            ):
                 params.update(**{permission: True})
             else:
                 missing_perms.append(permission)
 
         await ctx.guild.create_role(
-            name=role.name,
-            color=role.color,
-            permissions=params,
-            hoist=role.hoist,
-            mentionable=role.mentionable
+            name=role.name, color=role.color, permissions=params, hoist=role.hoist, mentionable=role.mentionable,
         )
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
         if missing_perms:
             descrip = ""
             for mis in missing_perms:
                 descrip += f"`{mis}`\n"
-            em = Embed(
-                title=t.failed_to_clone_role_permissions,
-                description=descrip,
-                color=Colors.MissingPermissions
-            )
+            em = Embed(title=t.failed_to_clone_role_permissions, description=descrip, color=Colors.MissingPermissions)
             await send_long_embed(ctx, em, paginate=True)
 
     @roles.command(name="remove", aliases=["r", "del", "d", "-"])
