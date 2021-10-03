@@ -50,13 +50,13 @@ class PollsCog(Cog, name="Polls"):
         self.team_roles: list[str] = team_roles
 
     async def send_poll(
-        self,
-        ctx: Context,
-        title: str,
-        args: str,
-        field: Optional[Tuple[str, str]] = None,
-        allow_delete: bool = True,
-        team_poll: bool = False,
+            self,
+            ctx: Context,
+            title: str,
+            args: str,
+            field: Optional[Tuple[str, str]] = None,
+            allow_delete: bool = True,
+            team_poll: bool = False,
     ):
         question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
 
@@ -186,46 +186,6 @@ class PollsCog(Cog, name="Polls"):
             await message.delete()
             raise StopEventHandling
 
-        embed, index = await get_teampoll_embed(message)
-        if embed is None:
-            return
-
-        if not await is_teamler(member):
-            try:
-                await message.remove_reaction(emoji, member)
-            except Forbidden:
-                pass
-            raise StopEventHandling
-
-        for reaction in message.reactions:
-            if reaction.emoji == emoji.name:
-                break
-        else:
-            return
-
-        if not reaction.me:
-            return
-
-        value = await self.get_reacted_teamlers(message)
-        embed.set_field_at(index, name=tg.status, value=value, inline=False)
-        await message.edit(embed=embed)
-
-    async def on_raw_reaction_remove(self, message: Message, _, member: Member):
-        if member.bot or message.guild is None:
-            return
-        embed, index = await get_teampoll_embed(message)
-        if embed is not None:
-            user_reacted = False
-            for reaction in message.reactions:
-                if reaction.me and member in await reaction.users().flatten():
-                    user_reacted = True
-                    break
-            if not user_reacted and await is_teamler(member):
-                value = await self.get_reacted_teamlers(message)
-                embed.set_field_at(index, name=tg.status, value=value, inline=False)
-                await message.edit(embed=embed)
-                return
-
     @commands.command(usage=t.poll_usage, aliases=["vote"])
     @guild_only()
     async def poll(self, ctx: Context, *, args: str):
@@ -314,7 +274,7 @@ class PollOption:
             self.emoji = unicode_emoji
             self.option = text.strip()
         elif (match := re.match(r"^:([^: ]+):$", emoji_candidate)) and (
-            unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
+                unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
         ):
             self.emoji = unicode_emoji
             self.option = text.strip()
