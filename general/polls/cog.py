@@ -274,7 +274,7 @@ class PollOption:
             self.emoji = unicode_emoji
             self.option = text.strip()
         elif (match := re.match(r"^:([^: ]+):$", emoji_candidate)) and (
-                unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
+            unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
         ):
             self.emoji = unicode_emoji
             self.option = text.strip()
