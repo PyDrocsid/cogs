@@ -86,7 +86,7 @@ class PollsCog(Cog, name="Polls"):
 
         vote_select = Select(placeholder=t.poll_select_placeholder, max_values=len(options))
 
-        for i, option in enumerate(options):
+        for _, option in enumerate(options):
             vote_select.add_option(label=option.option, description=t.votes(0, cnt=0), emoji=option.emoji)
 
         for option in options:
