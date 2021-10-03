@@ -10,7 +10,7 @@ The `.verification` command shows the current verification configuration. This i
 
 ### `add`
 
-The `add` subcommand adds a verification role. If you set `reverse` to `true`, the role will be removed from the user instead of being added. Note that verification will fail if the user does not have all reverse verification roles!
+The `add` subcommand adds a verification role. If you set `reverse` to `true`, the role will be removed from the member instead of being added. Note that verification will fail if the member does not have all reverse verification roles!
 
 ```css
 .verification [add|a|+] <role> [reverse=False]
@@ -19,7 +19,7 @@ The `add` subcommand adds a verification role. If you set `reverse` to `true`, t
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`role`|:heavy_check_mark:|The verification role|
-|`reverse`|       |Remove this role instead of adding it to the user.|
+|`reverse`|       |Remove this role instead of adding it to the member.|
 
 Required permissions:
 
@@ -47,7 +47,7 @@ Required permissions:
 
 ### `password`
 
-The `password` subcommand sets the *secret* password the user will need to verify with.
+The `password` subcommand sets the *secret* password the member will need to verify with.
 
 ```css
 .verification [password|p] <password>
