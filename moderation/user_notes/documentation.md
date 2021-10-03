@@ -17,7 +17,6 @@ The `.un add` add a note for a specific user.
 |`note`|:heavy_check_mark:|The note you want to add|
 
 
-
 ## `remove`
 
 The `.un remove` command remove the user note by note id.
