@@ -2,8 +2,7 @@ import re
 import string
 from typing import Optional, Tuple
 
-from discord import Embed, Message, PartialEmoji, Member, Forbidden, Guild, Interaction, SelectOption, \
-    InteractionResponded
+from discord import Embed, Message, PartialEmoji, Member, Forbidden, Guild, Interaction, SelectOption
 from discord.ext import commands
 from discord.ext.commands import Context, guild_only, CommandError
 from discord.ui import View, Select
@@ -25,6 +24,7 @@ tg = t.g
 t = t.polls
 
 MAX_OPTIONS = 20  # Discord reactions limit
+# TODO Remove Limit or change it
 
 default_emojis = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
 
@@ -43,20 +43,20 @@ class PollsCog(Cog, name="Polls"):
         Contributor.Defelo,
         Contributor.TNT2k,
         Contributor.wolflu,
-        Contributor.Tert0
+        Contributor.Tert0,
     ]
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
 
     async def send_poll(
-            self,
-            ctx: Context,
-            title: str,
-            args: str,
-            field: Optional[Tuple[str, str]] = None,
-            allow_delete: bool = True,
-            team_poll: bool = False,
+        self,
+        ctx: Context,
+        title: str,
+        args: str,
+        field: Optional[Tuple[str, str]] = None,
+        allow_delete: bool = True,
+        team_poll: bool = False,
     ):
         question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
 
@@ -163,8 +163,9 @@ class PollsCog(Cog, name="Polls"):
             teamlers.update(member for member in team_role.members if not member.bot)
 
         if message:
-            teamlers = {teamler for teamler in teamlers if
-                        len(await redis.smembers(get_team_poll_redis_key(teamler))) < 1}
+            teamlers = {
+                teamler for teamler in teamlers if len(await redis.smembers(get_team_poll_redis_key(teamler))) < 1
+            }
 
         teamlers: list[Member] = list(teamlers)
 
@@ -313,7 +314,7 @@ class PollOption:
             self.emoji = unicode_emoji
             self.option = text.strip()
         elif (match := re.match(r"^:([^: ]+):$", emoji_candidate)) and (
-                unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
+            unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
         ):
             self.emoji = unicode_emoji
             self.option = text.strip()
