@@ -25,7 +25,7 @@ created_by: Created by @{} ({})
 can_not_use_wastebucket_as_option: "You can not use :wastebasket: as option"
 foreign_message: "You are not allowed to add yes/no reactions to foreign messages!"
 could_not_add_reactions: Could not add reactions because I don't have `add_reactions` permission in {}.
-poll_select_placeholder: Select an Option to Vote!
+poll_select_placeholder: Select an option to vote!
 votes:
   zero: "{} Votes"
   one: "{} Vote"
