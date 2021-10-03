@@ -50,13 +50,13 @@ class PollsCog(Cog, name="Polls"):
         self.team_roles: list[str] = team_roles
 
     async def send_poll(
-            self,
-            ctx: Context,
-            title: str,
-            args: str,
-            field: Optional[Tuple[str, str]] = None,
-            allow_delete: bool = True,
-            team_poll: bool = False,
+        self,
+        ctx: Context,
+        title: str,
+        args: str,
+        field: Optional[Tuple[str, str]] = None,
+        allow_delete: bool = True,
+        team_poll: bool = False,
     ):
         question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
 
