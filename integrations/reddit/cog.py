@@ -292,6 +292,12 @@ class RedditCog(Cog, name="Reddit"):
         await send_to_changelog(ctx.guild, t.log_reddit_author_set(author))
         await reply(ctx, embed=embed)
 
+        if not self.reddit_loop.is_running():
+            try:
+                self.reddit_loop.start()
+            except RuntimeError:
+                self.reddit_loop.restart()
+
     @reddit.command(name="trigger", aliases=["t"])
     @RedditPermission.trigger.check
     async def reddit_trigger(self, ctx: Context):
