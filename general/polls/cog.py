@@ -1,6 +1,6 @@
 import re
 import string
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from discord import Embed, Message, PartialEmoji, Member, Forbidden, Guild, Interaction, SelectOption
 from discord.ext import commands
@@ -23,8 +23,7 @@ from ...contributor import Contributor
 tg = t.g
 t = t.polls
 
-MAX_OPTIONS = 20  # Discord reactions limit
-# TODO Remove Limit or change it
+MAX_OPTIONS = 25  # Discord Select Item Limit
 
 default_emojis = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
 
@@ -60,6 +59,9 @@ class PollsCog(Cog, name="Polls"):
     ):
         question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
 
+        if len(options) != len(set(options)):
+            raise CommandError(t.option_name_duplicated)
+
         if not options:
             raise CommandError(t.missing_options)
         if len(options) > MAX_OPTIONS - allow_delete:
@@ -67,7 +69,7 @@ class PollsCog(Cog, name="Polls"):
 
         options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
 
-        if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
+        if any(len(str(option)) > 100 for option in options):  # Max Char Length of Select Option = 100
             raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
         embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
@@ -75,9 +77,6 @@ class PollsCog(Cog, name="Polls"):
 
         if allow_delete:
             embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
-
-        if len(set(map(lambda x: x.emoji, options))) < len(options):
-            raise CommandError(t.option_duplicated)
 
         if field:
             embed.add_field(name=field[0], value=field[1], inline=False)
@@ -87,17 +86,13 @@ class PollsCog(Cog, name="Polls"):
         vote_select = Select(placeholder=t.poll_select_placeholder, max_values=len(options))
 
         for _, option in enumerate(options):
-            vote_select.add_option(label=option.option, description=t.votes(0, cnt=0), emoji=option.emoji)
-
-        for option in options:
-            if len([item for item in options if item.option == option.option]) > 1:
-                raise CommandError("cant have to items with same name")  # TODO Translation
+            vote_select.add_option(label=option.option, description=t.votes(cnt=0), emoji=option.emoji)
 
         async def poll_vote(interaction: Interaction):
             def get_option_by_label(label: str, select: Select) -> SelectOption:
-                for option in select.options:
-                    if option.label == label:
-                        return option
+                possible_options: List[SelectOption] = list(filter(lambda option: option.label == label, select.options))
+                if len(possible_options) == 1:
+                    return possible_options[0]
 
             def get_redis_key(message: Message, member: Member, option: SelectOption) -> str:
                 return f"poll_vote:{message.id}:{member.id}:{vote_select.options.index(option)}"
@@ -121,7 +116,7 @@ class PollsCog(Cog, name="Polls"):
                     await redis.delete(redis_key)
 
                 vote_count: int = int(re.match(r"[\-]?[0-9]+", selected_option.description).group(0))
-                selected_option.description = t.votes(vote_count + vote_value, cnt=vote_count + vote_value)
+                selected_option.description = t.votes(cnt=vote_count + vote_value)
                 if vote_value == 1:
                     await redis.set(redis_key, 1)
                     if team_poll:
@@ -140,8 +135,9 @@ class PollsCog(Cog, name="Polls"):
         vote_select.callback = poll_vote
         view.add_item(vote_select)
 
-        poll: Message = await ctx.send(content="** **", embed=embed, view=view)  # TODO Remove Content from Message
-        # Content will get sent as WorkARound for https://github.com/Pycord-Development/pycord/issues/192
+        poll: Message = await ctx.send(content="** **", embed=embed, view=view)
+        # TODO Remove Content from Message
+        #  Content will get sent as WorkARound for https://github.com/Pycord-Development/pycord/issues/192
 
         try:
             if allow_delete:
