@@ -26,7 +26,6 @@ foreign_message: "You are not allowed to add yes/no reactions to foreign message
 could_not_add_reactions: Could not add reactions because I don't have `add_reactions` permission in {}.
 poll_select_placeholder: Select an option to vote!
 votes:
-  zero: "{cnt} votes"
   one: "{cnt} vote"
   many: "{cnt} votes"
 yes: Yes
