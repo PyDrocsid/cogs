@@ -90,7 +90,9 @@ class PollsCog(Cog, name="Polls"):
 
         async def poll_vote(interaction: Interaction):
             def get_option_by_label(label: str, select: Select) -> SelectOption:
-                possible_options: List[SelectOption] = list(filter(lambda option: option.label == label, select.options))
+                possible_options: List[SelectOption] = list(
+                    filter(lambda option: option.label == label, select.options)
+                )
                 if len(possible_options) == 1:
                     return possible_options[0]
 
