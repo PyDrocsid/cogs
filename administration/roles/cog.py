@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import CommandError, Context, guild_only, UserInputError, Group
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import reply, docs, optional_permissions
 from PyDrocsid.config import Contributor, Config
 from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, select, filter_by
@@ -227,6 +227,7 @@ class RolesCog(Cog, name="Roles"):
         await send_to_changelog(ctx.guild, t.log_role_auth_removed(source, target))
 
     @roles.command(name="add", aliases=["a", "+"])
+    @optional_permissions(RolesPermission.auth_write)
     @docs(t.commands.roles_add)
     async def roles_add(self, ctx: Context, member: Member, *, role: Role):
         if role in member.roles:
@@ -241,6 +242,7 @@ class RolesCog(Cog, name="Roles"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @roles.command(name="remove", aliases=["r", "del", "d", "-"])
+    @optional_permissions(RolesPermission.auth_write)
     @docs(t.commands.roles_remove)
     async def roles_remove(self, ctx: Context, member: Member, *, role: Role):
         if role not in member.roles:
@@ -258,6 +260,7 @@ class RolesCog(Cog, name="Roles"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @roles.command(name="perma_add", aliases=["pa", "++"])
+    @optional_permissions(RolesPermission.auth_write)
     @docs(t.commands.roles_perma_add)
     async def roles_perma_add(self, ctx: Context, member: UserMemberConverter, *, role: Role):
         member: Union[User, Member]
@@ -278,6 +281,7 @@ class RolesCog(Cog, name="Roles"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @roles.command(name="perma_remove", aliases=["pr", "perma_delete", "pd", "--"])
+    @optional_permissions(RolesPermission.auth_write)
     @docs(t.commands.roles_perma_remove)
     async def roles_perma_remove(self, ctx: Context, member: UserMemberConverter, *, role: Role):
         member: Union[User, Member]
@@ -298,6 +302,7 @@ class RolesCog(Cog, name="Roles"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @roles.command(name="perma_unset", aliases=["pu", "~~"])
+    @optional_permissions(RolesPermission.auth_write)
     @docs(t.commands.roles_perma_unset)
     async def roles_perma_unset(self, ctx: Context, member: UserMemberConverter, *, role: Role):
         member: Union[User, Member]

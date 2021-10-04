@@ -93,6 +93,7 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
         embed.add_field(
             name=t.required_permissions,
             value="\n".join(f":small_orange_diamond: `{p}`" for p in permissions),
+            inline=False,
         )
     if permission_levels:
         permission_level: BasePermissionLevel = max(permission_levels, key=lambda pl: pl.level)
@@ -100,6 +101,7 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
             embed.add_field(
                 name=t.required_permission_level,
                 value=f":small_orange_diamond: **{permission_level.description}**",
+                inline=False,
             )
 
     optional_permissions: list[str] = [permission.fullname for permission in get_optional_permissions(command)]
@@ -107,6 +109,7 @@ async def send_help(ctx: Context, command_name: Optional[Union[str, Command]]) -
         embed.add_field(
             name=t.optional_permissions,
             value="\n".join(f":small_blue_diamond: `{p}`" for p in optional_permissions),
+            inline=False,
         )
 
     if (doc_url := get_documentation(cmd.cog)) and not getattr(cmd.callback, "no_documentation", False):

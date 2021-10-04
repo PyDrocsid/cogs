@@ -1,6 +1,5 @@
 import asyncio
 import random
-from datetime import datetime
 from os import getenv
 from pathlib import Path
 from typing import Optional, Union
@@ -25,10 +24,11 @@ from discord import (
 from discord.abc import Messageable
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
+from discord.utils import utcnow
 
 from PyDrocsid.async_thread import gather_any, GatherAnyException
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply, confirm
+from PyDrocsid.command import docs, reply, confirm, optional_permissions
 from PyDrocsid.database import filter_by, db, select, delete, db_context, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -167,7 +167,14 @@ async def safe_create_voice_channel(
 
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.Florian, Contributor.wolflu, Contributor.TNT2k]
+    CONTRIBUTORS = [
+        Contributor.Defelo,
+        Contributor.Florian,
+        Contributor.wolflu,
+        Contributor.TNT2k,
+        Contributor.Scriptim,
+        Contributor.MarcelCoding,
+    ]
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
@@ -192,11 +199,21 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                     if name := name.strip():
                         self.names[name_list].add(name)
 
+        self.allowed_names: set[str] = set()
+        for path in Path(__file__).parent.joinpath("names").iterdir():
+            if not path.name.endswith(".txt"):
+                continue
+
+            with path.open() as file:
+                for name in file.readlines():
+                    if name := name.strip():
+                        self.allowed_names.add(name.lower())
+
     def prepare(self) -> bool:
         return bool(self.names)
 
     def _get_name_list(self, guild_id: int) -> str:
-        r = random.Random(f"{guild_id}{datetime.utcnow().date().isoformat()}")
+        r = random.Random(f"{guild_id}{utcnow().date().isoformat()}")
         return r.choice(sorted(self.names))
 
     def _random_channel_name(self, guild_id: int, avoid: set[str]) -> Optional[str]:
@@ -260,7 +277,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 text_channel,
                 title,
                 "",
-                datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S"),
+                utcnow().strftime("%d.%m.%Y %H:%M:%S"),
                 msg,
                 colour=color,
                 force_new_embed=force_new_embed,
@@ -1040,12 +1057,18 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await self.update_control_message(channel, messages[-1])
 
     @voice.command(name="rename")
-    @VoiceChannelPermission.dyn_rename.check
+    @optional_permissions(VoiceChannelPermission.dyn_rename, VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_rename)
-    async def voice_rename(self, ctx: Context, *, name: str):
+    async def voice_rename(self, ctx: Context, *, name: Optional[str]):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
         text_channel: TextChannel = self.get_text_channel(channel)
         old_name = voice_channel.name
+
+        if not name:
+            name = await self.get_channel_name(ctx.guild)
+        elif name.lower() not in self.allowed_names:
+            if not await VoiceChannelPermission.dyn_rename.check_permissions(ctx.author):
+                raise CommandError(t.no_custom_name)
 
         if any(c.id != voice_channel.id and name == c.name for c in voice_channel.guild.voice_channels):
             conf_embed = Embed(title=t.rename_confirmation, description=t.rename_description, color=Colors.Voice)
@@ -1070,6 +1093,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="owner", aliases=["o"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_owner)
     async def voice_owner(self, ctx: Context, member: Member):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1087,6 +1111,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="lock", aliases=["l"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_lock)
     async def voice_lock(self, ctx: Context):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1097,6 +1122,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="hide", aliases=["h"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_hide)
     async def voice_hide(self, ctx: Context):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1109,6 +1135,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="show", aliases=["s", "unhide"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_show)
     async def voice_show(self, ctx: Context):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1120,6 +1147,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="unlock", aliases=["u"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_unlock)
     async def voice_unlock(self, ctx: Context):
         channel, voice_channel = await self.get_channel(ctx.author, check_owner=True)
@@ -1130,6 +1158,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="add", aliases=["a", "+", "invite"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_add)
     async def voice_add(self, ctx: Context, *members: Greedy[Member]):
         if not members:
@@ -1146,6 +1175,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @voice.command(name="remove", aliases=["r", "-", "kick", "k"])
+    @optional_permissions(VoiceChannelPermission.override_owner)
     @docs(t.commands.voice_remove)
     async def voice_remove(self, ctx: Context, *members: Greedy[Member]):
         if not members:

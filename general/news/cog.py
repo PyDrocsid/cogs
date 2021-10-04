@@ -143,7 +143,7 @@ class NewsCog(Cog, name="News"):
 
         content = ""
         send_embed = Embed(title=t.news, description=message, colour=Colors.News)
-        send_embed.set_footer(text=t.sent_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
+        send_embed.set_footer(text=t.sent_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
 
         if authorization.notification_role_id is not None:
             role: Optional[Role] = ctx.guild.get_role(authorization.notification_role_id)

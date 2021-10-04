@@ -1,11 +1,11 @@
 import re
 import string
-from datetime import datetime
 from typing import Optional, Tuple
 
 from discord import Embed, Message, PartialEmoji, Member, Forbidden, Guild
 from discord.ext import commands
 from discord.ext.commands import Context, guild_only, CommandError
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.embeds import EmbedLimits
@@ -53,10 +53,10 @@ async def send_poll(
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
-    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=datetime.utcnow())
-    embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
+    embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
     if allow_delete:
-        embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
+        embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
 
     if len(set(map(lambda x: x.emoji, options))) < len(options):
         raise CommandError(t.option_duplicated)
@@ -209,14 +209,15 @@ class PollsCog(Cog, name="Polls"):
                 pass
 
     @commands.command(aliases=["tyn"])
+    @PollsPermission.team_poll.check
     @guild_only()
     async def team_yesno(self, ctx: Context, *, text: str):
         """
         Starts a yes/no poll and shows, which teamler has not voted yet.
         """
 
-        embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=datetime.utcnow())
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=utcnow())
+        embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
 
         embed.add_field(name=tg.status, value=await self.get_reacted_teamlers(), inline=False)
 
@@ -243,7 +244,9 @@ class PollOption:
         elif (unicode_emoji := emoji_candidate) in emoji_to_name:
             self.emoji = unicode_emoji
             self.option = text.strip()
-        elif unicode_emoji := name_to_emoji.get(emoji_candidate.replace(":", "")):
+        elif (match := re.match(r"^:([^: ]+):$", emoji_candidate)) and (
+            unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
+        ):
             self.emoji = unicode_emoji
             self.option = text.strip()
         else:

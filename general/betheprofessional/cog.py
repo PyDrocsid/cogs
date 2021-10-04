@@ -62,11 +62,11 @@ async def parse_topics(topics_str: str) -> List[BTPTopic]:
             def dist(name: str) -> int:
                 return calculate_edit_distance(name.lower(), topic.lower())
 
-            best_match = min([r.name for r in all_topics], key=dist)
-            if best_match:
+            best_dist, best_match = min((dist(r.name), r.name) for r in all_topics)
+            if best_dist <= 5:
                 raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
-            else:
-                raise CommandError(t.topic_not_found(topic))
+
+            raise CommandError(t.topic_not_found(topic))
         elif not (await db.exists(query)):
             raise CommandError(t.no_topics_registered)
         topics.append(topic_db)
@@ -80,7 +80,7 @@ async def get_topics() -> List[BTPTopic]:
     return topics
 
 
-class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
+class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.MaxiHuHe04, Contributor.AdriBloober]
 
     async def on_ready(self):
@@ -200,6 +200,8 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_`{|}~")
         registered_topics: List[tuple[str, bool, Optional[list[BTPTopic]]]] = []
         for topic in topics:
+            if len(topic) > 100:
+                raise CommandError(t.topic_too_long(topic))
             if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
 

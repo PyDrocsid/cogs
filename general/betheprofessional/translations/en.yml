@@ -20,6 +20,7 @@ topics_removed:
   many: "{cnt} topics have been removed successfully. :white_check_mark:"
 
 topic_invalid_chars: Topic name `{}` contains invalid characters.
+topic_too_long: Topic name `{}` is too long.
 topic_already_registered: Topic `{}` has already been registered.
 topic_not_registered: Topic `{}` has not been registered.
 topic_not_registered_too_high: Topic could not be registered because `@{}` is higher than `@{}`.

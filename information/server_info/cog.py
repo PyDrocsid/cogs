@@ -35,7 +35,8 @@ class ServerInfoCog(Cog, name="Server Information"):
 
         guild: Guild = ctx.guild
         embed = Embed(title=guild.name, description=t.info_description, color=Colors.ServerInformation)
-        embed.set_thumbnail(url=guild.icon_url)
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon.url)
         created = guild.created_at.date()
         embed.add_field(name=t.creation_date, value=f"{created.day}.{created.month}.{created.year}")
         online_count = sum([m.status != Status.offline for m in guild.members])
