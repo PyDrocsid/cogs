@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from itertools import groupby
 from sys import platform
@@ -42,6 +43,7 @@ async def user_agent() -> str:
 
 
 async def exists_subreddit(subreddit: str) -> bool:
+    subreddit = re.sub("^(/r/|r/)", "", subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
@@ -51,6 +53,7 @@ async def exists_subreddit(subreddit: str) -> bool:
 
 
 async def get_subreddit_name(subreddit: str) -> str:
+    subreddit = re.sub("^(/r/|r/)", "", subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",

@@ -4,10 +4,11 @@ from datetime import datetime
 from typing import Union, Optional
 from uuid import uuid4
 
-from sqlalchemy import Column, BigInteger, Boolean, DateTime, ForeignKey, String
+from discord.utils import utcnow
+from sqlalchemy import Column, BigInteger, Boolean, ForeignKey, String
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, UTCDateTime
 
 
 class DynGroup(db.Base):
@@ -65,7 +66,7 @@ class DynChannelMember(db.Base):
     member_id: Union[Column, int] = Column(BigInteger)
     channel_id: Union[Column, int] = Column(BigInteger, ForeignKey("dynvoice_channel.channel_id"))
     channel: DynChannel = relationship("DynChannel", back_populates="members")
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
     async def create(member_id: int, channel_id: int) -> DynChannelMember:
@@ -73,7 +74,7 @@ class DynChannelMember(db.Base):
             id=str(uuid4()),
             member_id=member_id,
             channel_id=channel_id,
-            timestamp=datetime.utcnow(),
+            timestamp=utcnow(),
         )
         await db.add(member)
         return member

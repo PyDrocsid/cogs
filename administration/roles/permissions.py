@@ -14,3 +14,4 @@ class RolesPermission(BasePermission):
     auth_read = auto()
     auth_write = auto()
     list_members = auto()
+    roles_clone = auto()
