@@ -9,7 +9,6 @@ from discord.ui import View, Select
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.embeds import EmbedLimits
 from PyDrocsid.emojis import name_to_emoji, emoji_to_name
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
@@ -70,7 +69,7 @@ class PollsCog(Cog, name="Polls"):
         options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
 
         if any(len(str(option)) > 100 for option in options):  # Max Char Length of Select Option = 100
-            raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
+            raise CommandError(t.option_too_long(100))
 
         embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
@@ -112,20 +111,20 @@ class PollsCog(Cog, name="Polls"):
 
                 redis_key: str = get_redis_key(interaction.message, interaction.user, selected_option)
                 team_poll_redis_key: str = get_team_poll_redis_key(interaction.message, interaction.user)
-                vote_value = 1
+
                 if await redis.exists(redis_key):
                     vote_value = -1
                     await redis.delete(redis_key)
-
-                vote_count: int = int(re.match(r"[\-]?[0-9]+", selected_option.description).group(0))
-                selected_option.description = t.votes(cnt=vote_count + vote_value)
-                if vote_value == 1:
+                    if team_poll:
+                        await redis.srem(team_poll_redis_key, vote_select.options.index(selected_option))
+                else:
+                    vote_value = 1
                     await redis.set(redis_key, 1)
                     if team_poll:
                         await redis.sadd(team_poll_redis_key, vote_select.options.index(selected_option))
-                elif vote_value == -1:
-                    if team_poll:
-                        await redis.srem(team_poll_redis_key, vote_select.options.index(selected_option))
+
+                vote_count: int = int(re.match(r"[\-]?[0-9]+", selected_option.description).group(0))
+                selected_option.description = t.votes(cnt=vote_count + vote_value)
 
             if team_poll:
                 _, index = await get_teampoll_embed(interaction.message)
