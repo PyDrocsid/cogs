@@ -41,19 +41,19 @@ class ColorPickerCog(Cog, name="Color Picker"):
             hsl = _to_int(colorsys.rgb_to_hls(*rgb))
         elif color_re := self.RE_RGB.match(color):
             rgb = _to_int((color_re.group(1), color_re.group(2), color_re.group(3)))
-            color_hex = "%02x%02x%02x" % rgb
+            color_hex = "{:02x}{:02x}{:02x}".format(*rgb)
             hsv = ImageColor.getcolor(f"#{color_hex}", "HSV")
             hsl = _to_int(colorsys.rgb_to_hls(*rgb))
         elif color_re := self.RE_HSV.match(color):
             hsv = _to_int((color_re.group(1), color_re.group(2), color_re.group(3)))
             rgb = _to_int(colorsys.hsv_to_rgb(*hsv))
-            color_hex = "%02x%02x%02x" % rgb
+            color_hex = "{:02x}{:02x}{:02x}".format(*rgb)
             hsl = _to_int(colorsys.rgb_to_hls(*rgb))
         elif color_re := self.RE_HSL.match(color):
             hsl = _to_int((color_re.group(1), color_re.group(2), color_re.group(3)))
             rgb = _to_int(colorsys.hls_to_rgb(*hsl))
             hsv = _to_int(colorsys.rgb_to_hsv(*rgb))
-            color_hex = "%02x%02x%02x" % rgb
+            color_hex = "{:02x}{:02x}{:02x}".format(*rgb)
         else:
             embed: Embed = Embed(title=t.error_parse_color_title(color), description=t.error_parse_color_example)
             await reply(ctx, embed=embed)
