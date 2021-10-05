@@ -5,6 +5,17 @@ permissions:
 
 #AntiRaid
 antiraid: AntiRaid
+time_configured: "Set timespan for raid detection"
+log_time_configured: "Set timespan for raid detection to {} minutes"
+invalid_threshold: "Invalid threshold"
+threshold_configured: "Set threshold for raid detection"
+log_threshold_configured: "Set threshold for raid detection to {} joins"
+alert_cooldown_configured: "Set minimum time between two raid alarms"
+log_alert_cooldown_configured: "Set minimum time between two raid alarms to {} minutes"
+timespan: "Timespan"
+threshold: "Threshold"
+alert_cooldown: "Alert Cooldown"
+possible_raid: "The raid detection was triggered"
 
 #joinkick
 joinkick: JoinKick
