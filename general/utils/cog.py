@@ -74,7 +74,7 @@ class UtilsCog(Cog, name="Utils"):
         user: Union[User, Member]
 
         embed = Embed(color=Colors.Utils)
-        embed.set_author(name=str(user), icon_url=user.avatar_url)
+        embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         embed.add_field(name=t.username, value=str(user.name.encode())[2:-1], inline=False)
         if isinstance(user, Member) and user.nick:
             embed.add_field(name=t.nickname, value=str(user.nick.encode())[2:-1], inline=False)

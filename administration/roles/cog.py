@@ -1,12 +1,12 @@
 from typing import Optional, Union, Dict, List
 
-from discord import Role, Embed, Member, Status, Guild, NotFound, User, Forbidden
+from discord import Role, Embed, Member, Status, Guild, NotFound, User, Forbidden, Permissions
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, guild_only, UserInputError, Group
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, docs, optional_permissions
-from PyDrocsid.config import Contributor, Config
+from PyDrocsid.config import Config
 from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, select, filter_by
 from PyDrocsid.embeds import send_long_embed
@@ -18,6 +18,7 @@ from PyDrocsid.util import check_role_assignable
 from .colors import Colors
 from .models import RoleAuth, PermaRole
 from .permissions import RolesPermission
+from ...contributor import Contributor
 from ...pubsub import send_to_changelog, send_alert
 
 tg = t.g
@@ -90,7 +91,7 @@ def add_role_command(roles_config: Group, name: str, title: str, check_assignabl
 
 
 class RolesCog(Cog, name="Roles"):
-    CONTRIBUTORS = [Contributor.Defelo]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.NekoFanatic]
 
     def __init__(self):
         super().__init__()
@@ -241,6 +242,42 @@ class RolesCog(Cog, name="Roles"):
         await member.add_roles(role)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
+    @roles.command(name="clone", aliases=["cl"])
+    @RolesPermission.roles_clone.check
+    @docs(t.commands.roles_clone)
+    async def roles_clone(self, ctx: Context, *, role: Role):
+        if not ctx.me.guild_permissions.manage_roles:
+            raise CommandError(t.clone_no_permission)
+
+        cloned_permissions = role.permissions.value & ctx.me.guild_permissions.value
+
+        missing_permissions = "\n".join(
+            f":small_blue_diamond: `{permission}`"
+            for permission, value in Permissions(role.permissions.value & ~ctx.me.guild_permissions.value)
+            if value
+        )
+
+        await ctx.guild.create_role(
+            name=role.name,
+            color=role.color,
+            permissions=Permissions(cloned_permissions),
+            hoist=role.hoist,
+            mentionable=role.mentionable,
+        )
+
+        if missing_permissions:
+            await send_long_embed(
+                ctx,
+                Embed(
+                    title=t.failed_to_clone_role_permissions,
+                    description=missing_permissions,
+                    color=Colors.MissingPermissions,
+                ),
+                paginate=True,
+            )
+
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
     @roles.command(name="remove", aliases=["r", "del", "d", "-"])
     @optional_permissions(RolesPermission.auth_write)
     @docs(t.commands.roles_remove)
@@ -361,7 +398,7 @@ class RolesCog(Cog, name="Roles"):
             out.append(f":grey_question: <@{member_id}> (@{member_name}) :shield:")
 
         if out:
-            embed = Embed(title=t.member_list_cnt(len(out)), colour=0x256BE6, description="\n".join(out))
+            embed = Embed(title=t.member_list_cnt(role.name, cnt=len(out)), colour=0x256BE6, description="\n".join(out))
         else:
             embed = Embed(title=t.member_list, colour=0xCF0606, description=t.no_members)
         await send_long_embed(ctx, embed, paginate=True)
