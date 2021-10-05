@@ -1,5 +1,4 @@
 import string
-from collections import Counter
 from typing import List, Union, Optional, Dict
 
 from discord import Member, Embed, Role, Message
@@ -54,22 +53,26 @@ async def split_parents(topics: List[str], assignable: bool) -> List[tuple[str, 
 async def parse_topics(topics_str: str) -> List[BTPTopic]:
     topics: List[BTPTopic] = []
     all_topics: List[BTPTopic] = await get_topics()
-    for topic in split_topics(topics_str):
-        query = select(BTPTopic).filter_by(name=topic)
-        topic_db = await db.first(query)
-        if not (await db.exists(query)) and len(all_topics) > 0:
 
+    if len(all_topics) == 0:
+        raise CommandError(t.no_topics_registered)
+
+    for topic_name in split_topics(topics_str):
+        topic = await db.first(select(BTPTopic).filter_by(name=topic_name))
+
+        if topic is None and len(all_topics) > 0:
             def dist(name: str) -> int:
-                return calculate_edit_distance(name.lower(), topic.lower())
+                return calculate_edit_distance(name.lower(), topic_name.lower())
 
             best_dist, best_match = min((dist(r.name), r.name) for r in all_topics)
             if best_dist <= 5:
-                raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
+                raise CommandError(t.topic_not_found_did_you_mean(topic_name, best_match))
 
-            raise CommandError(t.topic_not_found(topic))
-        elif not (await db.exists(query)):
+            raise CommandError(t.topic_not_found(topic_name))
+        elif topic is None:
             raise CommandError(t.no_topics_registered)
-        topics.append(topic_db)
+        topics.append(topic)
+
     return topics
 
 
@@ -81,7 +84,13 @@ async def get_topics() -> List[BTPTopic]:
 
 
 class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.MaxiHuHe04, Contributor.AdriBloober]
+    CONTRIBUTORS = [
+        Contributor.Defelo,
+        Contributor.wolflu,
+        Contributor.MaxiHuHe04,
+        Contributor.AdriBloober,
+        Contributor.Tert0
+    ]
 
     async def on_ready(self):
         self.update_roles.start()
@@ -152,8 +161,15 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
             and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
+
+        roles: List[Role] = []
+
         for topic in topics:
             await BTPUser.create(member.id, topic.id)
+            if topic.role_id:
+                roles.append(ctx.guild.get_role(topic.role_id))
+        await ctx.author.add_roles(*roles)
+
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_added(cnt=len(topics))
         if not topics:
@@ -177,8 +193,14 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             if await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)):
                 affected_topics.append(topic)
 
+        roles: List[Role] = []
+
         for topic in affected_topics:
             await db.delete(await db.first(select(BTPUser).filter_by(topic=topic.id)))
+            if topic.role_id:
+                roles.append(ctx.guild.get_role(topic.role_id))
+
+        await ctx.author.remove_roles(*roles)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_removed(cnt=len(affected_topics))
@@ -205,12 +227,8 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
 
-            if await db.exists(
-                select(BTPTopic).filter_by(name=topic[0], parent=topic[2][-1].id if len(topic[2]) > 0 else None),
-            ):
-                raise CommandError(
-                    t.topic_already_registered(f"{topic[1]}/{topic[2][-1].name + '/' if topic[1] else ''}{topic[0]}"),
-                )
+            if await db.exists(select(BTPTopic).filter_by(name=topic[0])):
+                raise CommandError(t.topic_already_registered(topic[0]))
             else:
                 registered_topics.append(topic)
 
@@ -268,7 +286,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         embed.description = t.topics_unregistered(cnt=len(delete_topics))
         await send_to_changelog(
             ctx.guild,
-            t.log_topics_unregistered(cnt=len(delete_topics), topics=", ".join(f"`{r}`" for r in delete_topics)),
+            t.log_topics_unregistered(cnt=len(delete_topics), topics=", ".join(f"`{t.name}`" for t in delete_topics)),
         )
         await send_long_embed(ctx, embed)
 
@@ -312,10 +330,19 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             : (100 if len(topic_count) >= 100 else len(topic_count))
         ]:
             top_topics.append(topic_id)
-        for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id != None)):  # noqa: E711
+        for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id is not None)):  # type: BTPTopic
             if topic.id not in top_topics:
-                await self.bot.guilds[0].get_role(topic.role_id).delete()
+                if topic.role_id is not None:
+                    await self.bot.guilds[0].get_role(topic.role_id).delete()
+                    topic.role_id = None
         for top_topic in top_topics:
             if (topic := await db.first(select(BTPTopic).filter_by(id=top_topic, role_id=None))) is not None:
                 topic.role_id = (await self.bot.guilds[0].create_role(name=topic.name)).id
+                for member_id in await db.all(select(BTPUser).filter_by(topic=topic.id)):
+                    member = await self.bot.guilds[0].get_member(member_id)
+                    if member:
+                        role = self.bot.guilds[0].get_role(topic.role_id)
+                        await member.add_roles(role)
+                    else:
+                        raise Exception  # TODO Error Handling
         logger.info("Created Top Topic Roles")
