@@ -58,6 +58,7 @@ class ColorPickerCog(Cog, name="Color Picker"):
             embed: Embed = Embed(title=t.error_parse_color_title(color), description=t.error_parse_color_example)
             await reply(ctx, embed=embed)
             return
+
         img: Image = Image.new("RGB", (100, 100), rgb)
         with io.BytesIO() as image_binary:
             img.save(image_binary, "PNG")
