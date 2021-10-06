@@ -14,13 +14,6 @@ from nekosbest import Client
 tg = t.g
 t = t.nekosbest
 
-nekosbest_client = Client()
-
-
-async def get_single_image(category: str):
-    result = await nekosbest_client.get_image(category)
-    return result
-
 
 class NekosBestCog(Cog, name="NekosBest"):
     CONTRIBUTORS = [Contributor.NekoFanatic]
@@ -29,7 +22,7 @@ class NekosBestCog(Cog, name="NekosBest"):
     @guild_only()
     @docs(t.commands.neko)
     async def neko(self, ctx: Context):
-        nekos = await get_single_image("nekos")
+        nekos = await Client().get_image("nekos")
 
         embed = Embed(title="Sauce", url=nekos.source_url, color=Colors.NekosBest)
         embed.set_image(url=nekos.url)
