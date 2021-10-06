@@ -23,7 +23,7 @@ class NekosBestCog(Cog, name="NekosBest"):
     async def neko(self, ctx: Context):
         nekos = await Client().get_image("nekos")
 
-        embed = Embed(title="Sauce", url=nekos.source_url, color=Colors.NekosBest)
+        embed = Embed(title=t.title, url=nekos.source_url, color=Colors.NekosBest)
         embed.set_image(url=nekos.url)
         embed.set_author(name=nekos.artist_name, url=nekos.artist_href)
 
