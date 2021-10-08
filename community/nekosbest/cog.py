@@ -25,7 +25,7 @@ class NekosBestCog(Cog, name="NekosBest"):
             resp = await session.get("https://nekos.best/api/v1/nekos")
             nekos = await resp.json()
 
-            embed = Embed(title="Sauce", url=nekos["source_url"], color=Colors.NekosBest)
+            embed = Embed(title=t.title, url=nekos["source_url"], color=Colors.NekosBest)
             embed.set_image(url=nekos["url"])
             embed.set_author(name=nekos["artist_name"], url=nekos["artist_href"])
 
