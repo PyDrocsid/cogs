@@ -18,7 +18,7 @@ t = t.nekosbest
 class NekosBestCog(Cog, name="NekosBest"):
     CONTRIBUTORS = [Contributor.NekoFanatic]
 
-    @commands.command(name="nekos")
+    @commands.command()
     @docs(t.commands.neko)
     async def neko(self, ctx: Context):
         async with ClientSession() as session:
