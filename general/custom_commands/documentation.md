@@ -2,6 +2,8 @@
 
 This cog contains the `custom_commands` command. The command can be used to create own commands which can be called.
 
+## custom_commands
+
 This command contains different sub commands to create/edit/delete custom commands.
 
 ```css
@@ -11,7 +13,7 @@ This command contains different sub commands to create/edit/delete custom comman
 If no subcommand is given a list of all avaiable custom commands with aliasses will be send.
 
 
-## `add`
+### `add`
 
 This command is used to create new custom commands.
 
@@ -26,7 +28,7 @@ This command is used to create new custom commands.
 |`public`||If set to `False` the permission level of the command will be set to the default permission level of the bot|
 
 
-## `alias`
+### `alias`
 
 The alias command is used to add an alias to a command
 
@@ -40,7 +42,7 @@ The alias command is used to add an alias to a command
 |`alias`|:heavy_check_mark:|The alias which should be added to the command|
 
 
-## `edit`
+### `edit`
 
 The edit command is used to edit different things.
 
@@ -51,7 +53,7 @@ The edit command is used to edit different things.
 If no subcommand is given a list of all subcommands for `edit` will be send.
 
 
-### __`channel`__
+#### `channel`
 
 The channel is used to specifie a channel in which the commnand should be send by default.
 
@@ -65,7 +67,7 @@ The channel is used to specifie a channel in which the commnand should be send b
 |`channel`||The channel in which the message should be send. If no channel is given the message will be send to the channel from the executed command|
 
 
-### __`channel_parameter`__
+#### `channel_parameter`
 
 The channel_parameter is used to specifie a channel in which the commnand should be send by default.
 
@@ -79,7 +81,7 @@ The channel_parameter is used to specifie a channel in which the commnand should
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the `channel` parameter|
 
 
-### __`delete_command`__
+#### `delete_command`
 
 The delete_command is used to specifie if the command should be deleted after the execution.
 
@@ -93,7 +95,7 @@ The delete_command is used to specifie if the command should be deleted after th
 |`delete`|:heavy_check_mark:|True/False to enable/disable the deletion|
 
 
-### __`description`__
+#### `description`
 
 The description is used to set an description for a custom command.
 
@@ -107,7 +109,7 @@ The description is used to set an description for a custom command.
 |`description`||The text for the description. The discription can be removed by leaving the description param empty|
 
 
-### __`enable`__
+#### `enable`
 
 The enable is used to enable/disable the command.
 
@@ -121,7 +123,7 @@ The enable is used to enable/disable the command.
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the command|
 
 
-### __`name`__
+#### `name`
 
 The name is used to change the name of the custom command.
 
@@ -135,7 +137,7 @@ The name is used to change the name of the custom command.
 |`name`|:heavy_check_mark:|The new name for the command|
 
 
-### __`permission_level`__
+#### `permission_level`
 
 The permission_level is used to set the requiered permission level to execute the custom command.
 
@@ -149,7 +151,7 @@ The permission_level is used to set the requiered permission level to execute th
 |`level`|:heavy_check_mark:|The new permission level (0-4)|
 
 
-### __`requires_confirmation`__
+#### `requires_confirmation`
 
 The requires_confirmation is used to specifie whether to send a confirmation message before sending the message of the custom command.
 
@@ -163,7 +165,7 @@ The requires_confirmation is used to specifie whether to send a confirmation mes
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the confimation|
 
 
-### __`text`__
+#### `text`
 
 The text is used to edit the content of the message.
 
@@ -177,7 +179,7 @@ The text is used to edit the content of the message.
 |`text`|:heavy_check_mark:|Go to [this side](https://discohook.org/), compose your message, click on `Share Message` and copy the link.|
 
 
-### __`user_parameter`__
+#### `user_parameter`
 
 The user_parameter is used to enable/disable the mention of a user on top of the message.
 
@@ -191,7 +193,7 @@ The user_parameter is used to enable/disable the mention of a user on top of the
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the user parameter|
 
 
-## `remove`
+### `remove`
 
 The remove command is used to remove a custom command.
 
@@ -204,7 +206,7 @@ The remove command is used to remove a custom command.
 |`command`|:heavy_check_mark:|The name of the custom command|
 
 
-## `show`
+### `show`
 
 The show command is used to show all information about a custom command.
 
@@ -217,7 +219,7 @@ The show command is used to show all information about a custom command.
 |`command`|:heavy_check_mark:|The name of the custom command|
 
 
-## `test`
+### `test`
 
 The test command is used to send a preview of the message without mentioning roles/user.
 
@@ -230,7 +232,7 @@ The test command is used to send a preview of the message without mentioning rol
 |`command`|:heavy_check_mark:|The name of the custom command|
 
 
-## `unalias`
+### `unalias`
 
 The unalias command is used to remove an alias from a custom command.
 
@@ -243,7 +245,7 @@ The unalias command is used to remove an alias from a custom command.
 |`alias`|:heavy_check_mark:|The name of the alias|
 
 
-## Execution of custom commands
+### Execution of custom commands
 
 ```css
 .<name|alias> <channel> [user]
