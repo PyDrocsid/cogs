@@ -153,7 +153,7 @@ The permission_level is used to set the requiered permission level to execute th
 
 #### `requires_confirmation`
 
-The requires_confirmation is used to specifie whether to send a confirmation message before sending the message of the custom command.
+The requires_confirmation is used to specify whether to send a confirmation message before sending the message of the custom command.
 
 ```css
 .custom_commands edit [requires_confirmation|rc] <command> <enabled>
