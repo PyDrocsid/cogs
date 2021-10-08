@@ -2,6 +2,7 @@
 
 This cog contains the `custom_commands` command. The command can be used to create own commands which can be called.
 
+
 ## custom_commands
 
 This command contains different sub commands to create/edit/delete custom commands.
@@ -15,7 +16,7 @@ If no subcommand is given a list of all avaiable custom commands with aliasses w
 
 ### `add`
 
-This command is used to create new custom commands.
+The add command is used to create new custom commands.
 
 ```css
 .custom_commands [add|+] <name> <discohook_url> [public=True]
@@ -30,7 +31,7 @@ This command is used to create new custom commands.
 
 ### `alias`
 
-The alias command is used to add an alias to a command
+The alias command is used to add an alias to a command.
 
 ```css
 .custom_commands [alias|a] <command> <alias>
@@ -83,7 +84,7 @@ The channel_parameter is used to specifie a channel in which the commnand should
 
 #### `delete_command`
 
-The delete_command is used to specifie if the command should be deleted after the execution.
+The delete_command parameter is used to specifie if the command should be deleted after the execution.
 
 ```css
 .custom_commands edit [delete_command|dc] <command> <delete>
@@ -97,7 +98,7 @@ The delete_command is used to specifie if the command should be deleted after th
 
 #### `description`
 
-The description is used to set an description for a custom command.
+The description parameter is used to set an description for a custom command.
 
 ```css
 .custom_commands edit [description|desc|d] <command> [description]
@@ -125,7 +126,7 @@ The enable is used to enable/disable the command.
 
 #### `name`
 
-The name is used to change the name of the custom command.
+The name parameter is used to change the name of the custom command.
 
 ```css
 .custom_commands edit [name|n] <command> <name>
@@ -139,7 +140,7 @@ The name is used to change the name of the custom command.
 
 #### `permission_level`
 
-The permission_level is used to set the requiered permission level to execute the custom command.
+The permission_level is used to set the required permission level to execute the custom command.
 
 ```css
 .custom_commands edit [permission_level|pl] <command> <level>
@@ -167,7 +168,7 @@ The requires_confirmation is used to specify whether to send a confirmation mess
 
 #### `text`
 
-The text is used to edit the content of the message.
+The text parameter is used to edit the content of the message.
 
 ```css
 .custom_commands edit [text|t|content|data] <command> <discohook_url>
@@ -253,6 +254,6 @@ The unalias command is used to remove an alias from a custom command.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`name|alias`|:heavy_check_mark:|The name or the alias of a custom command|
+|`name/alias`|:heavy_check_mark:|The name or the alias of a custom command|
 |`channel`|:heavy_check_mark:|If activated you have to name a channel in which the message should be send|
 |`user`||If activated you can set a user which will be mentioned|
