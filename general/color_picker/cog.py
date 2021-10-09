@@ -3,10 +3,9 @@ import io
 import re
 from typing import Any
 
-from PIL import ImageColor, Image
 from discord import Embed, Colour, File
 from discord.ext import commands
-from discord.ext.commands import Context
+from discord.ext.commands import Context, CommandError
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
@@ -34,15 +33,18 @@ class ColorPickerCog(Cog, name="Color Picker"):
         hsv: tuple[int, ...]
         hsl: tuple[int, ...]
 
+        def _hex_to_color(hex_color: str) -> tuple[int, ...]:
+            return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
         if color_re := self.RE_HEX.match(color):
             color_hex = color_re.group(1)
-            rgb = ImageColor.getcolor(color, "RGB")
-            hsv = ImageColor.getcolor(color, "HSV")
+            rgb = _hex_to_color(color_hex)
+            hsv = _to_int(colorsys.rgb_to_hsv(*rgb))
             hsl = _to_int(colorsys.rgb_to_hls(*rgb))
         elif color_re := self.RE_RGB.match(color):
             rgb = _to_int((color_re.group(1), color_re.group(2), color_re.group(3)))
             color_hex = "{0:02x}{1:02x}{2:02x}".format(*rgb)
-            hsv = ImageColor.getcolor(f"#{color_hex}", "HSV")
+            hsv = _to_int(colorsys.rgb_to_hsv(*rgb))
             hsl = _to_int(colorsys.rgb_to_hls(*rgb))
         elif color_re := self.RE_HSV.match(color):
             hsv = _to_int((color_re.group(1), color_re.group(2), color_re.group(3)))
@@ -55,18 +57,12 @@ class ColorPickerCog(Cog, name="Color Picker"):
             hsv = _to_int(colorsys.rgb_to_hsv(*rgb))
             color_hex = "{0:02x}{1:02x}{2:02x}".format(*rgb)
         else:
-            embed: Embed = Embed(title=t.error_parse_color_title(color), description=t.error_parse_color_example)
-            await reply(ctx, embed=embed)
-            return
+            raise CommandError(t.error_parse_color_example(color))
 
-        img: Image = Image.new("RGB", (100, 100), rgb)
-        with io.BytesIO() as image_binary:
-            img.save(image_binary, "PNG")
-            image_binary.seek(0)
-            embed: Embed = Embed(title="Color Picker", color=Colour(int(color_hex, 16)))
-            embed.add_field(name="HEX", value=f"#{color_hex}")
-            embed.add_field(name="RGB", value=f"rgb{rgb}")
-            embed.add_field(name="HSV", value=f"hsv{hsv}")
-            embed.add_field(name="HSL", value=f"hsl{hsl}")
-            embed.set_image(url="attachment://color.png")
-            await reply(ctx, embed=embed, file=File(fp=image_binary, filename="color.png"))
+        embed: Embed = Embed(title="Color Picker", color=Colour(int(color_hex, 16)))
+        embed.set_image(url=f"https://singlecolorimage.com/get/{color_hex}/300x50")
+        embed.add_field(name="HEX", value=f"`#{color_hex}`")
+        embed.add_field(name="RGB", value=f"`rgb{rgb}`")
+        embed.add_field(name="HSV", value=f"`hsv{hsv}`")
+        embed.add_field(name="HSL", value=f"`hsl{hsl}`")
+        await reply(ctx, embed=embed)
