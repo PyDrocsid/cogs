@@ -34,7 +34,7 @@ class ColorPickerCog(Cog, name="Color Picker"):
         hsl: tuple[int, ...]
 
         def _hex_to_color(hex_color: str) -> tuple[int, ...]:
-            return tuple(int(hex_color[i: i + 2], 16) for i in (0, 2, 4))  # noqa: E203
+            return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))  # noqa: E203
 
         if color_re := self.RE_HEX.match(color):
             color_hex = color_re.group(1)
