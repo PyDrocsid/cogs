@@ -21,6 +21,8 @@ new_content: New Content
 message_deleted: Message Deleted
 attachments: Attachments
 message_id: Message ID
+embed_deleted: "deleted_embed.json"
+after_edited_embeds: "new_embed.json"
 
 member_joined_server: "{} ({}) just joined the server!"
 member_left_server: "**{}** just left the server!"
