@@ -56,7 +56,7 @@ If no subcommand is given, a list of all subcommands for `edit` will be sent.
 
 #### `channel`
 
-The channel is used to specifie a channel in which the commnand should be send by default.
+The `channel` subcommand is used to specify a channel the custom command's answer should be sent to by default.
 
 ```css
 .custom_commands edit [channel|c] <command> [channel]
