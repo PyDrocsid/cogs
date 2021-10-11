@@ -255,5 +255,5 @@ The `unalias` subcommand is used to remove an alias from a custom command.
 |Argument|Required|Description|
 |:------:|:------:|:----------|
 |`name/alias`|:heavy_check_mark:|A custom command's name or alias|
-|`channel`|:heavy_check_mark:|If activated you have to name a channel in which the message should be send|
+|`channel`|       |The channel to send the custom command's answer to. Required if the custom command's `channel` parameter is enabled|
 |`user`||If activated you can set a user which will be mentioned|
