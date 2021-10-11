@@ -209,7 +209,7 @@ The `remove` subcommand is used to remove a custom command.
 
 ### `show`
 
-The show subcommand is used to show all information about a custom command.
+The `show` subcommand is used to show all information about a custom command.
 
 ```css
 .custom_commands [show|s|view|v|?] <command>
