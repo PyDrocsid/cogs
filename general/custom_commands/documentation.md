@@ -235,7 +235,7 @@ The test subcommand is used to send a preview of the message without mentioning 
 
 ### `unalias`
 
-The unalias subcommand is used to remove an alias from a custom command.
+The `unalias` subcommand is used to remove an alias from a custom command.
 
 ```css
 .custom_commands [unalias|u] <alias>
