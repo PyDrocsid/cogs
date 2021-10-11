@@ -89,7 +89,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         Contributor.wolflu,
         Contributor.MaxiHuHe04,
         Contributor.AdriBloober,
-        Contributor.Tert0
+        Contributor.Tert0,
     ]
 
     async def on_ready(self):
