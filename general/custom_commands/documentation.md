@@ -148,7 +148,7 @@ The `permission_level` subcommand is used to set the permission level required t
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`level`|:heavy_check_mark:|The new permission level (0-4)|
 
 
