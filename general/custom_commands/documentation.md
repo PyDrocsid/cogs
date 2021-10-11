@@ -51,7 +51,7 @@ The `edit` subcommand contains various subcommands to edit an existing custom co
 .custom_commands [edit|e] [subcommand] 
 ```
 
-If no subcommand is given a list of all subcommands for `edit` will be send.
+If no subcommand is given, a list of all subcommands for `edit` will be sent.
 
 
 #### `channel`
