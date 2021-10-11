@@ -92,7 +92,7 @@ The `delete_command` subcommand is used to specify if the message used to trigge
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`delete`|:heavy_check_mark:|True/False to enable/disable the deletion|
 
 
