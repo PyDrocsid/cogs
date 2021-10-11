@@ -70,7 +70,7 @@ The `channel` subcommand is used to specify a channel the custom command's answe
 
 #### `channel_parameter`
 
-The channel_parameter is used to specifie a channel in which the commnand should be send by default.
+The `channel_parameter` subcommand is used to enable or disable the custom command's `channel` parameter.
 
 ```css
 .custom_commands edit [channel_parameter|cp] <command> <enabled>
