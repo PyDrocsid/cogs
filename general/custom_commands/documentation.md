@@ -120,7 +120,7 @@ The `enabled` subcommand is used to enable or disable a custom command.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the command|
 
 
