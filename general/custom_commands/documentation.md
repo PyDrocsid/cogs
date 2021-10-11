@@ -5,7 +5,7 @@ This cog contains the `custom_commands` command, which can be used to create sim
 
 ## custom_commands
 
-This command contains different sub commands to create/edit/delete custom commands.
+The `.custom_commands` command contains different sub commands to create, edit and delete custom commands.
 
 ```css
 .[custom_commands|cc] [subcommand]
