@@ -217,7 +217,7 @@ The `show` subcommand is used to show all information about a custom command.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 
 
 ### `test`
