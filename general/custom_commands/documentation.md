@@ -204,7 +204,7 @@ The `remove` subcommand is used to remove a custom command.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 
 
 ### `show`
