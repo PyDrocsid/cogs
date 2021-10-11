@@ -182,7 +182,7 @@ The `text` subcommand is used to edit the custom command's answer.
 
 #### `user_parameter`
 
-The user_parameter subcommand is used to enable/disable the mention of a user on top of the message.
+The `user_parameter` subcommand is used to enable or disable the user mention sent with the custom command's answer.
 
 ```css
 .custom_commands edit [user_parameter|up] <command> <enabled>
