@@ -168,7 +168,7 @@ The `requires_confirmation` subcommand is used to specify whether to send a conf
 
 #### `text`
 
-The text subcommand is used to edit the content of the message.
+The `text` subcommand is used to edit the custom command's answer.
 
 ```css
 .custom_commands edit [text|t|content|data] <command> <discohook_url>
