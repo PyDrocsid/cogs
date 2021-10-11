@@ -1,4 +1,4 @@
-# custom commands
+# Custom Commands
 
 This cog contains the `custom_commands` command. The command can be used to create own commands which can be called.
 
