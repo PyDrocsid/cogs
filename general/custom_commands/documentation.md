@@ -140,7 +140,7 @@ The `name` subcommand is used to change a custom command's name.
 
 #### `permission_level`
 
-The permission_level subcommand is used to set the required permission level to execute the custom command.
+The `permission_level` subcommand is used to set the permission level required to execute the custom command.
 
 ```css
 .custom_commands edit [permission_level|pl] <command> <level>
