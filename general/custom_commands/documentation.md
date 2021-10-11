@@ -26,7 +26,7 @@ The add command is used to create new custom commands.
 |:------:|:------:|:----------|
 |`name`|:heavy_check_mark:|The custom command's name|
 |`discohook_url`|:heavy_check_mark:|Go to [this side](https://discohook.org/), compose your message, click on `Share Message` and copy the link|
-|`public`||If set to `False` the permission level of the command will be set to the default permission level of the bot|
+|`public`|        |If set to `False`, the custom command's permission level will be set to the bot's default permission level|
 
 
 ### `alias`
