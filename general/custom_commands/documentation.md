@@ -98,7 +98,7 @@ The `delete_command` subcommand is used to specify if the message used to trigge
 
 #### `description`
 
-The description subcommand is used to set an description for a custom command.
+The `description` subcommand is used to set a description for a custom command.
 
 ```css
 .custom_commands edit [description|desc|d] <command> [description]
