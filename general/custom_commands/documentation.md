@@ -39,7 +39,7 @@ The alias command is used to add an alias to a command.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`alias`|:heavy_check_mark:|The alias which should be added to the command|
 
 
