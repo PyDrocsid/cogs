@@ -112,7 +112,7 @@ The `description` subcommand is used to set a description for a custom command.
 
 #### `enabled`
 
-The enabled subcommand is used to enable/disable the command.
+The `enabled` subcommand is used to enable or disable a custom command.
 
 ```css
 .custom_commands edit [enabled|e] <command> <enabled>
