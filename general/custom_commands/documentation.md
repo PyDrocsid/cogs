@@ -222,7 +222,7 @@ The show subcommand is used to show all information about a custom command.
 
 ### `test`
 
-The test subcommand is used to send a preview of the message without mentioning roles/user.
+The `test` subcommand is used to send a preview of the custom command's answer without mentioning any roles or users.
 
 ```css
 .custom_commands [test|t] <command>
