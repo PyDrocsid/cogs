@@ -196,7 +196,7 @@ The `user_parameter` subcommand is used to enable or disable the user mention se
 
 ### `remove`
 
-The remove subcommand is used to remove a custom command.
+The `remove` subcommand is used to remove a custom command.
 
 ```css
 .custom_commands [remove|r|del|d|-] <command>
