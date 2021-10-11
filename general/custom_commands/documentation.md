@@ -106,7 +106,7 @@ The `description` subcommand is used to set a description for a custom command.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's description|
 |`description`|       |The description. The description can be removed by leaving this argument empty|
 
 
