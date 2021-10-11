@@ -190,7 +190,7 @@ The `user_parameter` subcommand is used to enable or disable the user mention se
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the user parameter|
 
 
