@@ -11,7 +11,7 @@ The `.custom_commands` command contains different sub commands to create, edit a
 .[custom_commands|cc] [subcommand]
 ```
 
-If no subcommand is given a list of all avaiable custom commands with aliasses will be send.
+If no subcommand is given, a list of all avaiable custom commands with aliases will be send.
 
 
 ### `add`
