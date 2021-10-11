@@ -16,7 +16,7 @@ If no subcommand is given, a list of all avaiable custom commands with aliases w
 
 ### `add`
 
-The add command is used to create new custom commands.
+The `add` subcommand is used to create new custom commands.
 
 ```css
 .custom_commands [add|+] <name> <discohook_url> [public=True]
