@@ -84,7 +84,7 @@ The `channel_parameter` subcommand is used to enable or disable the custom comma
 
 #### `delete_command`
 
-The delete_command subcommand is used to specifie if the command should be deleted after the execution.
+The `delete_command` subcommand is used to specify if the message used to trigger the custom command should be deleted after execution.
 
 ```css
 .custom_commands edit [delete_command|dc] <command> <delete>
