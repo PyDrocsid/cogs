@@ -84,7 +84,7 @@ The channel_parameter is used to specifie a channel in which the commnand should
 
 #### `delete_command`
 
-The delete_command parameter is used to specifie if the command should be deleted after the execution.
+The delete_command subcommand is used to specifie if the command should be deleted after the execution.
 
 ```css
 .custom_commands edit [delete_command|dc] <command> <delete>
@@ -98,7 +98,7 @@ The delete_command parameter is used to specifie if the command should be delete
 
 #### `description`
 
-The description parameter is used to set an description for a custom command.
+The description subcommand is used to set an description for a custom command.
 
 ```css
 .custom_commands edit [description|desc|d] <command> [description]
@@ -110,9 +110,9 @@ The description parameter is used to set an description for a custom command.
 |`description`||The text for the description. The discription can be removed by leaving the description param empty|
 
 
-#### `enable`
+#### `enabled`
 
-The enable is used to enable/disable the command.
+The enabled subcommand is used to enable/disable the command.
 
 ```css
 .custom_commands edit [enabled|e] <command> <enabled>
@@ -126,7 +126,7 @@ The enable is used to enable/disable the command.
 
 #### `name`
 
-The name parameter is used to change the name of the custom command.
+The name subcommand is used to change the name of the custom command.
 
 ```css
 .custom_commands edit [name|n] <command> <name>
@@ -140,7 +140,7 @@ The name parameter is used to change the name of the custom command.
 
 #### `permission_level`
 
-The permission_level is used to set the required permission level to execute the custom command.
+The permission_level subcommand is used to set the required permission level to execute the custom command.
 
 ```css
 .custom_commands edit [permission_level|pl] <command> <level>
@@ -154,7 +154,7 @@ The permission_level is used to set the required permission level to execute the
 
 #### `requires_confirmation`
 
-The requires_confirmation is used to specify whether to send a confirmation message before sending the message of the custom command.
+The requires_confirmation subcommand is used to specify whether to send a confirmation message before sending the message of the custom command.
 
 ```css
 .custom_commands edit [requires_confirmation|rc] <command> <enabled>
@@ -168,7 +168,7 @@ The requires_confirmation is used to specify whether to send a confirmation mess
 
 #### `text`
 
-The text parameter is used to edit the content of the message.
+The text subcommand is used to edit the content of the message.
 
 ```css
 .custom_commands edit [text|t|content|data] <command> <discohook_url>
@@ -182,7 +182,7 @@ The text parameter is used to edit the content of the message.
 
 #### `user_parameter`
 
-The user_parameter is used to enable/disable the mention of a user on top of the message.
+The user_parameter subcommand is used to enable/disable the mention of a user on top of the message.
 
 ```css
 .custom_commands edit [user_parameter|up] <command> <enabled>
@@ -196,7 +196,7 @@ The user_parameter is used to enable/disable the mention of a user on top of the
 
 ### `remove`
 
-The remove command is used to remove a custom command.
+The remove subcommand is used to remove a custom command.
 
 ```css
 .custom_commands [remove|r|del|d|-] <command>
@@ -209,7 +209,7 @@ The remove command is used to remove a custom command.
 
 ### `show`
 
-The show command is used to show all information about a custom command.
+The show subcommand is used to show all information about a custom command.
 
 ```css
 .custom_commands [show|s|view|v|?] <command>
@@ -222,7 +222,7 @@ The show command is used to show all information about a custom command.
 
 ### `test`
 
-The test command is used to send a preview of the message without mentioning roles/user.
+The test subcommand is used to send a preview of the message without mentioning roles/user.
 
 ```css
 .custom_commands [test|t] <command>
@@ -235,7 +235,7 @@ The test command is used to send a preview of the message without mentioning rol
 
 ### `unalias`
 
-The unalias command is used to remove an alias from a custom command.
+The unalias subcommand is used to remove an alias from a custom command.
 
 ```css
 .custom_commands [unalias|u] <alias>
