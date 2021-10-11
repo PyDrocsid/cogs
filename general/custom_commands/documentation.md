@@ -45,7 +45,7 @@ The `alias` subcommand is used to add an alias to a custom command.
 
 ### `edit`
 
-The edit command is used to edit different things.
+The `edit` subcommand contains various subcommands to edit an existing custom command.
 
 ```css
 .custom_commands [edit|e] [subcommand] 
