@@ -176,7 +176,7 @@ The `text` subcommand is used to edit the custom command's answer.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`text`|:heavy_check_mark:|Go to [this side](https://discohook.org/), compose your message, click on `Share Message` and copy the link.|
 
 
