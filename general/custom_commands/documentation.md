@@ -162,7 +162,7 @@ The `requires_confirmation` subcommand is used to specify whether to send a conf
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`enabled`|:heavy_check_mark:|True/False to enable/disable the confimation|
 
 
