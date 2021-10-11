@@ -64,7 +64,7 @@ The `channel` subcommand is used to specify a channel the custom command's answe
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`channel`||The channel in which the message should be send. If no channel is given the message will be send to the channel from the executed command|
 
 
