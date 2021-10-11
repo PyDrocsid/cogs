@@ -134,7 +134,7 @@ The `name` subcommand is used to change a custom command's name.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 |`name`|:heavy_check_mark:|The new name for the command|
 
 
