@@ -21,7 +21,7 @@ The `add` subcommand adds a verification role. If you set `reverse` to `true`, t
 |`role`|:heavy_check_mark:|The verification role|
 |`reverse`|       |Remove this role instead of adding it to the member.|
 
-Required permissions:
+Required Permissions:
 
 - `verification.read`
 - `verification.write`
@@ -39,7 +39,7 @@ The `remove` subcommand removes an existing verification role.
 |:------:|:------:|:----------|
 |`role`|:heavy_check_mark:|The verification role|
 
-Required permissions:
+Required Permissions:
 
 - `verification.read`
 - `verification.write`
@@ -57,7 +57,7 @@ The `password` subcommand sets the *secret* password the member will need to ver
 |:------:|:------:|:----------|
 |`password`|:heavy_check_mark:|The password|
 
-Required permissions:
+Required Permissions:
 
 - `verification.read`
 - `verification.write`
@@ -78,7 +78,7 @@ The `delay` subcommand sets the amount of time a member has to be in the server 
 |:------:|:------:|:----------|
 |`delay`|:heavy_check_mark:|The amount of time in seconds|
 
-Required permissions:
+Required Permissions:
 
 - `verification.read`
 - `verification.write`
