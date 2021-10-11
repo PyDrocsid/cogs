@@ -230,7 +230,7 @@ The test subcommand is used to send a preview of the message without mentioning 
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`command`|:heavy_check_mark:|The name of the custom command|
+|`command`|:heavy_check_mark:|The custom command's name|
 
 
 ### `unalias`
