@@ -126,7 +126,7 @@ The `enabled` subcommand is used to enable or disable a custom command.
 
 #### `name`
 
-The name subcommand is used to change the name of the custom command.
+The `name` subcommand is used to change a custom command's name.
 
 ```css
 .custom_commands edit [name|n] <command> <name>
