@@ -31,7 +31,7 @@ The `add` subcommand is used to create new custom commands.
 
 ### `alias`
 
-The alias command is used to add an alias to a command.
+The `alias` subcommand is used to add an alias to a custom command.
 
 ```css
 .custom_commands [alias|a] <command> <alias>
