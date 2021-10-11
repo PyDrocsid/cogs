@@ -243,7 +243,7 @@ The `unalias` subcommand is used to remove an alias from a custom command.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`alias`|:heavy_check_mark:|The name of the alias|
+|`alias`|:heavy_check_mark:|The alias' name|
 
 
 ### Execution of custom commands
