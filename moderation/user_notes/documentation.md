@@ -1,11 +1,15 @@
-# UserNotes
+# user_notes
 
-This cog contains a system for user notes.
+The `.user_notes` command contains subcommands to manage user notes.
+
+```css
+.[user_notes|un] [subcommand]
+```
 
 
-## `add`
+### `add`
 
-The `.user_notes add` command adds a note for a specific user.
+The `add` subcommand is used to add a note to a specific user.
 
 ```css
 .user_notes [add|a|+] <member> <content>
@@ -13,18 +17,18 @@ The `.user_notes add` command adds a note for a specific user.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`member`|:heavy_check_mark:|A member| |
+|`member`|:heavy_check_mark:|A member|
 |`note`|:heavy_check_mark:|The note you want to add|
 
-Required permissions:
+Required Permissions:
 
 - `user_notes.read`
 - `user_notes.write`
 
 
-## `remove`
+### `remove`
 
-The `.user_notes remove` command removes the user note by note id.
+The `remove` subcommand removes a user note by note id.
 
 ```css
 .user_notes [remove|r|delete|d|-] <note_id>
@@ -32,17 +36,17 @@ The `.user_notes remove` command removes the user note by note id.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`note_id`|:heavy_check_mark:|A note id You can see|
+|`note_id`|:heavy_check_mark:|A note id|
 
-Required permissions:
+Required Permissions:
 
 - `user_notes.read`
 - `user_notes.write`
 
 
-## `show`
+### `show`
 
-The `.user_notes show` command shows all notes belonging to a member.
+The `show` subcommand shows all notes for a member.
 
 ```css
 .user_notes [show|s|list|l] <member>
@@ -52,6 +56,6 @@ The `.user_notes show` command shows all notes belonging to a member.
 |:------:|:------:|:----------|
 |`member`|:heavy_check_mark:|A member|
 
-Required permissions:
+Required Permissions:
 
 - `user_notes.read`
