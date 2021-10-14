@@ -1,4 +1,9 @@
-# user_notes
+# UserNoteCog
+
+This cog provides the `.user_notes` command to manage user notes.
+
+
+## user_notes
 
 The `.user_notes` command contains subcommands to manage user notes.
 
