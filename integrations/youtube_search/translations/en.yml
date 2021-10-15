@@ -1,0 +1,16 @@
+permissions:
+  read: read youtube integration configuration
+  write: write youtube integration configuration
+
+commands:
+  youtube: search youtube video/playlist
+  youtube_settings: manage youtube integration
+
+youtube: Youtube
+amount: Amount of Pages
+x_pages:
+  one: "{cnt} page"
+  many: "{cnt} pages"
+invalid_amount: Invalid amount
+youtube_amount_set: Number of pages for YoutubeSearch set to {cnt}
+log_youtube_amount_set: "**YouTube page amount** has been **set** to {}."
