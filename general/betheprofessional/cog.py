@@ -132,7 +132,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         for role in roles:
             check_role_assignable(role)
 
-        await member.add_roles(*roles)
+        await member.add_roles(*roles, atomic=False)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_added(cnt=len(roles))
@@ -158,7 +158,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         for role in roles:
             check_role_assignable(role)
 
-        await member.remove_roles(*roles)
+        await member.remove_roles(*roles, atomic=False)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_removed(cnt=len(roles))
