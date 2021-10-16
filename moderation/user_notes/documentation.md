@@ -10,6 +10,7 @@ The `.user_notes` command contains subcommands to manage user notes.
 ```css
 .[user_notes|un] [subcommand]
 ```
+
 Required Permissions:
 
 - `user_notes.read`
