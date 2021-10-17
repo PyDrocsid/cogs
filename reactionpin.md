@@ -39,9 +39,7 @@ Required Permissions:
 Aliases: `rp`
 
 
-```css
-.add
-```
+
 
 ```css
 .reactionpin <command>
@@ -67,7 +65,7 @@ Required Permissions:
 
 
 ```css
-.add
+.rp [add|a|+] <channel>
 ```
 
 |Arguments|Description|
@@ -97,7 +95,7 @@ Required Permissions:
 
 
 ```css
-.remove
+.rp [del|r|d|-] <channel>
 ```
 
 |Arguments|Description|
@@ -107,7 +105,7 @@ Required Permissions:
 ***
 ### `pin_message`
 
-This command enables or disables the "{bot.user} pinned a message. See all messages" message.
+This command enables or disables the "MorpheusHelper pinned a message. See all messages" message.
 
 [![image](https://www.linkpicture.com/q/Screenshot-2021-10-17-072804_1.png)](https://www.linkpicture.com/view.php?img=LPic616bc85447a64587571420)
 
@@ -124,7 +122,7 @@ Aliases: `pm`
 
     
 ```css
-.reactionpin [pin_message|pm] <enabled>
+.rp [pin_message|pm] <enabled>
 ```
 
 
