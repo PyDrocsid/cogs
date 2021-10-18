@@ -19,9 +19,9 @@ class ColorPickerCog(Cog, name="Color Picker"):
     CONTRIBUTORS = [Contributor.Tert0]
 
     RE_HEX = re.compile(r"^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
-    RE_RGB = re.compile(r"^rgb\(([0-9]{1,3})\, ?([0-9]{1,3})\, ?([0-9]{1,3})\)$")
-    RE_HSV = re.compile(r"^hsv\(([0-9]{1,3})\, ?([0-9]{1,3})\, ?([0-9]{1,3})\)$")
-    RE_HSL = re.compile(r"^hsl\(([0-9]{1,3})\, ?([0-9]{1,3})\, ?([0-9]{1,3})\)$")
+    RE_RGB = re.compile(r"^rgb\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
+    RE_HSV = re.compile(r"^hsv\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
+    RE_HSL = re.compile(r"^hsl\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
 
     @commands.command(name="color_picker", aliases=["cp", "color"])
     async def color_picker(self, ctx: Context, *, color: str):
