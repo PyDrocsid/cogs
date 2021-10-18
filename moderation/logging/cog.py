@@ -1,8 +1,9 @@
 import json
 from datetime import timedelta
+from io import StringIO
 from typing import Optional, Union
 
-from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member, Forbidden
+from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member, Forbidden, File
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Group, Command
 from discord.utils import utcnow
@@ -211,6 +212,12 @@ class LoggingCog(Cog, name="Logging"):
             embed.add_field(name=t.url, value=message.jump_url, inline=False)
             add_field(embed, t.new_content, message.content)
         await edit_channel.send(embed=embed)
+        if message.embeds:
+            for edit_embed in message.embeds:
+                em_content = edit_embed.to_dict()
+                json_file = json.dumps(em_content, indent=4)
+                f = StringIO(json_file)
+                await edit_channel.send(file=File(filename=t.after_edited_embeds, fp=f))
 
     async def on_message_delete(self, message: Message):
         if message.guild is None:
@@ -241,6 +248,12 @@ class LoggingCog(Cog, name="Logging"):
                 out.append(f"[{attachment.filename}]({attachment.url}) ({size:.1f} {_unit})")
             embed.add_field(name=t.attachments, value="\n".join(out), inline=False)
         await delete_channel.send(embed=embed)
+        if message.embeds:
+            for del_embed in message.embeds:
+                em_content = del_embed.to_dict()
+                json_file = json.dumps(em_content, indent=4)
+                f = StringIO(json_file)
+                await delete_channel.send(file=File(filename=t.embed_deleted, fp=f))
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
