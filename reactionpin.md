@@ -32,11 +32,15 @@ As soon as the message author or a Team-Member removes his reaction `:pushpin:` 
 This is the main command, for the command group, to show all the 
 subcommands, if you have the permission for it.
 
+
 Required Permissions:
 
-`reactionpin.read`
+- `reactionpin.read`
 
-Aliases: `rp`
+
+
+Aliases:
+- `a`
 
 
 
@@ -57,11 +61,11 @@ Required Permissions:
 - `reactionpin.write`
 
 
-|Aliases|
-|:------:|
-|`add`|
-|`a`|
-|`+`|
+Aliases:
+- `add`
+- `a`
+- `+`
+
 
 
 ```css
@@ -84,13 +88,13 @@ Required Permissions:
 - `reactionpin.write`
 
 
-|Aliases|
-|:------:|
-|`remove`|
-|`del`|
-|`r`|
-|`d`|
-|`-`|
+Aliases
+- `remove`
+- `del`
+- `r`
+- `d`
+- `-`
+
 
 
 
@@ -117,7 +121,8 @@ Required Permissions:
 
 
 
-Aliases: `pm`
+Aliases:
+- `pm`
 
 
     
