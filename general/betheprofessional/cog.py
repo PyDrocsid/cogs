@@ -41,10 +41,14 @@ async def parse_topics(guild: Guild, topics: str, author: Member) -> List[Role]:
                 def dist(name: str) -> int:
                     return calculate_edit_distance(name.lower(), topic.lower())
 
-                best_match = min([r.name for r in all_topics], key=dist)
-                raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
+                best_dist, best_match = min((dist(r.name), r.name) for r in all_topics)
+                if best_dist <= 5:
+                    raise CommandError(t.topic_not_found_did_you_mean(topic, best_match))
+
             raise CommandError(t.topic_not_found(topic))
+
         roles.append(role)
+
     return roles
 
 
@@ -93,7 +97,7 @@ async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
     await send_long_embed(ctx, embed)
 
 
-class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
+class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
     CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.MaxiHuHe04, Contributor.AdriBloober]
 
     @commands.command(name="?")
@@ -128,7 +132,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         for role in roles:
             check_role_assignable(role)
 
-        await member.add_roles(*roles)
+        await member.add_roles(*roles, atomic=False)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_added(cnt=len(roles))
@@ -154,7 +158,7 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         for role in roles:
             check_role_assignable(role)
 
-        await member.remove_roles(*roles)
+        await member.remove_roles(*roles, atomic=False)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_removed(cnt=len(roles))
@@ -173,10 +177,12 @@ class BeTheProfessionalCog(Cog, name="Self Assignable Topic Roles"):
         if not names:
             raise UserInputError
 
-        valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_`{|}~")
+        valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_{|}~")
         to_be_created: List[str] = []
         roles: List[Role] = []
         for topic in names:
+            if len(topic) > 100:
+                raise CommandError(t.topic_too_long(topic))
             if any(c not in valid_chars for c in topic):
                 raise CommandError(t.topic_invalid_chars(topic))
 

@@ -1,10 +1,11 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional
 
 from discord import TextChannel, Forbidden, Embed, Message, NotFound
 from discord.ext import commands, tasks
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
@@ -29,7 +30,7 @@ async def clear_channel(channel: TextChannel, minutes: int, limit: Optional[int]
 
     message: Message
     async for message in channel.history(
-        before=datetime.utcnow() - timedelta(minutes=minutes),
+        before=utcnow() - timedelta(minutes=minutes),
         limit=limit,
         oldest_first=True,
     ):

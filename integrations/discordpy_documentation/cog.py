@@ -216,7 +216,7 @@ async def do_rtfm(ctx: Context, key: str, obj: Optional[str]):
 
     e = discord.Embed(colour=Colors.DiscordPy, title=t.documentation(key.capitalize()))
     e.description = "\n".join(f"[`{key}`]({url})" for key, url in matches)
-    e.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
+    e.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
     await reply(ctx, embed=e)
 
 

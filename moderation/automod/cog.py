@@ -101,7 +101,10 @@ class AutoModCog(Cog, name="AutoMod"):
 
         if role == await self.get_instantkick_role():
             if not await kick(member):
-                await member.remove_roles(role)
+                try:
+                    await member.remove_roles(role)
+                except Forbidden:
+                    pass
             return
 
         mode: int = await AutoModSettings.autokick_mode.get()

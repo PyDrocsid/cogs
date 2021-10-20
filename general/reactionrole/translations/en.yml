@@ -19,6 +19,8 @@ rr_link_not_created_no_permissions: >
 log_rr_link_created: "**ReactionRole link** for {} -> <@&{}> has been **created** on [this message]({}) in {}"
 rr_link_not_found: Such a link does not exist.
 rr_link_removed: "Link has been removed successfully. :white_check_mark:"
+could_not_add_reactions: "Could not add reaction to message!"
+could_not_remove_reactions: "Could not remove reaction from message!"
 log_rr_link_removed: "**ReactionRole link** for {} -> <@&{}> has been **deleted** on [this message]({}) in {}"
 rr_link: "{} -> {}"
 auto_remove: auto remove

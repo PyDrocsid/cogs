@@ -3,15 +3,15 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Union
 
-from PyDrocsid.database import db, db_wrapper
-from sqlalchemy import Column, BigInteger, DateTime
+from PyDrocsid.database import db, db_wrapper, UTCDateTime
+from sqlalchemy import Column, BigInteger
 
 
 class Activity(db.Base):
     __tablename__ = "activity"
 
     id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
     async def create(object_id: int, timestamp: datetime) -> Activity:
