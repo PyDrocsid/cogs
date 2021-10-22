@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Union, Optional
+from datetime import datetime
 
-from sqlalchemy import Column, Integer, BigInteger, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, BigInteger, Text, Boolean
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, UTCDateTime
+
+from discord.utils import utcnow
 
 
 class Report(db.Base):
@@ -15,7 +17,7 @@ class Report(db.Base):
     member: Union[Column, int] = Column(BigInteger)
     member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     reporter: Union[Column, int] = Column(BigInteger)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
@@ -25,7 +27,7 @@ class Report(db.Base):
             member=member,
             member_name=member_name,
             reporter=reporter,
-            timestamp=datetime.utcnow(),
+            timestamp=utcnow(),
             reason=reason,
             evidence=evidence,
         )
@@ -41,7 +43,7 @@ class Warn(db.Base):
     member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     mod: Union[Column, int] = Column(BigInteger)
     mod_level: Union[Column, int] = Column(Integer)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
@@ -59,7 +61,7 @@ class Warn(db.Base):
             member_name=member_name,
             mod=mod,
             mod_level=mod_level,
-            timestamp=datetime.utcnow(),
+            timestamp=utcnow(),
             reason=reason,
             evidence=evidence,
         )
@@ -87,12 +89,12 @@ class Mute(db.Base):
     member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     mod: Union[Column, int] = Column(BigInteger)
     mod_level: Union[Column, int] = Column(Integer)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
     minutes: Union[Column, int] = Column(Integer)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     active: Union[Column, bool] = Column(Boolean)
-    deactivation_timestamp: Union[Column, Optional[datetime]] = Column(DateTime, nullable=True)
+    deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
     unmute_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
     unmute_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
     updated: Union[Column, bool] = Column(Boolean, default=False)
@@ -114,7 +116,7 @@ class Mute(db.Base):
             member_name=member_name,
             mod=mod,
             mod_level=mod_level,
-            timestamp=datetime.utcnow(),
+            timestamp=utcnow(),
             minutes=minutes,
             reason=reason,
             evidence=evidence,
@@ -131,7 +133,7 @@ class Mute(db.Base):
     async def deactivate(mute_id: int, unmute_mod: int = None, reason: str = None) -> "Mute":
         row: Mute = await db.get(Mute, id=mute_id)
         row.active = False
-        row.deactivation_timestamp = datetime.utcnow()
+        row.deactivation_timestamp = utcnow()
         row.unmute_mod = unmute_mod
         row.unmute_reason = reason
         return row
@@ -162,7 +164,7 @@ class Kick(db.Base):
     member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     mod: Union[Column, int] = Column(BigInteger)
     mod_level: Union[Column, int] = Column(Integer)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
@@ -180,7 +182,7 @@ class Kick(db.Base):
             member_name=member_name,
             mod=mod,
             mod_level=mod_level,
-            timestamp=datetime.utcnow(),
+            timestamp=utcnow(),
             reason=reason,
             evidence=evidence,
         )
@@ -208,12 +210,12 @@ class Ban(db.Base):
     member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     mod: Union[Column, int] = Column(BigInteger)
     mod_level: Union[Column, int] = Column(Integer)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
     minutes: Union[Column, int] = Column(Integer)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     active: Union[Column, bool] = Column(Boolean)
-    deactivation_timestamp: Union[Column, Optional[datetime]] = Column(DateTime, nullable=True)
+    deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
     unban_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
     unban_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
     updated: Union[Column, bool] = Column(Boolean, default=False)
@@ -235,7 +237,7 @@ class Ban(db.Base):
             member_name=member_name,
             mod=mod,
             mod_level=mod_level,
-            timestamp=datetime.utcnow(),
+            timestamp=utcnow(),
             minutes=minutes,
             reason=reason,
             evidence=evidence,
@@ -252,7 +254,7 @@ class Ban(db.Base):
     async def deactivate(ban_id: int, unban_mod: int = None, unban_reason: str = None) -> Ban:
         row: Ban = await db.get(Ban, id=ban_id)
         row.active = False
-        row.deactivation_timestamp = datetime.utcnow()
+        row.deactivation_timestamp = utcnow()
         row.unban_mod = unban_mod
         row.unban_reason = unban_reason
         return row

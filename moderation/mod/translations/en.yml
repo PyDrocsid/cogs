@@ -54,6 +54,8 @@ cannot_fetch_audit_logs: A ban initiated through the server couldn't be added to
 
 # reports
 report: ":speech_balloon: Report"
+report_canceled: ":x: Report canceled"
+report_confirmed: ":white_check_mark: Report confirmed"
 cannot_report: This member cannot be reported.
 no_self_report: You cannot report yourself.
 confirm_report: "Are you sure you want to report {} for ```\n{}```\n"
@@ -69,7 +71,7 @@ warned:
 warned_response: "User warned successfully :white_check_mark:"
 log_warned: ":warning: Member warned"
 confirm_warn_edit: "Are you sure you want to change this warns reason from ```\n{}\n```to```\n{}\n```"
-warn_edited: "The warn reason has been changed from ```\n{}\n```to```\n{}\n```"
+warn_edited: "The warn reasonhas been changed from ```\n{}\n```to```\n{}\n```"
 warn_edited_response: ":white_check_mark: The warn reason has been edited"
 log_warn_edited: ":warning: Warn edited"
 confirm_warn_delete: "Are you sure you want to delete this warning for *{}*?\n`(ID: {})`"
@@ -101,7 +103,7 @@ confirm_mute_edit:
 mute_edited:
   reason: "The mute reason has been changed from ```\n{}\n```to```\n{}\n```"
   duration: "The mute duration has been changed from ```\n{}\n```to```\n{}\n```"
-mute_edited_response: ":white_check_mark: The mute reason has been edited"
+mute_edited_response: ":white_check_mark: The mute has been edited"
 log_mute_edited: ":mute: Mute edited"
 confirm_mute_delete: "Are you sure you want to delete this mute for *{}*?\n`(ID: {})`"
 mute_deleted:
@@ -153,7 +155,7 @@ confirm_ban_edit:
 ban_edited:
   reason: "The ban reason has been changed from ```\n{}\n```to```\n{}\n```"
   duration: "The ban duration has been changed from ```\n{}\n```to```\n{}\n```"
-ban_edited_response: ":white_check_mark: The ban reason has been edited"
+ban_edited_response: ":white_check_mark: The ban has been edited"
 log_ban_edited: ":no_entry: Ban edited"
 confirm_ban_delete: "Are you sure you want to delete this ban of *{}*?\n`(ID: {})`"
 ban_deleted:
