@@ -127,7 +127,10 @@ async def get_and_compare_entry(entry_format: db.Base, entry_id: int, mod: Membe
 
 
 async def confirm_action(
-    ctx: Context, embed: Embed, message_confirmed: str = t.edit_confirmed, message_canceled: str = t.edit_canceled,
+    ctx: Context,
+    embed: Embed,
+    message_confirmed: str = t.edit_confirmed,
+    message_canceled: str = t.edit_canceled,
 ) -> bool:
     async with confirm(ctx, embed) as (result, msg):
         if not result:
