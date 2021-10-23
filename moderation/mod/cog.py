@@ -126,6 +126,23 @@ async def get_and_compare_entry(entry_format: db.Base, entry_id: int, mod: Membe
     return entry
 
 
+async def confirm_action(
+        ctx: Context,
+        embed: Embed,
+        message_confirmed: str = t.edit_confirmed,
+        message_canceled: str = t.edit_canceled
+) -> bool:
+    async with confirm(ctx, embed) as (result, msg):
+        if not result:
+            embed.description += f"\n\n{message_canceled}"
+            return result
+
+        embed.description += f"\n\n{message_confirmed}"
+        if msg:
+            await msg.delete(delay=5)
+        return result
+
+
 async def send_to_changelog_mod(
     guild: Guild,
     message: Optional[Message],
@@ -550,14 +567,8 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.report_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.report_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed, t.report_confirmed, t.report_canceled):
+            return
 
         attachments = ctx.message.attachments
         evidence = attachments[0] if attachments else None
@@ -629,7 +640,7 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await Warn.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
         await reply(ctx, embed=server_embed)
@@ -655,14 +666,8 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         user = self.bot.get_user(warn.member)
 
@@ -679,7 +684,7 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warn_edited, user, reason)
@@ -701,14 +706,8 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         await Warn.delete(warn_id)
 
@@ -726,7 +725,7 @@ class ModCog(Cog, name="Mod Tools"):
             try:
                 await user.send(embed=user_embed)
             except (Forbidden, HTTPException):
-                server_embed.description = t.no_dm + "\n\n" + server_embed.description
+                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
                 server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
@@ -841,7 +840,7 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
@@ -875,14 +874,8 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         user = self.bot.get_user(mute.member)
 
@@ -899,7 +892,7 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.mute, t.log_mute_edited, user, reason)
@@ -941,14 +934,8 @@ class ModCog(Cog, name="Mod Tools"):
         else:
             conf_embed.description = t.confirm_mute_edit.duration(old_mute_minutes, time_to_units(minutes))
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         for mute in active_mutes:
             await Mute.update(mute.id, ctx.author.id)
@@ -960,54 +947,34 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        if minutes is not None:
-            await Mute.create(
-                user.id,
-                str(user),
-                ctx.author.id,
-                await get_mod_level(ctx.author),
-                minutes,
-                mute.reason,
-                mute.evidence,
-                True,
-            )
-            user_embed.description = t.mute_edited.duration(time_to_units(mute.minutes), time_to_units(minutes))
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_mute_edited,
-                user,
-                mute.reason,
-                duration=time_to_units(minutes),
-            )
-
-        else:
-            await Mute.create(
-                user.id,
-                str(user),
-                ctx.author.id,
-                await get_mod_level(ctx.author),
-                -1,
-                mute.reason,
-                mute.evidence,
-                True,
-            )
-            user_embed.description = t.mute_edited.duration(time_to_units(mute.minutes), t.infinity)
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_mute_edited,
-                user,
-                mute.reason,
-                duration=t.log_field.infinity,
-            )
+        await Mute.create(
+            user.id,
+            str(user),
+            ctx.author.id,
+            await get_mod_level(ctx.author),
+            -1 if minutes is None else minutes,
+            mute.reason,
+            mute.evidence,
+            True,
+        )
+        user_embed.description = t.mute_edited.duration(
+            time_to_units(mute.minutes),
+            t.infinity if minutes is None else time_to_units(minutes),
+        )
+        await send_to_changelog_mod(
+            ctx.guild,
+            ctx.message,
+            Colors.mute,
+            t.log_mute_edited,
+            user,
+            Mute.reason,
+            duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
+        )
 
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
 
@@ -1028,14 +995,8 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=mute.member))
 
@@ -1066,7 +1027,7 @@ class ModCog(Cog, name="Mod Tools"):
             try:
                 await user.send(embed=user_embed)
             except (Forbidden, HTTPException):
-                server_embed.description = t.no_dm + "\n\n" + server_embed.description
+                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
                 server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
@@ -1182,7 +1143,7 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             await member.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
 
         await member.kick(reason=reason)
@@ -1210,14 +1171,8 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         user = self.bot.get_user(kick.member)
 
@@ -1234,7 +1189,7 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kick_edited, user, reason)
@@ -1256,14 +1211,8 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         await Kick.delete(kick_id)
 
@@ -1281,7 +1230,7 @@ class ModCog(Cog, name="Mod Tools"):
             try:
                 await user.send(embed=user_embed)
             except (Forbidden, HTTPException):
-                server_embed.description = t.no_dm + "\n\n" + server_embed.description
+                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
                 server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
@@ -1406,7 +1355,7 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
 
         await ctx.guild.ban(user, delete_message_days=delete_days, reason=reason)
@@ -1443,22 +1392,12 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         user = self.bot.get_user(ban.member)
 
-        user_embed = Embed(
-            title=t.ban,
-            description=t.ban_edited.reason(ban.reason, reason),
-            colour=Colors.ModTools,
-        )
+        user_embed = Embed(title=t.ban,  description=t.ban_edited.reason(ban.reason, reason), colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
@@ -1467,7 +1406,7 @@ class ModCog(Cog, name="Mod Tools"):
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.ban, t.log_ban_edited, user, reason)
@@ -1497,10 +1436,7 @@ class ModCog(Cog, name="Mod Tools"):
         if ban.minutes == minutes or (ban.minutes == -1 and minutes is None):
             raise CommandError(t.already_banned)
 
-        conf_embed = Embed(
-            title=t.confirmation,
-            color=Colors.ModTools,
-        )
+        conf_embed = Embed(title=t.confirmation, color=Colors.ModTools)
 
         old_ban_minutes = t.infinity if ban.minutes == -1 else time_to_units(ban.minutes)
 
@@ -1509,73 +1445,44 @@ class ModCog(Cog, name="Mod Tools"):
         else:
             conf_embed.description = t.confirm_ban_edit.duration(old_ban_minutes, time_to_units(minutes))
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         for ban in active_bans:
             await ban.update(ban.id, ctx.author.id)
 
-        user_embed = Embed(
-            title=t.ban,
-            colour=Colors.ModTools,
-        )
+        user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        if minutes is not None:
-            await Ban.create(
-                user.id,
-                str(user),
-                ctx.author.id,
-                await get_mod_level(ctx.author),
-                minutes,
-                ban.reason,
-                ban.evidence,
-                True,
-            )
-            user_embed.description = t.ban_edited.duration(time_to_units(ban.minutes), time_to_units(minutes))
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_ban_edited,
-                user,
-                ban.reason,
-                duration=time_to_units(minutes),
-            )
-
-        else:
-            await Ban.create(
-                user.id,
-                str(user),
-                ctx.author.id,
-                await get_mod_level(ctx.author),
-                -1,
-                ban.reason,
-                ban.evidence,
-                True,
-            )
-            user_embed.description = t.ban_edited.duration(time_to_units(ban.minutes), t.infinity)
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_ban_edited,
-                user,
-                ban.reason,
-                duration=t.log_field.infinity,
-            )
+        await Ban.create(
+            user.id,
+            str(user),
+            ctx.author.id,
+            await get_mod_level(ctx.author),
+            -1 if minutes is None else minutes,
+            ban.reason,
+            ban.evidence,
+            True,
+        )
+        user_embed.description = t.ban_edited.duration(
+            time_to_units(ban.minutes),
+            t.infinity if minutes is None else time_to_units(minutes),
+        )
+        await send_to_changelog_mod(
+            ctx.guild,
+            ctx.message,
+            Colors.ban,
+            t.log_ban_edited,
+            user,
+            ban.reason,
+            duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
+        )
 
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
-            server_embed.description = t.no_dm + "\n\n" + server_embed.description
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
 
@@ -1596,14 +1503,8 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                conf_embed.description += "\n\n" + t.edit_canceled
-                return
-
-            conf_embed.description += "\n\n" + t.edit_confirmed
-            if msg:
-                await msg.delete(delay=5)
+        if not await confirm_action(ctx, conf_embed):
+            return
 
         active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=ban.member))
 
@@ -1624,10 +1525,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         if await ModSettings.send_delete_user_message.get():
-            user_embed = Embed(
-                title=t.ban,
-                colour=Colors.ModTools,
-            )
+            user_embed = Embed(title=t.ban, colour=Colors.ModTools)
 
             if ban.minutes == -1:
                 user_embed.description = t.ban_deleted.inf(ban.reason)
@@ -1637,31 +1535,20 @@ class ModCog(Cog, name="Mod Tools"):
             try:
                 await user.send(embed=user_embed)
             except (Forbidden, HTTPException):
-                server_embed.description = t.no_dm + "\n\n" + server_embed.description
+                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
                 server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
 
-        if ban.minutes == -1:
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.ban,
-                t.log_ban_deleted,
-                user,
-                ban.reason,
-                duration=t.log_field_infinity,
-            )
-        else:
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.ban,
-                t.log_ban_deleted,
-                user,
-                ban.reason,
-                duration=time_to_units(ban.minutes),
-            )
+        await send_to_changelog_mod(
+            ctx.guild,
+            ctx.message,
+            Colors.ban,
+            t.log_ban_deleted,
+            user,
+            ban.reason,
+            duration=t.log_field_infinity if ban.minutes == -1 else time_to_units(ban.minutes),
+        )
 
     @commands.command()
     @ModPermission.ban.check
