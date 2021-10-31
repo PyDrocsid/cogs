@@ -86,8 +86,11 @@ class InfoComponent:
     @staticmethod
     def pydrocsid(inline: bool):
         async def inner(_, embed: Embed):
-            async with ClientSession() as session, session.head("https://discord.pydrocsid.ml") as response:
-                url = response.headers["location"]
+            async with ClientSession() as session, session.head(
+                Config.DISCORD_INVITE,
+                allow_redirects=True,
+            ) as response:
+                url = str(response.url)
             code = url.split("/")[-1]
 
             embed.add_field(name=t.pydrocsid, value=t.pydrocsid_info(code=code), inline=inline)
