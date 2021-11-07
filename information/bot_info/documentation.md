@@ -22,7 +22,7 @@ The information given by this command includes:
 - Version
 - Number of enabled cogs
 - Github repository
-- PyDrocsid [Discord](https://discord.pydrocsid.ml/){target=_blank} and [GitHub](https://github.com/PyDrocsid){target=_blank} links
+- PyDrocsid [Discord](../../../discord){target=_blank} and [GitHub](https://github.com/PyDrocsid){target=_blank} links
 - Prefix
 - Help command
 - Where to submit bug reports and feature requests
@@ -66,4 +66,4 @@ The `.cogs` command returns a list of all cogs currently in use.
 
 ## Status Message
 
-The bot displays a status message that is updated every 20 seconds. The list of status strings is defined under the `profile_status` [translation key](https://docs.pydrocsid.ml/library/translations/){target=_blank}.
+The bot displays a status message that is updated every 20 seconds. The list of status strings is defined under the `profile_status` [translation key](../../../library/translations/){target=_blank}.

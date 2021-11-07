@@ -30,8 +30,8 @@ Usage:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel for which AutoClear is to be configured|
-|`minutes`|:heavy_check_mark:|The TTL in minutes|
+|`channel`|:fontawesome-solid-check:|The channel for which AutoClear is to be configured|
+|`minutes`|:fontawesome-solid-check:|The TTL in minutes|
 
 Required Permissions:
 
@@ -54,7 +54,7 @@ Usage:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel in which AutoClear is to be disabled|
+|`channel`|:fontawesome-solid-check:|The channel in which AutoClear is to be disabled|
 
 Required Permissions:
 
