@@ -1,8 +1,7 @@
 # Reaction Pin
 
 
-This cog consists of a reaction event 
-and some moderation commands.
+This cog consists of a reaction event and some moderation commands.
 
 
 ## Reaction Pin
@@ -22,15 +21,13 @@ b)
 4. the user does not have the `mute` role
 
 
-
 As soon as the message author or a Team-Member removes his reaction `:pushpin:` 📌, the message will be removed from the pinned messages.
 
 ***
 ## `reactionpin`
 
 
-This is the main command, for the command group, to show all the 
-subcommands, if you have the permission for it.
+This is the main command, for the command group, to show all the subcommands, if you have the permission for it.
 
 
 Required Permissions:
@@ -38,11 +35,8 @@ Required Permissions:
 - `reactionpin.read`
 
 
-
 Aliases:
 - `a`
-
-
 
 
 ```css
@@ -65,7 +59,6 @@ Aliases:
 - `add`
 - `a`
 - `+`
-
 
 
 ```css
@@ -96,8 +89,6 @@ Aliases
 - `-`
 
 
-
-
 ```css
 .rp [del|r|d|-] <channel>
 ```
@@ -120,19 +111,19 @@ Required Permissions:
 - `reactionpin.write`
 
 
-
 Aliases:
 - `pm`
-
 
     
 ```css
 .rp [pin_message|pm] <enabled>
 ```
 
-
 Arguments:
 
 |Argument|Required|Description|
 |:------:|:----|:------:|
 |enabled|✔️|Message is displayed if true|
+
+
+
