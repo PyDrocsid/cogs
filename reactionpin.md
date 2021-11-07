@@ -1,7 +1,7 @@
-# [Reaction Pin](https://github.com/PyDrocsid/cogs/blob/develop/general/reactionpin/cog.py)
+# Reaction Pin
 
 
-This cog consists of an reaction event 
+This cog consists of a reaction event 
 and some moderation commands.
 
 
@@ -72,9 +72,9 @@ Aliases:
 .rp [add|a|+] <channel>
 ```
 
-|Arguments|Description|
-|:------:|:-----|
-|`channel`|Adds the channel to the whitelisted Reaction-Pin Channels|
+|Arguments|Required|Description|
+|:------:|:------|:-----|
+|`channel`|✔️|Adds the channel to the whitelisted Reaction-Pin Channels|
 
 
 ***
@@ -102,9 +102,9 @@ Aliases
 .rp [del|r|d|-] <channel>
 ```
 
-|Arguments|Description|
-|:------:|:-----|
-|`channel`|Removes the channel to the whitelisted Reaction-Pin Channels|
+|Arguments|Required|Description|
+|:------:|:-----|:-----|
+|`channel`|✔️|Removes the channel to the whitelisted Reaction-Pin Channels|
 
 ***
 ### `pin_message`
@@ -133,7 +133,6 @@ Aliases:
 
 Arguments:
 
-|Argument|Description|
-|:------:|:------:|
-|True|Message is displayed|
-|False|Message is not displayed|
+|Argument|Required|Description|
+|:------:|:----|:------:|
+|enabled|✔️|Message is displayed if true|
