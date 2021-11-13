@@ -4,4 +4,4 @@ from PyDrocsid.material_colors import MaterialColors
 
 
 class Colors(MaterialColors):
-    DiscordPy = Color.blurple()  # discord color
+    PythonDocs = Color.blurple()
