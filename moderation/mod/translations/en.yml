@@ -6,12 +6,6 @@ permissions:
   modtools_write: write mod tools configuration
 
 times:
-  years:
-    one: "{cnt} year"
-    many: "{cnt} years"
-  months:
-    one: "{cnt} month"
-    many: "{cnt} months"
   days:
     one: "{cnt} day"
     many: "{cnt} days"

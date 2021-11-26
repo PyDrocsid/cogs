@@ -60,17 +60,14 @@ class DurationConverter(Converter):
     async def convert(self, ctx, argument: str) -> Optional[int]:
         if argument.lower() in ("inf", "perm", "permanent", "-1", "∞"):
             return None
-        if (match := re.match(r"^(\d+y)?(\d+m)?(\d+w)?(\d+d)?(\d+h)?(\d+n)?$", argument)) is None:
+        if (match := re.match(r"^(\d+w)?(\d+d)?(\d+h)?(\d+m)?$", argument)) is None:
             raise BadArgument(tg.invalid_duration)
 
-        years, months, weeks, days, hours, minutes = [
-            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 7)
+        weeks, days, hours, minutes = [
+            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 5)
         ]
 
-        days += years * 365
-        days += months * 30
         days += weeks * 7
-
         td = timedelta(days=days, hours=hours, minutes=minutes)
         duration = int(td.total_seconds() / 60)
 
@@ -82,7 +79,7 @@ class DurationConverter(Converter):
 
 
 def time_to_units(minutes: Union[int, float]) -> str:
-    _keys = ("years", "months", "days", "hours", "minutes")
+    _keys = ("days", "hours", "minutes")
 
     rd = relativedelta(
         datetime.fromtimestamp(0) + timedelta(minutes=minutes),
@@ -737,7 +734,7 @@ class ModCog(Cog, name="Mod Tools"):
     async def mute(self, ctx: Context, user: UserMemberConverter, time: DurationConverter, *, reason: str):
         """
         mute a user
-        time format: `ymwdhn`
+        time format: `wdhm`
         set time to `inf` for a permanent mute
         """
 
@@ -901,7 +898,7 @@ class ModCog(Cog, name="Mod Tools"):
     async def edit_mute_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
         """
         edit a mute duration
-        time format: `ymwdhn`
+        time format: `wdhm`
         set time to `inf` for a permanent mute
         """
 
@@ -1250,7 +1247,7 @@ class ModCog(Cog, name="Mod Tools"):
     ):
         """
         ban a user
-        time format: `ymwdhn`
+        time format: `wdhm`
         set time to `inf` for a permanent ban
         """
 
@@ -1415,7 +1412,7 @@ class ModCog(Cog, name="Mod Tools"):
     async def edit_ban_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
         """
         edit a ban duration
-        time format: `ymwdhn`
+        time format: `wdhm`
         set time to `inf` for a permanent ban
         """
 
