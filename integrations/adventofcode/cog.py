@@ -154,13 +154,13 @@ def escape_aoc_name(name: Optional[str]) -> str:
 
 # Alternative get facility
 def get_git_repo(url: str) -> Optional[str]:
-    l = [
+    servers = [
             (r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitlab.com/api/v4/projects/{}%2F{}"),
             (r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitea.com/api/v1/repos/{user}/{repo}"),
             (r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://api.github.com/repos/{user}/{repo}")
         ]
 
-    for pattern, api in l:
+    for pattern, api in servers:
         if not (match := re.match(pattern, url)):
             continue
         _, user, repo, path = match.groups()
@@ -204,7 +204,12 @@ def get_github_repo(url: str) -> Optional[str]:
 
 # Alternative parsing facility
 def parse_git_url(url: str) -> tuple[str, str]:
-    for pattern in [r"^https://gitlab.com/([^/]+)/([^/]+).*", r"^https://gitea.com/([^/]+)/([^/]+).*", r"^https://github.com/([^/]+)/([^/]+).*"]:
+    patterns = [
+            r"^https://gitlab.com/([^/]+)/([^/]+).*",
+            r"^https://gitea.com/([^/]+)/([^/]+).*",
+            r"^https://github.com/([^/]+)/([^/]+).*"
+        ]
+    for pattern in patterns:
         match = re.match(pattern, url)
         if match is not None:
             user, repo = match.groups()
