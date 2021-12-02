@@ -153,7 +153,7 @@ def escape_aoc_name(name: Optional[str]) -> str:
     return "".join(c for c in name if c.isalnum() or c in " _-") if name else ""
 
 # Alternative get facility
-def get_repo(url: str) -> Optional[str]:
+def get_git_repo(url: str) -> Optional[str]:
     l = [
             (r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitlab.com/api/v4/projects/{}%2F{}"),
             (r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitea.com/api/v1/repos/{user}/{repo}"),
@@ -173,7 +173,7 @@ def get_repo(url: str) -> Optional[str]:
     return None
 
 # TODO remove
-def get_git_repo(url: str, pattern: str, api: str) -> Optional[str]:
+def get_repo(url: str, pattern: str, api: str) -> Optional[str]:
     if not (match := re.match(pattern, url)):
         return None
     _, user, repo, path = match.groups()
@@ -203,7 +203,7 @@ def get_github_repo(url: str) -> Optional[str]:
         "https://api.github.com/repos/{user}/{repo}")
 
 # Alternative parsing facility
-def parse_url(url: str) -> tuple[str, str]:
+def parse_git_url(url: str) -> tuple[str, str]:
     for pattern in [r"^https://gitlab.com/([^/]+)/([^/]+).*", r"^https://gitea.com/([^/]+)/([^/]+).*", r"^https://github.com/([^/]+)/([^/]+).*"]:
         match = re.match(pattern, url)
         if match is not None:
@@ -212,7 +212,7 @@ def parse_url(url: str) -> tuple[str, str]:
     return "", "" # TODO how handle error
 
 # TODO remove
-def parse_git_url(url: str, pattern: str) -> tuple[str, str]:
+def parse_url(url: str, pattern: str) -> tuple[str, str]:
     user, repo = re.match(pattern, url).groups()
     return user, repo
 
@@ -395,7 +395,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         embed.add_field(name=":chart_with_upwards_trend: Progress", value=progress, inline=True)
 
         if link and link.solutions:
-            user, repo = parse_github_url(link.solutions)
+            user, repo = parse_git_url(link.solutions)
             embed.add_field(name=":package: Solutions", value=f"[[{user}/{repo}]]({link.solutions})", inline=True)
 
         embed.add_field(name=":star: Stars", value=aoc_member["stars"], inline=True)
@@ -620,7 +620,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             if not link.solutions or link.aoc_id not in members:
                 continue
 
-            user, repo = parse_github_url(link.solutions)
+            user, repo = parse_git_url(link.solutions)
             out.append(f"<@{link.discord_id}> ({members[link.aoc_id]['name']}): [[{user}/{repo}]]({link.solutions})")
 
         if not out:
