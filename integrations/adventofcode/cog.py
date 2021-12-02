@@ -152,22 +152,45 @@ def make_member_stats(member: dict) -> tuple[int, list[str]]:
 def escape_aoc_name(name: Optional[str]) -> str:
     return "".join(c for c in name if c.isalnum() or c in " _-") if name else ""
 
-
-def get_github_repo(url: str) -> Optional[str]:
-    if not (match := re.match(r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", url)):
+def get_git_repo(url: str, pattern: str, api: str) -> Optional[str]:
+    if not (match := re.match(pattern, url)):
         return None
     _, user, repo, path = match.groups()
-    if not (response := requests.get(f"https://api.github.com/repos/{user}/{repo}")).ok:
+    if not (response := requests.get(api.format(user, repo))).ok:
         return None
     url = response.json()["html_url"] + (path or "")
     if not requests.head(url).ok:
         return None
     return url
 
+def get_gitlab_repo(url: str) -> Optional[str]:
+    return get_git_repo(url,
+            r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+            "https://gitlab.com/api/v4/projects/{}%2F{}")
+
+def get_gitea_repo(url: str) -> Optional[str]:
+    return get_git_repo(url,
+        r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+        "https://gitea.com/api/v1/repos/{user}/{repo}")
+
+def get_github_repo(url: str) -> Optional[str]:
+    return get_git_repo(url,
+        r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+        "https://api.github.com/repos/{user}/{repo}")
+
+
+def parse_git_url(url: str, pattern: str) -> tuple[str, str]:
+    user, repo = re.match(pattern, url).groups()
+    return user, repo
+
+def parse_gitlab_url(url: str) -> tuple[str, str]:
+    return parse_git_url(url, r"^https://gitlab.com/([^/]+)/([^/]+).*")
+
+def parse_gitea_url(url: str) -> tuple[str, str]:
+    return parse_git_url(url, r"^https://gitea.com/([^/]+)/([^/]+).*")
 
 def parse_github_url(url: str) -> tuple[str, str]:
-    user, repo = re.match(r"^https://github.com/([^/]+)/([^/]+).*", url).groups()
-    return user, repo
+    return parse_git_url(url, r"^https://github.com/([^/]+)/([^/]+).*")
 
 
 class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
