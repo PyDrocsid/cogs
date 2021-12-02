@@ -178,6 +178,14 @@ def get_github_repo(url: str) -> Optional[str]:
         r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
         "https://api.github.com/repos/{user}/{repo}")
 
+# Alternative parsing facility
+def parse_url(url: str) -> tuple[str, str]:
+    for pattern in [r"^https://gitlab.com/([^/]+)/([^/]+).*", r"^https://gitea.com/([^/]+)/([^/]+).*", r"^https://github.com/([^/]+)/([^/]+).*"]:
+        match = re.match(pattern, url)
+        if match is not None:
+            user, repo = match.groups()
+            return user, repo
+    return "", "" # TODO how handle error
 
 def parse_git_url(url: str, pattern: str) -> tuple[str, str]:
     user, repo = re.match(pattern, url).groups()
