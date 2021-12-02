@@ -152,6 +152,26 @@ def make_member_stats(member: dict) -> tuple[int, list[str]]:
 def escape_aoc_name(name: Optional[str]) -> str:
     return "".join(c for c in name if c.isalnum() or c in " _-") if name else ""
 
+# Alternative get facility
+def get_repo(url: str) -> Optional[str]:
+    l = [
+            (r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitlab.com/api/v4/projects/{}%2F{}"),
+            (r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitea.com/api/v1/repos/{user}/{repo}"),
+            (r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://api.github.com/repos/{user}/{repo}")
+        ]
+
+    for pattern, api in l:
+        if not (match := re.match(pattern, url)):
+            continue
+        _, user, repo, path = match.groups()
+        if not (response := requests.get(api.format(user, repo))).ok:
+            continue # TODO or exit here
+        url = response.json()["html_url"] + (path or "")
+        if not requests.head(url).ok:
+            continue # TODO or exit here
+        return url
+    return None
+
 def get_git_repo(url: str, pattern: str, api: str) -> Optional[str]:
     if not (match := re.match(pattern, url)):
         return None
