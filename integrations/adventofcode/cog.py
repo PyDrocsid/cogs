@@ -172,6 +172,7 @@ def get_repo(url: str) -> Optional[str]:
         return url
     return None
 
+# TODO remove
 def get_git_repo(url: str, pattern: str, api: str) -> Optional[str]:
     if not (match := re.match(pattern, url)):
         return None
@@ -183,16 +184,19 @@ def get_git_repo(url: str, pattern: str, api: str) -> Optional[str]:
         return None
     return url
 
+# TODO remove
 def get_gitlab_repo(url: str) -> Optional[str]:
     return get_git_repo(url,
             r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
             "https://gitlab.com/api/v4/projects/{}%2F{}")
 
+# TODO remove
 def get_gitea_repo(url: str) -> Optional[str]:
     return get_git_repo(url,
         r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
         "https://gitea.com/api/v1/repos/{user}/{repo}")
 
+# TODO remove
 def get_github_repo(url: str) -> Optional[str]:
     return get_git_repo(url,
         r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
@@ -207,16 +211,20 @@ def parse_url(url: str) -> tuple[str, str]:
             return user, repo
     return "", "" # TODO how handle error
 
+# TODO remove
 def parse_git_url(url: str, pattern: str) -> tuple[str, str]:
     user, repo = re.match(pattern, url).groups()
     return user, repo
 
+# TODO remove
 def parse_gitlab_url(url: str) -> tuple[str, str]:
     return parse_git_url(url, r"^https://gitlab.com/([^/]+)/([^/]+).*")
 
+# TODO remove
 def parse_gitea_url(url: str) -> tuple[str, str]:
     return parse_git_url(url, r"^https://gitea.com/([^/]+)/([^/]+).*")
 
+# TODO remove
 def parse_github_url(url: str) -> tuple[str, str]:
     return parse_git_url(url, r"^https://github.com/([^/]+)/([^/]+).*")
 
