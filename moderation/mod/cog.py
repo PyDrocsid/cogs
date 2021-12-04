@@ -507,9 +507,12 @@ class ModCog(Cog, name="Mod Tools"):
     async def on_member_ban(self, guild: Guild, member: Member):
         try:
             entry: AuditLogEntry
-            async for entry in guild.audit_logs(limit=1, action=AuditLogAction.ban):
+            async for entry in guild.audit_logs(limit=100, action=AuditLogAction.ban):
                 if entry.user == self.bot.user:
-                    return
+                    continue
+
+                if member.id != entry.target.id:
+                    continue
 
                 if entry.reason:
                     await Ban.create(
@@ -535,6 +538,8 @@ class ModCog(Cog, name="Mod Tools"):
 
                 else:
                     await send_alert(guild, t.alert_member_banned(str(entry.target), str(entry.user)))
+
+                return
 
         except Forbidden:
             raise CommandError(t.cannot_fetch_audit_logs)
