@@ -112,7 +112,8 @@ async def get_userlog_entries(user_id: int, show_ids: bool) -> list[list[tuple[d
 Arguments:
 
 - `user_id`: The user id
-- `show_ids`: whether to put ids from moderation events into the log entry (only relevant for the mod cog)
+- `show_ids`: Whether to put ids from moderation events into the log entry (only relevant for the mod cog)
+- `author`: The member who requested the user logs (only relevant for the mod cog)
 
 Returns: A list of `(datetime, log_entry)` tuples
 

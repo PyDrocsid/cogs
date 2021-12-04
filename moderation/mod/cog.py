@@ -302,30 +302,31 @@ class ModCog(Cog, name="Mod Tools"):
         return [(t.active_sanctions, status)]
 
     @get_userlog_entries.subscribe
-    async def handle_get_userlog_entries(self, user_id: int, show_ids: bool) -> list[tuple[datetime, str]]:
+    async def handle_get_userlog_entries(self, user_id: int, show_ids: bool, author: Member) -> list[tuple[datetime, str]]:
         out: list[tuple[datetime, str]] = []
 
-        report: Report
-        async for report in await db.stream(filter_by(Report, member=user_id)):
-            if show_ids:
-                out.append(
-                    (
-                        report.timestamp,
-                        t.ulog.reported.id_on(
-                            f"<@{report.reporter}>",
-                            report.reason,
-                            report.id,
-                            show_evidence(report.evidence),
+        if await is_teamler(author):
+            report: Report
+            async for report in await db.stream(filter_by(Report, member=user_id)):
+                if show_ids:
+                    out.append(
+                        (
+                            report.timestamp,
+                            t.ulog.reported.id_on(
+                                f"<@{report.reporter}>",
+                                report.reason,
+                                report.id,
+                                show_evidence(report.evidence),
+                            ),
                         ),
-                    ),
-                )
-            else:
-                out.append(
-                    (
-                        report.timestamp,
-                        t.ulog.reported.id_off(f"<@{report.reporter}>", report.reason, show_evidence(report.evidence)),
-                    ),
-                )
+                    )
+                else:
+                    out.append(
+                        (
+                            report.timestamp,
+                            t.ulog.reported.id_off(f"<@{report.reporter}>", report.reason, show_evidence(report.evidence)),
+                        ),
+                    )
 
         warn: Warn
         async for warn in await db.stream(filter_by(Warn, member=user_id)):

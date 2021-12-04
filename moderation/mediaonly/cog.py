@@ -81,7 +81,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
         return not await db.exists(filter_by(MediaOnlyChannel, channel=channel.id))
 
     @get_userlog_entries.subscribe
-    async def handle_get_userlog_entries(self, user_id: int, _) -> list[tuple[datetime, str]]:
+    async def handle_get_userlog_entries(self, user_id: int, *_) -> list[tuple[datetime, str]]:
         out: list[tuple[datetime, str]] = []
 
         deletion: MediaOnlyDeletion

@@ -246,7 +246,7 @@ class UserInfoCog(Cog, name="User Information"):
 
     @commands.command(aliases=["userlog", "ulog"])
     @optional_permissions(UserInfoPermission.view_userlog)
-    async def userlogs(self, ctx: Context, user: Optional[Union[User, int]] = None):
+    async def userlogs(self, ctx: Context, user: Optional[Union[User, int]] = None, show_ids: Optional[bool] = False):
         """
         show moderation log of a user
         """
@@ -285,7 +285,7 @@ class UserInfoCog(Cog, name="User Information"):
                 else:
                     out.append((verification.timestamp, t.ulog.verification.revoked))
 
-        responses = await get_userlog_entries(user_id, ctx.author)
+        responses = await get_userlog_entries(user_id, show_ids, ctx.author)
         for response in responses:
             out += response
 
