@@ -35,7 +35,7 @@ from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, filter_by, db_wrapper
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import is_teamler
+from PyDrocsid.util import is_teamler, check_role_assignable
 from PyDrocsid.config import Config
 from .colors import Colors
 from .models import Mute, Ban, Report, Warn, Kick
@@ -213,6 +213,8 @@ class ModCog(Cog, name="Mod Tools"):
                     await guild.unban(user := await self.bot.fetch_user(ban.member))
                 except NotFound:
                     user = ban.member, ban.member_name
+                except Forbidden:
+                    await send_alert(guild, t.cannot_unban_permissions)
 
                 await send_to_changelog_mod(
                     guild,
@@ -225,6 +227,12 @@ class ModCog(Cog, name="Mod Tools"):
 
         mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
+            return
+
+        try:
+            check_role_assignable(mute_role)
+        except CommandError:
+            await send_alert(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
             return
 
         async for mute in await db.stream(filter_by(Mute, active=True)):

@@ -91,6 +91,7 @@ log_unmuted_expired: "Unmuted automatically because the mute time for this user 
 unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
+cannot_assign_mute_role: Cannot manage mute role `@{}` ({})
 confirm_mute_edit:
   reason: "Are you sure you want to change this mutes reason from ```\n{}\n```to```\n{}\n```"
   duration: "Are you sure you want to change the mute duration from ```\n{}\n```to```\n{}\n```"
