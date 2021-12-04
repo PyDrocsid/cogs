@@ -301,7 +301,7 @@ class ModCog(Cog, name="Mod Tools"):
 
     @get_userlog_entries.subscribe
     async def handle_get_userlog_entries(
-            self, user_id: int, show_ids: bool, author: Member
+            self, user_id: int, show_ids: bool, author: Member,
     ) -> list[tuple[datetime, str]]:
         out: list[tuple[datetime, str]] = []
 
@@ -325,7 +325,7 @@ class ModCog(Cog, name="Mod Tools"):
                         (
                             report.timestamp,
                             t.ulog.reported.id_off(
-                                f"<@{report.reporter}>", report.reason, show_evidence(report.evidence)
+                                f"<@{report.reporter}>", report.reason, show_evidence(report.evidence),
                             ),
                         ),
                     )
