@@ -63,9 +63,7 @@ class DurationConverter(Converter):
         if (match := re.match(r"^(\d+w)?(\d+d)?(\d+h)?(\d+m)?$", argument)) is None:
             raise BadArgument(tg.invalid_duration)
 
-        weeks, days, hours, minutes = [
-            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 5)
-        ]
+        weeks, days, hours, minutes = [0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 5)]
 
         days += weeks * 7
         td = timedelta(days=days, hours=hours, minutes=minutes)
@@ -302,7 +300,9 @@ class ModCog(Cog, name="Mod Tools"):
         return [(t.active_sanctions, status)]
 
     @get_userlog_entries.subscribe
-    async def handle_get_userlog_entries(self, user_id: int, show_ids: bool, author: Member) -> list[tuple[datetime, str]]:
+    async def handle_get_userlog_entries(
+            self, user_id: int, show_ids: bool, author: Member
+    ) -> list[tuple[datetime, str]]:
         out: list[tuple[datetime, str]] = []
 
         if await is_teamler(author):
@@ -324,7 +324,9 @@ class ModCog(Cog, name="Mod Tools"):
                     out.append(
                         (
                             report.timestamp,
-                            t.ulog.reported.id_off(f"<@{report.reporter}>", report.reason, show_evidence(report.evidence)),
+                            t.ulog.reported.id_off(
+                                f"<@{report.reporter}>", report.reason, show_evidence(report.evidence)
+                            ),
                         ),
                     )
 
