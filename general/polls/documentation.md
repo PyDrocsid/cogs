@@ -30,9 +30,9 @@ The `.poll` command creates a poll with 1 to a maximum of 19 options.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`question`|:heavy_check_mark:|The poll topic/question|
+|`question`|:fontawesome-solid-check:|The poll topic/question|
 |`emojiX`|       |The reaction emote for option X|
-|`option1`|:heavy_check_mark:|The first poll option|
+|`option1`|:fontawesome-solid-check:|The first poll option|
 |`optionX`|       |The Xth poll option|
 
 !!! note
@@ -51,9 +51,9 @@ The `.teampoll` command creates a poll with 1 to a maximum of 20 options and sho
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`question`|:heavy_check_mark:|The poll topic/question|
+|`question`|:fontawesome-solid-check:|The poll topic/question|
 |`emojiX`|       |The reaction emote for option X|
-|`option1`|:heavy_check_mark:|The first poll option|
+|`option1`|:fontawesome-solid-check:|The first poll option|
 |`optionX`|       |The Xth poll option|
 
 !!! note

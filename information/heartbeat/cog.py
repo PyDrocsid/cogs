@@ -1,3 +1,5 @@
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from discord import User, Forbidden
@@ -38,6 +40,7 @@ class HeartbeatCog(Cog, name="Heartbeat"):
                 t.heartbeat,
                 utcnow().strftime("%d.%m.%Y %H:%M:%S UTC"),
             )
+            Path("health").write_text(str(int(datetime.now().timestamp())))
         except Forbidden:
             pass
 
