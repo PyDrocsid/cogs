@@ -325,7 +325,9 @@ class ModCog(Cog, name="Mod Tools"):
                         (
                             report.timestamp,
                             t.ulog.reported.id_off(
-                                f"<@{report.reporter}>", report.reason, show_evidence(report.evidence),
+                                f"<@{report.reporter}>",
+                                report.reason,
+                                show_evidence(report.evidence),
                             ),
                         ),
                     )
