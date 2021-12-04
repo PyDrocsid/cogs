@@ -301,7 +301,10 @@ class ModCog(Cog, name="Mod Tools"):
 
     @get_userlog_entries.subscribe
     async def handle_get_userlog_entries(
-            self, user_id: int, show_ids: bool, author: Member,
+            self,
+            user_id: int,
+            show_ids: bool,
+            author: Member,
     ) -> list[tuple[datetime, str]]:
         out: list[tuple[datetime, str]] = []
 
