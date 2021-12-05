@@ -8,8 +8,8 @@ This cog consists of a reaction event and some moderation commands.
 
 A message is pinned when
 
-a) 
-the user who added the reaction `:pushpin` (📌) has the `reactionpin.pin` permission OR 
+a)
+the user who added the reaction `:pushpin` (📌) has the `reactionpin.pin` permission OR
 
 b)
 1. `:pushpin:` (📌) is added as a reaction to a message AND
@@ -24,7 +24,7 @@ b)
 As soon as the message author or a Team-Member removes his reaction `:pushpin:` 📌, the message will be removed from the pinned messages.
 
 ***
-## `reactionpin`
+## `reactionpin` 
 
 
 This is the main command, for the command group, to show all the subcommands, if you have the permission for it.
@@ -47,7 +47,7 @@ Aliases:
 ***
 ### `add`
 
-This command adds a channel to the whitelisted Reactionpin channel. 
+This command adds a channel to the whitelisted Reactionpin channel.
 
 Required Permissions:
 
@@ -65,19 +65,19 @@ Aliases:
 .rp [add|a|+] <channel>
 ```
 
-|Arguments|Required|Description|
-|:------:|:------|:-----|
-|`channel`|✔️|Adds the channel to the whitelisted Reaction-Pin Channels|
+|Arguments|Required|Description| 
+|:------:|:------|:-----| 
+|`channel`|✔️|Adds the channel to the whitelisted Reaction-Pin Channels| 
 
 
 ***
 ### `remove`
 
-This command removes a channel to the whitelisted Reactionpin channel. 
+This command removes a channel to the whitelisted Reactionpin channel.
 
 Required Permissions:
 
-- `reactionpin.read` 
+- `reactionpin.read`
 - `reactionpin.write`
 
 
@@ -93,9 +93,9 @@ Aliases
 .rp [del|r|d|-] <channel>
 ```
 
-|Arguments|Required|Description|
-|:------:|:-----|:-----|
-|`channel`|✔️|Removes the channel to the whitelisted Reaction-Pin Channels|
+|Arguments|Required|Description| 
+|:------:|:-----|:-----| 
+|`channel`|✔️|Removes the channel to the whitelisted Reaction-Pin Channels| 
 
 ***
 ### `pin_message`
@@ -121,9 +121,6 @@ Aliases:
 
 Arguments:
 
-|Argument|Required|Description|
-|:------:|:----|:------:|
-|enabled|✔️|Message is displayed if true|
-
-
-
+|Argument|Required|Description| 
+|:------:|:----|:------:| 
+|enabled|✔️|Message is displayed if true| 
