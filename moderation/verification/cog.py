@@ -1,9 +1,9 @@
-from datetime import datetime
 from typing import Optional, List
 
 from discord import Role, Member, Guild, Embed
 from discord.ext import commands
 from discord.ext.commands import Context, CommandError, CheckFailure, check, guild_only, UserInputError
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
@@ -38,6 +38,8 @@ class VerificationCog(Cog, name="Verification"):
         correct_password: str = await VerificationSettings.password.get()
         if correct_password is None:
             raise CommandError(t.verification_disabled)
+        if not await db.exists(select(VerificationRole)):
+            raise CommandError(t.verification_disabled)
 
         if password != correct_password:
             raise CommandError(t.password_incorrect)
@@ -46,8 +48,8 @@ class VerificationCog(Cog, name="Verification"):
         member: Member = guild.get_member(ctx.author.id)
 
         delay: int = await VerificationSettings.delay.get()
-        if delay != -1 and (datetime.utcnow() - member.joined_at).total_seconds() < delay:
-            raise CommandError(t.password_incorrect)
+        if delay != -1 and (utcnow() - member.joined_at).total_seconds() < delay:
+            raise CommandError(t.too_soon)
 
         add: List[Role] = []
         remove: List[Role] = []

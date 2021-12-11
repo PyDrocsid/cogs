@@ -18,7 +18,7 @@ You can change the prefix by using:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`new_prefix`|:heavy_check_mark:|The new prefix|
+|`new_prefix`|:fontawesome-solid-check:|The new prefix|
 
 !!! note
     - The prefix cannot contain more than 16 characters.

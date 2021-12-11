@@ -1,0 +1,25 @@
+permissions:
+  read: Read AutoClear configuration
+  write: Write AutoClear configuration
+
+commands:
+  autoclear: Manage AutoClear channels
+  set: Configure message ttl of a given channel
+  disable: Disable AutoClear in a given channel
+
+autoclear: AutoClear
+no_autoclear_channels: ":x: No AutoClear channels."
+cannot_read: >
+  AutoClear could not delete some messages in {} because I don't have `read_message_history` permission there.
+not_deleted: >
+  AutoClear could not delete some messages in {} because I don't have `manage_messages` permission there.
+not_configured: AutoClear has not been configured for this channel.
+cannot_add: Channel could not be configured because I don't have `manage_messages` permission there.
+set:
+  one: "**Message TTL** for {} has been **set** to {cnt} minute."
+  many: "**Message TTL** for {} has been **set** to {cnt} minutes."
+disabled: "**AutoClear** has been **disabled** for {}."
+
+minutes:
+  one: "{cnt} minute"
+  many: "{cnt} minutes"

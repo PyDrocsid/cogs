@@ -1,0 +1,84 @@
+Abraham De Moivre
+Ada Lovelace
+Al Khwarizmi
+Alan Turing
+Albert Einstein
+Albertus Magnus
+Alexandre Grothendieck
+Alfred North Whitehead
+Andrew Wiles
+Archimedes
+Aristotle
+Arthur Cayley
+Aryabhata
+Augustin-Louis Cauchy
+Augustus De Morgan
+Benjamin Banneker
+Bernhard Riemann
+Bertrand Russell
+Blaise Pascal
+Brahmagupta
+Brook Taylor
+Carl Friedrich Gauss
+Charles Babbage
+Charles Babbage
+Christiaan Huygens
+Daniel Bernoulli
+David Hilbert
+Democritus
+Diophantus
+Edmund Halley
+Edward Lorenz
+Edward Witten
+Emanuel Lasker
+Emmy Noether
+Eratosthenes
+Euclid
+Évariste Galois
+Felix Klein
+Fibonacci
+Filippo Brunelleschi
+G.H. Hardy
+Galileo Galilei
+Gaspard Monge
+Georg Cantor
+George Boole
+Giuseppe Peano
+Gottfried Leibniz
+Gottlob Frege
+Grace Murray Hopper
+Grigori Perelman
+Henri Poincaré
+Heron Of Alexandria
+Hipparchus
+Isaac Newton
+Jacob Bernoulli
+Johann Bernoulli
+Johannes Kepler
+John Napier
+John Nash
+John Venn
+John von Neumann
+John Wallis
+Joseph Fourier
+Joseph Louis Lagrange
+Julia Robinson
+Kurt Gödel
+Leonhard Euler
+Liu Hui
+Luca Pacioli
+Madhava
+Maurits Escher
+Niels Henrik Abel
+Omar Khayyam
+Paul Cohen
+Pierre de Fermat
+Pierre-Simon Laplace
+Plato
+Ptolemy
+Pythagoras
+René Descartes
+Sophie Germain
+Srinivasa Ramanujan
+Thales
+William Rowan Hamilton

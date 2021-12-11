@@ -4,6 +4,7 @@ permissions:
   auth_read: read role assignment permissions
   auth_write: write role assignment permissions
   list_members: list role members
+  roles_clone: clones existing roles
 
 commands:
   roles: manage roles
@@ -12,6 +13,7 @@ commands:
   roles_auth_add: add a new role assignment authorization
   roles_auth_remove: remove a role assignment authorization
   roles_add: assign a role to a member
+  roles_clone: clone an existing role
   roles_remove: remove a role from a member
   roles_perma_add: assign a role permanently to a member
   roles_perma_unset: remove the perma flag from a member role
@@ -38,7 +40,9 @@ role_auth_removed: Role assignment authorization has been removed successfully.
 log_role_auth_removed: Role assignment authorization `@{}` -> `@{}` has been removed.
 role_not_authorized: You are not allowed to manage this role.
 member_list: Member List
-member_list_cnt: Member List ({})
+member_list_cnt:
+  one: "Member List of @{} ({cnt} Member)"
+  many: "Member List of @{} ({cnt} Members)"
 member_list_line: ":small_orange_diamond: {} ({})"
 no_members: No member was found with this role.
 role_already_assigned: Role has already been assigned to this member.
@@ -50,3 +54,5 @@ perma_reassigned: Perma role {} has been reassigned to {} ({}). If you want to r
 no_perma_roles: No permanent role assignments.
 perma_roles: Permanent Role Assignments
 could_not_reassign: Could not reassign perma role {} to {} ({}).
+clone_no_permission: I cannot clone this role because I don't have `manage_roles` permission on this server.
+failed_to_clone_role_permissions: ":warning: Could not clone following permissions:"

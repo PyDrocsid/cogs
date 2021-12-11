@@ -8,7 +8,7 @@ from discord import Embed, Message, Status, Game
 from discord.ext import commands, tasks
 from discord.ext.commands import Context
 
-from PyDrocsid.cog import Cog
+from PyDrocsid.cog import Cog, get_documentation
 from PyDrocsid.command import reply, docs
 from PyDrocsid.config import Config
 from PyDrocsid.embeds import send_long_embed
@@ -86,8 +86,11 @@ class InfoComponent:
     @staticmethod
     def pydrocsid(inline: bool):
         async def inner(_, embed: Embed):
-            async with ClientSession() as session, session.head("https://discord.pydrocsid.ml") as response:
-                url = response.headers["location"]
+            async with ClientSession() as session, session.head(
+                Config.DISCORD_INVITE,
+                allow_redirects=True,
+            ) as response:
+                url = str(response.url)
             code = url.split("/")[-1]
 
             embed.add_field(name=t.pydrocsid, value=t.pydrocsid_info(code=code), inline=inline)
@@ -219,6 +222,8 @@ class BotInfoCog(Cog, name="Bot Information"):
     async def cogs(self, ctx: Context):
         description = []
         for name, cog in sorted(self.bot.cogs.items()):
+            if doc_url := get_documentation(cog):
+                name = f"[{name}]({doc_url})"
             description.append(f":small_orange_diamond: {name} (`{cog.__class__.__name__}`)")
 
         await send_long_embed(

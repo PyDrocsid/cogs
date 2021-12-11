@@ -58,7 +58,7 @@ class SudoCog(Cog, name="Sudo"):
     @commands.command()
     @SudoPermission.clear_cache.check
     async def clear_cache(self, ctx: Context):
-        await redis.flushall()
+        await redis.flushdb()
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @commands.command()
