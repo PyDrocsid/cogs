@@ -157,13 +157,16 @@ def escape_aoc_name(name: Optional[str]) -> str:
 def get_git_repo(url: str) -> Optional[str]:
     servers = [
         (
-            r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitlab.com/api/v4/projects/{}%2F{}"
+            r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+            "https://gitlab.com/api/v4/projects/{}%2F{}",
         ),
         (
-            r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitea.com/api/v1/repos/{user}/{repo}"
+            r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+            "https://gitea.com/api/v1/repos/{user}/{repo}",
         ),
         (
-            r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://api.github.com/repos/{user}/{repo}"
+            r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+            "https://api.github.com/repos/{user}/{repo}",
         ),
     ]
 
@@ -183,10 +186,10 @@ def get_git_repo(url: str) -> Optional[str]:
 # Alternative parsing facility
 def parse_git_url(url: str) -> tuple[str, str]:
     patterns = [
-            r"^https://gitlab.com/([^/]+)/([^/]+).*",
-            r"^https://gitea.com/([^/]+)/([^/]+).*",
-            r"^https://github.com/([^/]+)/([^/]+).*"
-        ]
+        r"^https://gitlab.com/([^/]+)/([^/]+).*",
+        r"^https://gitea.com/([^/]+)/([^/]+).*",
+        r"^https://github.com/([^/]+)/([^/]+).*",
+    ]
     for pattern in patterns:
         match = re.match(pattern, url)
         if match is not None:
@@ -551,7 +554,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         if not await db.get(AOCLink, discord_id=ctx.author.id):
             raise CommandError(t.not_verified)
 
-        url: Optional[str] = get_github_repo(url)
+        url: Optional[str] = get_git_repo(url)
         if not url or len(url) > 128:
             raise CommandError(t.invalid_url)
 
