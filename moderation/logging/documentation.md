@@ -8,7 +8,7 @@ This cog provides commands to set up the logging channels.
 
 The `.logging` command is the main command of the logging cog. It uses 8 different subcommands, which also often have 2-3 subcommands.
 
-If no subcommand is given, the command shows the settings (channels, editing-range, etc)
+If no subcommand is given, the command shows the settings (channels, editing range, etc).
 
 ```css
 .[logging|log]
