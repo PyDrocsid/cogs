@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, List, Tuple, Type
 
 from discord import (
     Role,
@@ -110,7 +110,7 @@ async def compare_mod_level(mod: Member, mod_level: int) -> bool:
     return await get_mod_level(mod) > mod_level or mod == mod.guild.owner
 
 
-async def get_and_compare_entry(entry_format: db.Base, entry_id: int, mod: Member):
+async def get_and_compare_entry(entry_format: Type[db.Base], entry_id: int, mod: Member):
     entry = await db.get(entry_format, id=entry_id)
     if entry is None:
         raise CommandError(getattr(t.not_found, entry_format.__tablename__))
