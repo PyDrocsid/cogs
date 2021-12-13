@@ -8,7 +8,7 @@ This cog contains a function for sending pictures from cute Nekos.
 
 ## `nekos`
 
-The `.nekos` command sends a picture of a cute Neko
+The `.nekos` command sends a picture of a cute Neko.
 
 ```css
 .nekos
