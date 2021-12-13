@@ -152,55 +152,33 @@ def make_member_stats(member: dict) -> tuple[int, list[str]]:
 def escape_aoc_name(name: Optional[str]) -> str:
     return "".join(c for c in name if c.isalnum() or c in " _-") if name else ""
 
+
 # Alternative get facility
 def get_git_repo(url: str) -> Optional[str]:
     servers = [
-            (r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitlab.com/api/v4/projects/{}%2F{}"),
-            (r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitea.com/api/v1/repos/{user}/{repo}"),
-            (r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://api.github.com/repos/{user}/{repo}")
-        ]
+        (
+            r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitlab.com/api/v4/projects/{}%2F{}"
+        ),
+        (
+            r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://gitea.com/api/v1/repos/{user}/{repo}"
+        ),
+        (
+            r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", "https://api.github.com/repos/{user}/{repo}"
+        ),
+    ]
 
     for pattern, api in servers:
         if not (match := re.match(pattern, url)):
             continue
         _, user, repo, path = match.groups()
         if not (response := requests.get(api.format(user, repo))).ok:
-            continue # TODO or exit here
+            continue  # TODO or exit here
         url = response.json()["html_url"] + (path or "")
         if not requests.head(url).ok:
-            continue # TODO or exit here
+            continue  # TODO or exit here
         return url
     return None
 
-# TODO remove
-def get_repo(url: str, pattern: str, api: str) -> Optional[str]:
-    if not (match := re.match(pattern, url)):
-        return None
-    _, user, repo, path = match.groups()
-    if not (response := requests.get(api.format(user, repo))).ok:
-        return None
-    url = response.json()["html_url"] + (path or "")
-    if not requests.head(url).ok:
-        return None
-    return url
-
-# TODO remove
-def get_gitlab_repo(url: str) -> Optional[str]:
-    return get_git_repo(url,
-            r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
-            "https://gitlab.com/api/v4/projects/{}%2F{}")
-
-# TODO remove
-def get_gitea_repo(url: str) -> Optional[str]:
-    return get_git_repo(url,
-        r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
-        "https://gitea.com/api/v1/repos/{user}/{repo}")
-
-# TODO remove
-def get_github_repo(url: str) -> Optional[str]:
-    return get_git_repo(url,
-        r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
-        "https://api.github.com/repos/{user}/{repo}")
 
 # Alternative parsing facility
 def parse_git_url(url: str) -> tuple[str, str]:
@@ -214,24 +192,7 @@ def parse_git_url(url: str) -> tuple[str, str]:
         if match is not None:
             user, repo = match.groups()
             return user, repo
-    return "", "" # TODO how handle error
-
-# TODO remove
-def parse_url(url: str, pattern: str) -> tuple[str, str]:
-    user, repo = re.match(pattern, url).groups()
-    return user, repo
-
-# TODO remove
-def parse_gitlab_url(url: str) -> tuple[str, str]:
-    return parse_git_url(url, r"^https://gitlab.com/([^/]+)/([^/]+).*")
-
-# TODO remove
-def parse_gitea_url(url: str) -> tuple[str, str]:
-    return parse_git_url(url, r"^https://gitea.com/([^/]+)/([^/]+).*")
-
-# TODO remove
-def parse_github_url(url: str) -> tuple[str, str]:
-    return parse_git_url(url, r"^https://github.com/([^/]+)/([^/]+).*")
+    return "", ""  # TODO how handle error
 
 
 class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
