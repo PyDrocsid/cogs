@@ -143,7 +143,7 @@ Sends a message if a message was edited.
 
 ### channel
 
-Sets the channel for the log (Has to be used for enable the logging channels after disabling)
+Sets the channel for the log (has to be used to enable the logging channels after disabling).
 
 ```css
 .logging edit [channel|ch|c] <channel>
