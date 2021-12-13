@@ -1,3 +1,5 @@
+from aiohttp import ClientSession
+
 from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -8,8 +10,6 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
 from .colors import Colors
 from ...contributor import Contributor
-
-from aiohttp import ClientSession
 
 tg = t.g
 t = t.nekosbest
