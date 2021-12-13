@@ -72,7 +72,7 @@ Enables the log function for a channel.
 
 ## `alert`
 
-Sends a message if an error occurs or if someone is channelhopping for example.
+Sends a message if an error occurs or e.g. if someone is moving through various channels.
 
 ```css
 .logging [alert|al|a]
