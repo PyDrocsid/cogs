@@ -28,7 +28,7 @@ The `.maxage` command configures a period after which old log entries should be 
 |:------:|:------:|:----------|
 |`days`|:heavy_check_mark:|Time after which the old messages should be deleted|
 
-If the value of `days` is set to `-1`, the deletion of the log entries is deactivated.
+If the value of `days` is set to `-1`, the deletion of the log entries is disabled.
 
 
 ## `exclude`
