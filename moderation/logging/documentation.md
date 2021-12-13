@@ -59,7 +59,7 @@ Disables the log function for a channel.
 
 ### remove
 
-Removes a channel from the exclude list.
+Enables the log function for a channel.
 
 ```css
 .logging exclude [remove|r|del|d|-] <channel>
