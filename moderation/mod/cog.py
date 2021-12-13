@@ -115,7 +115,7 @@ async def get_and_compare_entry(entry_format: Type[db.Base], entry_id: int, mod:
     if entry is None:
         raise CommandError(getattr(t.not_found, entry_format.__tablename__))
 
-    if not await compare_mod_level(mod, entry.mod_level) or not mod.id == entry.mod:
+    if mod.id != entry.mod and not await compare_mod_level(mod, entry.mod_level):
         raise CommandError(tg.permission_denied)
 
     return entry
