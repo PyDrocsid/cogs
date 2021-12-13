@@ -34,7 +34,7 @@ If the value of `days` is set to `-1`, the deletion of the log entries is disabl
 ## `exclude`
 
 
-The `.exclude` command excludes channel from the logging function. It has 2 subcommands.
+The `.exclude` command excludes a channel from the logging function. It has 2 subcommands.
 
 If no subcommand is given, the command shows a list with excluded channels.
 
