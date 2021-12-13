@@ -67,7 +67,7 @@ Enables the log function for a channel.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel which should be removed from the excluded list|
+|`channel`|:heavy_check_mark:|The channel which should be included in logging|
 
 
 ## `alert`
