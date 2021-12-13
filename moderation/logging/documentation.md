@@ -165,7 +165,7 @@ Disables edit event logging.
 
 ### mindist
 
-Sets a number for the minimum ammount that has to be changed to activate the event.
+Sets a number for the minimum amount that has to be changed to activate the event.
 
 ```css
 .logging [edit|e] [mindist|md] <mindist>
