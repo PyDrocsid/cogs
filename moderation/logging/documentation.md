@@ -112,7 +112,7 @@ Sends a message if some changes are made, for example creating a reaction role, 
 
 ### channel
 
-Sets the channel for the log (Has to be used for enable the logging channels after disabling)
+Sets the channel for the log (has to be used to enable the logging channels after disabling).
 
 ```css
 .logging changelog [channel|ch|c] <channel>
