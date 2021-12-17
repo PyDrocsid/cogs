@@ -22,7 +22,7 @@ The `.show` command shows detailed information about a given server on the white
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|server|:heavy_check_mark:|The server's name, id or invite|
+|server|:fontawesome-solid-check:|The server's name, id or invite|
 
 
 ## `add`
@@ -35,8 +35,8 @@ The `.add` command adds a Discord server to the whitelist.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|invite|:heavy_check_mark:|The invite link (should be permanent with unlimited usages)|
-|applicant|:heavy_check_mark:|The user who wants to add the server to the list|
+|invite|:fontawesome-solid-check:|The invite link (should be permanent with unlimited usages)|
+|applicant|:fontawesome-solid-check:|The user who wants to add the server to the list|
 
 Required Permissions:
 
@@ -53,7 +53,7 @@ The `.remove` command removes a server from the whitelist.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|server|:heavy_check_mark:|The server's name, id or invite|
+|server|:fontawesome-solid-check:|The server's name, id or invite|
 
 Required Permissions:
 
@@ -70,4 +70,4 @@ The `.update` command allows the applicant and users with the `invites.manage` p
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|invite|:heavy_check_mark:|The new invite link (should be permanent with unlimited usages)|
+|invite|:fontawesome-solid-check:|The new invite link (should be permanent with unlimited usages)|

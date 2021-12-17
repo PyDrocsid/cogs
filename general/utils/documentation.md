@@ -26,7 +26,7 @@ Usage:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`ID`|:heavy_check_mark:|The snowflake ID|
+|`ID`|:fontawesome-solid-check:|The snowflake ID|
 
 
 ## `encode`
@@ -41,7 +41,7 @@ Usage:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`user`|:heavy_check_mark:|The user or member|
+|`user`|:fontawesome-solid-check:|The user or member|
 
 
 ## `suggest_role_color`

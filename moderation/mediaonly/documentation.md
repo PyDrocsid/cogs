@@ -26,7 +26,7 @@ The `add` subcommand sets the media-only flag for a given text channel.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel|
+|`channel`|:fontawesome-solid-check:|The channel|
 
 Required Permissions:
 
@@ -47,7 +47,7 @@ The `remove` subcommand removes the media-only flag from a given text channel.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel|
+|`channel`|:fontawesome-solid-check:|The channel|
 
 Required Permissions:
 
