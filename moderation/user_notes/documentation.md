@@ -3,13 +3,30 @@
 This cog provides the `.user_notes` command to manage user notes.
 
 
-## user_notes
+## `user_notes`
 
 The `.user_notes` command contains subcommands to manage user notes.
 
 ```css
-.[user_notes|un] [subcommand]
+.[user_notes|un]
 ```
+
+Required Permissions:
+
+- `user_notes.read`
+
+
+### `show`
+
+The `show` subcommand shows all notes of a specific user.
+
+```css
+.user_notes [show|s|list|l] <member>
+```
+
+|Argument|Required|Description|
+|:------:|:------:|:----------|
+|`member`|:fontawesome-solid-check:|A member|
 
 Required Permissions:
 
@@ -26,8 +43,8 @@ The `add` subcommand is used to add a note to a specific user.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`member`|:heavy_check_mark:|A member|
-|`note`|:heavy_check_mark:|The note you want to add|
+|`member`|:fontawesome-solid-check:|A member|
+|`content`|:fontawesome-solid-check:|The note you want to add|
 
 Required Permissions:
 
@@ -45,26 +62,9 @@ The `remove` subcommand removes a user note by note id.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`note_id`|:heavy_check_mark:|A note id|
+|`note_id`|:fontawesome-solid-check:|A note id|
 
 Required Permissions:
 
 - `user_notes.read`
 - `user_notes.write`
-
-
-### `show`
-
-The `show` subcommand shows all notes for a member.
-
-```css
-.user_notes [show|s|list|l] <member>
-```
-
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`member`|:heavy_check_mark:|A member|
-
-Required Permissions:
-
-- `user_notes.read`
