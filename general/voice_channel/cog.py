@@ -26,7 +26,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
 from discord.utils import utcnow
 
-from PyDrocsid.async_thread import gather_any, GatherAnyException
+from PyDrocsid.async_thread import gather_any, GatherAnyError
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply, confirm, optional_permissions
 from PyDrocsid.database import filter_by, db, select, delete, db_context, db_wrapper
@@ -106,7 +106,7 @@ async def get_commands_embed() -> Embed:
 async def rename_channel(channel: Union[TextChannel, VoiceChannel], name: str):
     try:
         idx, _ = await gather_any(channel.edit(name=name), asyncio.sleep(3))
-    except GatherAnyException as e:
+    except GatherAnyError as e:
         raise e.exception
 
     if idx:
