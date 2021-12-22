@@ -5,7 +5,7 @@ from typing import Optional, Union
 from discord import Embed, User, Member
 from discord.ext import commands
 from discord.ext.commands import Context, CommandError, max_concurrency, guild_only
-from discord.utils import snowflake_time
+from discord.utils import snowflake_time, format_dt
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
@@ -64,7 +64,7 @@ class UtilsCog(Cog, name="Utils"):
             raise CommandError(t.invalid_snowflake)
 
         try:
-            await reply(ctx, snowflake_time(arg).strftime("%d.%m.%Y %H:%M:%S"))
+            await reply(ctx, format_dt(snowflake_time(arg), style="F"))
         except (OverflowError, ValueError, OSError):
             raise CommandError(t.invalid_snowflake)
 
