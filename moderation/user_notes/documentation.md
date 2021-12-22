@@ -21,14 +21,14 @@ Required Permissions:
 Shows all notes for a specific user.
 
 ```css
-.user_notes [show|s|list|l] <member>
+.user_notes [show|s|list|l] <user>
 ```
 
 Arguments:
 
-| Argument | Required           | Description |
-|:--------:|:------------------:|:------------|
-|`member`|:fontawesome-solid-check:|A member|
+| Argument | Required                  | Description |
+|:--------:|:-------------------------:|:------------|
+| `user`   | :fontawesome-solid-check: | A user      |
 
 Required Permissions:
 
@@ -40,13 +40,15 @@ Required Permissions:
 Adds a note to a specific user.
 
 ```css
-.user_notes [add|a|+] <member> <content>
+.user_notes [add|a|+] <user> <content>
 ```
 
-| Argument  | Required           | Description     |
-|:---------:|:------------------:|:----------------|
-|`member`|:fontawesome-solid-check:|A member|
-|`content`|:fontawesome-solid-check:|The note you want to add|
+Arguments:
+
+| Argument  | Required                  | Description     |
+|:---------:|:-------------------------:|:----------------|
+| `user`    | :fontawesome-solid-check: | A user          |
+| `content` | :fontawesome-solid-check: | The note to add |
 
 Required Permissions:
 
@@ -62,9 +64,11 @@ Removes a user note by note id.
 .user_notes [remove|r|delete|d|-] <note_id>
 ```
 
-| Argument  | Required           | Description |
-|:---------:|:------------------:|:------------|
-|`note_id`|:fontawesome-solid-check:|A note id|
+Arguments:
+
+| Argument  | Required                  | Description |
+|:---------:|:-------------------------:|:------------|
+| `note_id` | :fontawesome-solid-check: | A note id   |
 
 Required Permissions:
 
