@@ -24,7 +24,7 @@ from discord import (
 from discord.abc import Messageable
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
-from discord.utils import utcnow
+from discord.utils import utcnow, format_dt
 
 from PyDrocsid.async_thread import gather_any, GatherAnyError
 from PyDrocsid.cog import Cog
@@ -277,7 +277,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 text_channel,
                 title,
                 "",
-                utcnow().strftime("%d.%m.%Y %H:%M:%S"),
+                format_dt(now := utcnow(), style="D") + " " + format_dt(now, style="T"),
                 msg,
                 colour=color,
                 force_new_embed=force_new_embed,
