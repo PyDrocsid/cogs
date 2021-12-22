@@ -1,11 +1,11 @@
 # User Notes
 
-This cog provides the `.user_notes` command to manage user notes.
+Contains the `.user_notes` command to manage user notes.
 
 
 ## `user_notes`
 
-The `.user_notes` command contains subcommands to manage user notes.
+Contains subcommands to manage user notes.
 
 ```css
 .[user_notes|un]
@@ -18,14 +18,16 @@ Required Permissions:
 
 ### `show`
 
-The `show` subcommand shows all notes of a specific user.
+Shows all notes for a specific user.
 
 ```css
 .user_notes [show|s|list|l] <member>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
+Arguments:
+
+| Argument | Required           | Description |
+|:--------:|:------------------:|:------------|
 |`member`|:fontawesome-solid-check:|A member|
 
 Required Permissions:
@@ -35,14 +37,14 @@ Required Permissions:
 
 ### `add`
 
-The `add` subcommand is used to add a note to a specific user.
+Adds a note to a specific user.
 
 ```css
 .user_notes [add|a|+] <member> <content>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
+| Argument  | Required           | Description     |
+|:---------:|:------------------:|:----------------|
 |`member`|:fontawesome-solid-check:|A member|
 |`content`|:fontawesome-solid-check:|The note you want to add|
 
@@ -54,14 +56,14 @@ Required Permissions:
 
 ### `remove`
 
-The `remove` subcommand removes a user note by note id.
+Removes a user note by note id.
 
 ```css
 .user_notes [remove|r|delete|d|-] <note_id>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
+| Argument  | Required           | Description |
+|:---------:|:------------------:|:------------|
 |`note_id`|:fontawesome-solid-check:|A note id|
 
 Required Permissions:
