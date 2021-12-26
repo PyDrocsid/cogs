@@ -59,9 +59,7 @@ alert_report: "{} reported {} because of ```\n{}\n```"
 # warns
 warn: ":warning: Warn"
 cannot_warn: This member cannot be warned.
-warned:
-  evidence: "{} just warned you on {}:```\n{}\n```Evidence: {}"
-  no_evidence: "{} just warned you on {}:```\n{}\n```"
+warned: "{} just warned you on {}:```\n{}\n```"
 warned_response: "User warned successfully :white_check_mark:"
 log_warned: ":warning: Member warned"
 confirm_warn_edit: "Are you sure you want to change this warns reason from ```\n{}\n```to```\n{}\n```"
@@ -79,12 +77,8 @@ unmute: ":loud_sound: Mute"
 mute_role_not_set: User could not be muted because no mute role is configured.
 cannot_mute: This member cannot be muted.
 already_muted: User is already muted for the given period of time.
-muted:
-  evidence: "{} just muted you on {} for {}:```\n{}\n```Evidence: {}"
-  no_evidence: "{} just muted you on {} for {}:```\n{}\n```"
-muted_inf:
-  evidence: "{} just muted you on {}:```\n{}\n```Evidence: {}"
-  no_evidence: "{} just muted you on {}:```\n{}\n```"
+muted: "{} just muted you on {} for {}:```\n{}\n```"
+muted_inf: "{} just muted you on {}:```\n{}\n```"
 muted_response: "User muted successfully :white_check_mark:"
 log_muted: ":mute: Member muted"
 log_unmuted_expired: "Unmuted automatically because the mute time for this user has expired."
@@ -109,9 +103,7 @@ log_mute_deleted: ":loud_sound: Mute deleted"
 
 # kicks
 kick: ":x: Kick"
-kicked:
-  evidence: "{} just kicked you from {}:```\n{}\n```Evidence: {}"
-  no_evidence: "{} just kicked you from {}:```\n{}\n```"
+kicked: "{} just kicked you from {}:```\n{}\n```"
 kicked_response: "User kicked successfully :white_check_mark:"
 log_kicked: ":x: Member kicked"
 cannot_kick: This member cannot be kicked.
@@ -131,12 +123,8 @@ unban: ":white_check_mark: Ban"
 cannot_ban: This member cannot be banned.
 already_banned: This member is already banned for the given period of time.
 cannot_ban_permissions: User could not be banned because I don't have `ban_members` permission on this server.
-banned:
-  evidence: "{} just banned you from {} for {}:```\n{}\n```Evidence: {}"
-  no_evidence: "{} just banned you from {} for {}:```\n{}\n```"
-banned_inf:
-  evidence: "{} just banned you from {}:```\n{}\n```Evidence: {}"
-  no_evidence: "{} just banned you from {}:```\n{}\n```"
+banned: "{} just banned you from {} for {}:```\n{}\n```"
+banned_inf: "{} just banned you from {}:```\n{}\n```"
 banned_response: "User banned successfully :white_check_mark:"
 log_banned: ":no_entry: Member Banned"
 log_unbanned_expired: "Unbanned automatically because the ban time for this user has expired."

@@ -642,16 +642,8 @@ class ModCog(Cog, name="Mod Tools"):
         user_embed = Embed(
             title=t.warn,
             colour=Colors.ModTools,
+            description=t.warned(ctx.author.mention, ctx.guild.name, reason)
         )
-        if evidence:
-            user_embed.description = t.warned.evidence(
-                ctx.author.mention,
-                ctx.guild.name,
-                reason,
-                t.image_link(evidence.filename, evidence_url),
-            )
-        else:
-            user_embed.description = t.warned.no_evidence(ctx.author.mention, ctx.guild.name, reason)
 
         server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
@@ -798,21 +790,8 @@ class ModCog(Cog, name="Mod Tools"):
                 reason,
                 evidence_url,
             )
-            if evidence:
-                user_embed.description = t.muted.evidence(
-                    ctx.author.mention,
-                    ctx.guild.name,
-                    time_to_units(minutes),
-                    reason,
-                    t.image_link(evidence.filename, evidence_url),
-                )
-            else:
-                user_embed.description = t.muted.no_evidence(
-                    ctx.author.mention,
-                    ctx.guild.name,
-                    time_to_units(minutes),
-                    reason,
-                )
+
+            user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
 
             await send_to_changelog_mod(
                 ctx.guild,
@@ -834,15 +813,8 @@ class ModCog(Cog, name="Mod Tools"):
                 reason,
                 evidence_url,
             )
-            if evidence:
-                user_embed.description = t.muted_inf.evidence(
-                    ctx.author.mention,
-                    ctx.guild.name,
-                    reason,
-                    t.image_link(evidence.filename, evidence_url),
-                )
-            else:
-                user_embed.description = t.muted_inf.no_evidence(ctx.author.mention, ctx.guild.name, reason)
+
+            user_embed.description = t.muted_inf(ctx.author.mention, ctx.guild.name, reason)
 
             await send_to_changelog_mod(
                 ctx.guild,
@@ -1143,17 +1115,8 @@ class ModCog(Cog, name="Mod Tools"):
         user_embed = Embed(
             title=t.kick,
             colour=Colors.ModTools,
+            description=t.kicked.no_evidence(ctx.author.mention, ctx.guild.name, reason),
         )
-
-        if evidence:
-            user_embed.description = t.kicked.evidence(
-                ctx.author.mention,
-                ctx.guild.name,
-                reason,
-                t.image_link(evidence.filename, evidence_url),
-            )
-        else:
-            user_embed.description = t.kicked.no_evidence(ctx.author.mention, ctx.guild.name, reason)
 
         server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(member), icon_url=member.display_avatar.url)
@@ -1313,21 +1276,9 @@ class ModCog(Cog, name="Mod Tools"):
                 evidence_url,
                 False,
             )
-            if evidence:
-                user_embed.description = t.banned.evidence(
-                    ctx.author.mention,
-                    ctx.guild.name,
-                    time_to_units(minutes),
-                    reason,
-                    t.image_link(evidence.filename, evidence_url),
-                )
-            else:
-                user_embed.description = t.banned.no_evidence(
-                    ctx.author.mention,
-                    ctx.guild.name,
-                    time_to_units(minutes),
-                    reason,
-                )
+
+            user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
+
             await send_to_changelog_mod(
                 ctx.guild,
                 ctx.message,
@@ -1349,15 +1300,8 @@ class ModCog(Cog, name="Mod Tools"):
                 evidence_url,
                 False,
             )
-            if evidence:
-                user_embed.description = t.banned_inf.evidence(
-                    ctx.author.mention,
-                    ctx.guild.name,
-                    reason,
-                    t.image_link(evidence.filename, evidence_url),
-                )
-            else:
-                user_embed.description = t.banned_inf.evidence(ctx.author.mention, ctx.guild.name, reason)
+
+            user_embed.description = t.banned_inf(ctx.author.mention, ctx.guild.name, reason)
 
             await send_to_changelog_mod(
                 ctx.guild,
