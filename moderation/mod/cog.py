@@ -679,7 +679,10 @@ class ModCog(Cog, name="Mod Tools"):
         if not await confirm_action(ctx, conf_embed):
             return
 
-        user = self.bot.get_user(warn.member)
+        try:
+            user = await self.bot.fetch_user(warn.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
 
         user_embed = Embed(
             title=t.warn,
@@ -721,7 +724,11 @@ class ModCog(Cog, name="Mod Tools"):
 
         await Warn.delete(warn_id)
 
-        user = await self.bot.fetch_user(warn.member)
+        try:
+            user = await self.bot.fetch_user(warn.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
+
         server_embed = Embed(title=t.warn, description=t.warn_deleted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
@@ -867,7 +874,10 @@ class ModCog(Cog, name="Mod Tools"):
         if not await confirm_action(ctx, conf_embed):
             return
 
-        user = self.bot.get_user(mute.member)
+        try:
+            user = await self.bot.fetch_user(mute.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
 
         user_embed = Embed(
             title=t.mute,
@@ -996,7 +1006,10 @@ class ModCog(Cog, name="Mod Tools"):
                 if (mute_role := await get_mute_role(ctx.guild)) in user.roles:
                     await user.remove_roles(mute_role)
 
-        user = await self.bot.fetch_user(mute.member)
+        try:
+            user = await self.bot.fetch_user(mute.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
 
         await Mute.delete(mute_id)
 
@@ -1155,7 +1168,10 @@ class ModCog(Cog, name="Mod Tools"):
         if not await confirm_action(ctx, conf_embed):
             return
 
-        user = self.bot.get_user(kick.member)
+        try:
+            user = await self.bot.fetch_user(kick.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
 
         user_embed = Embed(
             title=t.kick,
@@ -1197,7 +1213,11 @@ class ModCog(Cog, name="Mod Tools"):
 
         await Kick.delete(kick_id)
 
-        user = await self.bot.fetch_user(kick.member)
+        try:
+            user = await self.bot.fetch_user(kick.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
+
         server_embed = Embed(title=t.warn, description=t.kick_deleted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
@@ -1357,7 +1377,10 @@ class ModCog(Cog, name="Mod Tools"):
         if not await confirm_action(ctx, conf_embed):
             return
 
-        user = self.bot.get_user(ban.member)
+        try:
+            user = await self.bot.fetch_user(ban.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
 
         user_embed = Embed(title=t.ban, description=t.ban_edited.reason(ban.reason, reason), colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
@@ -1478,7 +1501,10 @@ class ModCog(Cog, name="Mod Tools"):
                 except HTTPException:
                     pass
 
-        user = await self.bot.fetch_user(ban.member)
+        try:
+            user = await self.bot.fetch_user(ban.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
 
         await Ban.delete(ban_id)
 
