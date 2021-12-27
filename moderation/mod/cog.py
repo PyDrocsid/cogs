@@ -17,6 +17,7 @@ from discord import (
     AuditLogAction,
     AuditLogEntry,
     TextChannel,
+    Thread,
 )
 from discord.utils import utcnow
 from discord.ext import commands, tasks
@@ -604,7 +605,7 @@ class ModCog(Cog, name="Mod Tools"):
             timestamp=utcnow(),
         )
 
-        if type(ctx.channel) is TextChannel:
+        if type(ctx.channel) in (Thread, TextChannel):
             alert_embed.add_field(
                 name=t.log_field.channel,
                 value=t.jump_url(ctx.channel.mention, ctx.message.jump_url),
