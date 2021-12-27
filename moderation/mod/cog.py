@@ -788,52 +788,31 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
+        await Mute.create(
+            user.id,
+            str(user),
+            ctx.author.id,
+            await get_mod_level(ctx.author),
+            minutes if minutes is not None else -1,
+            reason,
+            evidence_url,
+        )
+
+        await send_to_changelog_mod(
+            ctx.guild,
+            ctx.message,
+            Colors.mute,
+            t.log_muted,
+            user,
+            reason,
+            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            evidence=evidence,
+        )
+
         if minutes is not None:
-            await Mute.create(
-                user.id,
-                str(user),
-                ctx.author.id,
-                await get_mod_level(ctx.author),
-                minutes,
-                reason,
-                evidence_url,
-            )
-
             user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
-
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_muted,
-                user,
-                reason,
-                duration=time_to_units(minutes),
-                evidence=evidence,
-            )
         else:
-            await Mute.create(
-                user.id,
-                str(user),
-                ctx.author.id,
-                await get_mod_level(ctx.author),
-                -1,
-                reason,
-                evidence_url,
-            )
-
             user_embed.description = t.muted_inf(ctx.author.mention, ctx.guild.name, reason)
-
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_muted,
-                user,
-                reason,
-                duration=t.log_field.infinity,
-                evidence=evidence,
-            )
 
         try:
             await user.send(embed=user_embed)
@@ -1286,54 +1265,34 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        if minutes is not None:
-            await Ban.create(
-                user.id,
-                str(user),
-                ctx.author.id,
-                await get_mod_level(ctx.author),
-                minutes,
-                reason,
-                evidence_url,
-                False,
-            )
+        await Ban.create(
+            user.id,
+            str(user),
+            ctx.author.id,
+            await get_mod_level(ctx.author),
+            minutes if minutes is not None else -1,
+            reason,
+            evidence_url,
+            False,
+        )
 
+        await send_to_changelog_mod(
+            ctx.guild,
+            ctx.message,
+            Colors.ban,
+            t.log_banned,
+            user,
+            reason,
+            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            evidence=evidence,
+        )
+
+
+        if minutes is not None:
             user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
 
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.ban,
-                t.log_banned,
-                user,
-                reason,
-                duration=time_to_units(minutes),
-                evidence=evidence,
-            )
         else:
-            await Ban.create(
-                user.id,
-                str(user),
-                ctx.author.id,
-                await get_mod_level(ctx.author),
-                -1,
-                reason,
-                evidence_url,
-                False,
-            )
-
             user_embed.description = t.banned_inf(ctx.author.mention, ctx.guild.name, reason)
-
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.ban,
-                t.log_banned,
-                user,
-                reason,
-                duration=t.log_field.infinity,
-                evidence=evidence,
-            )
 
         try:
             await user.send(embed=user_embed)
