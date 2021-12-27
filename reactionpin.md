@@ -23,8 +23,8 @@ b)
 
 As soon as the message author or a Team-Member removes his reaction `:pushpin:` 📌, the message will be removed from the pinned messages.
 
-***
-## `reactionpin` 
+---
+## `reactionpin`
 
 
 This is the main command, for the command group, to show all the subcommands, if you have the permission for it.
@@ -39,35 +39,35 @@ Aliases:
 - `a`
 
 
-```css
+```css  
 .reactionpin <command>
 ```
 
 
 ---
-### `add`
+### `add` 
 
 This command adds a channel to the whitelisted Reactionpin channel.
 
 Required Permissions:
 
-- `reactionpin.read` 
+- `reactionpin.read`
 - `reactionpin.write`
 
 
 Aliases:
-- `add`
+- ` add `
 - `a`
 - `+`
 
 
-```css
+```css  
 .rp [add|a|+] <channel>
 ```
 
 |Arguments|Required|Description|
 |:------:|:------|:-----|
-|`channel`|✔️|Adds the channel to the whitelisted Reaction-Pin Channels| 
+|`channel`|✔️|Adds the channel to the whitelisted Reaction-Pin Channels|
 
 
 ---
@@ -82,20 +82,20 @@ Required Permissions:
 
 
 Aliases
-- `remove`
+- ` remove `
 - `del`
 - `r`
 - `d`
 - `-`
 
 
-```css
+```css  
 .rp [del|r|d|-] <channel>
 ```
 
 |Arguments|Required|Description|
 |:------:|:-----|:-----|
-|`channel`|✔️|Removes the channel to the whitelisted Reaction-Pin Channels| 
+|`channel`|✔️|Removes the channel to the whitelisted Reaction-Pin Channels|  
 
 ---
 ### `pin_message`
@@ -112,10 +112,10 @@ Required Permissions:
 
 
 Aliases:
-- `pm`
+- ` pm `
 
 
-```css
+```css  
 .rp [pin_message|pm] <enabled>
 ```
 
@@ -123,4 +123,4 @@ Arguments:
 
 |Argument|Required|Description|
 |:------:|:----|:------:|
-|enabled|✔️|Message is displayed if true| 
+|enabled|✔️|Message is displayed if true|  
