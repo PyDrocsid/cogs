@@ -259,7 +259,7 @@ class UserInfoCog(Cog, name="User Information"):
 
         join: Join
         async for join in await db.stream(filter_by(Join, member=user_id)):
-            out.append((join.timestamp, t.ulog.joined))
+            out.append((join.timestamp, t.ulog.joined(join.member_name)))
 
         leave: Leave
         async for leave in await db.stream(filter_by(Leave, member=user_id)):
