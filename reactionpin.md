@@ -44,7 +44,7 @@ Aliases:
 ```
 
 
-***
+---
 ### `add`
 
 This command adds a channel to the whitelisted Reactionpin channel.
@@ -65,12 +65,12 @@ Aliases:
 .rp [add|a|+] <channel>
 ```
 
-|Arguments|Required|Description| 
-|:------:|:------|:-----| 
+|Arguments|Required|Description|
+|:------:|:------|:-----|
 |`channel`|✔️|Adds the channel to the whitelisted Reaction-Pin Channels| 
 
 
-***
+---
 ### `remove`
 
 This command removes a channel to the whitelisted Reactionpin channel.
@@ -93,11 +93,11 @@ Aliases
 .rp [del|r|d|-] <channel>
 ```
 
-|Arguments|Required|Description| 
-|:------:|:-----|:-----| 
+|Arguments|Required|Description|
+|:------:|:-----|:-----|
 |`channel`|✔️|Removes the channel to the whitelisted Reaction-Pin Channels| 
 
-***
+---
 ### `pin_message`
 
 This command enables or disables the "MorpheusHelper pinned a message. See all messages" message.
@@ -114,13 +114,13 @@ Required Permissions:
 Aliases:
 - `pm`
 
-    
+
 ```css
 .rp [pin_message|pm] <enabled>
 ```
 
 Arguments:
 
-|Argument|Required|Description| 
-|:------:|:----|:------:| 
+|Argument|Required|Description|
+|:------:|:----|:------:|
 |enabled|✔️|Message is displayed if true| 
