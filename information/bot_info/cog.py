@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections import Callable
-from typing import Optional, Awaitable
+from typing import Optional, Awaitable, Callable
 
 from aiohttp import ClientSession
 from discord import Embed, Message, Status, Game

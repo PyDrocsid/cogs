@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import random
 from os import getenv
@@ -20,13 +22,17 @@ from discord import (
     NotFound,
     PartialEmoji,
     User,
+    ui,
+    Interaction,
+    InteractionResponse,
 )
 from discord.abc import Messageable
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
-from discord.utils import utcnow
+from discord.ui import View, Button
+from discord.utils import utcnow, format_dt
 
-from PyDrocsid.async_thread import gather_any, GatherAnyException
+from PyDrocsid.async_thread import gather_any, GatherAnyError
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply, confirm, optional_permissions
 from PyDrocsid.database import filter_by, db, select, delete, db_context, db_wrapper
@@ -106,7 +112,7 @@ async def get_commands_embed() -> Embed:
 async def rename_channel(channel: Union[TextChannel, VoiceChannel], name: str):
     try:
         idx, _ = await gather_any(channel.edit(name=name), asyncio.sleep(3))
-    except GatherAnyException as e:
+    except GatherAnyError as e:
         raise e.exception
 
     if idx:
@@ -164,6 +170,72 @@ async def safe_create_voice_channel(
         await voice_channel.edit(overwrites=overwrites)
 
     return voice_channel
+
+
+class ControlMessage(View):
+    def __init__(self, cog: VoiceChannelCog, channel: DynChannel, message: Message):
+        super().__init__(timeout=None)
+        self.cog = cog
+        self.channel = channel
+        self.message = message
+
+        _, locked, hidden = self.get_status()
+        self.children: list[Button]
+        self.children[2].label = t.buttons["unlock" if locked else "lock"]
+        self.children[2].emoji = name_to_emoji["unlock" if locked else "lock"]
+        self.children[3].label = t.buttons["show" if hidden else "hide"]
+        self.children[3].emoji = name_to_emoji["eye" if hidden else "man_detective"]
+
+    async def update(self):
+        self.channel = await DynChannel.get(channel_id=self.channel.channel_id)
+
+    def get_status(self):
+        voice_channel: VoiceChannel = self.cog.bot.get_channel(self.channel.channel_id)
+        user_role = voice_channel.guild.get_role(self.channel.group.user_role)
+        locked = self.channel.locked
+        hidden = voice_channel.overwrites_for(user_role).view_channel is False
+        return voice_channel, locked, hidden
+
+    @ui.button(label=t.buttons.info, emoji=name_to_emoji["information_source"])
+    @db_wrapper
+    async def info(self, _, interaction: Interaction):
+        await self.cog.send_voice_info(interaction.response, self.channel)
+
+    @ui.button(label=t.buttons.help, emoji=name_to_emoji["grey_question"])
+    async def help(self, _, interaction: Interaction):
+        await interaction.response.send_message(embed=await get_commands_embed(), ephemeral=True)
+
+    @ui.button()
+    @db_wrapper
+    async def lock(self, _, interaction: Interaction):
+        await self.update()
+        try:
+            await self.cog.check_authorization(self.channel, interaction.user)
+        except CommandError:
+            await interaction.response.send_message(t.private_voice_owner_required, ephemeral=True)
+            return
+
+        voice_channel, locked, _ = self.get_status()
+        if not locked:
+            await self.cog.lock_channel(interaction.user, self.channel, voice_channel, hide=False)
+        else:
+            await self.cog.unlock_channel(interaction.user, self.channel, voice_channel)
+
+    @ui.button()
+    @db_wrapper
+    async def hide(self, _, interaction: Interaction):
+        await self.update()
+        try:
+            await self.cog.check_authorization(self.channel, interaction.user)
+        except CommandError:
+            await interaction.response.send_message(t.private_voice_owner_required, ephemeral=True)
+            return
+
+        voice_channel, _, hidden = self.get_status()
+        if not hidden:
+            await self.cog.lock_channel(interaction.user, self.channel, voice_channel, hide=True)
+        else:
+            await self.cog.unhide_channel(interaction.user, self.channel, voice_channel)
 
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
@@ -277,7 +349,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 text_channel,
                 title,
                 "",
-                utcnow().strftime("%d.%m.%Y %H:%M:%S"),
+                format_dt(now := utcnow(), style="D") + " " + format_dt(now, style="T"),
                 msg,
                 colour=color,
                 force_new_embed=force_new_embed,
@@ -290,64 +362,20 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await self.update_control_message(channel, message)
 
     async def update_control_message(self, channel: DynChannel, message: Message):
-        async def clear_reactions(msg_id):
+        async def clear_view(msg_id):
             try:
-                await (await message.channel.fetch_message(msg_id)).clear_reactions()
+                await (await message.channel.fetch_message(msg_id)).edit(view=None)
             except Forbidden:
                 await send_alert(message.guild, t.could_not_clear_reactions(message.jump_url, message.channel.mention))
             except NotFound:
                 pass
 
-        async def update_reactions(add, rm):
-            if rm:
-                try:
-                    await asyncio.gather(*[rct.clear() for rct in rm])
-                except Forbidden:
-                    await send_alert(
-                        message.guild,
-                        t.could_not_clear_reactions(message.jump_url, message.channel.mention),
-                    )
-                except NotFound:
-                    return
-
-            if add:
-                try:
-                    await asyncio.gather(*[message.add_reaction(e) for e in add])
-                except Forbidden:
-                    await send_alert(
-                        message.guild,
-                        t.could_not_add_reactions(message.jump_url, message.channel.mention),
-                    )
-                except NotFound:
-                    return
-
         if (msg := await redis.get(key := f"dynvc_control_message:{channel.text_id}")) and msg != str(message.id):
-            asyncio.create_task(clear_reactions(msg))
+            asyncio.create_task(clear_view(msg))
 
         await redis.setex(key, 86400, message.id)
 
-        voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
-        user_role = voice_channel.guild.get_role(channel.group.user_role)
-        locked = channel.locked
-        hidden = voice_channel.overwrites_for(user_role).view_channel is False
-
-        emojis = [
-            "information_source",
-            "grey_question",
-            "lock" if not locked else "unlock",
-            "man_detective" if not hidden else "eye",
-        ]
-        emojis = list(map(name_to_emoji.get, emojis))
-
-        remove = []
-
-        for reaction in message.reactions:
-            if reaction.me and reaction.emoji in emojis:
-                emojis.remove(reaction.emoji)
-            else:
-                remove.append(reaction)
-
-        asyncio.create_task(update_reactions(emojis, remove))
+        await message.edit(view=ControlMessage(self, channel, message))
 
     async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, user: Union[Member, User]):
         if not message.guild or user.bot:
@@ -1011,7 +1039,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
 
         await self.send_voice_info(ctx, channel)
 
-    async def send_voice_info(self, target: Messageable, channel: DynChannel):
+    async def send_voice_info(self, target: Messageable | InteractionResponse, channel: DynChannel):
         voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
         if channel.locked:
             if voice_channel.overwrites_for(voice_channel.guild.get_role(channel.group.user_role)).view_channel:
@@ -1053,6 +1081,8 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         embed.add_field(name=name, value="\n".join(out), inline=False)
 
         messages = await send_long_embed(target, embed, paginate=True)
+        if isinstance(target, InteractionResponse):
+            return
         if channel := await DynChannel.get(text_id=channel.text_id):
             await self.update_control_message(channel, messages[-1])
 
@@ -1074,10 +1104,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             conf_embed = Embed(title=t.rename_confirmation, description=t.rename_description, color=Colors.Voice)
             async with confirm(ctx, conf_embed) as (result, msg):
                 if not result:
-                    conf_embed.description += "\n\n" + t.canceled
                     return
-
-                conf_embed.description += "\n\n" + t.confirmed
                 if msg:
                     await msg.delete(delay=5)
 

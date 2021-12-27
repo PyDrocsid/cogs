@@ -3,6 +3,7 @@ from typing import Optional, Union
 from discord import Embed, User, Member
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, guild_only, CommandError
+from discord.utils import format_dt
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import confirm, docs
@@ -41,7 +42,7 @@ class UserNoteCog(Cog, name="User Notes"):
         note: UserNote
         async for note in await db.stream(select(UserNote).filter_by(member_id=member.id)):
             embed.add_field(
-                name=note.timestamp.strftime("%d.%m.%Y %H:%M:%S"),
+                name=format_dt(note.timestamp, style="D") + " " + format_dt(note.timestamp, style="T"),
                 value=t.user_note_entry(id=note.id, author=f"<@{note.author_id}>", content=note.content),
                 inline=False,
             )
@@ -80,11 +81,9 @@ class UserNoteCog(Cog, name="User Notes"):
                 user_note.content,
             ),
         )
-        async with confirm(ctx, conf_embed) as (result, _):
+        async with confirm(ctx, conf_embed, danger=True) as (result, _):
             if not result:
-                conf_embed.description += "\n\n" + t.canceled
                 return
-            conf_embed.description += "\n\n" + t.confirmed
 
         await db.delete(user_note)
         await send_to_changelog(
