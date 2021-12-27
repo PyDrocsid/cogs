@@ -228,12 +228,9 @@ class MessageCog(Cog, name="Message Commands"):
             description=t.confirm(channel.mention, cnt=count),
             color=Colors.MessageCommands,
         )
-        async with confirm(ctx, conf_embed) as (result, msg):
+        async with confirm(ctx, conf_embed, danger=True) as (result, msg):
             if not result:
-                conf_embed.description += "\n\n" + t.canceled
                 return
-
-            conf_embed.description += "\n\n" + t.confirmed
             if msg:
                 await msg.delete(delay=5)
 
