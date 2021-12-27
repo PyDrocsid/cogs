@@ -35,12 +35,12 @@ class UserNoteCog(Cog, name="User Notes"):
 
     @user_notes.command(name="show", aliases=["s", "list", "l"])
     @docs(t.commands.user_notes_show)
-    async def user_notes_show(self, ctx: Context, *, member: UserMemberConverter):
-        member: Union[User, Member]
+    async def user_notes_show(self, ctx: Context, *, user: UserMemberConverter):
+        user: Union[User, Member]
 
         embed = Embed(title=t.user_notes, colour=Colors.user_notes)
         note: UserNote
-        async for note in await db.stream(select(UserNote).filter_by(member_id=member.id)):
+        async for note in await db.stream(select(UserNote).filter_by(member_id=user.id)):
             embed.add_field(
                 name=format_dt(note.timestamp, style="D") + " " + format_dt(note.timestamp, style="T"),
                 value=t.user_note_entry(id=note.id, author=f"<@{note.author_id}>", content=note.content),
@@ -56,14 +56,14 @@ class UserNoteCog(Cog, name="User Notes"):
     @user_notes.command(name="add", aliases=["a", "+"])
     @UserNotePermission.write.check
     @docs(t.commands.user_notes_add)
-    async def user_notes_add(self, ctx: Context, member: UserMemberConverter, *, content: str):
-        member: Union[User, Member]
+    async def user_notes_add(self, ctx: Context, user: UserMemberConverter, *, content: str):
+        user: Union[User, Member]
 
         if len(content) > 1000:
             raise CommandError(t.too_long)
 
-        await UserNote.create(member.id, ctx.author.id, content)
-        await send_to_changelog(ctx.guild, t.new_note(ctx.author.mention, member.mention, content))
+        await UserNote.create(user.id, ctx.author.id, content)
+        await send_to_changelog(ctx.guild, t.new_note(ctx.author.mention, user.mention, content))
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @user_notes.command(name="remove", aliases=["r", "delete", "d", "-"])
