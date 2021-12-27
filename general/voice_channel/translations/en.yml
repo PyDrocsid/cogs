@@ -106,6 +106,14 @@ canceled: ":x: Canceled"
 confirmed: "Confirmed :white_check_mark:"
 no_custom_name: You are not allowed to set a custom channel name! Omit the `name` parameter to choose a random name or pick a name from [theses lists](https://github.com/PyDrocsid/cogs/tree/develop/general/voice_channel/names)!
 
+buttons:
+  info: Info
+  help: Help
+  lock: Lock
+  unlock: Unlock
+  hide: Hide
+  show: Unhide
+
 voice_info: "Voice Channel Information"
 voice_owner: "Owner"
 voice_members:

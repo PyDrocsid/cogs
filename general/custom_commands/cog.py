@@ -80,10 +80,7 @@ async def send_custom_command_message(
         conf_embed = Embed(title=t.confirmation, description=t.confirm(custom_command.name, channel.mention))
         async with confirm(ctx, conf_embed) as (result, msg):
             if not result:
-                conf_embed.description += "\n\n" + t.canceled
                 return
-
-            conf_embed.description += "\n\n" + t.confirmed
             if msg:
                 await msg.delete(delay=5)
 
@@ -257,10 +254,7 @@ async def ask_cc_test(ctx: Context, command: CustomCommand):
     )
     async with confirm(ctx, embed) as (result, _):
         if not result:
-            embed.description += "\n\n" + t.canceled
             return
-
-        embed.description += "\n\n" + t.confirmed
 
     await send_custom_command_message(ctx, command, ctx.channel, test=True)
 

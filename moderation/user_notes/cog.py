@@ -81,11 +81,9 @@ class UserNoteCog(Cog, name="User Notes"):
                 user_note.content,
             ),
         )
-        async with confirm(ctx, conf_embed) as (result, _):
+        async with confirm(ctx, conf_embed, danger=True) as (result, _):
             if not result:
-                conf_embed.description += "\n\n" + t.canceled
                 return
-            conf_embed.description += "\n\n" + t.confirmed
 
         await db.delete(user_note)
         await send_to_changelog(
