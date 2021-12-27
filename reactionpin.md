@@ -9,10 +9,10 @@ This cog consists of a reaction event and some moderation commands.
 A message is pinned when
 
 a)
-the user who added the reaction `:pushpin` (📌) has the `reactionpin.pin` permission OR
+the user who added the reaction `:pushpin` (📌) has the `reactionpin.pin` permission OR 
 
 b)
-1. `:pushpin:` (📌) is added as a reaction to a message AND
+1. `:pushpin:` (📌) is added as a reaction to a message AND 
 
 2. the reaction is added by the author of the message AND
 
@@ -24,7 +24,7 @@ b)
 As soon as the message author or a Team-Member removes his reaction `:pushpin:` 📌, the message will be removed from the pinned messages.
 
 ---
-## `reactionpin`
+## `reactionpin` 
 
 
 This is the main command, for the command group, to show all the subcommands, if you have the permission for it.
@@ -36,7 +36,7 @@ Required Permissions:
 
 
 Aliases:
-- `a`
+- `a` 
 
 
 ```css  
@@ -45,7 +45,7 @@ Aliases:
 
 
 ---
-### `add` 
+### `add`
 
 This command adds a channel to the whitelisted Reactionpin channel.
 
@@ -56,7 +56,7 @@ Required Permissions:
 
 
 Aliases:
-- ` add `
+- `add` 
 - `a`
 - `+`
 
@@ -71,7 +71,7 @@ Aliases:
 
 
 ---
-### `remove`
+### `remove` 
 
 This command removes a channel to the whitelisted Reactionpin channel.
 
@@ -82,7 +82,7 @@ Required Permissions:
 
 
 Aliases
-- ` remove `
+- `remove` 
 - `del`
 - `r`
 - `d`
@@ -98,7 +98,7 @@ Aliases
 |`channel`|✔️|Removes the channel to the whitelisted Reaction-Pin Channels|  
 
 ---
-### `pin_message`
+### `pin_message` 
 
 This command enables or disables the "MorpheusHelper pinned a message. See all messages" message.
 
@@ -112,7 +112,7 @@ Required Permissions:
 
 
 Aliases:
-- ` pm `
+- `pm` 
 
 
 ```css  
