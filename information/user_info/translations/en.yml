@@ -15,7 +15,7 @@ not_a_member: ":x: User is not a member of this server."
 
 ulog:
   created: ":sparkles: **Created** this account."
-  joined: ":tada: **Joined** this server."
+  joined: ":tada: **Joined** this server as `{}`."
   left: ":door: **Left** this server."
   nick:
     set: ":label: **Nickname set** to `{}`"
