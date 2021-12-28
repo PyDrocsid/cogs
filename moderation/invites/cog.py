@@ -318,6 +318,9 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
 
         server: AllowedInvite
 
+        if not await InvitesPermission.manage.check_permissions(ctx.author) and ctx.author.id != server.applicant:
+            raise CommandError(tg.not_allowed)
+
         if not description:
             conf_embed = Embed(title=t.confirm, description=t.clear_description)
 
