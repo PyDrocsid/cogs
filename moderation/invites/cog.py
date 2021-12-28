@@ -336,6 +336,9 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
 
         else:
 
+            if len(description) > 500:
+                raise CommandError(t.description_too_long)
+
             old = server.description
             server.description = description
 

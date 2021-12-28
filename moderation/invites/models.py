@@ -17,7 +17,7 @@ class AllowedInvite(Base):
     guild_name: Union[Column, str] = Column(String(128))
     applicant: Union[Column, int] = Column(BigInteger)
     approver: Union[Column, int] = Column(BigInteger)
-    description: Union[Column, Optional[str]] = Column(String(128), nullable=True)
+    description: Union[Column, Optional[str]] = Column(Text, nullable=True)
     created_at: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
