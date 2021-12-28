@@ -3,7 +3,7 @@ from typing import Union
 from sqlalchemy import Column, BigInteger
 
 from PyDrocsid.async_thread import LockDeco
-from PyDrocsid.database import db, select, delete
+from PyDrocsid.database import db, select, delete, Base
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 
@@ -24,7 +24,7 @@ async def load_cache():
     await tr.execute()
 
 
-class AutoRole(db.Base):
+class AutoRole(Base):
     __tablename__ = "autorole"
 
     role_id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
