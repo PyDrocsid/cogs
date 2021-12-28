@@ -244,9 +244,10 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         embed.add_field(name=t.server_name, value=invite.guild_name)
         embed.add_field(name=t.server_id, value=invite.guild_id)
         embed.add_field(name=invite_title, value=f"https://discord.gg/{invite.code}")
+        if invite.description:
+            embed.add_field(name=t.description, value=invite.description, inline=False)
         embed.add_field(name=t.applicant, value=f"<@{invite.applicant}>")
         embed.add_field(name=t.approver, value=f"<@{invite.approver}>")
-        embed.add_field(name=t.description, value=invite.description)
         embed.add_field(name=t.date, value=f"{date.day:02}.{date.month:02}.{date.year:02}")
 
         await reply(ctx, embed=embed)
