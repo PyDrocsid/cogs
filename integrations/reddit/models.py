@@ -6,10 +6,10 @@ from typing import Union
 from discord.utils import utcnow
 from sqlalchemy import Column, String, BigInteger
 
-from PyDrocsid.database import db, delete, filter_by, UTCDateTime
+from PyDrocsid.database import db, delete, filter_by, UTCDateTime, Base
 
 
-class RedditChannel(db.Base):
+class RedditChannel(Base):
     __tablename__ = "reddit_channel"
 
     subreddit: Union[Column, str] = Column(String(32), primary_key=True)
@@ -22,7 +22,7 @@ class RedditChannel(db.Base):
         return row
 
 
-class RedditPost(db.Base):
+class RedditPost(Base):
     __tablename__ = "reddit_post"
 
     post_id: Union[Column, str] = Column(String(16), primary_key=True, unique=True)

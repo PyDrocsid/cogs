@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Union, Optional
 
-from PyDrocsid.database import db, select
+from PyDrocsid.database import db, select, Base
 from sqlalchemy import Column, BigInteger, String, Boolean
 
 
@@ -19,7 +19,7 @@ def decode(emoji: str) -> str:
     return bytes.fromhex(emoji).decode()
 
 
-class ReactionRole(db.Base):
+class ReactionRole(Base):
     __tablename__ = "reactionrole"
 
     channel_id: Union[Column, int] = Column(BigInteger, primary_key=True)

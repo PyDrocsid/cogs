@@ -1,15 +1,15 @@
 from typing import Union
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, Base
 from sqlalchemy import Column, BigInteger, Text
 
 
-class AOCLink(db.Base):
+class AOCLink(Base):
     __tablename__ = "aoc_link"
 
     discord_id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
     aoc_id: Union[Column, str] = Column(Text, unique=True)
-    solutions: Union[Column, str] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+    solutions: Union[Column, str] = Column(Text, nullable=True)
 
     @staticmethod
     async def create(discord_id: int, aoc_id: str) -> "AOCLink":
