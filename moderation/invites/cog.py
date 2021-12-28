@@ -9,7 +9,7 @@ from urllib3.exceptions import LocationParseError
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, optional_permissions
+from PyDrocsid.command import confirm, reply, optional_permissions
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -85,7 +85,12 @@ def find_urls(text):
 
 
 class InvitesCog(Cog, name="Allowed Discord Invites"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.TNT2k, Contributor.Florian]
+    CONTRIBUTORS = [Contributor.Defelo,
+                    Contributor.wolflu,
+                    Contributor.TNT2k,
+                    Contributor.Florian,
+                    Contributor.NekoFanatic
+                    ]
 
     @get_userlog_entries.subscribe
     async def handle_get_ulog_entries(self, user_id: int, _):
@@ -240,6 +245,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         embed.add_field(name=invite_title, value=f"https://discord.gg/{invite.code}")
         embed.add_field(name=t.applicant, value=f"<@{invite.applicant}>")
         embed.add_field(name=t.approver, value=f"<@{invite.approver}>")
+        embed.add_field(name=t.description, value=invite.description)
         embed.add_field(name=t.date, value=f"{date.day:02}.{date.month:02}.{date.year:02}")
 
         await reply(ctx, embed=embed)
@@ -264,9 +270,19 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_server_whitelisted(guild.name))
 
-    @invites.command(name="update", aliases=["u"])
+    @invites.group(name="update", aliases=["u"])
     @optional_permissions(InvitesPermission.manage)
-    async def invites_update(self, ctx: Context, invite: Invite):
+    async def update(self, ctx: Context):
+        """
+        manage allowed discord invites
+        """
+
+        if ctx.invoked_subcommand is None:
+            raise UserInputError
+
+    @update.command(name="invite", aliases=["i"])
+    @optional_permissions(InvitesPermission.manage)
+    async def invite(self, ctx: Context, invite: Invite):
         """
         update the invite link of an allowed discord server
         """
@@ -290,6 +306,51 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         )
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_invite_updated(ctx.author.mention, guild.name))
+
+    @update.command(name="description", aliases=["d"])
+    @optional_permissions(InvitesPermission.manage)
+    async def description(self, ctx: Context, server: AllowedServerConverter, *, description: str | None = None):
+        """
+        update the description link of an allowed discord server
+        """
+
+        server: AllowedInvite
+
+        if not description:
+            conf_embed = Embed(
+                title=t.confirm,
+                description=t.clear_description
+            )
+
+            async with confirm(ctx, conf_embed, danger=True) as (result, _):
+                if not result:
+                    return
+
+            server.description = None
+
+            embed = Embed(
+                title=t.invites,
+                description=t.description_cleared(server.guild_name),
+                color=Colors.Invites,
+            )
+            await reply(ctx, embed=embed)
+            await send_to_changelog(ctx.guild, t.log_description_cleared(ctx.author.mention, server.guild_name))
+
+        else:
+
+            old = server.description
+            server.description = description
+
+            embed = Embed(
+                title=t.invites,
+                description=t.description_updated(old, description, server.guild_name),
+                color=Colors.Invites,
+            )
+            await reply(ctx, embed=embed)
+            await send_to_changelog(
+                ctx.guild,
+                t.log_description_updated(ctx.author.mention, server.guild_name, old, description)
+            )
 
     @invites.command(name="remove", aliases=["r", "del", "d", "-"])
     @InvitesPermission.manage.check
