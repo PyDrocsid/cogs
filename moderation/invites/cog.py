@@ -333,25 +333,24 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             )
             await reply(ctx, embed=embed)
             await send_to_changelog(ctx.guild, t.log_description_cleared(ctx.author.mention, server.guild_name))
+            return
 
-        else:
+        if len(description) > 500:
+            raise CommandError(t.description_too_long)
 
-            if len(description) > 500:
-                raise CommandError(t.description_too_long)
+        old = server.description
+        server.description = description
 
-            old = server.description
-            server.description = description
-
-            embed = Embed(
-                title=t.invites,
-                description=t.description_updated(old, description, server.guild_name),
-                color=Colors.Invites,
-            )
-            await reply(ctx, embed=embed)
-            await send_to_changelog(
-                ctx.guild,
-                t.log_description_updated(ctx.author.mention, server.guild_name, old, description),
-            )
+        await reply(ctx, embed=Embed(
+            title=t.invites,
+            description=t.description_updated(old, description, server.guild_name),
+            color=Colors.Invites,
+        ),
+        )
+        await send_to_changelog(
+            ctx.guild,
+            t.log_description_updated(ctx.author.mention, server.guild_name, old, description),
+        )
 
     @invites.command(name="remove", aliases=["r", "del", "d", "-"])
     @InvitesPermission.manage.check
