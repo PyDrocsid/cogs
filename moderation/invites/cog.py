@@ -326,11 +326,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
 
             server.description = None
 
-            embed = Embed(
-                title=t.invites,
-                description=t.description_cleared(server.guild_name),
-                color=Colors.Invites,
-            )
+            embed = Embed(title=t.invites, description=t.description_cleared(server.guild_name), color=Colors.Invites)
             await reply(ctx, embed=embed)
             await send_to_changelog(ctx.guild, t.log_description_cleared(ctx.author.mention, server.guild_name))
             return
