@@ -29,7 +29,7 @@ class AllowedInvite(db.Base):
             applicant=applicant,
             approver=approver,
             description=None,
-            created_at=utcnow()
+            created_at=utcnow(),
         )
         await db.add(row)
         return row

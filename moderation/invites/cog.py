@@ -85,12 +85,13 @@ def find_urls(text):
 
 
 class InvitesCog(Cog, name="Allowed Discord Invites"):
-    CONTRIBUTORS = [Contributor.Defelo,
-                    Contributor.wolflu,
-                    Contributor.TNT2k,
-                    Contributor.Florian,
-                    Contributor.NekoFanatic
-                    ]
+    CONTRIBUTORS = [
+        Contributor.Defelo,
+        Contributor.wolflu,
+        Contributor.TNT2k,
+        Contributor.Florian,
+        Contributor.NekoFanatic,
+    ]
 
     @get_userlog_entries.subscribe
     async def handle_get_ulog_entries(self, user_id: int, _):
@@ -317,10 +318,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         server: AllowedInvite
 
         if not description:
-            conf_embed = Embed(
-                title=t.confirm,
-                description=t.clear_description
-            )
+            conf_embed = Embed(title=t.confirm, description=t.clear_description)
 
             async with confirm(ctx, conf_embed, danger=True) as (result, _):
                 if not result:
@@ -348,8 +346,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             )
             await reply(ctx, embed=embed)
             await send_to_changelog(
-                ctx.guild,
-                t.log_description_updated(ctx.author.mention, server.guild_name, old, description)
+                ctx.guild, t.log_description_updated(ctx.author.mention, server.guild_name, old, description)
             )
 
     @invites.command(name="remove", aliases=["r", "del", "d", "-"])
