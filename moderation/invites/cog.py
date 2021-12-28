@@ -346,7 +346,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             )
             await reply(ctx, embed=embed)
             await send_to_changelog(
-                ctx.guild, t.log_description_updated(ctx.author.mention, server.guild_name, old, description)
+                ctx.guild, t.log_description_updated(ctx.author.mention, server.guild_name, old, description),
             )
 
     @invites.command(name="remove", aliases=["r", "del", "d", "-"])
