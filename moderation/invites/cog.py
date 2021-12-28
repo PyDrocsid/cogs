@@ -341,11 +341,13 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         old = server.description
         server.description = description
 
-        await reply(ctx, embed=Embed(
-            title=t.invites,
-            description=t.description_updated(old, description, server.guild_name),
-            color=Colors.Invites,
-        ),
+        await reply(
+            ctx,
+            embed=Embed(
+                title=t.invites,
+                description=t.description_updated(old, description, server.guild_name),
+                color=Colors.Invites,
+            ),
         )
         await send_to_changelog(
             ctx.guild,
