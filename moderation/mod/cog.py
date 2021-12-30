@@ -95,7 +95,7 @@ def time_to_units(minutes: Union[int, float]) -> str:
 async def get_mute_role(guild: Guild) -> Role:
     mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
     if mute_role is None:
-        raise CommandError(t.mute_role_not_set)
+        await send_alert(guild, t.mute_role_not_set)
     return mute_role
 
 
