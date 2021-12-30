@@ -550,7 +550,7 @@ class ModCog(Cog, name="Mod Tools"):
                 return
 
         except Forbidden:
-            raise CommandError(t.cannot_fetch_audit_logs)
+            await send_alert(guild, t.cannot_fetch_audit_logs)
 
     @commands.command()
     @ModPermission.modtools_write.check
