@@ -1126,7 +1126,7 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=server_embed)
 
     @commands.command(aliases=["kick_edit"])
-    @ModPermission.warn.check
+    @ModPermission.kick.check
     @guild_only()
     async def edit_kick(self, ctx: Context, kick_id: int, *, reason: str):
         """
