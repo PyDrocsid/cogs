@@ -4,10 +4,10 @@ from typing import Union
 
 from sqlalchemy import Column, BigInteger, Integer
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, Base
 
 
-class AutoClearChannel(db.Base):
+class AutoClearChannel(Base):
     __tablename__ = "autoclear_channel"
 
     channel: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
