@@ -300,8 +300,6 @@ class UserInfoCog(Cog, name="User Information"):
             value = row[1]
             embed.add_field(name=name, value=value, inline=False)
 
-        embed.set_footer(text=t.utc_note)
-
         if arg_passed:
             await send_long_embed(ctx, embed, paginate=True)
         else:
