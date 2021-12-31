@@ -39,6 +39,7 @@ class UserNoteCog(Cog, name="User Notes"):
         user: Union[User, Member]
 
         embed = Embed(title=t.user_notes, colour=Colors.user_notes)
+        embed.set_author(name=f"{user} ({user.id})", icon_url=user.display_avatar.url)
         note: UserNote
         async for note in await db.stream(select(UserNote).filter_by(member_id=user.id)):
             embed.add_field(
