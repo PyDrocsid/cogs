@@ -78,7 +78,7 @@ class DurationConverter(Converter):
 
 
 def time_to_units(minutes: Union[int, float]) -> str:
-    _keys = ("days", "hours", "minutes")
+    _keys = ("years", "months", "days", "hours", "minutes")
 
     rd = relativedelta(
         datetime.fromtimestamp(0) + timedelta(minutes=minutes),
@@ -352,30 +352,24 @@ class ModCog(Cog, name="Mod Tools"):
 
         mute: Mute
         async for mute in await db.stream(filter_by(Mute, member=user_id)):
-            if mute.is_update:
-                text = t.ulog.muted.update
-                mute.evidence = None
-            else:
-                text = t.ulog.muted.first
-
             if mute.minutes == -1:
                 if show_ids:
                     out.append(
                         (
                             mute.timestamp,
-                            text.inf.id_on(f"<@{mute.mod}>", mute.reason, mute.id, show_evidence(mute.evidence)),
+                            t.ulog.muted.inf.id_on(f"<@{mute.mod}>", mute.reason, mute.id, show_evidence(mute.evidence)),
                         ),
                     )
                 else:
                     out.append(
-                        (mute.timestamp, text.inf.id_off(f"<@{mute.mod}>", mute.reason, show_evidence(mute.evidence))),
+                        (mute.timestamp, t.ulog.muted.inf.id_off(f"<@{mute.mod}>", mute.reason, show_evidence(mute.evidence))),
                     )
             else:
                 if show_ids:
                     out.append(
                         (
                             mute.timestamp,
-                            text.temp.id_on(
+                            t.ulog.muted.temp.id_on(
                                 f"<@{mute.mod}>",
                                 time_to_units(mute.minutes),
                                 mute.reason,
@@ -388,7 +382,7 @@ class ModCog(Cog, name="Mod Tools"):
                     out.append(
                         (
                             mute.timestamp,
-                            text.temp.id_off(
+                            t.ulog.muted.temp.id_off(
                                 f"<@{mute.mod}>",
                                 time_to_units(mute.minutes),
                                 mute.reason,
@@ -397,7 +391,7 @@ class ModCog(Cog, name="Mod Tools"):
                         ),
                     )
 
-            if not mute.active and not mute.updated:
+            if not mute.active:
                 if mute.unmute_mod is None:
                     out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
                 else:
@@ -438,30 +432,24 @@ class ModCog(Cog, name="Mod Tools"):
 
         ban: Ban
         async for ban in await db.stream(filter_by(Ban, member=user_id)):
-            if ban.is_update:
-                text = t.ulog.banned.update
-                ban.evidence = None
-            else:
-                text = t.ulog.banned.first
-
             if ban.minutes == -1:
                 if show_ids:
                     out.append(
                         (
                             ban.timestamp,
-                            text.inf.id_on(f"<@{ban.mod}>", ban.reason, ban.id, show_evidence(ban.evidence)),
+                            t.ulog.banned.inf.id_on(f"<@{ban.mod}>", ban.reason, ban.id, show_evidence(ban.evidence)),
                         ),
                     )
                 else:
                     out.append(
-                        (ban.timestamp, text.inf.id_off(f"<@{ban.mod}>", ban.reason, show_evidence(ban.evidence))),
+                        (ban.timestamp, t.ulog.banned.inf.id_off(f"<@{ban.mod}>", ban.reason, show_evidence(ban.evidence))),
                     )
             else:
                 if show_ids:
                     out.append(
                         (
                             ban.timestamp,
-                            text.temp.id_on(
+                            t.ulog.banned.temp.id_on(
                                 f"<@{ban.mod}>",
                                 time_to_units(ban.minutes),
                                 ban.reason,
@@ -474,7 +462,7 @@ class ModCog(Cog, name="Mod Tools"):
                     out.append(
                         (
                             ban.timestamp,
-                            text.temp.id_off(
+                            t.ulog.banned.temp.id_off(
                                 f"<@{ban.mod}>",
                                 time_to_units(ban.minutes),
                                 ban.reason,
@@ -483,7 +471,7 @@ class ModCog(Cog, name="Mod Tools"):
                         ),
                     )
 
-            if not ban.active and not ban.updated:
+            if not ban.active:
                 if ban.unban_mod is None:
                     out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
                 else:
@@ -531,7 +519,6 @@ class ModCog(Cog, name="Mod Tools"):
                         -1,
                         entry.reason,
                         None,
-                        False,
                     )
 
                     await send_to_changelog_mod(
@@ -889,12 +876,15 @@ class ModCog(Cog, name="Mod Tools"):
         time: Optional[int]
         minutes = time
 
-        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
+        active_mutes: List[Mute] = sorted(
+            await db.all(filter_by(Mute, active=True, member=user.id)), key=lambda active_mute: active_mute.timestamp
+        )
+
 
         if not active_mutes:
             raise CommandError(t.not_muted)
 
-        mute = sorted(active_mutes, key=lambda active_mute: active_mute.timestamp)[0]
+        mute = active_mutes[0]
 
         if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
             raise CommandError(tg.permission_denied)
@@ -907,18 +897,18 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        old_mute_minutes = t.infinity if mute.minutes == -1 else time_to_units(mute.minutes)
+        old_time = t.infinity if mute.minutes == -1 else time_to_units(mute.minutes)
 
         if minutes is None:
-            conf_embed.description = t.confirm_mute_edit.duration(old_mute_minutes, t.infinity)
+            conf_embed.description = t.confirm_mute_edit.duration(old_time, t.infinity)
         else:
-            conf_embed.description = t.confirm_mute_edit.duration(old_mute_minutes, time_to_units(minutes))
+            conf_embed.description = t.confirm_mute_edit.duration(old_time, time_to_units(minutes))
 
         if not await confirm_action(ctx, conf_embed):
             return
 
-        for mute in active_mutes:
-            await Mute.update(mute.id, ctx.author.id)
+        for active_mute in active_mutes[1:]:
+            await Mute.delete(active_mute.id)
 
         user_embed = Embed(
             title=t.mute,
@@ -927,16 +917,8 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await Mute.create(
-            user.id,
-            str(user),
-            ctx.author.id,
-            await get_mod_level(ctx.author),
-            -1 if minutes is None else minutes,
-            mute.reason,
-            mute.evidence,
-            True,
-        )
+        await Mute.edit_duration(mute.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
+
         user_embed.description = t.mute_edited.duration(
             time_to_units(mute.minutes),
             t.infinity if minutes is None else time_to_units(minutes),
@@ -1273,7 +1255,6 @@ class ModCog(Cog, name="Mod Tools"):
             minutes if minutes is not None else -1,
             reason,
             evidence_url,
-            False,
         )
 
         await send_to_changelog_mod(
@@ -1368,12 +1349,14 @@ class ModCog(Cog, name="Mod Tools"):
         time: Optional[int]
         minutes = time
 
-        active_bans: List[Mute] = await db.all(filter_by(Ban, active=True, member=user.id))
+        active_bans: List[Ban] = sorted(
+            await db.all(filter_by(Ban, active=True, member=user.id)), key=lambda active_ban: active_ban.timestamp
+        )
 
         if not active_bans:
-            raise CommandError(t.not_muted)
+            raise CommandError(t.not_banned)
 
-        ban = sorted(active_bans, key=lambda active_ban: active_ban.timestamp)[0]
+        ban = active_bans[0]
 
         if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
             raise CommandError(tg.permission_denied)
@@ -1383,33 +1366,25 @@ class ModCog(Cog, name="Mod Tools"):
 
         conf_embed = Embed(title=t.confirmation, color=Colors.ModTools)
 
-        old_ban_minutes = t.infinity if ban.minutes == -1 else time_to_units(ban.minutes)
+        old_time = t.infinity if ban.minutes == -1 else time_to_units(ban.minutes)
 
         if minutes is None:
-            conf_embed.description = t.confirm_ban_edit.duration(old_ban_minutes, t.infinity)
+            conf_embed.description = t.confirm_ban_edit.duration(old_time, t.infinity)
         else:
-            conf_embed.description = t.confirm_ban_edit.duration(old_ban_minutes, time_to_units(minutes))
+            conf_embed.description = t.confirm_ban_edit.duration(old_time, time_to_units(minutes))
 
         if not await confirm_action(ctx, conf_embed):
             return
 
-        for ban in active_bans:
-            await ban.update(ban.id, ctx.author.id)
+        for ban in active_bans[1:]:
+            await Ban.delete(ban.id)
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await Ban.create(
-            user.id,
-            str(user),
-            ctx.author.id,
-            await get_mod_level(ctx.author),
-            -1 if minutes is None else minutes,
-            ban.reason,
-            ban.evidence,
-            True,
-        )
+        await Ban.edit_duration(ban.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
+
         user_embed.description = t.ban_edited.duration(
             time_to_units(ban.minutes),
             t.infinity if minutes is None else time_to_units(minutes),

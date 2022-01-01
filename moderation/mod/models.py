@@ -97,8 +97,6 @@ class Mute(db.Base):
     deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
     unmute_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
     unmute_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
-    updated: Union[Column, bool] = Column(Boolean, default=False)
-    is_update: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
     async def create(
@@ -109,7 +107,6 @@ class Mute(db.Base):
         minutes: int,
         reason: str,
         evidence: Optional[str],
-        is_update: bool = False,
     ) -> Mute:
         row = Mute(
             member=member,
@@ -124,7 +121,6 @@ class Mute(db.Base):
             deactivation_timestamp=None,
             unmute_mod=None,
             unmute_reason=None,
-            is_update=is_update,
         )
         await db.add(row)
         return row
@@ -139,16 +135,18 @@ class Mute(db.Base):
         return row
 
     @staticmethod
-    async def update(ban_id: int, mod: int):
-        mute = await Mute.deactivate(ban_id, mod)
-        mute.updated = True
-
-    @staticmethod
-    async def edit(mute_id: int, mod: int, mod_level: int, new_reason: str):
+    async def edit_reason(mute_id: int, mod: int, mod_level: int, new_reason: str):
         row = await db.get(Mute, id=mute_id)
         row.mod = mod
         row.mod_level = mod_level
         row.reason = new_reason
+
+    @staticmethod
+    async def edit_duration(mute_id: int, mod: int, mod_level: int, new_duration: int):
+        row = await db.get(Mute, id=mute_id)
+        row.mod = mod
+        row.mod_level = mod_level
+        row.minutes = new_duration
 
     @staticmethod
     async def delete(mute_id: int):
@@ -218,8 +216,6 @@ class Ban(db.Base):
     deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
     unban_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
     unban_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
-    updated: Union[Column, bool] = Column(Boolean, default=False)
-    is_update: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
     async def create(
@@ -230,7 +226,6 @@ class Ban(db.Base):
         minutes: int,
         reason: str,
         evidence: Optional[str],
-        is_update: bool = False,
     ) -> Ban:
         row = Ban(
             member=member,
@@ -245,7 +240,6 @@ class Ban(db.Base):
             deactivation_timestamp=None,
             unban_reason=None,
             unban_mod=None,
-            is_update=is_update,
         )
         await db.add(row)
         return row
@@ -260,16 +254,18 @@ class Ban(db.Base):
         return row
 
     @staticmethod
-    async def update(ban_id: int, mod: int):
-        ban = await Ban.deactivate(ban_id, mod)
-        ban.updated = True
-
-    @staticmethod
-    async def edit(ban_id: int, mod: int, mod_level: int, new_reason: str):
+    async def edit_reason(ban_id: int, mod: int, mod_level: int, new_reason: str):
         row = await db.get(Ban, id=ban_id)
         row.mod = mod
         row.mod_level = mod_level
         row.reason = new_reason
+
+    @staticmethod
+    async def edit_duration(ban_id: int, mod: int, mod_level: int, new_duration: int):
+        row = await db.get(Ban, id=ban_id)
+        row.mod = mod
+        row.mod_level = mod_level
+        row.minutes = new_duration
 
     @staticmethod
     async def delete(ban_id: int):

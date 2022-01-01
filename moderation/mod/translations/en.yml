@@ -15,6 +15,12 @@ times:
   minutes:
     one: "{cnt} minute"
     many: "{cnt} minutes"
+  months:
+    one: "{cnt} month"
+    many: "{cnt} months"
+  years:
+    one: "{cnt} year"
+    many: "{cnt} years"
 
 log_field:
   member: ":bust_in_silhouette: Member"
@@ -178,20 +184,12 @@ ulog:
     id_on: ":warning: **Warned** by {} because of `{}`\n`(ID: {})`{}"
 
   muted:
-    first:
-      temp:
-        id_off: ":mute: **Muted** by {} for {} because of `{}`{}"
-        id_on: ":mute: **Muted** by {} for {} because of `{}`\n`(ID: {})`{}"
-      inf:
-        id_off: ":mute: **Muted** permanently by {} because of `{}`{}"
-        id_on: ":mute: **Muted** permanently by {} because of `{}`\n`(ID: {})`{}"
-    update:
-      temp:
-        id_off: ":mute: **Mute updated** by {} to {} because of `{}`"
-        id_on: ":mute: **Mute updated** by {} to {} because of `{}`\n`(ID: {})`"
-      inf:
-        id_off: ":mute: **Mute updated** to permanent by {} because of `{}`"
-        id_on: ":mute: **Mute updated** to permanent by {} because of `{}`\n`(ID: {})`"
+    temp:
+      id_off: ":mute: **Muted** by {} for {} because of `{}`{}"
+      id_on: ":mute: **Muted** by {} for {} because of `{}`\n`(ID: {})`{}"
+    inf:
+      id_off: ":mute: **Muted** permanently by {} because of `{}`{}"
+      id_on: ":mute: **Muted** permanently by {} because of `{}`\n`(ID: {})`{}"
   unmuted:
     id_off: ":loud_sound: **Unmuted** by {} because of `{}`"
     id_on: ":loud_sound: **Unmuted** by {} because of `{}`\n`(ID: {})`"
@@ -203,20 +201,12 @@ ulog:
   autokicked: ":hourglass: **Kicked** automatically."
 
   banned:
-    first:
-      temp:
-        id_off: ":no_entry: **Banned** by {} for {} because of `{}`{}"
-        id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`{}"
-      inf:
-        id_off: ":no_entry: **Banned** permanently by {} because of `{}`{}"
-        id_on: ":no_entry: **Banned** by permanently by {} because of `{}`\n`(ID: {})`{}"
-    update:
-      temp:
-        id_off: ":no_entry: **Ban updated** by {} to {} because of `{}`"
-        id_on: ":no_entry: **Ban updated** by {} to {} because of `{}`\n`(ID: {})`"
-      inf:
-        id_off: ":no_entry: **Ban updated** to permanent by {} because of `{}`"
-        id_on: ":no_entry: **Ban updated** to permanent by {} because of `{}`\n`(ID: {})`"
+    temp:
+      id_off: ":no_entry: **Banned** by {} for {} because of `{}`{}"
+      id_on: ":no_entry: **Banned** by {} for {} because of `{}`\n`(ID: {})`{}"
+    inf:
+      id_off: ":no_entry: **Banned** permanently by {} because of `{}`{}"
+      id_on: ":no_entry: **Banned** by permanently by {} because of `{}`\n`(ID: {})`{}"
   unbanned:
     id_off: ":white_check_mark: **Unbanned** by {} because of `{}`"
     id_on: ":white_check_mark: **Unbanned** by {} because of `{}`\n`(ID: {})`"
