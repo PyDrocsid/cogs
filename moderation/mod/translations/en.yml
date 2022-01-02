@@ -153,6 +153,8 @@ ban_deleted:
 ban_deleted_response: ":white_check_mark: The ban has been deleted"
 log_ban_deleted: ":white_check_mark: Ban deleted"
 alert_member_banned: "The member {} has been banned through discords ban system by {}"
+cancelled_by_ban: The mute was cancelled because the member has been banned
+previously_muted: The member was prevoiously muted. This mute has now been cancelled.
 
 reported_cnt: ":speech_balloon:  Reported"
 warned_cnt: ":warning:  Warned"

@@ -1238,6 +1238,10 @@ class ModCog(Cog, name="Mod Tools"):
         if active_bans:
             raise UserCommandError(user, t.already_banned)
 
+        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
+        for mute in active_mutes:
+            await Mute.deactivate(mute.id, ctx.author.id, t.cancelled_by_ban)
+
         attachments = ctx.message.attachments
         evidence = attachments[0] if attachments else None
         evidence_url = evidence.url if attachments else None
@@ -1245,6 +1249,9 @@ class ModCog(Cog, name="Mod Tools"):
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+
+        if active_mutes:
+            server_embed.description += f"\n\n{t.previously_muted}"
 
         await Ban.create(
             user.id,
