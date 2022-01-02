@@ -41,6 +41,9 @@ modtools: Mod tools
 configured_send_delete_message:
   off: "Sending a message to a user after a warn/mute/kick/ban concerning him has been set to `off`"
   on: "Sending a message to a user after a warn/mute/kick/ban concerning him has been set to `on`"
+current_send_delete_message:
+  off: "Sending a message to a user after a warn/mute/kick/ban concerning him is currently `off`"
+  on: "Sending a message to a user after a warn/mute/kick/ban concerning him is currently `on`"
 jump_url: "{} [[Jump]]({})"
 image_link: "{} [[Go to image]]({})"
 no_dm: ":warning: User does not allow direct messages."

@@ -541,13 +541,20 @@ class ModCog(Cog, name="Mod Tools"):
 
     @commands.command()
     @ModPermission.modtools_write.check
-    async def send_delete_message(self, ctx: Context, send: bool):
+    async def send_delete_message(self, ctx: Context, send: Optional[bool] = None):
         """
         configure whether to send a warn/mute/kick/ban delete message to the concerned user
         """
 
-        await ModSettings.send_delete_user_message.set(send)
-        embed = Embed(title=t.modtools, description=t.configured_send_delete_message[send], color=Colors.ModTools)
+        embed = Embed(title=t.modtools, color=Colors.ModTools)
+
+        if send is None:
+            send = await ModSettings.send_delete_user_message.get()
+            embed.description = t.current_send_delete_message[send]
+        else:
+            await ModSettings.send_delete_user_message.set(send)
+            embed.description = t.configured_send_delete_message[send]
+
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.configured_send_delete_message[send])
 
