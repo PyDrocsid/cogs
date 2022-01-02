@@ -216,14 +216,15 @@ class ModCog(Cog, name="Mod Tools"):
 
         async for ban in await db.stream(filter_by(Ban, active=True)):
             if ban.minutes != -1 and utcnow() >= ban.timestamp + timedelta(minutes=ban.minutes):
-                await Ban.deactivate(ban.id)
-
                 try:
                     await guild.unban(user := await self.bot.fetch_user(ban.member))
                 except NotFound:
                     user = ban.member, ban.member_name
                 except Forbidden:
                     await send_alert(guild, t.cannot_unban_permissions)
+                    continue
+
+                await Ban.deactivate(ban.id)
 
                 await send_to_changelog_mod(
                     guild,
