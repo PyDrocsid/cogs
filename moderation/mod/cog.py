@@ -784,8 +784,7 @@ class ModCog(Cog, name="Mod Tools"):
             await user.add_roles(mute_role)
             await user.move_to(None)
 
-        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
-        if active_mutes:
+        if await db.exists(filter_by(Mute, active=True, member=user.id)):
             raise UserCommandError(user, t.already_muted)
 
         attachments = ctx.message.attachments
