@@ -630,7 +630,7 @@ class ModCog(Cog, name="Mod Tools"):
         user_embed = Embed(
             title=t.warn,
             colour=Colors.ModTools,
-            description=t.warned(ctx.author.mention, ctx.guild.name, reason)
+            description=t.warned(ctx.author.mention, ctx.guild.name, reason),
         )
 
         server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
@@ -854,7 +854,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await Mute.edit(mute_id, ctx.author.id, await get_mod_level(ctx.author), reason)
+        await Mute.edit_reason(mute_id, ctx.author.id, await get_mod_level(ctx.author), reason)
 
         try:
             await user.send(embed=user_embed)
@@ -877,9 +877,8 @@ class ModCog(Cog, name="Mod Tools"):
         minutes = time
 
         active_mutes: List[Mute] = sorted(
-            await db.all(filter_by(Mute, active=True, member=user.id)), key=lambda active_mute: active_mute.timestamp
+            await db.all(filter_by(Mute, active=True, member=user.id)), key=lambda active_mute: active_mute.timestamp,
         )
-
 
         if not active_mutes:
             raise CommandError(t.not_muted)
@@ -1268,7 +1267,6 @@ class ModCog(Cog, name="Mod Tools"):
             evidence=evidence,
         )
 
-
         if minutes is not None:
             user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
 
@@ -1327,7 +1325,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await Ban.edit(ban_id, ctx.author.id, await get_mod_level(ctx.author), reason)
+        await Ban.edit_reason(ban_id, ctx.author.id, await get_mod_level(ctx.author), reason)
 
         try:
             await user.send(embed=user_embed)
