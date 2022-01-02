@@ -54,6 +54,9 @@ edit_canceled: ":x: Edit canceled"
 edit_confirmed: ":white_check_mark: Edit confirmed"
 infinity: Permanent
 cannot_fetch_audit_logs: A ban initiated through the server couldn't be added to the database because I don't have `view_audit_log` permissions on this server.
+no_evidence: You did not attach an evidence to your message, are you sure you want to continue?
+action_cancelled: ":x: Action canceled"
+action_confirmed: ":white_check_mark: Action confirmed"
 
 # reports
 report: ":speech_balloon: Report"

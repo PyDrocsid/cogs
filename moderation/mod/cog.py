@@ -139,6 +139,16 @@ async def confirm_action(
         return result
 
 
+async def confirm_no_evidence(ctx: Context):
+    conf_embed = Embed(
+        title=t.confirmation,
+        description=t.no_evidence,
+        color=Colors.ModTools,
+    )
+
+    return confirm_action(ctx, conf_embed, t.action_confirmed, t.action_cancelled)
+
+
 async def send_to_changelog_mod(
     guild: Guild,
     message: Optional[Message],
@@ -634,6 +644,10 @@ class ModCog(Cog, name="Mod Tools"):
         evidence = attachments[0] if attachments else None
         evidence_url = evidence.url if attachments else None
 
+        if not evidence:
+            if not confirm_no_evidence(ctx):
+                return
+
         user_embed = Embed(
             title=t.warn,
             colour=Colors.ModTools,
@@ -777,6 +791,10 @@ class ModCog(Cog, name="Mod Tools"):
         attachments = ctx.message.attachments
         evidence = attachments[0] if attachments else None
         evidence_url = evidence.url if attachments else None
+
+        if not evidence:
+            if not confirm_no_evidence(ctx):
+                return
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
@@ -1082,6 +1100,10 @@ class ModCog(Cog, name="Mod Tools"):
         evidence = attachments[0] if attachments else None
         evidence_url = evidence.url if attachments else None
 
+        if not evidence:
+            if not confirm_no_evidence(ctx):
+                return
+
         await Kick.create(member.id, str(member), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
         await send_to_changelog_mod(
             ctx.guild,
@@ -1252,6 +1274,10 @@ class ModCog(Cog, name="Mod Tools"):
         attachments = ctx.message.attachments
         evidence = attachments[0] if attachments else None
         evidence_url = evidence.url if attachments else None
+
+        if not evidence:
+            if not confirm_no_evidence(ctx):
+                return
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
