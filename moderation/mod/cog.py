@@ -551,6 +551,7 @@ class ModCog(Cog, name="Mod Tools"):
             await send_alert(guild, t.cannot_fetch_audit_logs)
 
     @commands.command()
+    @guild_only()
     @ModPermission.modtools_write.check
     @docs(t.commands.send_delete_message)
     async def send_delete_message(self, ctx: Context, send: Optional[bool] = None):
