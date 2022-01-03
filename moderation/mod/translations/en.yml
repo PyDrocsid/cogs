@@ -5,6 +5,28 @@ permissions:
   ban: ban a user
   modtools_write: write mod tools configuration
 
+commands:
+  send_delete_message: configure whether to send a warn/mute/kick/ban delete message to the concerned user
+  report: report a user
+  warn: warn a user
+  edit_warn: edit a warn\nget the warn id from the users user log
+  delete_warn: delete a warn\nget the warn id from the users user log
+  mute: "mute a user\ntime format: `wdhm`\nset time to `inf` for a permanent mute"
+  edit_mute: edit a mute
+  edit_mute_reason: edit a mute reason\nget the mute id from the users user log
+  edit_mute_duration: "edit a mute duration\ntime format: `wdhm`\nset time to `inf` for a permanent mute"
+  delete_mute: delete a mute\nget the mute id from the users user log
+  unmute: unmute a user
+  kick: kick a member
+  edit_kick: edit a kick\nget the kick id from the users user log
+  delete_kick: delete a kick\nget the kick id from the users user log
+  ban: "ban a user\ntime format: `wdhm`\nset time to `inf` for a permanent ban"
+  edit_ban: edit a ban
+  edit_ban_reason: edit a ban reason\nget the ban id from the users user log
+  edit_ban_duration: "edit a ban duration\ntime format: `wdhm`\nset time to `inf` for a permanent ban"
+  delete_ban: delete a ban\nget the ban id from the users user log
+  unban: unban a user
+
 times:
   days:
     one: "{cnt} day"

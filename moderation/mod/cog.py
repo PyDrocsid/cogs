@@ -31,9 +31,9 @@ from discord.ext.commands import (
 )
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, UserCommandError, confirm
+from PyDrocsid.command import reply, UserCommandError, confirm, docs
 from PyDrocsid.converter import UserMemberConverter
-from PyDrocsid.database import db, filter_by, db_wrapper
+from PyDrocsid.database import db, filter_by, db_wrapper, Base
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler, check_role_assignable
@@ -111,7 +111,7 @@ async def compare_mod_level(mod: Member, mod_level: int) -> bool:
     return await get_mod_level(mod) > mod_level or mod == mod.guild.owner
 
 
-async def get_and_compare_entry(entry_format: Type[db.Base], entry_id: int, mod: Member):
+async def get_and_compare_entry(entry_format: Type[Base], entry_id: int, mod: Member):
     entry = await db.get(entry_format, id=entry_id)
     if entry is None:
         raise CommandError(getattr(t.not_found, entry_format.__tablename__))
@@ -552,11 +552,8 @@ class ModCog(Cog, name="Mod Tools"):
 
     @commands.command()
     @ModPermission.modtools_write.check
+    @docs(t.commands.send_delete_message)
     async def send_delete_message(self, ctx: Context, send: Optional[bool] = None):
-        """
-        configure whether to send a warn/mute/kick/ban delete message to the concerned user
-        """
-
         embed = Embed(title=t.modtools, color=Colors.ModTools)
 
         if send is None:
@@ -570,11 +567,8 @@ class ModCog(Cog, name="Mod Tools"):
         await send_to_changelog(ctx.guild, t.configured_send_delete_message[send])
 
     @commands.command()
+    @docs(t.commands.report)
     async def report(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        """
-        report a user
-        """
-
         user: Union[Member, User]
 
         if len(reason) > 900:
@@ -628,11 +622,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.warn.check
     @guild_only()
+    @docs(t.commands.warn)
     async def warn(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        """
-        warn a user
-        """
-
         user: Union[Member, User]
 
         if len(reason) > 900:
@@ -669,12 +660,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command(aliases=["warn_edit"])
     @ModPermission.warn.check
     @guild_only()
+    @docs(t.commands.edit_warn)
     async def edit_warn(self, ctx: Context, warn_id: int, *, reason: str):
-        """
-        edit a warn
-        get the warn id from the users user log
-        """
-
         warn = await get_and_compare_entry(Warn, warn_id, ctx.author)
 
         if len(reason) > 900:
@@ -715,12 +702,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command(aliases=["warn_delete"])
     @ModPermission.warn.check
     @guild_only()
+    @docs(t.commands.delete_warn)
     async def delete_warn(self, ctx: Context, warn_id: int):
-        """
-        delete a warn
-        get the warn id from the users user log
-        """
-
         warn = await get_and_compare_entry(Warn, warn_id, ctx.author)
 
         conf_embed = Embed(
@@ -761,13 +744,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
+    @docs(t.commands.mute)
     async def mute(self, ctx: Context, user: UserMemberConverter, time: DurationConverter, *, reason: str):
-        """
-        mute a user
-        time format: `wdhm`
-        set time to `inf` for a permanent mute
-        """
-
         user: Union[Member, User]
 
         time: Optional[int]
@@ -837,21 +815,14 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.group(aliases=["mute_edit"])
     @ModPermission.mute.check
     @guild_only()
+    @docs(t.commands.edit_mute)
     async def edit_mute(self, ctx):
-        """
-        edit a mute
-        """
-
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
     @edit_mute.command(name="reason", aliases=["r"])
+    @docs(t.commands.edit_mute_reason)
     async def edit_mute_reason(self, ctx: Context, mute_id: int, *, reason: str):
-        """
-        edit a mute reason
-        get the mute id from the users user log
-        """
-
         mute = await get_and_compare_entry(Mute, mute_id, ctx.author)
 
         if len(reason) > 900:
@@ -890,13 +861,8 @@ class ModCog(Cog, name="Mod Tools"):
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.mute, t.log_mute_edited, user, reason)
 
     @edit_mute.command(name="duration", aliases=["d"])
+    @docs(t.commands.edit_mute_duration)
     async def edit_mute_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
-        """
-        edit a mute duration
-        time format: `wdhm`
-        set time to `inf` for a permanent mute
-        """
-
         user: Union[Member, User]
         time: Optional[int]
         minutes = time
@@ -967,12 +933,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command(aliases=["mute_delete"])
     @ModPermission.mute.check
     @guild_only()
+    @docs(t.commands.delete_mute)
     async def delete_mute(self, ctx: Context, mute_id: int):
-        """
-        delete a mute
-        get the mute id from the users user log
-        """
-
         mute = await get_and_compare_entry(Mute, mute_id, ctx.author)
 
         conf_embed = Embed(
@@ -1045,11 +1007,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
+    @docs(t.commands.unmute)
     async def unmute(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        """
-        unmute a user
-        """
-
         user: Union[Member, User]
 
         if len(reason) > 900:
@@ -1079,11 +1038,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.kick.check
     @guild_only()
+    @docs(t.commands.kick)
     async def kick(self, ctx: Context, member: Member, *, reason: str):
-        """
-        kick a member
-        """
-
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
 
@@ -1138,12 +1094,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command(aliases=["kick_edit"])
     @ModPermission.kick.check
     @guild_only()
+    @docs(t.commands.edit_kick)
     async def edit_kick(self, ctx: Context, kick_id: int, *, reason: str):
-        """
-        edit a kick
-        get the kick id from the users user log
-        """
-
         kick = await get_and_compare_entry(Kick, kick_id, ctx.author)
 
         if len(reason) > 900:
@@ -1184,12 +1136,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command(aliases=["kick_delete"])
     @ModPermission.kick.check
     @guild_only()
+    @docs(t.commands.delete_kick)
     async def delete_kick(self, ctx: Context, kick_id: int):
-        """
-        delete a kick
-        get the kick id from the users user log
-        """
-
         kick = await get_and_compare_entry(Kick, kick_id, ctx.author)
 
         conf_embed = Embed(
@@ -1230,6 +1178,7 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.ban.check
     @guild_only()
+    @docs(t.commands.ban)
     async def ban(
         self,
         ctx: Context,
@@ -1239,12 +1188,6 @@ class ModCog(Cog, name="Mod Tools"):
         *,
         reason: str,
     ):
-        """
-        ban a user
-        time format: `wdhm`
-        set time to `inf` for a permanent ban
-        """
-
         time: Optional[int]
         minutes = time
 
@@ -1327,21 +1270,14 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.group(aliases=["ban_edit"])
     @ModPermission.mute.check
     @guild_only()
+    @docs(t.commands.edit_ban)
     async def edit_ban(self, ctx):
-        """
-        edit a ban
-        """
-
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
     @edit_ban.command(name="reason", aliases=["r"])
+    @docs(t.commands.edit_ban_reason)
     async def edit_ban_reason(self, ctx: Context, ban_id: int, *, reason: str):
-        """
-        edit a ban reason
-        get the ban id from the users user log
-        """
-
         ban = await get_and_compare_entry(Ban, ban_id, ctx.author)
 
         if len(reason) > 900:
@@ -1376,13 +1312,8 @@ class ModCog(Cog, name="Mod Tools"):
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.ban, t.log_ban_edited, user, reason)
 
     @edit_ban.command(name="duration", aliases=["d"])
+    @docs(t.commands.edit_ban_duration)
     async def edit_ban_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
-        """
-        edit a ban duration
-        time format: `wdhm`
-        set time to `inf` for a permanent ban
-        """
-
         user: Union[Member, User]
         time: Optional[int]
         minutes = time
@@ -1447,12 +1378,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command(aliases=["ban_delete"])
     @ModPermission.ban.check
     @guild_only()
+    @docs(t.commands.delete_ban)
     async def delete_ban(self, ctx: Context, ban_id: int):
-        """
-        delete a ban
-        get the ban id from the users user log
-        """
-
         ban = await get_and_compare_entry(Ban, ban_id, ctx.author)
 
         conf_embed = Embed(
@@ -1514,11 +1441,8 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @ModPermission.ban.check
     @guild_only()
+    @docs(t.commands.unban)
     async def unban(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        """
-        unban a user
-        """
-
         user: Union[Member, User]
 
         if len(reason) > 900:
