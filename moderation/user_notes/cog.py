@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Union
 
 from discord import Embed, User, Member
@@ -12,11 +13,12 @@ from PyDrocsid.database import db, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
+from PyDrocsid.util import is_teamler
 from .colors import Colors
 from .models import UserNote
 from .permissions import UserNotePermission
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog
+from ...pubsub import send_to_changelog, get_userlog_entries
 
 tg = t.g
 t = t.user_notes
@@ -24,6 +26,21 @@ t = t.user_notes
 
 class UserNoteCog(Cog, name="User Notes"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
+
+    @get_userlog_entries.subscribe
+    async def handle_get_userlog_entries(self, user_id: int, author: Member) -> list[tuple[datetime, str]]:
+        if not await is_teamler(author):
+            return []
+
+        out: list[tuple[datetime, str]] = []
+
+        note: UserNote
+        async for note in await db.stream(select(UserNote).filter_by(member_id=user_id)):
+            out.append(
+                (note.timestamp, t.ulog_entry(f"<@{note.author_id}>", "\n" * ("\n" in note.content) + note.content)),
+            )
+
+        return out
 
     @commands.group(aliases=["un"])
     @UserNotePermission.read.check
@@ -39,6 +56,7 @@ class UserNoteCog(Cog, name="User Notes"):
         user: Union[User, Member]
 
         embed = Embed(title=t.user_notes, colour=Colors.user_notes)
+        embed.set_author(name=f"{user} ({user.id})", icon_url=user.display_avatar.url)
         note: UserNote
         async for note in await db.stream(select(UserNote).filter_by(member_id=user.id)):
             embed.add_field(
