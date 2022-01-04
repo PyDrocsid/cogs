@@ -228,12 +228,12 @@ class ModCog(Cog, name="Mod Tools"):
                 await Ban.deactivate(ban.id)
 
                 await send_to_changelog_mod(
-                    guild,
-                    None,
-                    Colors.unban,
-                    t.log_unbanned,
-                    user,
-                    t.log_unbanned_expired,
+                    guild=guild,
+                    message=None,
+                    colour=Colors.unban,
+                    title=t.log_unbanned,
+                    member=user,
+                    reason=t.log_unbanned_expired,
                 )
 
         mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
@@ -254,12 +254,12 @@ class ModCog(Cog, name="Mod Tools"):
                     member = mute.member, mute.member_name
 
                 await send_to_changelog_mod(
-                    guild,
-                    None,
-                    Colors.unmute,
-                    t.log_unmuted,
-                    member,
-                    t.log_unmuted_expired,
+                    guild=guild,
+                    message=None,
+                    colour=Colors.unmute,
+                    title=t.log_unmuted,
+                    member=member,
+                    reason=t.log_unmuted_expired,
                 )
                 await Mute.deactivate(mute.id)
 
@@ -537,12 +537,12 @@ class ModCog(Cog, name="Mod Tools"):
                         )
 
                         await send_to_changelog_mod(
-                            guild,
-                            None,
-                            Colors.ban,
-                            t.log_banned,
-                            entry.target,
-                            entry.reason,
+                            guild=guild,
+                            message=None,
+                            colour=Colors.ban,
+                            title=t.log_banned,
+                            member=entry.target,
+                            reason=entry.reason,
                             duration=t.log_field.infinity,
                         )
 
@@ -663,7 +663,15 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await Warn.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warned, user, reason, evidence=evidence)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.warn,
+            title=t.log_warned,
+            member=user,
+            reason=reason,
+            evidence=evidence
+        )
 
     @commands.command(aliases=["warn_edit"])
     @ModPermission.warn.check
@@ -705,7 +713,14 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warn_edited, user, reason)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.warn,
+            title=t.log_warn_edited,
+            member=user,
+            reason=reason
+        )
 
     @commands.command(aliases=["warn_delete"])
     @ModPermission.warn.check
@@ -747,7 +762,14 @@ class ModCog(Cog, name="Mod Tools"):
                 server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.warn, t.log_warn_deleted, user, warn.reason)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.warn,
+            title=t.log_warn_deleted,
+            member=user,
+            reason=warn.reason
+        )
 
     @commands.command()
     @ModPermission.mute.check
@@ -797,12 +819,12 @@ class ModCog(Cog, name="Mod Tools"):
         )
 
         await send_to_changelog_mod(
-            ctx.guild,
-            ctx.message,
-            Colors.mute,
-            t.log_muted,
-            user,
-            reason,
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.mute,
+            title=t.log_muted,
+            member=user,
+            reason=reason,
             duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
             evidence=evidence,
         )
@@ -866,7 +888,14 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.mute, t.log_mute_edited, user, reason)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.mute,
+            title=t.log_mute_edited,
+            member=user,
+            reason=reason
+        )
 
     @edit_mute.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_mute_duration)
@@ -922,12 +951,12 @@ class ModCog(Cog, name="Mod Tools"):
             t.infinity if minutes is None else time_to_units(minutes),
         )
         await send_to_changelog_mod(
-            ctx.guild,
-            ctx.message,
-            Colors.mute,
-            t.log_mute_edited,
-            user,
-            Mute.reason,
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.mute,
+            title=t.log_mute_edited,
+            member=user,
+            reason=Mute.reason,
             duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
         )
 
@@ -991,26 +1020,15 @@ class ModCog(Cog, name="Mod Tools"):
 
         await reply(ctx, embed=server_embed)
 
-        if mute.minutes == -1:
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_mute_deleted,
-                user,
-                mute.reason,
-                duration=t.log_field_infinity,
-            )
-        else:
-            await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_mute_deleted,
-                user,
-                mute.reason,
-                duration=time_to_units(mute.minutes),
-            )
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.mute,
+            title=t.log_mute_deleted,
+            member=user,
+            reason=mute.reason,
+            duration=t.log_field_infinity if mute.minutes == -1 else time_to_units(mute.minutes),
+        )
 
     @commands.command()
     @ModPermission.mute.check
@@ -1041,7 +1059,14 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unmute, t.log_unmuted, user, reason)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.unmute,
+            title=t.log_unmuted,
+            member=user,
+            reason=reason
+        )
 
     @commands.command()
     @ModPermission.kick.check
@@ -1070,12 +1095,12 @@ class ModCog(Cog, name="Mod Tools"):
 
         await Kick.create(member.id, str(member), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
         await send_to_changelog_mod(
-            ctx.guild,
-            ctx.message,
-            Colors.kick,
-            t.log_kicked,
-            member,
-            reason,
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.kick,
+            title=t.log_kicked,
+            member=member,
+            reason=reason,
             evidence=evidence,
         )
 
@@ -1139,7 +1164,14 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kick_edited, user, reason)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.kick,
+            title=t.log_kick_edited,
+            member=user,
+            reason=reason
+        )
 
     @commands.command(aliases=["kick_delete"])
     @ModPermission.kick.check
@@ -1181,7 +1213,14 @@ class ModCog(Cog, name="Mod Tools"):
                 server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kick_deleted, user, kick.reason)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.kick,
+            title=t.log_kick_deleted,
+            member=user,
+            reason=kick.reason
+        )
 
     @commands.command()
     @ModPermission.ban.check
@@ -1248,12 +1287,12 @@ class ModCog(Cog, name="Mod Tools"):
         )
 
         await send_to_changelog_mod(
-            ctx.guild,
-            ctx.message,
-            Colors.ban,
-            t.log_banned,
-            user,
-            reason,
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.ban,
+            title=t.log_banned,
+            member= user,
+            reason=reason,
             duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
             evidence=evidence,
         )
@@ -1317,7 +1356,14 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.ban, t.log_ban_edited, user, reason)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.ban,
+            title=t.log_ban_edited,
+            member=user,
+            reason=reason
+        )
 
     @edit_ban.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_ban_duration)
@@ -1367,12 +1413,12 @@ class ModCog(Cog, name="Mod Tools"):
             t.infinity if minutes is None else time_to_units(minutes),
         )
         await send_to_changelog_mod(
-            ctx.guild,
-            ctx.message,
-            Colors.ban,
-            t.log_ban_edited,
-            user,
-            ban.reason,
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.ban,
+            title=t.log_ban_edited,
+            member=user,
+            reason=ban.reason,
             duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
         )
 
@@ -1437,12 +1483,12 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=server_embed)
 
         await send_to_changelog_mod(
-            ctx.guild,
-            ctx.message,
-            Colors.ban,
-            t.log_ban_deleted,
-            user,
-            ban.reason,
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.ban,
+            title=t.log_ban_deleted,
+            member=user,
+            reason=ban.reason,
             duration=t.log_field_infinity if ban.minutes == -1 else time_to_units(ban.minutes),
         )
 
@@ -1477,4 +1523,11 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unban, t.log_unbanned, user, reason)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.unban,
+            title=t.log_unbanned,
+            member=user,
+            reason=reason
+        )
