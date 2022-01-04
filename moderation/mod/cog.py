@@ -29,6 +29,7 @@ from discord.ext.commands import (
     BadArgument,
     UserInputError,
 )
+from asyncio import sleep
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, UserCommandError, confirm, docs
@@ -512,43 +513,49 @@ class ModCog(Cog, name="Mod Tools"):
             await member.add_roles(mute_role)
 
     async def on_member_ban(self, guild: Guild, member: Member):
-        try:
-            entry: AuditLogEntry
-            async for entry in guild.audit_logs(limit=100, action=AuditLogAction.ban):
-                if entry.user == self.bot.user:
-                    continue
+        search_limit = 100
+        for i in range(10, 1, -1):
 
-                if member.id != entry.target.id:
-                    continue
+            try:
+                entry: AuditLogEntry
+                async for entry in guild.audit_logs(limit=search_limit, action=AuditLogAction.ban):
+                    if entry.user == self.bot.user:
+                        continue
 
-                if entry.reason:
-                    await Ban.create(
-                        entry.target.id,
-                        str(entry.target),
-                        entry.user.id,
-                        await get_mod_level(entry.user),
-                        -1,
-                        entry.reason,
-                        None,
-                    )
+                    if member.id != entry.target.id:
+                        continue
 
-                    await send_to_changelog_mod(
-                        guild,
-                        None,
-                        Colors.ban,
-                        t.log_banned,
-                        entry.target,
-                        entry.reason,
-                        duration=t.log_field.infinity,
-                    )
+                    if entry.reason:
+                        await Ban.create(
+                            entry.target.id,
+                            str(entry.target),
+                            entry.user.id,
+                            await get_mod_level(entry.user),
+                            -1,
+                            entry.reason,
+                            None,
+                        )
 
-                else:
-                    await send_alert(guild, t.alert_member_banned(str(entry.target), str(entry.user)))
+                        await send_to_changelog_mod(
+                            guild,
+                            None,
+                            Colors.ban,
+                            t.log_banned,
+                            entry.target,
+                            entry.reason,
+                            duration=t.log_field.infinity,
+                        )
 
-                return
+                    else:
+                        await send_alert(guild, t.alert_member_banned(str(entry.target), str(entry.user)))
 
-        except Forbidden:
-            await send_alert(guild, t.cannot_fetch_audit_logs)
+                    return
+
+            except Forbidden:
+                await send_alert(guild, t.cannot_fetch_audit_logs)
+
+            await sleep(delay=i*10)
+            search_limit -= i * 10
 
     @commands.command()
     @guild_only()
