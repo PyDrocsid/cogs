@@ -38,7 +38,7 @@ ulog_invite_removed: ":-1:  **Invite removed** by {}: {}"
 ulog_illegal_post: ":no_entry_sign: **Posted an illegal invite** in {}: {}"
 description: Description
 confirm: "Confirm"
-clear_description: "Are you sure you want to delete the description?"
+clear_description: "Are you sure that you want to delete the description?"
 description_cleared: "Description for `{}` was cleared!"
 log_description_cleared: "{} just **cleared** the **description** for `{}`"
 description_updated: "Updated description from `{}` to `{}` for `{}`!"

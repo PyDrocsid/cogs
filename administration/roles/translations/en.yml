@@ -54,5 +54,5 @@ perma_reassigned: Perma role {} has been reassigned to {} ({}). If you want to r
 no_perma_roles: No permanent role assignments.
 perma_roles: Permanent Role Assignments
 could_not_reassign: Could not reassign perma role {} to {} ({}).
-clone_no_permission: I cannot clone this role because I don't have `manage_roles` permission on this server.
+clone_no_permission: I cannot clone this role because I do not have `manage_roles` permission on this server.
 failed_to_clone_role_permissions: ":warning: Could not clone following permissions:"
