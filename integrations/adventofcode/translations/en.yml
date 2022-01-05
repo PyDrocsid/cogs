@@ -13,6 +13,7 @@ join_instructions: |
   Good Luck, Have Fun! :christmas_tree: :gift:
 
 leaderboard_header: "**Private Leaderboard (Advent of Code {})**"
+last_update: "Last Update:"
 
 links: Advent of Code - User Links
 no_links: No member has been linked yet.

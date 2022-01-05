@@ -6,16 +6,16 @@ from uuid import uuid4
 from sqlalchemy import Column, Text, Boolean, BigInteger, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, Base
 from PyDrocsid.permission import BasePermissionLevel
 
 
-class CustomCommand(db.Base):
+class CustomCommand(Base):
     __tablename__ = "custom_command"
 
     id: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
-    name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"), unique=True)
-    description: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    name: Union[Column, str] = Column(Text, unique=True)
+    description: Union[Column, str] = Column(Text)
     disabled: Union[Column, bool] = Column(Boolean)
     channel_parameter: Union[Column, bool] = Column(Boolean)
     channel_id: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
@@ -23,7 +23,7 @@ class CustomCommand(db.Base):
     permission_level: Union[Column, bool] = Column(Integer)
     requires_confirmation: Union[Column, bool] = Column(Boolean)
     user_parameter: Union[Column, bool] = Column(Boolean)
-    data: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    data: Union[Column, str] = Column(Text)
     aliases: list[Alias] = relationship(
         "Alias",
         back_populates="command",
@@ -60,10 +60,10 @@ class CustomCommand(db.Base):
         return alias
 
 
-class Alias(db.Base):
+class Alias(Base):
     __tablename__ = "custom_command_alias"
 
     id: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
-    name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"), unique=True)
+    name: Union[Column, str] = Column(Text, unique=True)
     command_id: Union[Column, str] = Column(String(36), ForeignKey("custom_command.id"))
     command: CustomCommand = relationship("CustomCommand", back_populates="aliases")

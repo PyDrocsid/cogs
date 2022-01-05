@@ -18,10 +18,10 @@ The `add` subcommand adds a verification role. If you set `reverse` to `true`, t
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`role`|:heavy_check_mark:|The verification role|
+|`role`|:fontawesome-solid-check:|The verification role|
 |`reverse`|       |Remove this role instead of adding it to the member.|
 
-Required permissions:
+Required Permissions:
 
 - `verification.read`
 - `verification.write`
@@ -37,9 +37,9 @@ The `remove` subcommand removes an existing verification role.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`role`|:heavy_check_mark:|The verification role|
+|`role`|:fontawesome-solid-check:|The verification role|
 
-Required permissions:
+Required Permissions:
 
 - `verification.read`
 - `verification.write`
@@ -55,9 +55,9 @@ The `password` subcommand sets the *secret* password the member will need to ver
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`password`|:heavy_check_mark:|The password|
+|`password`|:fontawesome-solid-check:|The password|
 
-Required permissions:
+Required Permissions:
 
 - `verification.read`
 - `verification.write`
@@ -76,9 +76,9 @@ The `delay` subcommand sets the amount of time a member has to be in the server 
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`delay`|:heavy_check_mark:|The amount of time in seconds|
+|`delay`|:fontawesome-solid-check:|The amount of time in seconds|
 
-Required permissions:
+Required Permissions:
 
 - `verification.read`
 - `verification.write`
@@ -94,7 +94,7 @@ verify <password>
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`password`|:heavy_check_mark:|The verification password|
+|`password`|:fontawesome-solid-check:|The verification password|
 
 !!! note
     As this command can only be used in direct messages, it does not start with the configured bot prefix! So, for example, if the configured password is `Tr0ub4dor&3`, a member would have to send this exact message to the bot to complete verification:

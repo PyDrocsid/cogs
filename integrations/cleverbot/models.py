@@ -1,10 +1,10 @@
 from typing import Union
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, Base
 from sqlalchemy import Column, BigInteger
 
 
-class CleverBotChannel(db.Base):
+class CleverBotChannel(Base):
     __tablename__ = "cleverbot_channel"
 
     channel: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)

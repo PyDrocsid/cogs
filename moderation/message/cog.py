@@ -178,6 +178,8 @@ class MessageCog(Cog, name="Message Commands"):
 
         if color is not None:
             send_embed.colour = color
+        elif message.embeds and message.embeds[0].color is not Embed.Empty:
+            send_embed.colour = message.embeds[0].color
 
         await message.edit(content=None, files=[], embed=send_embed)
         embed.description = t.msg_edited
@@ -228,12 +230,9 @@ class MessageCog(Cog, name="Message Commands"):
             description=t.confirm(channel.mention, cnt=count),
             color=Colors.MessageCommands,
         )
-        async with confirm(ctx, conf_embed) as (result, msg):
+        async with confirm(ctx, conf_embed, danger=True) as (result, msg):
             if not result:
-                conf_embed.description += "\n\n" + t.canceled
                 return
-
-            conf_embed.description += "\n\n" + t.confirmed
             if msg:
                 await msg.delete(delay=5)
 

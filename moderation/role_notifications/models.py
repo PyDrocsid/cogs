@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Union
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, Base
 from sqlalchemy import Column, BigInteger, Boolean
 
 
-class RoleNotification(db.Base):
+class RoleNotification(Base):
     __tablename__ = "role_notification"
 
     role_id: Union[Column, int] = Column(BigInteger, primary_key=True)

@@ -168,7 +168,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             await BTPUser.create(member.id, topic.id)
             if topic.role_id:
                 roles.append(ctx.guild.get_role(topic.role_id))
-        await ctx.author.add_roles(*roles)
+        await ctx.author.add_roles(*roles, atomic=False)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_added(cnt=len(topics))
@@ -200,7 +200,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             if topic.role_id:
                 roles.append(ctx.guild.get_role(topic.role_id))
 
-        await ctx.author.remove_roles(*roles)
+        await ctx.author.remove_roles(*roles, atomic=False)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_removed(cnt=len(affected_topics))

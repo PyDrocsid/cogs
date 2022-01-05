@@ -1,9 +1,5 @@
 from typing import Union, Optional
 
-from PyDrocsid.database import db
-from sqlalchemy import Column, BigInteger, String, Integer, ForeignKey, Boolean
-
-
 class BTPTopic(db.Base):
     __tablename__ = "btp_topic"
 
