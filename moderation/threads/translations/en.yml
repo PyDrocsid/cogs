@@ -1,0 +1,9 @@
+permissions:
+  list: list all existing threads
+
+commands:
+  threads: list all existing threads
+
+threads: Threads
+no_threads: No threads have been created yet!
+new_thread_alert: Thread {} has been created in {} but auto join members could not be added, because I don't have permission to send messages there!

@@ -10,6 +10,7 @@ from discord.ext.commands import (
     CommandError,
     Converter,
 )
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, UserCommandError
@@ -66,7 +67,7 @@ async def send_to_changelog_mod(
     *,
     duration: Optional[str] = None,
 ):
-    embed = Embed(title=title, colour=colour, timestamp=datetime.utcnow())
+    embed = Embed(title=title, colour=colour, timestamp=utcnow())
 
     if isinstance(member, tuple):
         member_id, member_name = member
@@ -74,13 +75,13 @@ async def send_to_changelog_mod(
     else:
         member_id: int = member.id
         member_name: str = str(member)
-        embed.set_author(name=member_name, icon_url=member.avatar_url)
+        embed.set_author(name=member_name, icon_url=member.display_avatar.url)
 
     embed.add_field(name=t.log_field.member, value=f"<@{member_id}>", inline=True)
     embed.add_field(name=t.log_field.member_id, value=str(member_id), inline=True)
 
     if message:
-        embed.set_footer(text=str(message.author), icon_url=message.author.avatar_url)
+        embed.set_footer(text=str(message.author), icon_url=message.author.display_avatar.url)
         embed.add_field(
             name=t.log_field.channel,
             value=t.jump_url(message.channel.mention, message.jump_url),
@@ -118,7 +119,7 @@ class ModCog(Cog, name="Mod Tools"):
         guild: Guild = self.bot.guilds[0]
 
         async for ban in await db.stream(filter_by(Ban, active=True)):
-            if ban.days != -1 and datetime.utcnow() >= ban.timestamp + timedelta(days=ban.days):
+            if ban.days != -1 and utcnow() >= ban.timestamp + timedelta(days=ban.days):
                 await Ban.deactivate(ban.id)
 
                 try:
@@ -152,7 +153,7 @@ class ModCog(Cog, name="Mod Tools"):
             return
 
         async for mute in await db.stream(filter_by(Mute, active=True)):
-            if mute.days != -1 and datetime.utcnow() >= mute.timestamp + timedelta(days=mute.days):
+            if mute.days != -1 and utcnow() >= mute.timestamp + timedelta(days=mute.days):
                 if member := guild.get_member(mute.member):
                     await member.remove_roles(mute_role)
                 else:
@@ -204,14 +205,14 @@ class ModCog(Cog, name="Mod Tools"):
         if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
             if ban.days != -1:
                 expiry_date: datetime = ban.timestamp + timedelta(days=ban.days)
-                days_left = (expiry_date - datetime.utcnow()).days + 1
+                days_left = (expiry_date - utcnow()).days + 1
                 status = t.status_banned_days(cnt=ban.days, left=days_left)
             else:
                 status = t.status_banned
         elif (mute := await db.get(Mute, member=user_id, active=True)) is not None:
             if mute.days != -1:
                 expiry_date: datetime = mute.timestamp + timedelta(days=mute.days)
-                days_left = (expiry_date - datetime.utcnow()).days + 1
+                days_left = (expiry_date - utcnow()).days + 1
                 status = t.status_muted_days(cnt=mute.days, left=days_left)
             else:
                 status = t.status_muted
@@ -306,7 +307,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         await Report.create(user.id, str(user), ctx.author.id, reason)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.report, t.log_reported, user, reason)
 
@@ -332,7 +333,7 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.ModTools,
         )
         server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
@@ -374,7 +375,7 @@ class ModCog(Cog, name="Mod Tools"):
                 raise UserCommandError(user, t.already_muted)
 
             ts = mute.timestamp + timedelta(days=mute.days)
-            if days is not None and datetime.utcnow() + timedelta(days=days) <= ts:
+            if days is not None and utcnow() + timedelta(days=days) <= ts:
                 raise UserCommandError(user, t.already_muted)
 
         for mute in active_mutes:
@@ -382,7 +383,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
         server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         if days is not None:
             await Mute.create(user.id, str(user), ctx.author.id, days, reason, bool(active_mutes))
@@ -445,7 +446,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise UserCommandError(user, t.not_muted)
 
         server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unmute, t.log_unmuted, user, reason)
 
@@ -478,10 +479,7 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.ModTools,
         )
         server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)
-        server_embed.set_author(
-            name=str(member),
-            icon_url=member.avatar_url_as(format=("gif" if member.is_avatar_animated() else "png")),
-        )
+        server_embed.set_author(name=str(member), icon_url=member.display_avatar.url)
 
         try:
             await member.send(embed=user_embed)
@@ -533,7 +531,7 @@ class ModCog(Cog, name="Mod Tools"):
                 raise UserCommandError(user, t.already_banned)
 
             ts = ban.timestamp + timedelta(days=ban.days)
-            if ban_days is not None and datetime.utcnow() + timedelta(days=ban_days) <= ts:
+            if ban_days is not None and utcnow() + timedelta(days=ban_days) <= ts:
                 raise UserCommandError(user, t.already_banned)
 
         for ban in active_bans:
@@ -543,7 +541,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
         server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         if ban_days is not None:
             await Ban.create(user.id, str(user), ctx.author.id, ban_days, reason, bool(active_bans))
@@ -610,6 +608,6 @@ class ModCog(Cog, name="Mod Tools"):
             raise UserCommandError(user, t.not_banned)
 
         server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.avatar_url)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.unban, t.log_unbanned, user, reason)

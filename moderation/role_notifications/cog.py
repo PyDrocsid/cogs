@@ -5,9 +5,10 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError, CommandError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, filter_by, select
+from PyDrocsid.embeds import send_long_embed
+from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions
 from .colors import Colors
@@ -80,7 +81,7 @@ class RoleNotificationsCog(Cog, name="Role Notifications"):
             embed.colour = Colors.error
         else:
             embed.description = "\n".join(out)
-        await ctx.send(embed=embed)
+        await send_long_embed(ctx, embed)
 
     @role_notifications.command(name="add", aliases=["a", "+"])
     @RoleNotificationsPermission.write.check
@@ -102,7 +103,7 @@ class RoleNotificationsCog(Cog, name="Role Notifications"):
             raise CommandError(t.link_already_exists)
 
         await RoleNotification.create(role.id, channel.id, ping_role, ping_user)
-        await reply(ctx, t.rn_created)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
         await send_to_changelog(ctx.guild, t.log_rn_created(role, channel.mention))
 
     @role_notifications.command(name="remove", aliases=["del", "r", "d", "-"])
@@ -119,5 +120,5 @@ class RoleNotificationsCog(Cog, name="Role Notifications"):
         name: str = role.name if (role := ctx.guild.get_role(link.role_id)) else "deleted-role"
 
         await db.delete(link)
-        await reply(ctx, t.rn_removed)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
         await send_to_changelog(ctx.guild, t.log_rn_removed(name, channel.mention))

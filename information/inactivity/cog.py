@@ -13,6 +13,8 @@ from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
+from discord.utils import utcnow, format_dt
+
 from .models import Activity
 from .permissions import InactivityPermission
 from .settings import InactivitySettings
@@ -35,7 +37,7 @@ def status_icon(status: Status) -> str:
 async def scan(ctx: Context, days: int):
     async def update_msg(m: Message, content):
         embed.description = content
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = utcnow()
         await ignore_message_edit(m)
         try:
             await m.edit(embed=embed)
@@ -43,7 +45,7 @@ async def scan(ctx: Context, days: int):
             return await reply(ctx, embed=embed)
         return m
 
-    embed = Embed(title=t.scanning, timestamp=datetime.utcnow())
+    embed = Embed(title=t.scanning, timestamp=utcnow())
     message: list[Message] = [await reply(ctx, embed=embed)]
     guild: Guild = ctx.guild
     members: dict[Member, datetime] = {}
@@ -54,7 +56,7 @@ async def scan(ctx: Context, days: int):
         while len(completed) < len(channels):
             content = t.scanning_channel(len(completed), len(channels), cnt=len(active))
             for a, d in active.items():
-                channel_age = (datetime.utcnow() - a.created_at).days
+                channel_age = (utcnow() - a.created_at).days
                 content += f"\n:small_orange_diamond: {a.mention} ({d} / {min(channel_age, days)})"
             message[0] = await update_msg(message[0], content)
             await asyncio.sleep(2)
@@ -63,7 +65,7 @@ async def scan(ctx: Context, days: int):
         active[c] = 0
 
         async for msg in c.history(limit=None, oldest_first=False):
-            s = (datetime.utcnow() - msg.created_at).total_seconds()
+            s = (utcnow() - msg.created_at).total_seconds()
             if s > days * 24 * 60 * 60:
                 break
             members[msg.author] = max(members.get(msg.author, msg.created_at), msg.created_at)
@@ -129,10 +131,10 @@ class InactivityCog(Cog, name="Inactivity"):
 
         if activity is None:
             status = t.status.inactive
-        elif (days := (datetime.utcnow() - activity.timestamp).days) >= inactive_days:
-            status = t.status.inactive_since(activity.timestamp.strftime("%d.%m.%Y %H:%M:%S"))
+        elif (utcnow() - activity.timestamp).days >= inactive_days:
+            status = t.status.inactive_since(format_dt(activity.timestamp, style="R"))
         else:
-            status = t.status.active(cnt=days)
+            status = t.status.active(format_dt(activity.timestamp, style="R"))
 
         return [(t.activity, status)]
 
@@ -153,7 +155,7 @@ class InactivityCog(Cog, name="Inactivity"):
         elif days not in range(1, 10001):
             raise CommandError(tg.invalid_duration)
 
-        now = datetime.utcnow()
+        now = utcnow()
 
         @db_wrapper
         async def load_member(m: Member) -> tuple[Member, Optional[datetime]]:
@@ -180,7 +182,7 @@ class InactivityCog(Cog, name="Inactivity"):
                         status_icon(member.status),
                         member.mention,
                         f"@{member}",
-                        timestamp.strftime("%d.%m.%Y %H:%M:%S"),
+                        format_dt(timestamp, style="R"),
                     ),
                 )
 

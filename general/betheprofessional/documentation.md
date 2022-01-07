@@ -22,7 +22,7 @@ The `.+` command assigns the user the specified topics.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`topic`|:heavy_check_mark:|A topic. Multible topics can be added by separating them using `,` or `;`|
+|`topic`|:fontawesome-solid-check:|A topic. Multible topics can be added by separating them using `,` or `;`|
 
 
 ## `unassign_topics`
@@ -35,7 +35,7 @@ The `.-` command unassigns the user the specified topics.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`topic`|:heavy_check_mark:|A topic. Multible topics can be removed by separating them using `,` or `;`.|
+|`topic`|:fontawesome-solid-check:|A topic. Multible topics can be removed by separating them using `,` or `;`.|
 
 !!! note
     You can use `.- *` to remove all topics at once.
@@ -51,7 +51,7 @@ The `.*` command adds new topics to the list of available topics.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`topic`|:heavy_check_mark:|The new topic's name. If no role with this name (case insensitive) exists, one is created. Multible topics can be registered by separating them using `,` or `;`.|
+|`topic`|:fontawesome-solid-check:|The new topic's name. If no role with this name (case insensitive) exists, one is created. Multible topics can be registered by separating them using `,` or `;`.|
 
 
 ## `delete_topics`
@@ -64,7 +64,7 @@ The `./` command removes topics from the list of available topics and deletes th
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`topic`|:heavy_check_mark:|A topic. Multible topics can be deleted by separating them using `,` or `;`.|
+|`topic`|:fontawesome-solid-check:|A topic. Multible topics can be deleted by separating them using `,` or `;`.|
 
 
 ## `unregister_topics`
@@ -77,4 +77,4 @@ The `.%` command unregisters topics without deleting the associated roles.
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`topic`|:heavy_check_mark:|A topic. Multible topics can be unregistered by separating them using `,` or `;`.|
+|`topic`|:fontawesome-solid-check:|A topic. Multible topics can be unregistered by separating them using `,` or `;`.|

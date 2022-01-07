@@ -110,7 +110,7 @@ class AOCConfig:
         return await cls.get_member(member.name), None
 
 
-def make_leaderboard(last_update: float, members: list[tuple[int, int, int, Optional[str]]]) -> str:
+def make_leaderboard(members: list[tuple[int, int, int, Optional[str]]]) -> str:
     rank_len, score_len, stars_len, _ = [max(len(str(e)) for e in column) for column in zip(*map(list, members))]
     score_len = max(score_len, 3)
     stars_len = max(stars_len, 5)
@@ -118,7 +118,6 @@ def make_leaderboard(last_update: float, members: list[tuple[int, int, int, Opti
     out = [f" {' ' * rank_len}  {'SCORE':>{score_len + 2}}  STARS  NAME"]
     for rank, score, stars, name in members:
         out.append(f"#{rank:0{rank_len}}  [{score:{score_len}}]  {stars:{stars_len}}  {name[:50]}")
-    out += ["", datetime.utcfromtimestamp(last_update).strftime("/* Last Update: %d.%m.%Y %H:%M:%S UTC */")]
 
     return "```css\n" + "\n".join(out) + "\n```"
 
@@ -285,16 +284,22 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
         leaderboard = await AOCConfig.get_leaderboard()
 
-        out = t.leaderboard_header(AOCConfig.YEAR) + "\n"
-        out += make_leaderboard(
-            AOCConfig.last_update,
+        out = make_leaderboard(
             [
                 (m["rank"], m["local_score"], m["stars"], escape_aoc_name(m["name"]) or f"[anonymous user #{m['id']}]")
                 for i, m in enumerate(list(leaderboard["members"].values())[:20])
             ],
         )
 
-        await reply(ctx, out)
+        embed = Embed(
+            title=t.leaderboard_header(AOCConfig.YEAR),
+            description=out,
+            color=Colors.AdventOfCode,
+            timestamp=datetime.utcfromtimestamp(AOCConfig.last_update).replace(tzinfo=timezone.utc),
+        )
+        embed.set_footer(text=t.last_update)
+
+        await reply(ctx, embed=embed)
 
     @aoc.command(name="user")
     async def aoc_user(self, ctx: Context, *, user: Optional[Union[Member, str]]):
@@ -336,7 +341,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             progress = f"{completed}/{unlocked} ({full}{completed / unlocked * 100:.1f}%{full})"
 
         embed = Embed(title=f"Advent of Code {AOCConfig.YEAR}", colour=Colors.AdventOfCode)
-        icon_url = member.avatar_url if member else "https://adventofcode.com/favicon.png"
+        icon_url = member.display_avatar.url if member else "https://adventofcode.com/favicon.png"
         embed.set_author(name=name, icon_url=icon_url)
 
         linked = f"<@{member.id}>" + " (unverified)" * (not link) if member else "Not Linked"
@@ -353,7 +358,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
         embed.add_field(name="** **", value="```hs\n" + "\n".join(stars) + "\n```", inline=False)
         embed.set_footer(text="Last Update:")
-        embed.timestamp = datetime.utcfromtimestamp(AOCConfig.last_update)
+        embed.timestamp = datetime.utcfromtimestamp(AOCConfig.last_update).replace(tzinfo=timezone.utc)
 
         await reply(ctx, embed=embed)
 

@@ -22,6 +22,7 @@ removed_note: |
   {} removed a note from {}:
   {}
 content: Content
+ulog_entry: ":notepad_spiral: **User note created** (by {}): {}"
 
 confirmation: "Confirmation"
 confirm: |

@@ -11,3 +11,4 @@ class Contributor(ContributorBase):
     Tristan = (277069925678317568, "MDQ6VXNlcjQ1MzMwNjY3")
     Tert0 = (621330363167539210, "MDQ6VXNlcjYyMDM2NDY0")
     MarcelCoding = (398895973490884608, "MDQ6VXNlcjM0ODE5NTI0")
+    NekoFanatic = (846009958062358548, "MDQ6VXNlcjgzODgzODQ5")

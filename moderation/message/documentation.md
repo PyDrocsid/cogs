@@ -18,7 +18,7 @@ You can send normal text messages in a channel by using:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel into which you want to send the message|
+|`channel`|:fontawesome-solid-check:|The channel into which you want to send the message|
 
 After entering the command, the bot expects you to enter the text you want to send. If you have changed your mind, you can abort the process by entering `CANCEL`.
 
@@ -33,7 +33,7 @@ You can send embed messages in a channel by using:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel into which you want to send the message|
+|`channel`|:fontawesome-solid-check:|The channel into which you want to send the message|
 |`color`||The color of the embed (name or hex code)|
 
 After entering the command, the bot expects you to enter the embed title.
@@ -57,8 +57,8 @@ You can copy the content, embeds and files of any message into a new message by 
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel into which you want to send the new message|
-|`message`|:heavy_check_mark:|The message you want to copy (specify the message link)|
+|`channel`|:fontawesome-solid-check:|The channel into which you want to send the new message|
+|`message`|:fontawesome-solid-check:|The message you want to copy (specify the message link)|
 
 
 ## `edit`
@@ -76,7 +76,7 @@ You can edit normal text messages sent by the bot by using:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`message`|:heavy_check_mark:|The message you want to edit (specify the message link)|
+|`message`|:fontawesome-solid-check:|The message you want to edit (specify the message link)|
 
 After entering the command, the bot expects you to enter the new text. If you have changed your mind, you can abort the process by entering `CANCEL`.
 
@@ -91,7 +91,7 @@ Use this command to edit embed messages sent by the bot by using:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`message`|:heavy_check_mark:|The message you want to edit (specify the message link)|
+|`message`|:fontawesome-solid-check:|The message you want to edit (specify the message link)|
 |`color`||The new color of the embed (name or hex code)|
 
 After entering the command, the bot expects you to enter the new title.
@@ -115,8 +115,8 @@ You can copy the content, embeds and files of any message into another message a
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`message`|:heavy_check_mark:|The message you want to edit (specify the message link)|
-|`source`|:heavy_check_mark:|The message you want to copy from (specify the message link)|
+|`message`|:fontawesome-solid-check:|The message you want to edit (specify the message link)|
+|`source`|:fontawesome-solid-check:|The message you want to copy from (specify the message link)|
 
 
 ## `delete`
@@ -129,4 +129,4 @@ Use this command to delete any message:
 
 |Argument|Required|Description|
 |:------:|:------:|:----------|
-|`message`|:heavy_check_mark:|The message you want to delete (specify the message link)|
+|`message`|:fontawesome-solid-check:|The message you want to delete (specify the message link)|
