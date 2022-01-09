@@ -453,7 +453,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if default_n > max_n:
             await send_alert(ctx.guild, t.leaderboard_default_n_bigger_than_max_n)
             raise CommandError(t.leaderboard_configuration_error)
-        if n > max_n and not BeTheProfessionalPermission.bypass_leaderboard_n_limit.check_permissions(ctx.author):
+        if n > max_n and not await BeTheProfessionalPermission.bypass_leaderboard_n_limit.check_permissions(ctx.author):
             raise CommandError(t.leaderboard_n_too_big(n, max_n))
         if n <= 0:
             raise CommandError(t.leaderboard_n_zero_error)
@@ -461,7 +461,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         cached_leaderboard: Optional[str] = None
 
         if use_cache:
-            if not BeTheProfessionalPermission.bypass_leaderboard_cache.check_permissions(ctx.author):
+            if not await BeTheProfessionalPermission.bypass_leaderboard_cache.check_permissions(ctx.author):
                 raise CommandError(t.missing_cache_bypass_permission)
             cached_leaderboard = await redis.get(f"btp:leaderboard:n:{n}")
 
@@ -503,7 +503,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         embed = Embed(title=t.leaderboard_title(n), description=f"```css\n{leaderboard}\n```")
 
-        if len(embed.description) > PyDrocsid.embeds.EmbedLimits.DESCRIPTION or True:
+        if len(embed.description) > PyDrocsid.embeds.EmbedLimits.DESCRIPTION:
             embed.description = None
             with io.StringIO() as leaderboard_file:
                 leaderboard_file.write(leaderboard)
@@ -512,6 +512,35 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                 await reply(ctx, embed=embed, file=file)
         else:
             await reply(ctx, embed=embed)
+
+    @commands.command(name="usertopics", aliases=["usertopic", "utopics", "utopic"])
+    async def user_topics(self, ctx: Context, member: Optional[Member]):
+        """
+        lists all topics of a member
+        """
+
+        if member is None:
+            member = ctx.author
+
+        topics_assigns: list[BTPUser] = await db.all(select(BTPUser).filter_by(user_id=member.id))
+        topics: list[BTPTopic] = [
+            await db.first(select(BTPTopic).filter_by(id=assignment.topic)) for assignment in topics_assigns
+        ]
+
+        embed = Embed(title=t.betheprofessional, color=Colors.BeTheProfessional)
+
+        embed.set_author(name=str(member), icon_url=member.display_avatar.url)
+
+        topics_str: str = ""
+
+        if len(topics_assigns) == 0:
+            embed.colour = Colors.red
+        else:
+            topics_str = ', '.join([f"`{topic.name}`" for topic in topics])
+
+        embed.description = t.user_topics(member.mention, topics_str, cnt=len(topics))
+
+        await reply(ctx, embed=embed)
 
     @commands.command(aliases=["topic_update", "update_roles"])
     @guild_only()

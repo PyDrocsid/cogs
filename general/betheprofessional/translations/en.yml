@@ -45,6 +45,11 @@ log_topics_unregistered:
 
 single_un_assign_help: "Hey, did you know, that you can assign multiple topics by using `.+ TOPIC1,TOPIC2,TOPIC3` and remove multiple topics the same way using `.-`?\nTo remove all your Topics you can use `.- *`"
 
+user_topics:
+  zero: "{} has no topics assigned"
+  one: "{} has assigned the following topic: {}"
+  many: "{} has assigned the following topics: {}"
+
 parent_not_exists: "Parent `{}` doesn't exists"
 parent_format_help: "Please write `[Parents/]Topic-Name`"
 group_not_parent_group: "The group `{}` is not the same as the group of the Parent `{}`"
