@@ -184,8 +184,22 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_added(cnt=len(topics))
-        if not topics:
+
+        redis_key: str = f"btp:single_un_assign:{ctx.author.id}"
+
+        if len(topics) == 0:
             embed.colour = Colors.error
+        elif len(topics) == 1:
+            count = await redis.incr(redis_key)
+            await redis.expire(redis_key, 30)
+
+            if count > 3:
+                await reply(ctx, embed=embed)
+
+                embed.colour = Colors.BeTheProfessional
+                embed.description = t.single_un_assign_help
+        else:
+            await redis.delete(redis_key)
 
         await reply(ctx, embed=embed)
 
@@ -216,6 +230,20 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_removed(cnt=len(affected_topics))
+
+        redis_key: str = f"btp:single_un_assign:{ctx.author.id}"
+
+        if len(affected_topics) == 1:
+            count = await redis.incr(redis_key)
+            await redis.expire(redis_key, 30)
+
+            if count > 3:
+                await reply(ctx, embed=embed)
+
+                embed.description = t.single_un_assign_help
+        elif len(affected_topics) > 1:
+            await redis.delete(redis_key)
+
         await reply(ctx, embed=embed)
 
     @commands.command(name="*")
