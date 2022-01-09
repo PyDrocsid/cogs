@@ -378,7 +378,9 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                 users: int = topic_count[topic_id]
                 name: str = topic.name.ljust(name_len, " ")
                 rank: str = "#" + str(i + 1).rjust(rank_len - 1, "0")
-                leaderboard_rows.append(f"{rank}{' ' * LEADERBOARD_TABLE_SPACING}{name}{' ' * LEADERBOARD_TABLE_SPACING}{users}")  # noqa: E501
+                leaderboard_rows.append(
+                    f"{rank}{' ' * LEADERBOARD_TABLE_SPACING}{name}{' ' * LEADERBOARD_TABLE_SPACING}{users}"
+                )
 
             rank_spacing = " " * (rank_len + LEADERBOARD_TABLE_SPACING)
             name_spacing = " " * (name_len + LEADERBOARD_TABLE_SPACING - len(name_field))

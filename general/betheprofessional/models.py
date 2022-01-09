@@ -14,10 +14,10 @@ class BTPTopic(Base):
 
     @staticmethod
     async def create(
-            name: str,
-            role_id: Union[int, None],
-            assignable: bool,
-            parent: Optional[Union[int, None]],
+        name: str,
+        role_id: Union[int, None],
+        assignable: bool,
+        parent: Optional[Union[int, None]],
     ) -> "BTPTopic":
         row = BTPTopic(name=name, role_id=role_id, parent=parent, assignable=assignable)
         await db.add(row)
