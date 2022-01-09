@@ -181,6 +181,20 @@ The `.btp leaderboard_max_n` command is used to change the `leaderboard_max_n` S
 |:-------------------:|:-------------------------:|:---------------------------------|
 | `leaderboard_max_n` | :fontawesome-solid-check: | New value of `leaderboard_max_n` |
 
+
+## `user_topics`
+
+The `usertopics` command is used to show all topics a User has assigned.
+
+```css
+.[usertopics|usertopic|utopics|utopic] [member]
+```
+
+| Argument | Required | Description                                           |
+|:--------:|:--------:|:------------------------------------------------------|
+| `member` |          | A member. Default is the Member executing the command |
+
+
 ## `topic_update_roles`
 
 The `.topic_update_roles` manually updates the Top Topics.
