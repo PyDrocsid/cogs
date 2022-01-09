@@ -279,12 +279,19 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             if not await db.exists(select(BTPTopic).filter_by(name=topic)):
                 raise CommandError(t.topic_not_registered(topic))
             else:
-                btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
+                btp_topic: BTPTopic = await db.first(select(BTPTopic).filter_by(name=topic))
+
                 delete_topics.append(btp_topic)
-                for child_topic in await db.all(
-                        select(BTPTopic).filter_by(parent=btp_topic.id),
-                ):  # TODO Recursive? Fix more level childs
-                    delete_topics.insert(0, child_topic)
+
+                queue: list[int] = [btp_topic.id]
+
+                while len(queue) != 0:
+                    topic_id = queue.pop()
+                    for child_topic in await db.all(
+                            select(BTPTopic).filter_by(parent=topic_id),
+                    ):
+                        delete_topics.insert(0, child_topic)
+                        queue.append(child_topic.id)
         for topic in delete_topics:
             if topic.role_id is not None:
                 role: Role = ctx.guild.get_role(topic.role_id)
