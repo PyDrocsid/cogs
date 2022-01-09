@@ -62,8 +62,8 @@ leaderboard_n_zero_error: "N cant be zero or less!"
 
 fetching_topic_role_failed: "Failed to fetch Role of the Topic `{}` with the Role ID `{}`"
 
-leaderboard_colmn_name: "NAME"
-leaderboard_colmn_users: "USERS"
+leaderboard_colmn_name: "[NAME]"
+leaderboard_colmn_users: "[USERS]"
 leaderboard_title: "Top `{}` - Most assigned Topics"
 
 must_be_above_zero: "{} must be above zero!"

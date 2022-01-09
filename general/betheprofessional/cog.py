@@ -458,14 +458,16 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if n <= 0:
             raise CommandError(t.leaderboard_n_zero_error)
 
-        cached_leaderboard: Optional[str] = None
+        cached_leaderboard_parts: Optional[list[str]] = None
 
+        redis_key = f"btp:leaderboard:n:{n}"
         if use_cache:
             if not await BeTheProfessionalPermission.bypass_leaderboard_cache.check_permissions(ctx.author):
                 raise CommandError(t.missing_cache_bypass_permission)
-            cached_leaderboard = await redis.get(f"btp:leaderboard:n:{n}")
+            cached_leaderboard_parts = await redis.lrange(redis_key, 0, await redis.llen(redis_key))
 
-        if cached_leaderboard is None:
+        leaderboard_parts: list[str] = []
+        if not cached_leaderboard_parts:
             topic_count: Dict[int, int] = {}
 
             for topic in await db.all(select(BTPTopic)):
@@ -482,36 +484,39 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             rank_len = len(str(len(top_topics))) + 1
             name_len = max(max([len(topic.name) for topic in await db.all(select(BTPTopic))]), len(name_field))
 
-            leaderboard_rows: list[str] = []
+            rank_spacing = " " * (rank_len + LEADERBOARD_TABLE_SPACING)
+            name_spacing = " " * (name_len + LEADERBOARD_TABLE_SPACING - len(name_field))
+
+            header: str = f"{rank_spacing}{name_field}{name_spacing}{users_field}"
+
+            current_part: str = header
             for i, topic_id in enumerate(top_topics):
                 topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=topic_id))
                 users: int = topic_count[topic_id]
                 name: str = topic.name.ljust(name_len, " ")
                 rank: str = "#" + str(i + 1).rjust(rank_len - 1, "0")
-                leaderboard_rows.append(
-                    f"{rank}{' ' * LEADERBOARD_TABLE_SPACING}{name}{' ' * LEADERBOARD_TABLE_SPACING}{users}",
-                )
+                current_line = f"{rank}{' ' * LEADERBOARD_TABLE_SPACING}{name}{' ' * LEADERBOARD_TABLE_SPACING}{users}"
+                if current_part == "":
+                    current_part = current_line
+                else:
+                    if len(current_part + "\n" + current_line) + 9 > PyDrocsid.embeds.EmbedLimits.FIELD_VALUE:
+                        leaderboard_parts.append(current_part)
+                        current_part = current_line
+                    else:
+                        current_part += "\n" + current_line
+            if current_part != "":
+                leaderboard_parts.append(current_part)
 
-            rank_spacing = " " * (rank_len + LEADERBOARD_TABLE_SPACING)
-            name_spacing = " " * (name_len + LEADERBOARD_TABLE_SPACING - len(name_field))
-
-            header: str = f"{rank_spacing}{name_field}{name_spacing}{users_field}\n"
-            leaderboard: str = header + "\n".join(leaderboard_rows)
-            await redis.setex(f"btp:leaderboard:n:{n}", CACHE_TTL, leaderboard)
+            for part in leaderboard_parts:
+                await redis.lpush(redis_key, part)
+            await redis.expire(redis_key, CACHE_TTL)
         else:
-            leaderboard: str = cached_leaderboard
+            leaderboard_parts = cached_leaderboard_parts
 
-        embed = Embed(title=t.leaderboard_title(n), description=f"```css\n{leaderboard}\n```")
-
-        if len(embed.description) > PyDrocsid.embeds.EmbedLimits.DESCRIPTION:
-            embed.description = None
-            with io.StringIO() as leaderboard_file:
-                leaderboard_file.write(leaderboard)
-                leaderboard_file.seek(0)
-                file = File(fp=leaderboard_file, filename="output.css")
-                await reply(ctx, embed=embed, file=file)
-        else:
-            await reply(ctx, embed=embed)
+        embed = Embed(title=t.leaderboard_title(n))
+        for part in leaderboard_parts:
+            embed.add_field(name="** **", value=f"```css\n{part}\n```", inline=False)
+        await send_long_embed(ctx, embed, paginate=True)
 
     @commands.command(name="usertopics", aliases=["usertopic", "utopics", "utopic"])
     async def user_topics(self, ctx: Context, member: Optional[Member]):
