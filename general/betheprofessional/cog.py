@@ -11,7 +11,9 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.database import db, select, db_wrapper
 from PyDrocsid.embeds import send_long_embed
+from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.logger import get_logger
+from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance
 from .colors import Colors
@@ -326,7 +328,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
     @btp.command(aliases=["lb"])
     @guild_only()
-    async def leaderboard(self, ctx: Context, n: Optional[int] = None):
+    async def leaderboard(self, ctx: Context, n: Optional[int] = None, use_cache: bool = True):
         """
         lists the top n topics
         """
@@ -338,44 +340,55 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if default_n > max_n:
             await send_alert(ctx.guild, t.leaderboard_default_n_bigger_than_max_n)
             raise CommandError(t.leaderboard_configuration_error)
-        if n > max_n:
+        if n > max_n and not BeTheProfessionalPermission.bypass_leaderboard_n_limit.check_permissions(ctx.author):
             raise CommandError(t.leaderboard_n_too_big(n, max_n))
         if n <= 0:
             raise CommandError(t.leaderboard_n_zero_error)
 
-        topic_count: Dict[int, int] = {}
+        cached_leaderboard: Optional[str] = None
 
-        for topic in await db.all(select(BTPTopic)):
-            topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic=topic.id))
+        if use_cache:
+            if not BeTheProfessionalPermission.bypass_leaderboard_cache.check_permissions(ctx.author):
+                raise CommandError(t.missing_cache_bypass_permission)
+            cached_leaderboard = await redis.get(f"btp:leaderboard:n:{n}")
 
-        top_topics: List[int] = list(
-            sorted(topic_count, key=lambda x: topic_count[x], reverse=True),
-        )[:n]
+        if cached_leaderboard is None:
+            topic_count: Dict[int, int] = {}
 
-        if len(top_topics) == 0:
-            raise CommandError(t.no_topics_registered)
+            for topic in await db.all(select(BTPTopic)):
+                topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic=topic.id))
 
-        name_field = t.leaderboard_colmn_name
-        users_field = t.leaderboard_colmn_users
+            top_topics: List[int] = list(
+                sorted(topic_count, key=lambda x: topic_count[x], reverse=True),
+            )[:n]
 
-        rank_len = len(str(len(top_topics))) + 1
-        name_len = max(max([len(topic.name) for topic in await db.all(select(BTPTopic))]), len(name_field))
+            if len(top_topics) == 0:
+                raise CommandError(t.no_topics_registered)
 
-        TABLE_SPACING = 2
+            name_field = t.leaderboard_colmn_name
+            users_field = t.leaderboard_colmn_users
 
-        leaderboard_rows: list[str] = []
-        for i, topic_id in enumerate(top_topics):
-            topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=topic_id))
-            users: int = topic_count[topic_id]
-            name: str = topic.name.ljust(name_len, ' ')
-            rank: str = "#" + str(i+1).rjust(rank_len - 1, '0')
-            leaderboard_rows.append(f"{rank}{' ' * TABLE_SPACING}{name}{' ' * TABLE_SPACING}{users}")
+            rank_len = len(str(len(top_topics))) + 1
+            name_len = max(max([len(topic.name) for topic in await db.all(select(BTPTopic))]), len(name_field))
 
-        rank_spacing = ' ' * (rank_len + TABLE_SPACING)
-        name_spacing = ' ' * (name_len + TABLE_SPACING - len(name_field))
+            TABLE_SPACING = 2
 
-        header: str = f"{rank_spacing}{name_field}{name_spacing}{users_field}\n"
-        leaderboard: str = header + '\n'.join(leaderboard_rows)
+            leaderboard_rows: list[str] = []
+            for i, topic_id in enumerate(top_topics):
+                topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=topic_id))
+                users: int = topic_count[topic_id]
+                name: str = topic.name.ljust(name_len, ' ')
+                rank: str = "#" + str(i+1).rjust(rank_len - 1, '0')
+                leaderboard_rows.append(f"{rank}{' ' * TABLE_SPACING}{name}{' ' * TABLE_SPACING}{users}")
+
+            rank_spacing = ' ' * (rank_len + TABLE_SPACING)
+            name_spacing = ' ' * (name_len + TABLE_SPACING - len(name_field))
+
+            header: str = f"{rank_spacing}{name_field}{name_spacing}{users_field}\n"
+            leaderboard: str = header + '\n'.join(leaderboard_rows)
+            await redis.setex(f"btp:leaderboard:n:{n}", CACHE_TTL, leaderboard)
+        else:
+            leaderboard: str = cached_leaderboard
 
         embed = Embed(title=t.leaderboard_title(n), description=f"```css\n{leaderboard}\n```")
 

@@ -1,6 +1,8 @@
 permissions:
   manage: manage betheprofessional roles
-
+  bypass_leaderboard_cache: bypass leadboard cache
+  bypass_leaderboard_n_limit: bypass leaderboard n limit
+missing_cache_bypass_permission: "Missing Cache bypass Permission"
 # betheprofessional
 betheprofessional: BeTheProfessional
 youre_not_the_first_one: "Topic `{}` not found.\nYou're not the first one to try this, {}"
