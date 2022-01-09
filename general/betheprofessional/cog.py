@@ -66,6 +66,7 @@ async def parse_topics(topics_str: str) -> List[BTPTopic]:
         topic = await db.first(select(BTPTopic).filter_by(name=topic_name))
 
         if topic is None and len(all_topics) > 0:
+
             def dist(name: str) -> int:
                 return calculate_edit_distance(name.lower(), topic_name.lower())
 
@@ -110,7 +111,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             None
             if parent_topic is None
             else await db.first(select(BTPTopic).filter_by(name=parent_topic))
-                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
@@ -164,7 +165,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-               and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
 
         roles: List[Role] = []
@@ -275,7 +276,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                 btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
                 delete_topics.append(btp_topic)
                 for child_topic in await db.all(
-                        select(BTPTopic).filter_by(parent=btp_topic.id),
+                    select(BTPTopic).filter_by(parent=btp_topic.id),
                 ):  # TODO Recursive? Fix more level childs
                     delete_topics.insert(0, child_topic)
         for topic in delete_topics:
@@ -375,15 +376,15 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             for i, topic_id in enumerate(top_topics):
                 topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=topic_id))
                 users: int = topic_count[topic_id]
-                name: str = topic.name.ljust(name_len, ' ')
-                rank: str = "#" + str(i + 1).rjust(rank_len - 1, '0')
+                name: str = topic.name.ljust(name_len, " ")
+                rank: str = "#" + str(i + 1).rjust(rank_len - 1, "0")
                 leaderboard_rows.append(f"{rank}{' ' * TABLE_SPACING}{name}{' ' * TABLE_SPACING}{users}")
 
-            rank_spacing = ' ' * (rank_len + TABLE_SPACING)
-            name_spacing = ' ' * (name_len + TABLE_SPACING - len(name_field))
+            rank_spacing = " " * (rank_len + TABLE_SPACING)
+            name_spacing = " " * (name_len + TABLE_SPACING - len(name_field))
 
             header: str = f"{rank_spacing}{name_field}{name_spacing}{users_field}\n"
-            leaderboard: str = header + '\n'.join(leaderboard_rows)
+            leaderboard: str = header + "\n".join(leaderboard_rows)
             await redis.setex(f"btp:leaderboard:n:{n}", CACHE_TTL, leaderboard)
         else:
             leaderboard: str = cached_leaderboard
@@ -429,7 +430,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                 lambda topic_id: topic_count[topic_id] >= RoleCreateMinUsers,
                 sorted(topic_count, key=lambda x: topic_count[x], reverse=True),
             )
-        )[:await BeTheProfessionalSettings.RoleLimit.get()]
+        )[: await BeTheProfessionalSettings.RoleLimit.get()]
 
         # Delete old Top Topic Roles
         for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id is not None)):  # type: BTPTopic
@@ -452,8 +453,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                     if role:
                         await member.add_roles(role, atomic=False)
                     else:
-                        await send_alert(self.bot.guilds[0],
-                                         t.fetching_topic_role_failed(topic.name, topic.role_id))
+                        await send_alert(self.bot.guilds[0], t.fetching_topic_role_failed(topic.name, topic.role_id))
 
         logger.info("Created Top Topic Roles")
 
