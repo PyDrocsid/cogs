@@ -238,6 +238,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             await redis.expire(redis_key, 30)
 
             if count > 3:
+                await redis.delete(redis_key)
                 await reply(ctx, embed=embed)
 
                 embed.description = t.single_un_assign_help
