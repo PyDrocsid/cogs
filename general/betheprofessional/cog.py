@@ -28,6 +28,8 @@ t = t.betheprofessional
 
 logger = get_logger(__name__)
 
+LEADERBOARD_TABLE_SPACING: Final = 2
+
 
 def split_topics(topics: str) -> List[str]:
     return [topic for topic in map(str.strip, topics.replace(";", ",").split(",")) if topic]
@@ -370,18 +372,16 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             rank_len = len(str(len(top_topics))) + 1
             name_len = max(max([len(topic.name) for topic in await db.all(select(BTPTopic))]), len(name_field))
 
-            TABLE_SPACING: Final = 2
-
             leaderboard_rows: list[str] = []
             for i, topic_id in enumerate(top_topics):
                 topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=topic_id))
                 users: int = topic_count[topic_id]
                 name: str = topic.name.ljust(name_len, " ")
                 rank: str = "#" + str(i + 1).rjust(rank_len - 1, "0")
-                leaderboard_rows.append(f"{rank}{' ' * TABLE_SPACING}{name}{' ' * TABLE_SPACING}{users}")
+                leaderboard_rows.append(f"{rank}{' ' * LEADERBOARD_TABLE_SPACING}{name}{' ' * LEADERBOARD_TABLE_SPACING}{users}")  # noqa: E501
 
-            rank_spacing = " " * (rank_len + TABLE_SPACING)
-            name_spacing = " " * (name_len + TABLE_SPACING - len(name_field))
+            rank_spacing = " " * (rank_len + LEADERBOARD_TABLE_SPACING)
+            name_spacing = " " * (name_len + LEADERBOARD_TABLE_SPACING - len(name_field))
 
             header: str = f"{rank_spacing}{name_field}{name_spacing}{users_field}\n"
             leaderboard: str = header + "\n".join(leaderboard_rows)
@@ -415,7 +415,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
     @tasks.loop(hours=24)
     @db_wrapper
     async def update_roles(self):
-        RoleCreateMinUsers = await BeTheProfessionalSettings.RoleCreateMinUsers.get()
+        role_create_min_users = await BeTheProfessionalSettings.RoleCreateMinUsers.get()
 
         logger.info("Started Update Role Loop")
         topic_count: Dict[int, int] = {}
@@ -427,9 +427,9 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         # Limit Roles to BeTheProfessionalSettings.RoleLimit
         top_topics: List[int] = list(
             filter(
-                lambda topic_id: topic_count[topic_id] >= RoleCreateMinUsers,
+                lambda topic_id: topic_count[topic_id] >= role_create_min_users,
                 sorted(topic_count, key=lambda x: topic_count[x], reverse=True),
-            )
+            ),
         )[: await BeTheProfessionalSettings.RoleLimit.get()]
 
         # Delete old Top Topic Roles
