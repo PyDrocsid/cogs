@@ -17,6 +17,7 @@ By default `parent_topic` is the Root Level.
 |:--------------:|:--------:|:-----------------------|
 | `parent_topic` |          | Parent Level of Topics |
 
+
 ## `assign_topics`
 
 The `.+` command assigns the user the specified topics.
@@ -61,9 +62,10 @@ The `.*` command adds new topics to the list of available topics.
     You can use a topic's path!
 
 Topic Path Examples:
- - `Parent/Child` - Parent must already exist
- - `TopLevelNode`
- - `Main/Parent/Child2` - Main and Parent must already exist
+
+- `Parent/Child` - Parent must already exist
+- `TopLevelNode`
+- `Main/Parent/Child2` - Main and Parent must already exist
 
 ```css
 .* <topic>
@@ -73,6 +75,7 @@ Topic Path Examples:
 |:------------:|:-------------------------:|:---------------------------------------------------------------------------------------------|
 |   `topic`    | :fontawesome-solid-check: | The new topic's path. Multible topics can be registered by separating them using `,` or `;`. |
 | `assignable` |                           | Asignability of the created topic/topics                                                     |
+
 
 ## `delete_topics`
 
@@ -91,6 +94,7 @@ The `./` command removes topics from the list of available topics and deletes th
 
 
 ## `topic`
+
 The `.topic` command pings all members by topic name.
 If a role exists for the topic, it'll ping the role.
 
@@ -105,10 +109,14 @@ If `message` is set, the bot will reply to the given message.
 | `topic_name` | :fontawesome-solid-check: | A topic name.                                      |
 |  `message`   |                           | A Discord Message. e.g. Message ID or Message Link |
 
+
 ## `btp`
+
 BeTheProfessional Command Group
 
+
 ### `leaderboard`
+
 The `.btp leaderboard` command lists the top `n` topics sorted by users.
 
 ```css
@@ -120,7 +128,9 @@ The `.btp leaderboard` command lists the top `n` topics sorted by users.
 |     `n`     |          | Number of topics shown in the leaderboard. Limited by a Setting. Permission to bypass the Limit `betheprofessional.bypass_leaderboard_n_limit` |
 | `use_cache` |          | Disable Cache. Requires the Bypass Permission `betheprofessional.bypass_leaderboard_cache`                                                     |
 
+
 ## `topic_update_roles`
+
 The `.topic_update_roles` manually updates the Top Topics.
 The Top Topics will get a Role.
 These roles remain even in the case of a rejoin.
