@@ -117,7 +117,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             None
             if parent_topic is None
             else await db.first(select(BTPTopic).filter_by(name=parent_topic))
-                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
@@ -171,7 +171,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-               and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
 
         roles: List[Role] = []
@@ -317,7 +317,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                 while len(queue) != 0:
                     topic_id = queue.pop()
                     for child_topic in await db.all(
-                            select(BTPTopic).filter_by(parent=topic_id),
+                        select(BTPTopic).filter_by(parent=topic_id),
                     ):
                         delete_topics.insert(0, child_topic)
                         queue.append(child_topic.id)
@@ -536,7 +536,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if len(topics_assigns) == 0:
             embed.colour = Colors.red
         else:
-            topics_str = ', '.join([f"`{topic.name}`" for topic in topics])
+            topics_str = ", ".join([f"`{topic.name}`" for topic in topics])
 
         embed.description = t.user_topics(member.mention, topics_str, cnt=len(topics))
 
