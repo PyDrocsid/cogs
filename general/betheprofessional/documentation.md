@@ -112,7 +112,8 @@ If `message` is set, the bot will reply to the given message.
 
 ## `btp`
 
-BeTheProfessional Command Group
+The `.btp` command shows all BTP Settings.
+It requires the `betheprofessional.read` Permission.
 
 
 ### `leaderboard`
@@ -128,6 +129,57 @@ The `.btp leaderboard` command lists the top `n` topics sorted by users.
 |     `n`     |          | Number of topics shown in the leaderboard. Limited by a Setting. Permission to bypass the Limit `betheprofessional.bypass_leaderboard_n_limit` |
 | `use_cache` |          | Disable Cache. Requires the Bypass Permission `betheprofessional.bypass_leaderboard_cache`                                                     |
 
+
+### `role_limit`
+
+The `.btp role_limit` command is used to change the `role_limit` Settings for BTP.
+
+```css
+.btp role_limit <role_limit>
+```
+
+|   Argument   |         Required          | Description                 |
+|:------------:|:-------------------------:|:----------------------------|
+| `role_limit` | :fontawesome-solid-check: | New value of `role_setting` |
+
+
+### `role_create_min_users`
+
+The `.btp role_create_min_users` command is used to change the `role_create_min_users` Settings for BTP.
+
+```css
+.btp role_create_min_users <role_create_min_users>
+```
+
+|        Argument         |         Required          | Description                          |
+|:-----------------------:|:-------------------------:|:-------------------------------------|
+| `role_create_min_users` | :fontawesome-solid-check: | New value of `role_create_min_users` |
+
+
+### `leaderboard_default_n`
+
+The `.btp leaderboard_default_n` command is used to change the `leaderboard_default_n` Settings for BTP.
+
+```css
+.btp leaderboard_default_n <leaderboard_default_n>
+```
+
+|        Argument         |         Required          | Description                          |
+|:-----------------------:|:-------------------------:|:-------------------------------------|
+| `leaderboard_default_n` | :fontawesome-solid-check: | New value of `leaderboard_default_n` |
+
+
+### `leaderboard_max_n`
+
+The `.btp leaderboard_max_n` command is used to change the `leaderboard_max_n` Settings for BTP.
+
+```css
+.btp leaderboard_max_n <leaderboard_max_n>
+```
+
+|      Argument       |         Required          | Description                      |
+|:-------------------:|:-------------------------:|:---------------------------------|
+| `leaderboard_max_n` | :fontawesome-solid-check: | New value of `leaderboard_max_n` |
 
 ## `topic_update_roles`
 

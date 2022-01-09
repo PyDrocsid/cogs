@@ -10,5 +10,6 @@ class BeTheProfessionalPermission(BasePermission):
         return t.betheprofessional.permissions[self.name]
 
     manage = auto()
+    read = auto()
     bypass_leaderboard_cache = auto()
     bypass_leaderboard_n_limit = auto()

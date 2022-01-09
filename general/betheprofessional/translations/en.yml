@@ -1,5 +1,6 @@
 permissions:
-  manage: manage betheprofessional roles
+  manage: manage betheprofessional
+  read: read betheprofessional settings
   bypass_leaderboard_cache: bypass leadboard cache
   bypass_leaderboard_n_limit: bypass leaderboard n limit
 missing_cache_bypass_permission: "Missing Cache bypass Permission"

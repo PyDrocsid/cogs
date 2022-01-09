@@ -329,6 +329,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
     @commands.group()
     @guild_only()
+    @BeTheProfessionalPermission.read.check
     async def btp(self, ctx: Context):
         if ctx.subcommand_passed is not None:
             if ctx.invoked_subcommand is None:
