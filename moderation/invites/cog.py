@@ -313,7 +313,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
     @optional_permissions(InvitesPermission.manage)
     async def description(self, ctx: Context, server: AllowedServerConverter, *, description: str | None = None):
         """
-        update the description link of an allowed discord server
+        update the description of an allowed discord server
         """
 
         server: AllowedInvite
