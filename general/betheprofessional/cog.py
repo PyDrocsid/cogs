@@ -1,10 +1,12 @@
+import io
 import string
 from typing import List, Union, Optional, Dict
 
-from discord import Member, Embed, Role, Message
+from discord import Member, Embed, Role, Message, File
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
+import PyDrocsid.embeds
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.database import db, select, db_wrapper
@@ -17,7 +19,7 @@ from .models import BTPUser, BTPTopic
 from .permissions import BeTheProfessionalPermission
 from .settings import BeTheProfessionalSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog
+from ...pubsub import send_to_changelog, send_alert
 
 tg = t.g
 t = t.betheprofessional
@@ -49,6 +51,7 @@ async def split_parents(topics: List[str], assignable: bool) -> List[tuple[str, 
         topic = topic_tree[-1]
         result.append((topic, assignable, parents))
     return result
+
 
 async def parse_topics(topics_str: str) -> List[BTPTopic]:
     topics: List[BTPTopic] = []
@@ -315,6 +318,77 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         else:
             await message.reply(mention)
 
+    @commands.group()
+    @guild_only()
+    async def btp(self, ctx: Context):
+        if ctx.invoked_subcommand is None:
+            raise UserInputError
+
+    @btp.command(aliases=["lb"])
+    @guild_only()
+    async def leaderboard(self, ctx: Context, n: Optional[int] = None):
+        """
+        lists the top n topics
+        """
+
+        default_n = await BeTheProfessionalSettings.LeaderboardDefaultN.get()
+        max_n = await BeTheProfessionalSettings.LeaderboardMaxN.get()
+        if n is None:
+            n = default_n
+        if default_n > max_n:
+            await send_alert(ctx.guild, t.leaderboard_default_n_bigger_than_max_n)
+            raise CommandError(t.leaderboard_configuration_error)
+        if n > max_n:
+            raise CommandError(t.leaderboard_n_too_big(n, max_n))
+        if n <= 0:
+            raise CommandError(t.leaderboard_n_zero_error)
+
+        topic_count: Dict[int, int] = {}
+
+        for topic in await db.all(select(BTPTopic)):
+            topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic=topic.id))
+
+        top_topics: List[int] = list(
+            sorted(topic_count, key=lambda x: topic_count[x], reverse=True),
+        )[:n]
+
+        if len(top_topics) == 0:
+            raise CommandError(t.no_topics_registered)
+
+        name_field = t.leaderboard_colmn_name
+        users_field = t.leaderboard_colmn_users
+
+        rank_len = len(str(len(top_topics))) + 1
+        name_len = max(max([len(topic.name) for topic in await db.all(select(BTPTopic))]), len(name_field))
+
+        TABLE_SPACING = 2
+
+        leaderboard_rows: list[str] = []
+        for i, topic_id in enumerate(top_topics):
+            topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=topic_id))
+            users: int = topic_count[topic_id]
+            name: str = topic.name.ljust(name_len, ' ')
+            rank: str = "#" + str(i+1).rjust(rank_len - 1, '0')
+            leaderboard_rows.append(f"{rank}{' ' * TABLE_SPACING}{name}{' ' * TABLE_SPACING}{users}")
+
+        rank_spacing = ' ' * (rank_len + TABLE_SPACING)
+        name_spacing = ' ' * (name_len + TABLE_SPACING - len(name_field))
+
+        header: str = f"{rank_spacing}{name_field}{name_spacing}{users_field}\n"
+        leaderboard: str = header + '\n'.join(leaderboard_rows)
+
+        embed = Embed(title=t.leaderboard_title(n), description=f"```css\n{leaderboard}\n```")
+
+        if len(embed.description) > PyDrocsid.embeds.EmbedLimits.DESCRIPTION or True:
+            embed.description = None
+            with io.StringIO() as leaderboard_file:
+                leaderboard_file.write(leaderboard)
+                leaderboard_file.seek(0)
+                file = File(fp=leaderboard_file, filename="output.css")
+                await reply(ctx, embed=embed, file=file)
+        else:
+            await reply(ctx, embed=embed)
+
     @commands.command(aliases=["topic_update", "update_roles"])
     @guild_only()
     @BeTheProfessionalPermission.manage.check
@@ -363,7 +437,11 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                     member = await self.bot.guilds[0].fetch_member(btp_user.user_id)
                     if member:
                         role = self.bot.guilds[0].get_role(topic.role_id)
-                        await member.add_roles(role, atomic=False)
+                        if role:
+                            await member.add_roles(role, atomic=False)
+                        else:
+                            await send_alert(self.bot.guilds[0],
+                                             t.fetching_topic_role_failed(topic.name, topic.role_id))
                     else:
                         pass
 
