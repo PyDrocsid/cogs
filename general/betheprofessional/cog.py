@@ -1,6 +1,6 @@
 import io
 import string
-from typing import List, Union, Optional, Dict
+from typing import List, Union, Optional, Dict, Final
 
 from discord import Member, Embed, Role, Message, File
 from discord.ext import commands, tasks
@@ -358,9 +358,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             for topic in await db.all(select(BTPTopic)):
                 topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic=topic.id))
 
-            top_topics: List[int] = list(
-                sorted(topic_count, key=lambda x: topic_count[x], reverse=True),
-            )[:n]
+            top_topics: List[int] = sorted(topic_count, key=lambda x: topic_count[x], reverse=True)[:n]
 
             if len(top_topics) == 0:
                 raise CommandError(t.no_topics_registered)
@@ -371,14 +369,14 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             rank_len = len(str(len(top_topics))) + 1
             name_len = max(max([len(topic.name) for topic in await db.all(select(BTPTopic))]), len(name_field))
 
-            TABLE_SPACING = 2
+            TABLE_SPACING: Final = 2
 
             leaderboard_rows: list[str] = []
             for i, topic_id in enumerate(top_topics):
                 topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=topic_id))
                 users: int = topic_count[topic_id]
                 name: str = topic.name.ljust(name_len, ' ')
-                rank: str = "#" + str(i+1).rjust(rank_len - 1, '0')
+                rank: str = "#" + str(i + 1).rjust(rank_len - 1, '0')
                 leaderboard_rows.append(f"{rank}{' ' * TABLE_SPACING}{name}{' ' * TABLE_SPACING}{users}")
 
             rank_spacing = ' ' * (rank_len + TABLE_SPACING)
@@ -448,15 +446,14 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                 topic.role_id = (await self.bot.guilds[0].create_role(name=topic.name)).id
                 for btp_user in await db.all(select(BTPUser).filter_by(topic=topic.id)):
                     member = await self.bot.guilds[0].fetch_member(btp_user.user_id)
-                    if member:
-                        role = self.bot.guilds[0].get_role(topic.role_id)
-                        if role:
-                            await member.add_roles(role, atomic=False)
-                        else:
-                            await send_alert(self.bot.guilds[0],
-                                             t.fetching_topic_role_failed(topic.name, topic.role_id))
+                    if not member:
+                        continue
+                    role = self.bot.guilds[0].get_role(topic.role_id)
+                    if role:
+                        await member.add_roles(role, atomic=False)
                     else:
-                        pass
+                        await send_alert(self.bot.guilds[0],
+                                         t.fetching_topic_role_failed(topic.name, topic.role_id))
 
         logger.info("Created Top Topic Roles")
 
