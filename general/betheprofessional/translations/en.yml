@@ -57,3 +57,24 @@ fetching_topic_role_failed: "Failed to fetch Role of the Topic `{}` with the Rol
 leaderboard_colmn_name: "NAME"
 leaderboard_colmn_users: "USERS"
 leaderboard_title: "Top `{}` - Most assigned Topics"
+
+must_be_above_zero: "{} must be above zero!"
+must_be_zero_or_above: "{} must be zero or above!"
+
+settings:
+  role_limit:
+    name: "Role Limit"
+    internal_name: "RoleLimit"
+    updated: "The BTP Role Limit is now `{}`"
+  role_create_min_users:
+    name: "Role Create Min Users"
+    internal_name: "RoleCreateMinUsers"
+    updated: "Role Create Min Users Limit is now `{}`"
+  leaderboard_default_n:
+    name: "Leaderboard Default N"
+    internal_name: "LeaderboardDefaultN"
+    updated: "Leaderboard Default N is now `{}`"
+  leaderboard_max_n:
+    name: "Leaderboard Max N"
+    internal_name: "LeaderboardMaxN"
+    updated: "Leaderboard Max N is now `{}`"

@@ -101,7 +101,11 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
     ]
 
     async def on_ready(self):
-        self.update_roles.start()
+        self.update_roles.cancel()
+        try:
+            self.update_roles.start()
+        except RuntimeError:
+            self.update_roles.restart()
 
     @commands.command(name="?")
     @guild_only()
@@ -113,7 +117,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             None
             if parent_topic is None
             else await db.first(select(BTPTopic).filter_by(name=parent_topic))
-            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
@@ -167,7 +171,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+               and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
 
         roles: List[Role] = []
@@ -278,7 +282,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                 btp_topic = await db.first(select(BTPTopic).filter_by(name=topic))
                 delete_topics.append(btp_topic)
                 for child_topic in await db.all(
-                    select(BTPTopic).filter_by(parent=btp_topic.id),
+                        select(BTPTopic).filter_by(parent=btp_topic.id),
                 ):  # TODO Recursive? Fix more level childs
                     delete_topics.insert(0, child_topic)
         for topic in delete_topics:
@@ -326,8 +330,77 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
     @commands.group()
     @guild_only()
     async def btp(self, ctx: Context):
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
+        if ctx.subcommand_passed is not None:
+            if ctx.invoked_subcommand is None:
+                raise UserInputError
+            return
+        embed = Embed(title=t.betheprofessional, color=Colors.BeTheProfessional)
+        for setting_item in t.settings.__dict__["_fallback"].keys():
+            data = getattr(t.settings, setting_item)
+            embed.add_field(
+                name=data.name,
+                value=await getattr(BeTheProfessionalSettings, data.internal_name).get(),
+                inline=False,
+            )
+        await reply(ctx, embed=embed)
+
+    async def change_setting(self, ctx: Context, name: str, value: any):
+        data = getattr(t.settings, name)
+        await getattr(BeTheProfessionalSettings, data.internal_name).set(value)
+
+        embed = Embed(title=t.betheprofessional, color=Colors.green)
+        embed.description = data.updated(value)
+
+        await reply(ctx, embed=embed)
+        await send_to_changelog(ctx.guild, embed.description)
+
+    @btp.command()
+    @guild_only()
+    @BeTheProfessionalPermission.manage.check
+    async def role_limit(self, ctx: Context, role_limit: int):
+        """
+        changes the btp role limit
+        """
+
+        if role_limit <= 0:
+            raise CommandError(t.must_be_above_zero(t.settings.role_limit.name))
+        await self.change_setting(ctx, "role_limit", role_limit)
+
+    @btp.command()
+    @guild_only()
+    @BeTheProfessionalPermission.manage.check
+    async def role_create_min_users(self, ctx: Context, role_create_min_users: int):
+        """
+        changes the btp role create min users count
+        """
+
+        if role_create_min_users < 0:
+            raise CommandError(t.must_be_zero_or_above(t.settings.role_create_min_users.name))
+        await self.change_setting(ctx, "role_create_min_users", role_create_min_users)
+
+    @btp.command()
+    @guild_only()
+    @BeTheProfessionalPermission.manage.check
+    async def leaderboard_default_n(self, ctx: Context, leaderboard_default_n: int):
+        """
+        changes the btp leaderboard default n
+        """
+
+        if leaderboard_default_n <= 0:
+            raise CommandError(t.must_be_above_zero(t.settings.leaderboard_default_n.name))
+        await self.change_setting(ctx, "leaderboard_default_n", leaderboard_default_n)
+
+    @btp.command()
+    @guild_only()
+    @BeTheProfessionalPermission.manage.check
+    async def leaderboard_max_n(self, ctx: Context, leaderboard_max_n: int):
+        """
+        changes the btp leaderboard max n
+        """
+
+        if leaderboard_max_n <= 0:
+            raise CommandError(t.must_be_above_zero(t.settings.leaderboard_max_n.name))
+        await self.change_setting(ctx, "leaderboard_max_n", leaderboard_max_n)
 
     @btp.command(aliases=["lb"])
     @guild_only()
