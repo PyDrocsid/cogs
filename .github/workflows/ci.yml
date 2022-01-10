@@ -65,18 +65,24 @@ jobs:
             exit 1
           fi
 
-          for category in administration moderation information integrations general; do
+          ok=1
+          for category in */; do
             cd $category
 
             for cog in $(ls); do
               [[ -d $cog ]] || continue
               if ! [[ -f $cog/documentation.md ]]; then
-                echo ::warning::Could not find documentation for $category/$cog
+                ok=0
+                echo ::error::Could not find documentation for $category$cog
               fi
             done
 
             cd ..
           done
+
+          if [[ $ok -ne 1 ]]; then
+            exit 1
+          fi
 
       - name: Lint docs
         uses: docker://avtodev/markdown-lint:v1
