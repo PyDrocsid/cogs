@@ -8,7 +8,7 @@ This cog contains commands to access and search the documentation of [Python](ht
 Use this command to search the [Python documentation](https://docs.python.org/3/){target=_blank} for any Python entity:
 
 ```css
-,[python_docs|py] [entity]
+.[python_docs|py] [entity]
 ```
 
 |Argument|Required|Description|
@@ -23,7 +23,7 @@ If you don't provide an `entity`, you get the direct link to the [Python documen
 Use this command to search the [pycord documentation](https://docs.pycord.dev/en/master/){target=_blank} for any discord.py entity:
 
 ```css
-,[pycord_docs|pycord|pyc|dpy] [entity]
+.[pycord_docs|pycord|pyc|dpy] [entity]
 ```
 
 |Argument|Required|Description|

@@ -27,28 +27,26 @@ t = t.reddit
 logger = get_logger(__name__)
 
 
-async def exists_subreddit(subreddit: str) -> bool:
-    subreddit = re.sub("^(/r/|r/)", "", subreddit)
+def remove_prefix(subreddit: str) -> str:
+    return re.sub("^(/r/|r/)", "", subreddit)
+
+
+async def get_subreddit_name(subreddit: str) -> str | None:
+    subreddit = remove_prefix(subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
         headers={"User-agent": f"{Config.NAME}/{Config.VERSION}"},
+        allow_redirects=False,
     ) as response:
-        return response.ok
+        if response.status != 200:
+            return None
 
-
-async def get_subreddit_name(subreddit: str) -> str:
-    subreddit = re.sub("^(/r/|r/)", "", subreddit)
-    async with ClientSession() as session, session.get(
-        # raw_json=1 as parameter to get unicode characters instead of html escape sequences
-        f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
-        headers={"User-agent": f"{Config.NAME}/{Config.VERSION}"},
-    ) as response:
         return (await response.json())["data"]["display_name"]
 
 
 async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]:
-    subreddit = re.sub("^(/r/|r/)", "", subreddit)
+    subreddit = remove_prefix(subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1",
@@ -181,12 +179,11 @@ class RedditCog(Cog, name="Reddit"):
         create a link between a subreddit and a channel
         """
 
-        if not await exists_subreddit(subreddit):
+        if not (subreddit := await get_subreddit_name(subreddit)):
             raise CommandError(t.subreddit_not_found)
 
         check_message_send_permissions(channel, check_embed=True)
 
-        subreddit = await get_subreddit_name(subreddit)
         if await db.exists(filter_by(RedditChannel, subreddit=subreddit, channel=channel.id)):
             raise CommandError(t.reddit_link_already_exists)
 
@@ -202,7 +199,7 @@ class RedditCog(Cog, name="Reddit"):
         remove a reddit link
         """
 
-        subreddit = await get_subreddit_name(subreddit)
+        subreddit = await get_subreddit_name(subreddit) or subreddit
         link: Optional[RedditChannel] = await db.get(RedditChannel, subreddit=subreddit, channel=channel.id)
         if link is None:
             raise CommandError(t.reddit_link_not_found)

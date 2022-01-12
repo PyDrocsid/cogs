@@ -174,7 +174,7 @@ async def get_lookup_table(ctx: Context, name: str, url: str) -> dict[str, str]:
     if table:
         logger.debug(f"documentation for {name} ({url}) has been loaded")
 
-    await redis.hmset_dict(key, table)
+    await redis.hset(key, mapping=table)
     await redis.expire(key, CACHE_TTL)
     return table
 

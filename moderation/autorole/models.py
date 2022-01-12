@@ -15,13 +15,13 @@ async def load_cache():
 
     roles = [row.role_id async for row in await db.stream(select(AutoRole))]
 
-    tr = redis.multi_exec()
-    tr.delete(role_key := "autorole_roles")
-    if roles:
-        tr.sadd(role_key, *roles)
-        tr.expire(role_key, CACHE_TTL)
-    tr.setex(load_key, CACHE_TTL, 1)
-    await tr.execute()
+    async with redis.pipeline() as pipe:
+        await pipe.delete(role_key := "autorole_roles")
+        if roles:
+            await pipe.sadd(role_key, *roles)
+            await pipe.expire(role_key, CACHE_TTL)
+        await pipe.setex(load_key, CACHE_TTL, 1)
+        await pipe.execute()
 
 
 class AutoRole(Base):
