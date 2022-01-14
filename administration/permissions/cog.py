@@ -41,7 +41,7 @@ async def list_permissions(ctx: Context, title: str, min_level: BasePermissionLe
     embed = Embed(title=title, colour=Colors.error)
     if not out:
         embed.description = t.no_permissions
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         return
 
     embed.colour = Colors.Permissions

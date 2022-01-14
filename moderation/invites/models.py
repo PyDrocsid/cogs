@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 from discord.utils import utcnow
 from sqlalchemy import Column, String, BigInteger, Boolean, Integer, Text
 
-from PyDrocsid.database import db, UTCDateTime
+from PyDrocsid.database import db, UTCDateTime, Base
 
 
-class AllowedInvite(db.Base):
+class AllowedInvite(Base):
     __tablename__ = "allowed_invite"
 
     guild_id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
@@ -17,6 +17,7 @@ class AllowedInvite(db.Base):
     guild_name: Union[Column, str] = Column(String(128))
     applicant: Union[Column, int] = Column(BigInteger)
     approver: Union[Column, int] = Column(BigInteger)
+    description: Union[Column, Optional[str]] = Column(Text, nullable=True)
     created_at: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
@@ -27,6 +28,7 @@ class AllowedInvite(db.Base):
             guild_name=guild_name,
             applicant=applicant,
             approver=approver,
+            description=None,
             created_at=utcnow(),
         )
         await db.add(row)
@@ -39,7 +41,7 @@ class AllowedInvite(db.Base):
         row.guild_name = guild_name
 
 
-class InviteLog(db.Base):
+class InviteLog(Base):
     __tablename__ = "invite_log"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
@@ -64,14 +66,14 @@ class InviteLog(db.Base):
         return row
 
 
-class IllegalInvitePost(db.Base):
+class IllegalInvitePost(Base):
     __tablename__ = "illegal_invite_post"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    member_name: Union[Column, str] = Column(Text)
     channel: Union[Column, int] = Column(BigInteger)
-    name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    name: Union[Column, str] = Column(Text)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod

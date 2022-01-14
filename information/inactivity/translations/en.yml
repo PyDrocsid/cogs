@@ -16,16 +16,14 @@ updated_members:
   many: "Updated {cnt} members."
 activity: Activity
 status:
-  active:
-    one: ":white_check_mark: Active ({cnt} day ago)"
-    many: ":white_check_mark: Active ({cnt} days ago)"
+  active: ":white_check_mark: Active ({})"
   inactive: ":warning: Inactive"
-  inactive_since: ":warning: Inactive since {}"
+  inactive_since: ":warning: Inactive ({})"
 inactive_users: Inactive Users
 inactive_users_cnt: Inactive Users ({})
 no_inactive_users: "No inactive users :white_check_mark:"
 user_inactive: "{} {} ({})"
-user_inactive_since: "{} {} ({}, since {})"
+user_inactive_since: "{} {} ({}, {})"
 inactive_duration:
   one: Users that have not sent a message for {cnt} day are marked as inactive.
   many: Users that have not sent a message for {cnt} days are marked as inactive.

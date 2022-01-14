@@ -6,18 +6,18 @@ from typing import Union, Optional
 from discord.utils import utcnow
 from sqlalchemy import Column, Integer, BigInteger, Text, Boolean
 
-from PyDrocsid.database import db, UTCDateTime
+from PyDrocsid.database import db, UTCDateTime, Base
 
 
-class Report(db.Base):
+class Report(Base):
     __tablename__ = "report"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    member_name: Union[Column, str] = Column(Text)
     reporter: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    reason: Union[Column, str] = Column(Text)
 
     @staticmethod
     async def create(member: int, member_name: str, reporter: int, reason: str) -> Report:
@@ -32,15 +32,15 @@ class Report(db.Base):
         return row
 
 
-class Warn(db.Base):
+class Warn(Base):
     __tablename__ = "warn"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    member_name: Union[Column, str] = Column(Text)
     mod: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    reason: Union[Column, str] = Column(Text)
 
     @staticmethod
     async def create(member: int, member_name: str, mod: int, reason: str) -> Warn:
@@ -49,20 +49,20 @@ class Warn(db.Base):
         return row
 
 
-class Mute(db.Base):
+class Mute(Base):
     __tablename__ = "mute"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    member_name: Union[Column, str] = Column(Text)
     mod: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
     days: Union[Column, int] = Column(Integer)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    reason: Union[Column, str] = Column(Text)
     active: Union[Column, bool] = Column(Boolean)
     deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
     unmute_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
-    unmute_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+    unmute_reason: Union[Column, Optional[str]] = Column(Text, nullable=True)
     upgraded: Union[Column, bool] = Column(Boolean, default=False)
     is_upgrade: Union[Column, bool] = Column(Boolean)
 
@@ -99,15 +99,15 @@ class Mute(db.Base):
         mute.upgraded = True
 
 
-class Kick(db.Base):
+class Kick(Base):
     __tablename__ = "kick"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    member_name: Union[Column, str] = Column(Text)
     mod: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    reason: Union[Column, str] = Column(Text)
 
     @staticmethod
     async def create(member: int, member_name: str, mod: Optional[int], reason: Optional[str]) -> Kick:
@@ -116,19 +116,19 @@ class Kick(db.Base):
         return row
 
 
-class Ban(db.Base):
+class Ban(Base):
     __tablename__ = "ban"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    member_name: Union[Column, str] = Column(Text)
     mod: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
     days: Union[Column, int] = Column(Integer)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    reason: Union[Column, str] = Column(Text)
     active: Union[Column, bool] = Column(Boolean)
     deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
-    unban_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+    unban_reason: Union[Column, Optional[str]] = Column(Text, nullable=True)
     unban_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
     upgraded: Union[Column, bool] = Column(Boolean, default=False)
     is_upgrade: Union[Column, bool] = Column(Boolean)

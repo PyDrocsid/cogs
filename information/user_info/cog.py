@@ -31,7 +31,7 @@ from discord import (
 )
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, CommandError, max_concurrency, guild_only
-from discord.utils import snowflake_time, utcnow
+from discord.utils import snowflake_time, utcnow, format_dt
 
 from .colors import Colors
 from .models import Join, Leave, UsernameUpdate, Verification
@@ -226,7 +226,7 @@ class UserInfoCog(Cog, name="User Information"):
                 embed.add_field(name=name, value=value, inline=True)
 
         if (member := self.bot.guilds[0].get_member(user_id)) is not None:
-            status = t.member_since(member.joined_at.strftime("%d.%m.%Y %H:%M:%S"))
+            status = t.member_since(format_dt(member.joined_at))
         else:
             status = t.not_a_member
         embed.add_field(name=t.membership, value=status, inline=False)
@@ -259,7 +259,7 @@ class UserInfoCog(Cog, name="User Information"):
 
         join: Join
         async for join in await db.stream(filter_by(Join, member=user_id)):
-            out.append((join.timestamp, t.ulog.joined))
+            out.append((join.timestamp, t.ulog.joined(join.member_name)))
 
         leave: Leave
         async for leave in await db.stream(filter_by(Leave, member=user_id)):
@@ -296,11 +296,9 @@ class UserInfoCog(Cog, name="User Information"):
         else:
             embed.set_author(name=f"{user} ({user_id})", icon_url=user.display_avatar.url)
         for row in out:
-            name = row[0].strftime("%d.%m.%Y %H:%M:%S")
+            name = format_dt(row[0], style="D") + " " + format_dt(row[0], style="T")
             value = row[1]
             embed.add_field(name=name, value=value, inline=False)
-
-        embed.set_footer(text=t.utc_note)
 
         if arg_passed:
             await send_long_embed(ctx, embed, paginate=True)
