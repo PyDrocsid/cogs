@@ -55,7 +55,7 @@ class BadWordList(Base):
             if not await db.get(BadWordList, regex=res):
                 await redis.lrem("content_filter", 0, res)
 
-        if regex and not regex.regex in result:
+        if regex and regex.regex not in result:
             await redis.lpush("content_filter", regex.regex)
             return True
 
@@ -82,7 +82,7 @@ class BadWordPost(Base):
             timestamp=utcnow(),
             channel=channel,
             content=content,
-            deleted=deleted
+            deleted=deleted,
         )
         await db.add(row)
         return row

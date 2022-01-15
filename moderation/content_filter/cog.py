@@ -153,7 +153,7 @@ class ContentFilterCog(Cog, name="Zensursula"):
             embed.add_field(
                 name=t.embed_field_name(reg.id, reg.description),
                 value=t.embed_field_value(reg.regex, "True" if reg.delete else "False"),
-                inline=False
+                inline=False,
             )
 
             out = True
