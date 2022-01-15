@@ -1,0 +1,50 @@
+permissions:
+  bypass: bypass contentfilter checks
+  read: read contentfilter configuration
+  write: write contentfilter configuration
+
+commands:
+  content_filter: manage content filter settings
+  list: return a list of blacklisted strings
+  add: add a regex to the blacklist
+  remove: remove a regex from the blacklist
+  update: update a content filter pattern
+  update_description: update the description from a pattern
+  update_regex: update regex from a pattern
+  toggle_delete: activate/deactivate the delete from a pattern
+
+ulog_message: ":bookmark_tabs: **Sent** a message with the forbidden string `{}` in <#{}> (not deleted)."
+ulog_message_deleted: ":bookmark_tabs: **Sent** a message with the forbidden string `{}` in <#{}> (deleted)."
+
+already_blacklisted: "This regex is already in the list!"
+not_blacklisted: "This regex is not in the blacklist!"
+description_lengh: "The description has to be 500 or less characters long!"
+
+content_filter_added_header: "Added regex"
+content_filter_added: "`{}` was added successfully!"
+content_filter_removed_header: "Removed regex"
+content_filter_removed: "`{}` was removed successfully!"
+
+log_content_filter_added: "**Regex** `{}` was **added** to **Blacklist** by {}"
+log_content_filter_removed: "**Regex** `{}` was **removed** to **Blacklist** by {}"
+log_description_updated: "**Description** was **updated** for regex *{}*\nfrom: `{}`\nto: `{}`"
+log_regex_updated: "**Regex** was **updated**\nfrom: `{}`\nto: `{}`"
+log_delete_updated: "**Delete** was set to **{}** for `{}`"
+log_forbidden_posted: |
+  {} sent a **message** in {}, which contained one or more **forbidden expressions**: {} (no delete prio)
+log_forbidden_posted_deleted: |
+  **Deleted** a message of {} in {} because it contained one or more **forbidden expressions**: {}
+log_forbidden_posted_not_deleted: |
+  {} sent a **message** in {}, which contained one or more **forbidden expressions**: {}
+  **The message could not be deleted** because I don't have `manage_messages` permission in this channel.
+
+bad_word_list_header: "Blacklisted Expressions"
+no_pattern_listed: "No blacklisted patterns yet!"
+
+embed_field_name: ":dna: ID `{}` - {}"
+embed_field_value: "Regex: `{}`\nDelete: *{}*"
+
+description_updated: "Description was updated to `{}` successfully!"
+regex_updated: "Regex was updated to `{}` successfully!"
+pattern_updated: "Updated pattern!"
+delete_updated: "Delete status was updated to `{}` successfully!"
