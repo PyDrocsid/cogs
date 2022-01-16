@@ -1,11 +1,12 @@
 # AutoClear
 
-This cog automatically deletes messages that have exceeded a certain age from configured channels. Pinned messages are excluded from this and are not deleted.
+Contains functionality to delete messages that have exceeded a certain age from configured channels. Pinned messages are excluded from this and are not deleted.
 
 
 ## `autoclear`
 
-The `.autoclear` command shows a list of all configured channels with their respective TTLs (time to live) in minutes. Unpinned messages in one of those channels will be deleted when their age exceeds this TTL.
+Contains subcommands to manage the automatic message deletion. <br>
+If not subcommand is given, this command shows a list of all configured channels with their respective TTLs (time to live) in minutes. Unpinned messages in one of those channels will be deleted when their age exceeds this TTL.
 
 Usage:
 
@@ -20,18 +21,18 @@ Required Permissions:
 
 ### `set`
 
-The `set` subcommand configures the TTL for a given channel.
-
-Usage:
+Configures the TTL for a given channel.
 
 ```css
 .autoclear [set|s|add|a|+|=] <channel> <minutes>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`channel`|:fontawesome-solid-check:|The channel for which AutoClear is to be configured|
-|`minutes`|:fontawesome-solid-check:|The TTL in minutes|
+Arguments:
+
+| Argument  | Required                  | Description                                         |
+|:---------:|:-------------------------:|:----------------------------------------------------|
+| `channel` | :fontawesome-solid-check: | The channel for which AutoClear is to be configured |
+| `minutes` | :fontawesome-solid-check: | The TTL in minutes                                  |
 
 Required Permissions:
 
@@ -44,17 +45,17 @@ Required Permissions:
 
 ### `disable`
 
-The `disable` subcommand disables AutoClear in a given channel.
-
-Usage:
+Disables AutoClear in a given channel.
 
 ```css
 .autoclear [disable|d|delete|del|remove|r|-] <channel>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`channel`|:fontawesome-solid-check:|The channel in which AutoClear is to be disabled|
+Arguments:
+
+| Argument  | Required                  | Description                                      |
+|:---------:|:-------------------------:|:-------------------------------------------------|
+| `channel` | :fontawesome-solid-check: | The channel in which AutoClear is to be disabled |
 
 Required Permissions:
 
