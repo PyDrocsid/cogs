@@ -102,7 +102,7 @@ async def check_message(message: Message):
     raise StopEventHandling
 
 
-class ContentFilterCog(Cog, name="Zensursula"):
+class ContentFilterCog(Cog, name="Content Filter"):
     CONTRIBUTORS = [Contributor.NekoFanatic]
 
     @get_userlog_entries.subscribe
