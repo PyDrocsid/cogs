@@ -11,7 +11,7 @@ Contains subcommands to send messages as the bot.
 .send
 ```
 
-Required permissions:
+Required Permissions:
 
 - `message.send`
 
@@ -30,7 +30,7 @@ Arguments:
 |:---------:|:-------------------------:|:----------------------------------------------------|
 | `channel` | :fontawesome-solid-check: | The channel into which you want to send the message |
 
-Required permissions:
+Required Permissions:
 
 - `message.send`
 
@@ -50,7 +50,7 @@ Arguments:
 | `channel` | :fontawesome-solid-check: | The channel into which you want to send the message |
 | `color`   |                           | The color of the embed (name or hex code)           |
 
-Required permissions:
+Required Permissions:
 
 - `message.send`
 
@@ -74,7 +74,7 @@ Arguments:
 | `channel` | :fontawesome-solid-check: | The channel into which you want to send the new message |
 | `message` | :fontawesome-solid-check: | The message you want to copy (specify the message link) |
 
-Required permissions:
+Required Permissions:
 
 - `message.send`
 
@@ -87,7 +87,7 @@ Contains subcommands to edit messages sent by the bot.
 .edit
 ```
 
-Required permissions:
+Required Permissions:
 
 - `message.edit`
 
@@ -106,7 +106,7 @@ Arguments:
 |:---------:|:-------------------------:|:--------------------------------------------------------|
 | `message` | :fontawesome-solid-check: | The message you want to edit (specify the message link) |
 
-Required permissions:
+Required Permissions:
 
 - `message.edit`
 
@@ -126,7 +126,7 @@ Arguments:
 | `message` | :fontawesome-solid-check: | The message you want to edit (specify the message link)                                    |
 | `color`   |                           | The new color of the embed (name or hex code). If omitted, the embed color is not changed. |
 
-Required permissions:
+Required Permissions:
 
 - `message.edit`
 
@@ -150,7 +150,7 @@ Arguments:
 | `message` | :fontawesome-solid-check: | The message you want to edit (specify the message link)      |
 | `source`  | :fontawesome-solid-check: | The message you want to copy from (specify the message link) |
 
-Required permissions:
+Required Permissions:
 
 - `message.edit`
 
@@ -169,7 +169,7 @@ Arguments:
 |:---------:|:-------------------------:|:----------------------------------------------------------|
 | `message` | :fontawesome-solid-check: | The message you want to delete (specify the message link) |
 
-Required permissions:
+Required Permissions:
 
 - `message.delete`
 
@@ -188,7 +188,7 @@ Arguments:
 |:--------:|:-------------------------:|:------------------------------------------|
 | `count`  | :fontawesome-solid-check: | The number of messages you want to delete |
 
-Required permissions:
+Required Permissions:
 
 - `message.clear`
 

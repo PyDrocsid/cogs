@@ -17,7 +17,7 @@ Arguments:
 |:------------:|:-------------------------:|:---------------|
 | `new_prefix` | :fontawesome-solid-check: | The new prefix |
 
-Required permissions:
+Required Permissions:
 
 - `settings.change_prefix`
 

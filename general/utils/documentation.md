@@ -56,6 +56,6 @@ Arguments:
 |:--------:|:--------:|:-----------------------------------|
 | `avoid`  |          | A list of color hex codes to avoid |
 
-Required permissions:
+Required Permissions:
 
 - `utils.suggest_role_color`

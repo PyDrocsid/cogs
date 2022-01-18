@@ -56,7 +56,7 @@ Arguments:
 |:--------:|:-------------------------:|:------------------------|
 | `text`   | :fontawesome-solid-check: | The poll topic/question |
 
-Required permissions:
+Required Permissions:
 
 - `polls.team_poll`
 
@@ -80,7 +80,7 @@ Arguments:
 | `option1`  | :fontawesome-solid-check: | The first poll option           |
 | `optionX`  |                           | The Xth poll option             |
 
-Required permissions:
+Required Permissions:
 
 - `polls.team_poll`
 

@@ -59,7 +59,7 @@ Arguments:
 |:--------:|:-------------------------:|:---------------------------------------------|
 | `topics` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
 
-Required permissions:
+Required Permissions:
 
 - `betheprofessional.manage`
 
@@ -78,7 +78,7 @@ Arguments:
 |:--------:|:-------------------------:|:---------------------------------------------|
 | `topics` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
 
-Required permissions:
+Required Permissions:
 
 - `betheprofessional.manage`
 
@@ -97,6 +97,6 @@ Arguments:
 |:--------:|:-------------------------:|:---------------------------------------------|
 | `topics` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
 
-Required permissions:
+Required Permissions:
 
 - `betheprofessional.manage`
