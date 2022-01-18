@@ -7,63 +7,63 @@ from discord.ext.commands import CommandError, UserInputError
 from sentry_sdk import capture_exception
 
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import docs
 from PyDrocsid.embeds import send_long_embed
+from PyDrocsid.logger import get_logger
 from PyDrocsid.material_colors import MaterialColors
 from PyDrocsid.translations import t
-from .api import Emkc, EmkcAPIException
+from .api import PistonAPI, PistonException
 from ...contributor import Contributor
+
+logger = get_logger(__name__)
 
 tg = t.g
 t = t.run_code
 
 N_CHARS = 1000
 
-# fmt: off
-LANGUAGES = [
-    "awk", "bash", "brainfuck", "c", "cpp", "crystal", "csharp", "d", "dash", "deno", "elixir", "emacs", "go",
-    "haskell", "java", "jelly", "julia", "kotlin", "lisp", "lua", "nasm", "nasm64", "nim", "node", "osabie",
-    "paradoc", "perl", "php", "python2", "python3", "ruby", "rust", "swift", "typescript", "zig",
-]
-
-
-# fmt: on
-
-
-def supported_languages_docs(f):
-    f.__doc__ += f"\nSupported languages: {', '.join(f'`{lang}`' for lang in LANGUAGES)}"
-    return f
-
 
 class RunCodeCog(Cog, name="Run Code"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
 
-    @commands.command(usage=t.run_usage)
-    @supported_languages_docs
-    async def run(self, ctx, *, args: str):
-        """
-        run some code
-        """
+    def __init__(self):
+        self.api = PistonAPI()
 
+    async def on_ready(self):
+        logger.info("Loading piston environments")
+        try:
+            await self.api.load_environments()
+        except PistonException:
+            logger.error("Could not load piston environments!")
+            return
+
+        self.run.help = (
+            t.commands.run + "\n\n" + t.supported_languages(", ".join(f"`{lang}`" for lang in self.api.environments))
+        )
+
+    @commands.command(usage=t.run_usage)
+    @docs(t.commands.run)
+    async def run(self, ctx, *, args: str):
         if not (match := re.fullmatch(r"((```)?)([a-zA-Z\d]+)\n(.+?)\1", args, re.DOTALL)):
             raise UserInputError
 
-        *_, language, source = match.groups()
+        *_, lang, source = match.groups()
+
+        if not (language := self.api.get_language(lang)):
+            raise CommandError(t.error_unsupported_language(lang))
 
         await ctx.trigger_typing()
 
         try:
-            api_result: dict = await Emkc.run_code(language, source)
-        except EmkcAPIException as e:
-            if e.error == "Supplied language is not supported by Piston":
-                raise CommandError(t.error_unsupported_language(language))
-
+            result: dict = await self.api.run_code(language, source)
+        except PistonException as e:
             capture_exception()
             raise CommandError(f"{t.error_run_code}: {e.error}")
         except ClientError:
             capture_exception()
             raise CommandError(t.error_run_code)
 
-        output: str = api_result["output"]
+        output: str = result["run"]["output"]
         if len(output) > N_CHARS:
             newline = output.find("\n", N_CHARS, N_CHARS + 20)
             if newline == -1:
@@ -72,10 +72,10 @@ class RunCodeCog(Cog, name="Run Code"):
 
         description = "```\n" + output.replace("`", "`\u200b") + "\n```"
 
-        lang = api_result["language"]
-        version = api_result["version"]
+        lang = result["language"]
+        version = result["version"]
         embed = Embed(title=t.run_output(lang, version), color=MaterialColors.green, description=description)
-        if api_result["stderr"] and not api_result["stdout"]:
+        if result["run"]["code"] != 0:
             embed.colour = MaterialColors.error
 
         embed.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
