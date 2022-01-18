@@ -1,26 +1,27 @@
 # Polls
 
-This cog provides commands for simple "yes/no" polls, multiple choice polls and team polls.
+Contains commands for simple "yes/no" polls, multiple choice polls and team polls.
 
 
 ## `yesno`
 
-The `.yesno` command creates a "yes/no" poll by putting :thumbsup: and :thumbsdown: as reactions under the message (pictures and other files work, too).
+Creates a "yes/no" poll by adding :thumbsup: and :thumbsdown: reactions to the message (pictures and other files work, too). You can also specify a different message to which the reactions should be added.
 
 ```css
-.[yesno|yn] [content]
+.[yesno|yn] [content|message]
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`content`|       |The message content / A message link|
+Arguments:
 
-If `content` is a message link, the bot puts the reactions on the message this link refers to.
+| Argument  | Required | Description                     |
+|:---------:|:--------:|:--------------------------------|
+| `content` |          | The message content             |
+| `message` |          | The link to a different message |
 
 
 ## `poll`
 
-The `.poll` command creates a poll with 1 to a maximum of 19 options.
+Creates a poll with 1 to a maximum of 19 options.
 
 ```css
 .[poll|vote] <question>
@@ -28,20 +29,41 @@ The `.poll` command creates a poll with 1 to a maximum of 19 options.
 [emojiX] [optionX]
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`question`|:fontawesome-solid-check:|The poll topic/question|
-|`emojiX`|       |The reaction emote for option X|
-|`option1`|:fontawesome-solid-check:|The first poll option|
-|`optionX`|       |The Xth poll option|
+Arguments:
 
-!!! note
+| Argument   | Required                  | Description                     |
+|:----------:|:-------------------------:|:--------------------------------|
+| `question` | :fontawesome-solid-check: | The poll topic/question         |
+| `emojiX`   |                           | The reaction emote for option X |
+| `option1`  | :fontawesome-solid-check: | The first poll option           |
+| `optionX`  |                           | The Xth poll option             |
+
+!!! info
     Multiline titles and options can be specified using a \ at the end of a line
+
+
+## `team_yesno`
+
+Creates a "yes/no" poll and shows which team members have not voted yet.
+
+```css
+.[team_yesno|tyn] <text>
+```
+
+Arguments:
+
+| Argument | Required                  | Description             |
+|:--------:|:-------------------------:|:------------------------|
+| `text`   | :fontawesome-solid-check: | The poll topic/question |
+
+Required permissions:
+
+- `polls.team_poll`
 
 
 ## `teampoll`
 
-The `.teampoll` command creates a poll with 1 to a maximum of 20 options and shows which team members have not voted yet.
+Creates a poll with 1 to a maximum of 20 options and shows which team members have not voted yet.
 
 ```css
 .[teampoll|teamvote|tp] <question>
@@ -49,12 +71,18 @@ The `.teampoll` command creates a poll with 1 to a maximum of 20 options and sho
 [emojiX] [optionX]
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`question`|:fontawesome-solid-check:|The poll topic/question|
-|`emojiX`|       |The reaction emote for option X|
-|`option1`|:fontawesome-solid-check:|The first poll option|
-|`optionX`|       |The Xth poll option|
+Arguments:
 
-!!! note
+| Argument   | Required                  | Description                     |
+|:----------:|:-------------------------:|:--------------------------------|
+| `question` | :fontawesome-solid-check: | The poll topic/question         |
+| `emojiX`   |                           | The reaction emote for option X |
+| `option1`  | :fontawesome-solid-check: | The first poll option           |
+| `optionX`  |                           | The Xth poll option             |
+
+Required permissions:
+
+- `polls.team_poll`
+
+!!! info
     Multiline titles and options can be specified using a \ at the end of a line
