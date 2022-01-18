@@ -13,17 +13,12 @@ commands:
   update_regex: update regex from a pattern
   toggle_delete: activate/deactivate the delete from a pattern
 
-ulog_message: ":bookmark_tabs: **Sent** a message with the forbidden string `{}` in <#{}> (not deleted)."
-ulog_message_deleted: ":bookmark_tabs: **Sent** a message with the forbidden string `{}` in <#{}> (deleted)."
+ulog_message: ":roll_of_paper: **Sent** a message with the forbidden string `{}` in <#{}> (not deleted)."
+ulog_message_deleted: ":roll_of_paper: **Sent** a message with the forbidden string `{}` in <#{}> (deleted)."
 
 already_blacklisted: "This regex is already in the list!"
 not_blacklisted: "This regex is not in the blacklist!"
 description_length: "The description has to be 500 or less characters long!"
-
-content_filter_added_header: "Added regex"
-content_filter_added: "`{}` was added successfully!"
-content_filter_removed_header: "Removed regex"
-content_filter_removed: "`{}` was removed successfully!"
 
 log_content_filter_added: "**Regex** `{}` was **added** to **Blacklist** by {}"
 log_content_filter_removed: "**Regex** `{}` was **removed** to **Blacklist** by {}"
@@ -43,8 +38,3 @@ no_pattern_listed: "No blacklisted patterns yet!"
 
 embed_field_name: ":dna: ID `{}` - {}"
 embed_field_value: "Regex: `{}`\nDelete: *{}*"
-
-description_updated: "Description was updated to `{}` successfully!"
-regex_updated: "Regex was updated to `{}` successfully!"
-pattern_updated: "Updated pattern!"
-delete_updated: "Delete status was updated to `{}` successfully!"

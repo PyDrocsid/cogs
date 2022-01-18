@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs
 from PyDrocsid.database import db, filter_by
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -162,12 +162,8 @@ class ContentFilterCog(Cog, name="Content Filter"):
 
         await BadWord.add(ctx.author.id, regex, delete, description)
 
-        embed = Embed(
-            title=t.content_filter_added_header,
-            description=t.content_filter_added(regex),
-            colour=Colors.ContentFilter,
-        )
-        await reply(ctx, embed=embed)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
         await send_to_changelog(ctx.guild, t.log_content_filter_added(regex, ctx.author.mention))
 
     @content_filter.command(name="remove", aliases=["-"])
@@ -180,12 +176,8 @@ class ContentFilterCog(Cog, name="Content Filter"):
 
         regex = await BadWord.remove(pattern_id)
 
-        embed = Embed(
-            title=t.content_filter_removed_header,
-            description=t.content_filter_removed(regex.regex),
-            colour=Colors.ContentFilter,
-        )
-        await reply(ctx, embed=embed)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
         await send_to_changelog(ctx.guild, t.log_content_filter_removed(regex.regex, ctx.author.mention))
 
     @content_filter.group(name="update", aliases=["u"])
@@ -211,14 +203,8 @@ class ContentFilterCog(Cog, name="Content Filter"):
         old = regex.description
         regex.description = new_description
 
-        await reply(
-            ctx,
-            embed=Embed(
-                title=t.pattern_updated,
-                description=t.description_updated(new_description),
-                color=Colors.ContentFilter,
-            ),
-        )
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
         await send_to_changelog(
             ctx.guild,
             t.log_description_updated(regex.regex, old, new_description),
@@ -236,14 +222,8 @@ class ContentFilterCog(Cog, name="Content Filter"):
         old = regex.regex
         regex.regex = new_regex
 
-        await reply(
-            ctx,
-            embed=Embed(
-                title=t.pattern_updated,
-                description=t.regex_updated(new_regex),
-                color=Colors.ContentFilter,
-            ),
-        )
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
         await send_to_changelog(
             ctx.guild,
             t.log_regex_updated(regex.regex, old, new_regex),
@@ -263,14 +243,8 @@ class ContentFilterCog(Cog, name="Content Filter"):
 
         regex.delete = new
 
-        await reply(
-            ctx,
-            embed=Embed(
-                title=t.pattern_updated,
-                description=t.delete_updated(new),
-                color=Colors.ContentFilter,
-            ),
-        )
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+
         await send_to_changelog(
             ctx.guild,
             t.log_delete_updated(new, regex.regex),
