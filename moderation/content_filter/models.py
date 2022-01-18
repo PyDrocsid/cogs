@@ -10,7 +10,7 @@ from PyDrocsid.database import db, delete, UTCDateTime, Base
 from PyDrocsid.redis import redis
 
 
-class BadWordList(Base):
+class BadWord(Base):
     __tablename__ = "bad_word_list"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
@@ -22,25 +22,25 @@ class BadWordList(Base):
 
     @staticmethod
     async def add(mod: int, regex: str, deleted: bool, description: str):
-        await db.add(BadWordList(mod=mod, description=description, regex=regex, delete=deleted))
+        await db.add(BadWord(mod=mod, description=description, regex=regex, delete=deleted))
         await redis.lpush("content_filter", regex)
 
     @staticmethod
     async def remove(pattern_id: int):
 
-        regex = await db.get(BadWordList, id=pattern_id)
+        regex = await db.get(BadWord, id=pattern_id)
         if regex:
             await redis.lrem("content_filter", 0, regex.regex)
-            await db.exec(delete(BadWordList).filter_by(id=pattern_id))
+            await db.exec(delete(BadWord).filter_by(id=pattern_id))
 
         return regex
 
     @staticmethod
-    async def stream() -> list:
+    async def get_all() -> list:
         result = await redis.lrange("content_filter", 0, -1)
 
         for res in result:
-            if not await db.get(BadWordList, regex=res):
+            if not await db.get(BadWord, regex=res):
                 await redis.lrem("content_filter", 0, res)
 
         return await redis.lrange("content_filter", 0, -1)
@@ -48,11 +48,11 @@ class BadWordList(Base):
     @staticmethod
     async def exists(pattern_id: int) -> bool:
 
-        regex = await db.get(BadWordList, id=pattern_id)
+        regex = await db.get(BadWord, id=pattern_id)
         result = await redis.lrange("content_filter", 0, -1)
 
         for res in result:
-            if not await db.get(BadWordList, regex=res):
+            if not await db.get(BadWord, regex=res):
                 await redis.lrem("content_filter", 0, res)
 
         if regex and regex.regex not in result:

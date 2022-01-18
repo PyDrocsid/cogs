@@ -18,7 +18,7 @@ ulog_message_deleted: ":bookmark_tabs: **Sent** a message with the forbidden str
 
 already_blacklisted: "This regex is already in the list!"
 not_blacklisted: "This regex is not in the blacklist!"
-description_lengh: "The description has to be 500 or less characters long!"
+description_length: "The description has to be 500 or less characters long!"
 
 content_filter_added_header: "Added regex"
 content_filter_added: "`{}` was added successfully!"
@@ -31,11 +31,11 @@ log_description_updated: "**Description** was **updated** for regex *{}*\nfrom: 
 log_regex_updated: "**Regex** was **updated**\nfrom: `{}`\nto: `{}`"
 log_delete_updated: "**Delete** was set to **{}** for `{}`"
 log_forbidden_posted: |
-  {} sent a **message** in {}, which contained one or more **forbidden expressions**: {} (no delete prio)
+  {} sent a **[message]({})** in {}, which contained one or more **forbidden expressions**: {} (no delete prio)
 log_forbidden_posted_deleted: |
-  **Deleted** a message of {} in {} because it contained one or more **forbidden expressions**: {}
+  {}'s **[message]({})** in {} was **deleted** because it contained one or more **forbidden expressions**: {}
 log_forbidden_posted_not_deleted: |
-  {} sent a **message** in {}, which contained one or more **forbidden expressions**: {}
+  {} sent a **[message]({})** in {}, which contained one or more **forbidden expressions**: {}
   **The message could not be deleted** because I don't have `manage_messages` permission in this channel.
 
 bad_word_list_header: "Blacklisted Expressions"
