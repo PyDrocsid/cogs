@@ -292,7 +292,8 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if allowed and random.randrange(100):
             return random.choice(allowed)
 
-        a = "acddfilmmrtneeelnoioanopflofckrztrhetri  pu2aolain  hpkkxo ai  ea     nt  ul      y  st          u          f          f           "
+        a = "acddfilmmrtneeelnoioanopflofckrztrhetri  pu2aolain  hpkkxo "
+        a += "ai  ea     nt  ul      y  st          u          f          f           "
         c = len(b := [*range(17 - 37 + 42 >> (1 & 3 & 3 & 7 & ~42))])
         return random.shuffle(b) or next((e for d in b if (e := a[d::c].strip()) not in avoid), None)
 
