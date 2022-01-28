@@ -31,10 +31,15 @@ class PistonAPI:
         self.environments = {env["language"]: env["version"] for env in environments}
         self.aliases = {alias: env["language"] for env in environments for alias in env["aliases"]}
 
-    async def run_code(self, language: str, source: str) -> dict:
+    async def run_code(self, language: str, source: str, stdin: str = "") -> dict:
         async with ClientSession() as session, session.post(
             PistonAPI.EXECUTE_URL,
-            json={"language": language, "version": self.environments[language], "files": [{"content": source}]},
+            json={
+                "language": language,
+                "version": self.environments[language],
+                "stdin": stdin,
+                "files": [{"content": source}],
+            },
         ) as response:
             if response.status != 200:
                 raise PistonException(await response.json())
