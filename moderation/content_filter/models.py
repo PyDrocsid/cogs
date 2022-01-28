@@ -6,8 +6,19 @@ from typing import Union
 from discord.utils import utcnow
 from sqlalchemy import Column, BigInteger, Boolean, Integer, Text
 
-from PyDrocsid.database import db, delete, UTCDateTime, Base
+from PyDrocsid.database import db, delete, filter_by, UTCDateTime, Base
 from PyDrocsid.redis import redis
+
+
+async def sync_redis():
+    regex_list = await db.all(filter_by(BadWord))
+
+    if regex_list:
+        await redis.delete("content_filter")
+
+        regex: BadWord
+        for regex in regex_list:
+            await redis.lpush("content_filter", regex.regex)
 
 
 class BadWord(Base):
@@ -23,44 +34,29 @@ class BadWord(Base):
     @staticmethod
     async def add(mod: int, regex: str, deleted: bool, description: str):
         await db.add(BadWord(mod=mod, description=description, regex=regex, delete=deleted))
-        await redis.lpush("content_filter", regex)
+        await sync_redis()
 
     @staticmethod
     async def remove(pattern_id: int):
 
         regex = await db.get(BadWord, id=pattern_id)
         if regex:
-            await redis.lrem("content_filter", 0, regex.regex)
             await db.exec(delete(BadWord).filter_by(id=pattern_id))
+            await sync_redis()
 
         return regex
 
     @staticmethod
     async def get_all() -> list:
-        result = await redis.lrange("content_filter", 0, -1)
 
-        for res in result:
-            if not await db.get(BadWord, regex=res):
-                await redis.lrem("content_filter", 0, res)
-
-        return await redis.lrange("content_filter", 0, -1)
+        return await db.all(filter_by(BadWord))
 
     @staticmethod
     async def exists(pattern_id: int) -> bool:
 
         regex = await db.get(BadWord, id=pattern_id)
-        result = await redis.lrange("content_filter", 0, -1)
 
-        for res in result:
-            if not await db.get(BadWord, regex=res):
-                await redis.lrem("content_filter", 0, res)
-
-        if regex and regex.regex not in result:
-            await redis.lpush("content_filter", regex.regex)
-            return True
-
-        if result and regex:
-            return regex.regex in result
+        return True if regex else False
 
 
 class BadWordPost(Base):

@@ -131,10 +131,8 @@ class ContentFilterCog(Cog, name="Content Filter"):
             colour=Colors.ContentFilter,
         )
 
-        for regex in regex_list:
-
-            reg: BadWord
-            reg = await db.get(BadWord, regex=regex)
+        reg: BadWord
+        for reg in regex_list:
 
             embed.add_field(
                 name=t.embed_field_name(reg.id, reg.description),
