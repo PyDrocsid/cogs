@@ -242,8 +242,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         Contributor.Florian,
         Contributor.wolflu,
         Contributor.TNT2k,
+        # vc name lists only:
         Contributor.Scriptim,
         Contributor.MarcelCoding,
+        Contributor.Felux,
+        Contributor.hackandcode,
     ]
 
     def __init__(self, team_roles: list[str]):
