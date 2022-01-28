@@ -3,7 +3,7 @@ import re
 from aiohttp import ClientError
 from discord import Embed
 from discord.ext import commands
-from discord.ext.commands import CommandError, UserInputError
+from discord.ext.commands import CommandError, UserInputError, Context
 from sentry_sdk import capture_exception
 
 from PyDrocsid.cog import Cog
@@ -41,21 +41,14 @@ class RunCodeCog(Cog, name="Run Code"):
             t.commands.run + "\n\n" + t.supported_languages(", ".join(f"`{lang}`" for lang in self.api.environments))
         )
 
-    @commands.command(usage=t.run_usage)
-    @docs(t.commands.run)
-    async def run(self, ctx, *, args: str):
-        if not (match := re.fullmatch(r"((```)?)([a-zA-Z\d]+)\n(.+?)\1", args, re.DOTALL)):
-            raise UserInputError
-
-        *_, lang, source = match.groups()
-
-        if not (language := self.api.get_language(lang)):
-            raise CommandError(t.error_unsupported_language(lang))
+    async def execute(self, ctx: Context, language: str, source: str, stdin: str = ""):
+        if not (language := self.api.get_language(language)):
+            raise CommandError(t.error_unsupported_language(language))
 
         await ctx.trigger_typing()
 
         try:
-            result: dict = await self.api.run_code(language, source)
+            result: dict = await self.api.run_code(language, source, stdin)
         except PistonException as e:
             capture_exception()
             raise CommandError(f"{t.error_run_code}: {e.error}")
@@ -81,3 +74,31 @@ class RunCodeCog(Cog, name="Run Code"):
         embed.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
 
         await send_long_embed(ctx, embed)
+
+    @commands.command(usage=t.run_usage)
+    @docs(t.commands.run)
+    async def run(self, ctx: Context, *, code: str):
+        if not (match := re.fullmatch(r"((```)?)([a-zA-Z\d]+)\n(.+?)\1", code, re.DOTALL)):
+            raise UserInputError
+
+        *_, lang, source = match.groups()
+        await self.execute(ctx, lang, source)
+
+    @commands.command(aliases=["="])
+    @docs(t.commands.eval)
+    async def eval(self, ctx: Context, *, expr: str):
+        if not (match := re.fullmatch(r"(`*)([a-zA-Z\d]*\n)?(.+?)\1", expr, re.DOTALL)):
+            raise UserInputError
+
+        code = (
+            "from functools import reduce\n"
+            "from itertools import *\n"
+            "from operator import *\n"
+            "from random import *\n"
+            "from string import *\n"
+            "from math import *\n"
+            "print(eval(open(0).read()))"
+        )
+
+        *_, expr = match.groups()
+        await self.execute(ctx, "python", code, expr.strip())
