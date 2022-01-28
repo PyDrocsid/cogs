@@ -5,8 +5,9 @@ commands:
 error_run_code: An error occurred while executing the code
 error_unsupported_language: "Unsupported language: {}"
 run_usage: |
-  `​`​`language
-  your code
+  `​`​`<language>
+  <your code>
   `​`​`
+  [stdin]
 run_output: Run Output ({} {})
 supported_languages: "Supported languages: {}"

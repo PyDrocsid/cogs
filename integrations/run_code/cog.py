@@ -78,11 +78,11 @@ class RunCodeCog(Cog, name="Run Code"):
     @commands.command(usage=t.run_usage)
     @docs(t.commands.run)
     async def run(self, ctx: Context, *, code: str):
-        if not (match := re.fullmatch(r"((```)?)([a-zA-Z\d]+)\n(.+?)\1", code, re.DOTALL)):
+        if not (match := re.fullmatch(r"(```)([a-zA-Z\d]+)\n(.+?)\1(\n(.+?))?", code, re.DOTALL)):
             raise UserInputError
 
-        *_, lang, source = match.groups()
-        await self.execute(ctx, lang, source)
+        _, lang, source, _, stdin = match.groups()
+        await self.execute(ctx, lang, source, stdin)
 
     @commands.command(aliases=["="])
     @docs(t.commands.eval)
