@@ -181,7 +181,7 @@ class MessageCog(Cog, name="Message Commands"):
         elif message.embeds and message.embeds[0].color is not Embed.Empty:
             send_embed.colour = message.embeds[0].color
 
-        await message.edit(content=None, files=[], embed=send_embed)
+        await message.edit(content=None, attachments=[], embed=send_embed)
         embed.description = t.msg_edited
         await reply(ctx, embed=embed)
 
