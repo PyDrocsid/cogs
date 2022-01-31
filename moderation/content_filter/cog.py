@@ -40,7 +40,7 @@ async def check_message(message: Message):
 
         check: re.Match = re.search(bad_word, message.content)
 
-        if check:
+        if re.search(bad_word, message.content):
             forbidden.append(bad_word)
 
     if forbidden:
