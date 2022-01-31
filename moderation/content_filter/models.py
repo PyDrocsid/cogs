@@ -51,13 +51,6 @@ class BadWord(Base):
 
         return await db.all(filter_by(BadWord))
 
-    @staticmethod
-    async def exists(pattern_id: int) -> bool:
-
-        regex = await db.get(BadWord, id=pattern_id)
-
-        return True if regex else False
-
 
 class BadWordPost(Base):
     __tablename__ = "bad_word_post"

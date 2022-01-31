@@ -150,7 +150,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
     @docs(t.commands.add)
     async def add(self, ctx: Context, regex: str, delete: bool, *, description: str):
 
-        if await db.get(BadWord, regex=regex):
+        if await db.exists(filter_by(BadWord, regex=regex)):
             raise CommandError(t.already_blacklisted)
 
         if len(description) > 500:
@@ -167,7 +167,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
     @docs(t.commands.remove)
     async def remove(self, ctx: Context, pattern_id: int):
 
-        if not await BadWord.exists(pattern_id):
+        if not await db.exists(filter_by(BadWord, id=pattern_id)):
             raise CommandError(t.not_blacklisted)
 
         regex = await BadWord.remove(pattern_id)
@@ -191,7 +191,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
         if len(new_description) > 500:
             raise CommandError(t.description_length)
 
-        if not await BadWord.exists(pattern_id):
+        if not await db.exists(filter_by(BadWord, id=pattern_id)):
             raise CommandError(t.not_blacklisted)
 
         regex = await db.get(BadWord, id=pattern_id)
@@ -210,7 +210,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
     @docs(t.commands.update_regex)
     async def regex(self, ctx: Context, pattern_id: int, new_regex):
 
-        if not await BadWord.exists(pattern_id):
+        if not await db.exists(filter_by(BadWord, id=pattern_id)):
             raise CommandError(t.not_blacklisted)
 
         regex = await db.get(BadWord, id=pattern_id)
@@ -229,19 +229,16 @@ class ContentFilterCog(Cog, name="Content Filter"):
     @docs(t.commands.toggle_delete)
     async def toggle_delete(self, ctx: Context, pattern_id: int):
 
-        if not await BadWord.exists(pattern_id):
+        if not await db.exists(filter_by(BadWord, id=pattern_id)):
             raise CommandError(t.not_blacklisted)
 
         regex = await db.get(BadWord, id=pattern_id)
 
-        old: bool = regex.regex
-        new = False if old else True
-
-        regex.delete = new
+        regex.delete = not regex.delete
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
         await send_to_changelog(
             ctx.guild,
-            t.log_delete_updated(new, regex.regex),
+            t.log_delete_updated(regex.delete, regex.regex),
         )
