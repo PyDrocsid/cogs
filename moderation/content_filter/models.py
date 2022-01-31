@@ -32,7 +32,7 @@ class BadWord(Base):
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
-    async def add(mod: int, regex: str, deleted: bool, description: str):
+    async def create(mod: int, regex: str, deleted: bool, description: str):
         await db.add(BadWord(mod=mod, description=description, regex=regex, delete=deleted))
         await sync_redis()
 
