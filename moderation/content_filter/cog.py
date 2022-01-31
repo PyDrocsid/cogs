@@ -38,8 +38,6 @@ async def check_message(message: Message):
 
     for bad_word in bad_word_list:
 
-        check: re.Match = re.search(bad_word, message.content)
-
         if re.search(bad_word, message.content):
             forbidden.append(bad_word)
 
@@ -83,7 +81,7 @@ async def check_message(message: Message):
             await message.add_reaction(name_to_emoji["warning"])
 
         for post in set(forbidden):
-            await BadWordPost().create(author.id, author.name, message.channel.id, post, was_deleted)
+            await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
 
         raise StopEventHandling
 
@@ -158,7 +156,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
         if len(description) > 500:
             raise CommandError(t.description_length)
 
-        await BadWord.add(ctx.author.id, regex, delete, description)
+        await BadWord.create(ctx.author.id, regex, delete, description)
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
