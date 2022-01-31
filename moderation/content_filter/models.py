@@ -26,7 +26,7 @@ class BadWord(Base):
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     mod: Union[Column, int] = Column(BigInteger)
-    regex: Union[Column, str] = Column(Text)
+    regex: Union[Column, str] = Column(Text, unique=True)
     description: Union[Column, str] = Column(Text)
     delete: Union[Column, bool] = Column(Boolean)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
