@@ -295,8 +295,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if allowed and random.randrange(100):
             return random.choice(allowed)
 
-        a = "acddflmrtneeelooanopflocrztrhetr pu2aolai hpkkxo a ea     n ul       st        u        f        f "
-        c = len(b := [*range(13 - 37 + 42 >> (1 & 3 & 3 & 7 & ~42))])
+        a = "acddfilmmrtneeelnoioanopflofckrztrhetri  pu2aolain  hpkkxo "
+        a += "ai  ea     nt  ul      y  st          u          f          f           "
+        c = len(b := [*range(13 - 37 + 42 + ((4 > 2) << 4 - 2) >> (1 & 3 & 3 & 7 & ~42))])
         return random.shuffle(b) or next((e for d in b if (e := a[d::c].strip()) not in avoid), None)
 
     async def get_channel_name(self, guild: Guild) -> str:
