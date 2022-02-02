@@ -1,132 +1,196 @@
 # Message Commands
 
-This cog contains commands to send and manage messages as the bot.
+Contains commands to send, edit and delete messages as the bot.
 
 
 ## `send`
 
-The `.send` command can be used to send messages as the bot. There are three different subcommands.
+Contains subcommands to send messages as the bot.
+
+```css
+.send
+```
+
+Required Permissions:
+
+- `message.send`
 
 
 ### `text`
 
-You can send normal text messages in a channel by using:
+Sends normal text messages into a given text channel. After entering the command, the bot expects you to enter the text you want to send. If you have changed your mind, you can abort the process by entering `CANCEL`.
 
 ```css
 .send [text|t] <channel>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`channel`|:fontawesome-solid-check:|The channel into which you want to send the message|
+Arguments:
 
-After entering the command, the bot expects you to enter the text you want to send. If you have changed your mind, you can abort the process by entering `CANCEL`.
+| Argument  | Required                  | Description                                         |
+|:---------:|:-------------------------:|:----------------------------------------------------|
+| `channel` | :fontawesome-solid-check: | The channel into which you want to send the message |
+
+Required Permissions:
+
+- `message.send`
 
 
 ### `embed`
 
-You can send embed messages in a channel by using:
+Sends embed messages into a given text channel. After entering the command, the bot expects you to enter the embed title. After entering the title, the bot asks for the description of the embed. If at any point you have changed your mind, you can abort the process by entering `CANCEL`.
 
 ```css
 .send [embed|e] <channel> [color]
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`channel`|:fontawesome-solid-check:|The channel into which you want to send the message|
-|`color`||The color of the embed (name or hex code)|
+Arguments:
 
-After entering the command, the bot expects you to enter the embed title.
+| Argument  | Required                  | Description                                         |
+|:---------:|:----------------- -------:|:----------------------------------------------------|
+| `channel` | :fontawesome-solid-check: | The channel into which you want to send the message |
+| `color`   |                           | The color of the embed (name or hex code)           |
+
+Required Permissions:
+
+- `message.send`
 
 !!! note
     - The title cannot contain more than 256 characters.
     - You cannot use user/role/channel mentions in embed titles
 
-After entering the title, the bot asks for the description of the embed.
-
-If at any point you have changed your mind, you can abort the process by entering `CANCEL`.
-
 
 ### `copy`
 
-You can copy the content, embeds and files of any message into a new message by using:
+Copies the content, embeds and files of any message into a new message.
 
 ```css
 .send [copy|c] <channel> <message>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`channel`|:fontawesome-solid-check:|The channel into which you want to send the new message|
-|`message`|:fontawesome-solid-check:|The message you want to copy (specify the message link)|
+Arguments:
+
+| Argument  | Required                  | Description                                             |
+|:---------:|:-------------------------:|:--------------------------------------------------------|
+| `channel` | :fontawesome-solid-check: | The channel into which you want to send the new message |
+| `message` | :fontawesome-solid-check: | The message you want to copy (specify the message link) |
+
+Required Permissions:
+
+- `message.send`
 
 
 ## `edit`
 
-The `.edit` command can be used to edit messages sent by the bot.
+Contains subcommands to edit messages sent by the bot.
+
+```css
+.edit
+```
+
+Required Permissions:
+
+- `message.edit`
 
 
 ### `text`
 
-You can edit normal text messages sent by the bot by using:
+Edits normal text messages sent by the bot. After entering the command, the bot expects you to enter the new text. If you have changed your mind, you can abort the process by entering `CANCEL`.
 
 ```css
 .edit [text|t] <message>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`message`|:fontawesome-solid-check:|The message you want to edit (specify the message link)|
+Arguments:
 
-After entering the command, the bot expects you to enter the new text. If you have changed your mind, you can abort the process by entering `CANCEL`.
+| Argument  | Required                  | Description                                             |
+|:---------:|:-------------------------:|:--------------------------------------------------------|
+| `message` | :fontawesome-solid-check: | The message you want to edit (specify the message link) |
+
+Required Permissions:
+
+- `message.edit`
 
 
 ### `embed`
 
-Use this command to edit embed messages sent by the bot by using:
+Edits embed messages sent by the bot. After entering the command, the bot expects you to enter the new title. After entering the new title, the bot asks for the new description of the embed. If at any point you have changed your mind, you can abort the process by entering `CANCEL`.
 
 ```css
 .edit [embed|e] <message> [color]
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`message`|:fontawesome-solid-check:|The message you want to edit (specify the message link)|
-|`color`||The new color of the embed (name or hex code)|
+Arguments:
 
-After entering the command, the bot expects you to enter the new title.
+| Argument  | Required                  | Description                                                                                |
+|:---------:|:-------------------------:|:-------------------------------------------------------------------------------------------|
+| `message` | :fontawesome-solid-check: | The message you want to edit (specify the message link)                                    |
+| `color`   |                           | The new color of the embed (name or hex code). If omitted, the embed color is not changed. |
+
+Required Permissions:
+
+- `message.edit`
 
 !!! note
     - The title cannot contain more than 256 characters.
     - You cannot use user/role/channel mentions in embed titles
 
-After entering the new title, the bot asks for the new description of the embed.
-
-If at any point you have changed your mind, you can abort the process by entering `CANCEL`.
-
 
 ### `copy`
 
-You can copy the content, embeds and files of any message into another message already sent by the bot by using:
+Copies the content, embeds and files of any message into another message already sent by the bot.
 
 ```css
 .edit [copy|c] <message> <source>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`message`|:fontawesome-solid-check:|The message you want to edit (specify the message link)|
-|`source`|:fontawesome-solid-check:|The message you want to copy from (specify the message link)|
+Arguments:
+
+| Argument  | Required                  | Description                                                  |
+|:---------:|:-------------------------:|:-------------------------------------------------------------|
+| `message` | :fontawesome-solid-check: | The message you want to edit (specify the message link)      |
+| `source`  | :fontawesome-solid-check: | The message you want to copy from (specify the message link) |
+
+Required Permissions:
+
+- `message.edit`
 
 
 ## `delete`
 
-Use this command to delete any message:
+Deletes any message.
 
 ```css
 .delete <message>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`message`|:fontawesome-solid-check:|The message you want to delete (specify the message link)|
+Arguments:
+
+| Argument  | Required                  | Description                                               |
+|:---------:|:-------------------------:|:----------------------------------------------------------|
+| `message` | :fontawesome-solid-check: | The message you want to delete (specify the message link) |
+
+Required Permissions:
+
+- `message.delete`
+
+
+## `clear`
+
+Deletes the last `n` messages in a given text channel.
+
+```css
+.[clear|clean] <count>
+```
+
+Arguments:
+
+| Argument | Required                  | Description                               |
+|:--------:|:-------------------------:|:------------------------------------------|
+| `count`  | :fontawesome-solid-check: | The number of messages you want to delete |
+
+Required Permissions:
+
+- `message.clear`
+
+!!! note
+    You cannot delete more than 100 messages at once.
