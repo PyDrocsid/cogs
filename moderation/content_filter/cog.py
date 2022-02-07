@@ -34,30 +34,29 @@ async def check_message(message: Message):
     if not bad_word_list:
         return
 
-    forbidden = []
+    violations = set()
 
     for bad_word in bad_word_list:
 
         if re.search(bad_word, message.content):
-            forbidden.append(bad_word)
+            violations.add(bad_word)
 
-    if forbidden:
+    if violations:
         can_delete = message.channel.permissions_for(message.guild.me).manage_messages
         has_to_be_deleted = False
         was_deleted = False
 
-        for post in set(forbidden):
+        for post in violations:
             call = await db.get(BadWord, regex=post)
 
             if call.delete:
                 has_to_be_deleted = True
-                if can_delete:
-                    await message.delete()
-                    break
+                break
 
         log_text = None
 
         if has_to_be_deleted and can_delete:
+            await message.delete()
             was_deleted = True
             log_text = t.log_forbidden_posted_deleted
 
@@ -73,14 +72,14 @@ async def check_message(message: Message):
                 f"{author.mention} (`@{author}`, {author.id})",
                 message.jump_url,
                 message.channel.mention,
-                ", ".join(forbidden),
+                ", ".join(violations),
             ),
         )
 
         if not was_deleted:
             await message.add_reaction(name_to_emoji["warning"])
 
-        for post in set(forbidden):
+        for post in violations:
             await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
 
         raise StopEventHandling
