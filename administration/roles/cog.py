@@ -142,11 +142,8 @@ class RolesCog(Cog, name="Roles"):
                 raise UserInputError
             return
 
-        list_of_server_roles = ctx.guild.roles
-        list_of_server_roles.reverse()
-        description = ""
-        for role in list_of_server_roles:
-            description += f":small_blue_diamond: {role.mention} ({role.color})\n"
+        description = "\n".join(
+            t.description(role.mention, role.color) for role in ctx.guild.roles.reverse())
 
         title = f"{len(ctx.guild.roles)} {t.roles}"
         embed = Embed(title=title, description=description, color=Colors.Roles)
