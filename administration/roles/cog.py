@@ -137,8 +137,20 @@ class RolesCog(Cog, name="Roles"):
     @guild_only()
     @docs(t.commands.roles)
     async def roles(self, ctx: Context):
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
+        if ctx.subcommand_passed is not None:
+            if ctx.invoked_subcommand is None:
+                raise UserInputError
+            return
+
+        list_of_server_roles = ctx.guild.roles
+        list_of_server_roles.reverse()
+        description = ""
+        for role in list_of_server_roles:
+            description += f":small_blue_diamond: {role.mention} ({role.color})\n"
+
+        title = f"{len(ctx.guild.roles)} {t.roles}"
+        embed = Embed(title=title, description=description, color=Colors.Roles)
+        await send_long_embed(ctx, embed, paginate=True)
 
     @roles.group(name="config", aliases=["conf", "c", "set", "s"])
     @RolesPermission.config_read.check
