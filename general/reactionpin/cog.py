@@ -42,7 +42,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
 
         blocked_role = await RoleSettings.get("mute")
         if access or (member == message.author and all(r.id != blocked_role for r in member.roles)):
-            if message.type != MessageType.default:
+            if message.type not in (MessageType.default, MessageType.reply):
                 await message.remove_reaction(emoji, member)
                 await message.channel.send(embed=make_error(t.msg_not_pinned_system))
                 raise StopEventHandling
