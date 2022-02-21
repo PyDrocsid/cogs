@@ -1,7 +1,13 @@
+commands:
+  run: Run some code using the [Piston API](https://github.com/engineer-man/piston)
+  eval: Evaluate a Python expression using the [Piston API](https://github.com/engineer-man/piston)
+
 error_run_code: An error occurred while executing the code
 error_unsupported_language: "Unsupported language: {}"
 run_usage: |
-  `​`​`language
-  your code
+  `​`​`<language>
+  <your code>
   `​`​`
+  [stdin]
 run_output: Run Output ({} {})
+supported_languages: "Supported languages: {}"

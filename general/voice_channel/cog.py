@@ -20,8 +20,6 @@ from discord import (
     HTTPException,
     Message,
     NotFound,
-    PartialEmoji,
-    User,
     ui,
     Interaction,
     InteractionResponse,
@@ -244,8 +242,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         Contributor.Florian,
         Contributor.wolflu,
         Contributor.TNT2k,
+        # vc name lists only:
         Contributor.Scriptim,
         Contributor.MarcelCoding,
+        Contributor.Felux,
+        Contributor.hackandcode,
     ]
 
     def __init__(self, team_roles: list[str]):
@@ -294,8 +295,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         if allowed and random.randrange(100):
             return random.choice(allowed)
 
-        a = "acddflmrtneeelooanopflocrztrhetr pu2aolai hpkkxo a ea     n ul       st        u        f        f "
-        c = len(b := [*range(13 - 37 + 42 >> (1 & 3 & 3 & 7 & ~42))])
+        a = "acddfilmmrtneeelnoioanopflofckrztrhetri  pu2aolain  hpkkxo "
+        a += "ai  ea     nt  ul      y  st          u          f          f           "
+        c = len(b := [*range(13 - 37 + 42 + ((4 > 2) << 4 - 2) >> (1 & 3 & 3 & 7 & ~42))])
         return random.shuffle(b) or next((e for d in b if (e := a[d::c].strip()) not in avoid), None)
 
     async def get_channel_name(self, guild: Guild) -> str:
@@ -376,54 +378,6 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         await redis.setex(key, 86400, message.id)
 
         await message.edit(view=ControlMessage(self, channel, message))
-
-    async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, user: Union[Member, User]):
-        if not message.guild or user.bot:
-            return
-        if str(message.id) != await redis.get(f"dynvc_control_message:{message.channel.id}"):
-            return
-
-        channel: Optional[DynChannel] = await DynChannel.get(text_id=message.channel.id)
-        if not channel:
-            return
-
-        async with self._channel_lock[channel.group_id]:
-
-            try:
-                await message.remove_reaction(emoji, user)
-            except Forbidden:
-                await send_alert(message.guild, t.could_not_clear_reactions(message.jump_url, message.channel.mention))
-            except NotFound:
-                pass
-
-            if str(emoji) == name_to_emoji["information_source"]:
-                await self.send_voice_info(message.channel, channel)
-                return
-            elif str(emoji) == name_to_emoji["grey_question"]:
-                await self.update_control_message(
-                    channel,
-                    await message.channel.send(embed=await get_commands_embed()),
-                )
-                return
-
-            try:
-                await self.check_authorization(channel, user)
-            except CommandError:
-                return
-
-            voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)
-            user_role = voice_channel.guild.get_role(channel.group.user_role)
-            locked = channel.locked
-            hidden = voice_channel.overwrites_for(user_role).view_channel is False
-
-            if str(emoji) == name_to_emoji["lock"] and not locked:
-                await self.lock_channel(user, channel, voice_channel, hide=False)
-            elif str(emoji) == name_to_emoji["unlock"] and locked:
-                await self.unlock_channel(user, channel, voice_channel)
-            elif str(emoji) == name_to_emoji["man_detective"] and not hidden:
-                await self.lock_channel(user, channel, voice_channel, hide=True)
-            elif str(emoji) == name_to_emoji["eye"] and hidden:
-                await self.unhide_channel(user, channel, voice_channel)
 
     async def fix_owner(self, channel: DynChannel) -> Optional[Member]:
         voice_channel: VoiceChannel = self.bot.get_channel(channel.channel_id)

@@ -1,14 +1,11 @@
 # Bot Info
 
-This cog contains information about the bot and its tasks.
+Contains information about the bot and its tasks.
 
 
-## Commands
+## `info`
 
-
-### `info`
-
-The `.info` command shows information about the bot.
+Shows information about the bot.
 
 ```css
 .[info|infos|about]
@@ -28,36 +25,36 @@ The information given by this command includes:
 - Where to submit bug reports and feature requests
 
 
-### `version`
+## `version`
 
-The `.version` command returns the bot's current version.
+Returns the bot's current version.
 
 ```css
 .[version|v]
 ```
 
 
-### `github`
+## `github`
 
-The `.github` command returns information about the bot's GitHub repository.
+Returns information about the bot's GitHub repository.
 
 ```css
 .[github|gh]
 ```
 
 
-### `contributors`
+## `contributors`
 
-The `.contributors` command returns a list of all people that contributed to the bot.
+Returns a list of all people that contributed to the bot.
 
 ```css
 .[contributors|contri|con]
 ```
 
 
-### `cogs`
+## `cogs`
 
-The `.cogs` command returns a list of all cogs currently in use.
+Returns a list of all cogs currently in use.
 
 ```css
 .cogs
