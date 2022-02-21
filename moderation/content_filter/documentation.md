@@ -83,6 +83,7 @@ Contains subcommands to do edit the content_filter. <br>
 ```
 
 Required Permissions:
+
 - `content_filter.read`
 - `content_filter.write`
 
