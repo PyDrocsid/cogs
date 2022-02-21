@@ -15,6 +15,7 @@ Contains subcommands to do edit/show the content_filter. <br>
 ```
 
 Required Permissions:
+
 - `content_filter.read`
 
 
@@ -26,7 +27,7 @@ This command is used to add a new expressions for the filter. <br>
 .content_filter [add|+] <regex> <delete> <description>
 ```
 
-Arguments: 
+Arguments:
 
 |   Argument    |         Required          | Description                                                                                |
 |:-------------:|:-------------------------:|:-------------------------------------------------------------------------------------------|
@@ -35,6 +36,7 @@ Arguments:
 | `description` | :fontawesome-solid-check: | A description for the entry (shown on the list)                                            |
 
 Required Permissions:
+
 - `content_filter.read`
 - `content_filter.write`
 
@@ -48,6 +50,7 @@ This commands shows a list of every blacklisted expression. <br>
 ```
 
 Required Permissions:
+
 - `content_filter.read`
 
 
@@ -59,13 +62,14 @@ This command is used to remove an expressions from the filter. <br>
 .content_filter [remove|-] <pattern_id>
 ```
 
-Arguments: 
+Arguments:
 
 |   Argument   |         Required          | Description                                     |
 |:------------:|:-------------------------:|:------------------------------------------------|
 | `pattern_id` | :fontawesome-solid-check: | The ID from the command (shown by list command) |
 
 Required Permissions:
+
 - `content_filter.read`
 - `content_filter.write`
 
@@ -91,7 +95,7 @@ This command can be used to set a new description for an already existing filter
 .content_filter update [description|d] <pattern_id> <new_description>
 ```
 
-Arguments: 
+Arguments:
 
 |     Argument      |         Required          | Description                                     |
 |:-----------------:|:-------------------------:|:------------------------------------------------|
@@ -99,6 +103,7 @@ Arguments:
 | `new_description` | :fontawesome-solid-check: | The new description for the filter              |
 
 Required Permissions:
+
 - `content_filter.read`
 - `content_filter.write`
 
@@ -111,7 +116,7 @@ This command can be used to edit the regex for an already existing filter.
 .content_filter update [regex|r] <pattern_id> <new_regex>
 ```
 
-Arguments: 
+Arguments:
 
 |   Argument   |         Required          | Description                                     |
 |:------------:|:-------------------------:|:------------------------------------------------|
@@ -119,6 +124,7 @@ Arguments:
 | `new_regex`  | :fontawesome-solid-check: | The new regex for the filter to check for       |
 
 Required Permissions:
+
 - `content_filter.read`
 - `content_filter.write`
 
@@ -131,12 +137,13 @@ This command can be used to toggle the delete-status for an already existing fil
 .content_filter update [toggle_delete|td] <pattern_id>
 ```
 
-Arguments: 
+Arguments:
 
 |   Argument   |         Required          | Description                                     |
 |:------------:|:-------------------------:|:------------------------------------------------|
 | `pattern_id` | :fontawesome-solid-check: | The ID from the command (shown by list command) |
 
 Required Permissions:
+
 - `content_filter.read`
 - `content_filter.write`
