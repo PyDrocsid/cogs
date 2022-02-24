@@ -6,7 +6,7 @@ from typing import Union
 from discord.utils import utcnow
 from sqlalchemy import Column, BigInteger, Boolean, Integer, Text
 
-from PyDrocsid.database import db, delete, filter_by, UTCDateTime, Base
+from PyDrocsid.database import db, filter_by, UTCDateTime, Base
 from PyDrocsid.redis import redis
 
 
