@@ -20,7 +20,6 @@ class Activity(Base):
         return row
 
     @staticmethod
-    @db_wrapper
     async def update(object_id: int, timestamp: datetime) -> Activity:
         if not (row := await db.get(Activity, id=object_id)):
             row = await Activity.create(object_id, timestamp)
