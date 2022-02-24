@@ -1,11 +1,12 @@
+import asyncio
 import re
 
-from discord import Message, Embed
+from discord import Embed, Forbidden, Message
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs
+from PyDrocsid.command import confirm, docs
 from PyDrocsid.database import db, filter_by
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -23,66 +24,61 @@ t = t.content_filter
 
 async def check_message(message: Message):
     author = message.author
+    bad_word_list = await BadWord.get_all_redis()
 
     if message.guild is None:
         return
-    if await ContentFilterPermission.bypass.check_permissions(author):
-        return
+    #if await ContentFilterPermission.bypass.check_permissions(author):
+    #    return
 
-    bad_word_list = await BadWord.get_all()
-
-    if not bad_word_list:
-        return
-
-    violations = set()
-
+    violations: list[str] = []
     for bad_word in bad_word_list:
+        if match := re.search(bad_word, message.content):
+            violations.append(match.string)
 
-        if re.search(bad_word, message.content):
-            violations.add(bad_word)
+    if not violations:
+        return
 
-    if violations:
-        can_delete = message.channel.permissions_for(message.guild.me).manage_messages
-        has_to_be_deleted = False
-        was_deleted = False
+    has_to_be_deleted = False
+    for post in violations:
+        called_object = await db.get(BadWord, regex=post)
 
-        for post in violations:
-            call = await db.get(BadWord, regex=post)
+        if called_object.delete:
+            has_to_be_deleted = True
+            break
 
-            if call.delete:
-                has_to_be_deleted = True
-                break
-
-        log_text = None
-
-        if has_to_be_deleted and can_delete:
+    log_text = None
+    was_deleted = False
+    if has_to_be_deleted:
+        try:
             await message.delete()
             was_deleted = True
             log_text = t.log_forbidden_posted_deleted
-
-        elif has_to_be_deleted and not can_delete:
+        except Forbidden:
             log_text = t.log_forbidden_posted_not_deleted
 
-        elif not has_to_be_deleted:
-            log_text = t.log_forbidden_posted
+    elif not has_to_be_deleted:
+        log_text = t.log_forbidden_posted
 
-        await send_alert(
-            message.guild,
-            log_text(
-                f"{author.mention} (`@{author}`, {author.id})",
-                message.jump_url,
-                message.channel.mention,
-                ", ".join(violations),
-            ),
-        )
+    await send_alert(
+        message.guild,
+        log_text(
+            f"{author.mention} (`@{author}`, {author.id})",
+            message.jump_url,
+            message.channel.mention,
+            ", ".join(violations),
+        ),
+    )
 
-        if not was_deleted:
-            await message.add_reaction(name_to_emoji["warning"])
+    for post in violations:
+        await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
 
-        for post in violations:
-            await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
-
+    if not was_deleted:
+        await message.add_reaction(name_to_emoji["warning"])
+    else:
         raise StopEventHandling
+
+    #await db.commit() | Wenn `was_deleted` auf `False` ist, dann wird das nicht in die DB committed (so ähnlich, sagt TNT)
 
 
 class ContentFilterCog(Cog, name="Content Filter"):
@@ -94,7 +90,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
 
         log: BadWordPost
         async for log in await db.stream(filter_by(BadWordPost, member=user_id)):
-            if log.deleted:
+            if log.deleted_message:
                 out.append((log.timestamp, t.ulog_message_deleted(log.content, log.channel)))
             else:
                 out.append((log.timestamp, t.ulog_message(log.content, log.channel)))
@@ -107,20 +103,12 @@ class ContentFilterCog(Cog, name="Content Filter"):
     async def on_message_edit(self, _, after: Message):
         await check_message(after)
 
-    @commands.group(name="content_filter", aliases=["cf"])
+    @commands.group(name="content_filter", aliases=["cf"], invoke_without_command=True)
     @ContentFilterPermission.read.check
     @guild_only()
     @docs(t.commands.content_filter)
     async def content_filter(self, ctx: Context):
-
-        if ctx.invoked_subcommand is None:
-            raise UserInputError
-
-    @content_filter.command(name="list", aliases=["l"])
-    @docs(t.commands.list)
-    async def list(self, ctx: Context):
-        regex_list: list = await BadWord.get_all()
-
+        regex_list: list = await BadWord.get_all_db()
         out = False
 
         embed = Embed(
@@ -130,7 +118,6 @@ class ContentFilterCog(Cog, name="Content Filter"):
 
         reg: BadWord
         for reg in regex_list:
-
             embed.add_field(
                 name=t.embed_field_name(reg.id, reg.description),
                 value=t.embed_field_value(reg.regex, "True" if reg.delete else "False"),
@@ -140,53 +127,53 @@ class ContentFilterCog(Cog, name="Content Filter"):
             out = True
 
         if not out:
-            raise CommandError(t.no_pattern_listed)
+            embed.colour = Colors.error
+            embed.description = t.no_pattern_listed
 
         await send_long_embed(ctx, embed, paginate=True, max_fields=6)
 
-    @content_filter.command(name="add", aliases=["+"])
+    @content_filter.command(name="add", aliases=["a", "+"])
     @ContentFilterPermission.write.check
     @docs(t.commands.add)
     async def add(self, ctx: Context, regex: str, delete: bool, *, description: str):
-
         if await db.exists(filter_by(BadWord, regex=regex)):
             raise CommandError(t.already_blacklisted)
 
         if len(description) > 500:
             raise CommandError(t.description_length)
 
-        await BadWord.create(ctx.author.id, regex, delete, description)
-
+        await BadWord.create(regex, delete, description)
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
         await send_to_changelog(ctx.guild, t.log_content_filter_added(regex, ctx.author.mention))
 
-    @content_filter.command(name="remove", aliases=["-"])
+    @content_filter.command(name="remove", aliases=["del", "r", "d", "-"])
     @ContentFilterPermission.write.check
     @docs(t.commands.remove)
     async def remove(self, ctx: Context, pattern_id: int):
+        regex: BadWord | None = await db.get(BadWord, id=pattern_id)
 
-        if not await db.exists(filter_by(BadWord, id=pattern_id)):
+        if not regex:
             raise CommandError(t.not_blacklisted)
 
-        regex = await BadWord.remove(pattern_id)
+        conf_embed = Embed(title=t.confirm, description=t.confirm_text)
+        async with confirm(ctx, conf_embed, danger=True) as (result, _):
+            if not result:
+                return
 
+        await BadWord().remove()
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
         await send_to_changelog(ctx.guild, t.log_content_filter_removed(regex.regex, ctx.author.mention))
 
     @content_filter.group(name="update", aliases=["u"])
     @ContentFilterPermission.write.check
     @docs(t.commands.update)
     async def update(self, ctx: Context):
-
         if ctx.invoked_subcommand is None:
             raise UserInputError
 
     @update.command(name="description", aliases=["d"])
     @docs(t.commands.update_description)
     async def description(self, ctx: Context, pattern_id: int, *, new_description: str):
-
         if len(new_description) > 500:
             raise CommandError(t.description_length)
 
@@ -194,12 +181,10 @@ class ContentFilterCog(Cog, name="Content Filter"):
             raise CommandError(t.not_blacklisted)
 
         regex = await db.get(BadWord, id=pattern_id)
-
         old = regex.description
         regex.description = new_description
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
         await send_to_changelog(
             ctx.guild,
             t.log_description_updated(regex.regex, old, new_description),
@@ -208,7 +193,6 @@ class ContentFilterCog(Cog, name="Content Filter"):
     @update.command(name="regex", aliases=["r"])
     @docs(t.commands.update_regex)
     async def regex(self, ctx: Context, pattern_id: int, new_regex):
-
         if not await db.exists(filter_by(BadWord, id=pattern_id)):
             raise CommandError(t.not_blacklisted)
 
@@ -218,25 +202,21 @@ class ContentFilterCog(Cog, name="Content Filter"):
         regex.regex = new_regex
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
         await send_to_changelog(
             ctx.guild,
             t.log_regex_updated(regex.regex, old, new_regex),
         )
 
-    @update.command(name="toggle_delete", aliases=["td"])
-    @docs(t.commands.toggle_delete)
-    async def toggle_delete(self, ctx: Context, pattern_id: int):
-
+    @update.command(name="delete_messages", aliases=["del", "del_messages", "dm"])
+    @docs(t.commands.delete_messages)
+    async def delete_messages(self, ctx: Context, pattern_id: int, delete: bool):
         if not await db.exists(filter_by(BadWord, id=pattern_id)):
             raise CommandError(t.not_blacklisted)
 
         regex = await db.get(BadWord, id=pattern_id)
-
-        regex.delete = not regex.delete
+        regex.delete = delete
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-
         await send_to_changelog(
             ctx.guild,
             t.log_delete_updated(regex.delete, regex.regex),

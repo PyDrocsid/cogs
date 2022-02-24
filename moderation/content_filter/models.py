@@ -11,44 +11,38 @@ from PyDrocsid.redis import redis
 
 
 async def sync_redis():
-    regex_list = await db.all(filter_by(BadWord))
+    regex_list = await db.stream(filter_by(BadWord))
+    await redis.delete("content_filter")
 
-    if regex_list:
-        await redis.delete("content_filter")
-
-        regex: BadWord
-        for regex in regex_list:
-            await redis.lpush("content_filter", regex.regex)
+    regex: BadWord
+    async for regex in regex_list:
+        await redis.lpush("content_filter", regex.regex)
 
 
 class BadWord(Base):
     __tablename__ = "bad_word_list"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    mod: Union[Column, int] = Column(BigInteger)
     regex: Union[Column, str] = Column(Text, unique=True)
     description: Union[Column, str] = Column(Text)
     delete: Union[Column, bool] = Column(Boolean)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
-    async def create(mod: int, regex: str, deleted: bool, description: str):
-        await db.add(BadWord(mod=mod, description=description, regex=regex, delete=deleted))
+    async def create(regex: str, deleted: bool, description: str):
+        await db.add(BadWord(description=description, regex=regex, delete=deleted))
+        await sync_redis()
+
+    async def remove(self):
+        await db.delete(self)
         await sync_redis()
 
     @staticmethod
-    async def remove(pattern_id: int):
-
-        regex = await db.get(BadWord, id=pattern_id)
-        if regex:
-            await db.exec(delete(BadWord).filter_by(id=pattern_id))
-            await sync_redis()
-
-        return regex
+    async def get_all_redis() -> list[str]:
+        return await redis.lrange("content_filter", 0, -1)
 
     @staticmethod
-    async def get_all() -> list:
-
+    async def get_all_db() -> list[BadWord]:
         return await db.all(filter_by(BadWord))
 
 
@@ -60,7 +54,7 @@ class BadWordPost(Base):
     member_name: Union[Column, str] = Column(Text)
     channel: Union[Column, int] = Column(BigInteger)
     content: Union[Column, str] = Column(Text)
-    deleted: Union[Column, bool] = Column(Boolean)
+    deleted_message: Union[Column, bool] = Column(Boolean)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
@@ -71,7 +65,7 @@ class BadWordPost(Base):
             timestamp=utcnow(),
             channel=channel,
             content=content,
-            deleted=deleted,
+            deleted_message=deleted,
         )
         await db.add(row)
         return row
