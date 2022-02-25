@@ -29,7 +29,7 @@ As soon as the message author or a Team-Member removes his reaction `:pushpin:` 
 ## `reactionpin`
 
 
-This is the main command, for the command group, to show all the subcommands, if you have the permission for it.
+This is the main command for the command group, to show all the subcommands if you have permission for it.
 
 
 Required Permissions:
