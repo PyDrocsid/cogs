@@ -1,10 +1,10 @@
 from typing import Union, Optional
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, Base
 from sqlalchemy import Column, BigInteger
 
 
-class NewsAuthorization(db.Base):
+class NewsAuthorization(Base):
     __tablename__ = "news_authorization"
 
     user_id: Union[Column, int] = Column(BigInteger, primary_key=True)

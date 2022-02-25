@@ -1,39 +1,41 @@
 # User Info
 
-This cog contains commands to show information about Discord user accounts.
+Contains commands to show information about Discord user accounts.
 
 
-## `user`
+## `userinfo`
 
-The `.user` command shows general information about the requested user.
+Shows general information about the requested user.
 
 ```css
-.[userinfo|user|uinfo|userstats] [user]
+.[userinfo|user|uinfo|ui|userstats|stats] [user]
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`user`||The user whose information is requested. If omitted, the requesting user receives their own information as a direct message.|
+Arguments:
 
-!!! note
-    - Every user is allowed to request their own information.
-    - Requesting other users' information, however, requires the `user_info.view_userinfo` permission.
+| Argument | Required |Description                                                                                                                   |
+|:--------:|:--------:|:-----------------------------------------------------------------------------------------------------------------------------|
+| `user`   |          | The user whose information is requested. If omitted, the requesting user receives their own information as a direct message. |
 
 The user information given by this command includes:
 
 - Current username, discriminator, avatar and id
-- Moderation statistics:
+- Membership status
+- User activity (provided by [Inactivity](../inactivity))
+- Active punishments (provided by [Mod Tools](../../moderation/mod))
+- Moderation statistics (provided by [Mod Tools](../../moderation/mod)):
     - Reports
     - Warns
     - Mutes
     - Kicks
     - Bans
-- Membership status
-- User activity
-- Active punishments
+
+!!! note
+    - Every user is allowed to request their own information.
+    - Requesting other users' information, however, requires the `user_info.view_userinfo` permission.
 
 <!-- markdownlint-disable MD046 -->
-!!! note
+!!! info
     Moderation statistics:
 
     - The term `active` refers to the number of times this user *has actively* reported/punished someone else.
@@ -43,32 +45,32 @@ The user information given by this command includes:
 
 ## `joined`
 
-The `.joined` command shows a rough estimate of how much time has passed since the last verification of a given member. If no `Verified` role has been configured yet, this estimate refers to the last join date of this member.
+Shows a rough estimate of how much time has passed since the last verification of a given member. If no `Verified` role has been configured yet, this estimate refers to the last join date of this member.
 
 ```css
 .joined [member]
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`member`||The member whose information is requested. If omitted, this defaults to the requesting member.|
+Arguments:
+
+| Argument | Required | Description                                                                                    |
+|:--------:|:--------:|:-----------------------------------------------------------------------------------------------|
+| `member` |          | The member whose information is requested. If omitted, this defaults to the requesting member. |
 
 
-## `ulog`
+## `userlogs`
 
-The `.ulog` command shows the moderation log of a given user.
+Shows the moderation log of a given user.
 
 ```css
 .[userlogs|userlog|ulog] [user]
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`user`||The user whose log is requested. If omitted, the requesting user receives their own log as a direct message.|
+Arguments:
 
-!!! note
-    - Every user is allowed to request their own moderation log.
-    - Requesting other users' logs, however, requires the `user_info.view_userlog` permission.
+| Argument | Required | Description                                                                                                  |
+|:--------:|:--------:|:-------------------------------------------------------------------------------------------------------------|
+| `user`   |          | The user whose log is requested. If omitted, the requesting user receives their own log as a direct message. |
 
 The user log given by this command contains the following events:
 
@@ -76,13 +78,19 @@ The user log given by this command contains the following events:
 - Guild joins and leaves
 - Username and nickname changes
 - Verification state changes
-- Discord invite approvals and removals
-- Passive moderation actions:
+- Discord invite approvals and removals and illegal invite posts (provided by [Invite Whitelist](../../moderation/invites))
+- Illegal posts in media-only channels (provided by [MediaOnly](../../moderation/mediaonly))
+- User notes (provided by [User Notes](../../moderation/user_notes))
+- Passive moderation actions (provided by [Mod Tools](../../moderation/mod)):
     - Reports
     - Warns
     - Mutes
     - Kicks
     - Bans
+
+!!! note
+    - Every user is allowed to request their own moderation log.
+    - Requesting other users' logs, however, requires the `user_info.view_userlog` permission.
 
 
 ## `init_join_log`

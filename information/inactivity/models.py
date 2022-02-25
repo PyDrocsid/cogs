@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Union
 
-from PyDrocsid.database import db, db_wrapper, UTCDateTime
+from PyDrocsid.database import db, db_wrapper, UTCDateTime, Base
 from sqlalchemy import Column, BigInteger
 
 
-class Activity(db.Base):
+class Activity(Base):
     __tablename__ = "activity"
 
     id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)
@@ -20,7 +20,6 @@ class Activity(db.Base):
         return row
 
     @staticmethod
-    @db_wrapper
     async def update(object_id: int, timestamp: datetime) -> Activity:
         if not (row := await db.get(Activity, id=object_id)):
             row = await Activity.create(object_id, timestamp)

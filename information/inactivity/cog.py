@@ -13,7 +13,7 @@ from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from discord.utils import utcnow
+from discord.utils import utcnow, format_dt
 
 from .models import Activity
 from .permissions import InactivityPermission
@@ -91,7 +91,7 @@ async def scan(ctx: Context, days: int):
     embed = Embed(title=t.updating_members)
     message: Message = await reply(ctx, embed=embed)
 
-    await semaphore_gather(50, *[Activity.update(m.id, ts) for m, ts in members.items()])
+    await semaphore_gather(50, *[db_wrapper(Activity.update)(m.id, ts) for m, ts in members.items()])
 
     await update_msg(message, t.updated_members(cnt=len(members)))
 
@@ -131,10 +131,10 @@ class InactivityCog(Cog, name="Inactivity"):
 
         if activity is None:
             status = t.status.inactive
-        elif (days := (utcnow() - activity.timestamp).days) >= inactive_days:
-            status = t.status.inactive_since(activity.timestamp.strftime("%d.%m.%Y %H:%M:%S"))
+        elif (utcnow() - activity.timestamp).days >= inactive_days:
+            status = t.status.inactive_since(format_dt(activity.timestamp, style="R"))
         else:
-            status = t.status.active(cnt=days)
+            status = t.status.active(format_dt(activity.timestamp, style="R"))
 
         return [(t.activity, status)]
 
@@ -182,7 +182,7 @@ class InactivityCog(Cog, name="Inactivity"):
                         status_icon(member.status),
                         member.mention,
                         f"@{member}",
-                        timestamp.strftime("%d.%m.%Y %H:%M:%S"),
+                        format_dt(timestamp, style="R"),
                     ),
                 )
 

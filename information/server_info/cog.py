@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
 from .colors import Colors
@@ -71,7 +71,7 @@ class ServerInfoCog(Cog, name="Server Information"):
         if not cnt:
             embed.colour = Colors.error
             embed.description = t.no_bots
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             return
 
         if cnt := len(online):

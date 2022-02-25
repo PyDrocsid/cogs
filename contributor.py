@@ -12,3 +12,5 @@ class Contributor(ContributorBase):
     Tert0 = (621330363167539210, "MDQ6VXNlcjYyMDM2NDY0")
     MarcelCoding = (398895973490884608, "MDQ6VXNlcjM0ODE5NTI0")
     NekoFanatic = (846009958062358548, "MDQ6VXNlcjgzODgzODQ5")
+    Felux = (206815202375761920, "MDQ6VXNlcjMyNzQ5NzE0")
+    hackandcode = (301823559737671680, "MDQ6VXNlcjI3Njc5Mjc0")
