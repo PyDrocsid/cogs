@@ -78,7 +78,7 @@ Aliases:
 ### `remove`
 
 
-This command removes a channel to the whitelisted Reactionpin channel.
+This command removes a channel from the whitelist.
 
 Required Permissions:
 
