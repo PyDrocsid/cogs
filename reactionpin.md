@@ -71,7 +71,7 @@ Aliases:
 
 |Arguments|Required|Description|
 |:------:|:------|:-----|
-|`channel`|✔️|Adds the channel to the whitelisted Reaction-Pin Channels|
+|`channel`|✔️|Whitelists the channel|
 
 
 ---
