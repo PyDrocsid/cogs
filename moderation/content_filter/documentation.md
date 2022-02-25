@@ -64,9 +64,9 @@ This command is used to remove an expressions from the filter. <br>
 
 Arguments:
 
-|   Argument   |         Required          | Description                                     |
-|:------------:|:-------------------------:|:------------------------------------------------|
-| `pattern_id` | :fontawesome-solid-check: | The ID from the command (shown by list command) |
+| Argument  |         Required          | Description                                     |
+|:---------:|:-------------------------:|:------------------------------------------------|
+| `pattern` | :fontawesome-solid-check: | The ID from the pattern (shown by list command) |
 
 Required Permissions:
 
@@ -100,7 +100,7 @@ Arguments:
 
 |     Argument      |         Required          | Description                                     |
 |:-----------------:|:-------------------------:|:------------------------------------------------|
-|   `pattern_id`    | :fontawesome-solid-check: | The ID from the command (shown by list command) |
+|     `pattern`     | :fontawesome-solid-check: | The ID from the pattern (shown by list command) |
 | `new_description` | :fontawesome-solid-check: | The new description for the filter              |
 
 Required Permissions:
@@ -119,10 +119,10 @@ This command can be used to edit the regex for an already existing filter.
 
 Arguments:
 
-|   Argument   |         Required          | Description                                     |
-|:------------:|:-------------------------:|:------------------------------------------------|
-| `pattern_id` | :fontawesome-solid-check: | The ID from the command (shown by list command) |
-| `new_regex`  | :fontawesome-solid-check: | The new regex for the filter to check for       |
+|  Argument   |         Required          | Description                                     |
+|:-----------:|:-------------------------:|:------------------------------------------------|
+|  `pattern`  | :fontawesome-solid-check: | The ID from the pattern (shown by list command) |
+| `new_regex` | :fontawesome-solid-check: | The new regex for the filter to check for       |
 
 Required Permissions:
 
@@ -140,9 +140,9 @@ This command can be used to toggle the delete-status for an already existing fil
 
 Arguments:
 
-|   Argument   |         Required          | Description                                     |
-|:------------:|:-------------------------:|:------------------------------------------------|
-| `pattern_id` | :fontawesome-solid-check: | The ID from the command (shown by list command) |
+| Argument  |         Required          | Description                                     |
+|:---------:|:-------------------------:|:------------------------------------------------|
+| `pattern` | :fontawesome-solid-check: | The ID from the pattern (shown by list command) |
 
 Required Permissions:
 
