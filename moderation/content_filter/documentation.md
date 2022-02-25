@@ -43,7 +43,7 @@ Required Permissions:
 
 ### `list`
 
-This commands shows a list of every blacklisted expression. <br>
+This command shows a list of every blacklisted expression. <br>
 
 ```css
 .content_filter [list|l]
