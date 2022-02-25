@@ -48,6 +48,7 @@ Aliases:
 
 
 ---
+
 ### `add`
 
 
@@ -61,7 +62,7 @@ Required Permissions:
 
 Aliases:
 
-- `add` 
+- `add`
 - `a`
 - `+`
 
@@ -76,6 +77,7 @@ Aliases:
 
 
 ---
+
 ### `remove`
 
 
@@ -109,6 +111,7 @@ Aliases
 |`channel`|✔️|Removes the channel from the whitelist|  
 
 ---
+
 ### `pin_message`
 
 
