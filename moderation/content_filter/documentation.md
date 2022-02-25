@@ -1,6 +1,6 @@
 # Content Filter
 
-Contains commands to do set up checks for black listed expressions in every message.
+Contains commands to do setup checks for blacklisted expressions in every message.
 
 !!! note
     User with the `content_filter.bypass` permission are not effected by the check.
