@@ -7,7 +7,7 @@ This cog consists of a reaction event and some moderation commands.
 ## Reaction Pin
 
 
-A message is pinned when
+A message gets pinned when
 
 a)
 the user who added the reaction `:pushpin` (📌) has the `reactionpin.pin` permission OR
