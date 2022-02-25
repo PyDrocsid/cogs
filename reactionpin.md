@@ -105,7 +105,7 @@ Aliases
 
 |Arguments|Required|Description|
 |:------:|:-----|:-----|
-|`channel`|✔️|Removes the channel to the whitelisted Reaction-Pin Channels|  
+|`channel`|✔️|Removes the channel from the whitelist|  
 
 ---
 ### `pin_message`
