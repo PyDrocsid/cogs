@@ -14,19 +14,19 @@ the user who added the reaction `:pushpin` (📌) has the `reactionpin.pin` perm
 
 b)
 
-0. `:pushpin:` (📌) is added as a reaction to a message AND
+1.`:pushpin:` (📌) is added as a reaction to a message AND
 
-1. the reaction is added by the author of the message AND
+2. the reaction is added by the author of the message AND
 
-2. the message was written in a channel whitelisted for ReactionPin AND
+3. the message was written in a channel whitelisted for ReactionPin AND
 
-3. the user does not have the `mute` role
+4. the user does not have the `mute` role
 
 
 As soon as the message author or a Team-Member removes his reaction `:pushpin:` 📌, the message will be removed from the pinned messages.
 
 ---
-## `reactionpin`
+## `reactionpin`  
 
 
 This is the main command for the command group, to show all the subcommands if you have permission for it.
@@ -60,7 +60,8 @@ Required Permissions:
 
 
 Aliases:
-- `add`
+
+- `add` 
 - `a`
 - `+`
 
@@ -69,9 +70,9 @@ Aliases:
 .rp [add|a|+] <channel>
 ```
 
-|Arguments|Required|Description|
-|:------:|:------|:-----|
-|`channel`|✔️|Whitelists the channel|
+| Arguments | Required | Description            |
+|:---------:|:---------|:-----------------------|
+| `channel` | ✔️       | Whitelists the channel |
 
 
 ---
@@ -124,6 +125,7 @@ Required Permissions:
 
 
 Aliases:
+
 - `pm`
 
 
