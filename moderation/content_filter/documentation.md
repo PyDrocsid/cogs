@@ -21,7 +21,7 @@ Required Permissions:
 
 ### `add`
 
-This command is used to add a new expressions for the filter. <br>
+This command is used to add a new expression to the filter. <br>
 
 ```css
 .content_filter [add|+] <regex> <delete> <description>
