@@ -51,7 +51,7 @@ Aliases:
 ### `add`
 
 
-This command adds a channel to the whitelisted Reactionpin channel.
+This command whitelists a channel.
 
 Required Permissions:
 
