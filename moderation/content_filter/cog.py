@@ -209,9 +209,9 @@ class ContentFilterCog(Cog, name="Content Filter"):
             t.log_regex_updated(pattern.regex, old, new_regex),
         )
 
-    @update.command(name="delete_messages", aliases=["del", "del_messages", "dm"])
-    @docs(t.commands.delete_messages)
-    async def delete_messages(self, ctx: Context, pattern: ContentFilterConverter, delete: bool):
+    @update.command(name="delete_message", aliases=["del", "del_message", "dm"])
+    @docs(t.commands.delete_message)
+    async def delete_message(self, ctx: Context, pattern: ContentFilterConverter, delete: bool):
         pattern: BadWord
         pattern.delete = delete
 
