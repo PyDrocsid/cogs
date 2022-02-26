@@ -10,7 +10,7 @@ commands:
   update: update a content filter pattern
   update_description: update the description from a pattern
   update_regex: update regex from a pattern
-  delete_messages: activate/deactivate the delete from a pattern
+  delete_message: activate/deactivate the delete from a pattern
 
 ulog_message: ":roll_of_paper: **Sent** a message with the forbidden string `{}` in <#{}> (not deleted)."
 ulog_message_deleted: ":roll_of_paper: **Sent** a message with the forbidden string `{}` in <#{}> (deleted)."
