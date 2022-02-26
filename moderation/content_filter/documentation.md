@@ -111,7 +111,7 @@ Required Permissions:
 
 #### `regex`
 
-This command can be used to edit the regex for an already existing filter.
+Edits the regular expression of an existing filter.
 
 ```css
 .content_filter update [regex|r] <pattern_id> <new_regex>
