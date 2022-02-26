@@ -39,8 +39,8 @@ async def check_message(message: Message):
 
     if message.guild is None:
         return
-    #if await ContentFilterPermission.bypass.check_permissions(author):
-    #    return
+    if await ContentFilterPermission.bypass.check_permissions(author):
+        return
 
     bad_word_list = await BadWord.get_all_redis()
     violations = set()
