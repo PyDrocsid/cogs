@@ -39,3 +39,5 @@ no_pattern_listed: "No blacklisted patterns yet!"
 
 embed_field_name: ":dna: ID `{}` - {}"
 embed_field_value: "Regex: `{}`\nDelete: *{}*"
+delete: "True"
+not_delete: "False"

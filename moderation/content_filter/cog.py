@@ -31,22 +31,24 @@ class ContentFilterConverter(Converter):
         if row is not None:
             return row
 
-        raise UserInputError(t.not_blacklisted)
+        raise CommandError(t.not_blacklisted)
 
 
 async def check_message(message: Message):
     author = message.author
-    bad_word_list = await BadWord.get_all_redis()
 
     if message.guild is None:
         return
     if await ContentFilterPermission.bypass.check_permissions(author):
         return
 
-    violations: list[str] = []
+    bad_word_list = await BadWord.get_all_redis()
+    violations = set()
+    blacklisted: list[list] = []
     for bad_word in bad_word_list:
-        if match := re.search(bad_word, message.content):
-            violations.append(match.group())
+        if match := re.findall(bad_word, message.content):
+            violations.add(bad_word)
+            blacklisted.append(match)
 
     if not violations:
         return
@@ -82,8 +84,8 @@ async def check_message(message: Message):
         ),
     )
 
-    for post in violations:
-        await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
+    for post in blacklisted:
+        await BadWordPost.create(author.id, author.name, message.channel.id, ", ".join(post), was_deleted)
 
     if not was_deleted:
         await message.add_reaction(name_to_emoji["warning"])
@@ -118,7 +120,6 @@ class ContentFilterCog(Cog, name="Content Filter"):
     @guild_only()
     @docs(t.commands.content_filter)
     async def content_filter(self, ctx: Context):
-        regex_list: list = await BadWord.get_all_db()
         out = False
 
         embed = Embed(
@@ -127,10 +128,10 @@ class ContentFilterCog(Cog, name="Content Filter"):
         )
 
         reg: BadWord
-        for reg in regex_list:
+        async for reg in await db.stream(filter_by(BadWord)):
             embed.add_field(
                 name=t.embed_field_name(reg.id, reg.description),
-                value=t.embed_field_value(reg.regex, "True" if reg.delete else "False"),
+                value=t.embed_field_value(reg.regex, t.delete if reg.delete else t.not_delete),
                 inline=False,
             )
 
