@@ -76,7 +76,7 @@ Required Permissions:
 
 ### `update`
 
-Contains subcommands to do edit the content_filter. <br>
+Contains subcommands to do edit the content filter rules.
 
 ```css
 .content_filter [update|u]
