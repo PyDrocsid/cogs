@@ -8,7 +8,7 @@ Contains commands to do setup checks for blacklisted expressions in every messag
 
 ## `content_filter`
 
-Contains subcommands to do edit/show the content_filter. <br>
+Contains subcommands to manage the content filter.
 
 ```css
 .[content_filter|cf]
