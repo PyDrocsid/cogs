@@ -18,7 +18,7 @@ async def sync_redis():
         async for regex in await db.stream(select(BadWord)):
             await pipe.lpush("content_filter", regex.regex)
 
-            await pipe.execute()
+        await pipe.execute()
 
 
 class BadWord(Base):
