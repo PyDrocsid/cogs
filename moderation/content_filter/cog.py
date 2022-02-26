@@ -71,7 +71,7 @@ async def check_message(message: Message):
         except Forbidden:
             log_text = t.log_forbidden_posted_not_deleted
 
-    elif not has_to_be_deleted:
+    else:
         log_text = t.log_forbidden_posted
 
     await send_alert(
