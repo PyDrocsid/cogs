@@ -39,16 +39,17 @@ async def check_message(message: Message):
 
     if message.guild is None:
         return
-    if await ContentFilterPermission.bypass.check_permissions(author):
-        return
+    #if await ContentFilterPermission.bypass.check_permissions(author):
+    #    return
 
     bad_word_list = await BadWord.get_all_redis()
     violations = set()
-    blacklisted: list[list] = []
+    blacklisted: set[str] = set()
     for bad_word in bad_word_list:
-        if match := re.findall(bad_word, message.content):
+        if matches := re.findall(bad_word, message.content):
             violations.add(bad_word)
-            blacklisted.append(match)
+            for match in matches:
+                blacklisted.add(match)
 
     if not violations:
         return
@@ -61,7 +62,6 @@ async def check_message(message: Message):
             has_to_be_deleted = True
             break
 
-    log_text = None
     was_deleted = False
     if has_to_be_deleted:
         try:
@@ -80,12 +80,12 @@ async def check_message(message: Message):
             f"{author.mention} (`@{author}`, {author.id})",
             message.jump_url,
             message.channel.mention,
-            ", ".join(violations),
+            ", ".join(blacklisted),
         ),
     )
 
     for post in blacklisted:
-        await BadWordPost.create(author.id, author.name, message.channel.id, ", ".join(post), was_deleted)
+        await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
 
     if not was_deleted:
         await message.add_reaction(name_to_emoji["warning"])
