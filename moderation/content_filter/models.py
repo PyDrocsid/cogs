@@ -14,11 +14,11 @@ async def sync_redis():
     await redis.delete("content_filter")
 
     regex: BadWord
-    pipeline = redis.pipeline()
-    async for regex in await db.stream(select(BadWord)):
-        await pipeline.lpush("content_filter", regex.regex)
+    async with redis.pipeline() as pipe:
+        async for regex in await db.stream(select(BadWord)):
+            await pipe.lpush("content_filter", regex.regex)
 
-    await pipeline.execute()
+            await pipe.execute()
 
 
 class BadWord(Base):
