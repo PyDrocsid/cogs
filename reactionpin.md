@@ -122,8 +122,7 @@ Required Permissions:
 
 ### `pin_message`
 
-
-This command enables or disables the "MorpheusHelper pinned a message. See all messages" message.
+This command enables or disables the "pinned messages notification".
 
 [![image](https://www.linkpicture.com/q/Screenshot-2021-10-17-072804_1.png)](https://www.linkpicture.com/view.php?img=LPic616bc85447a64587571420)
 
