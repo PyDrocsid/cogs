@@ -197,7 +197,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
 
     @update.command(name="regex", aliases=["r"])
     @docs(t.commands.update_regex)
-    async def regex(self, ctx: Context, pattern: ContentFilterConverter, new_regex):
+    async def regex(self, ctx: Context, pattern: ContentFilterConverter, *, new_regex: str):
         pattern: BadWord
 
         old = pattern.regex
