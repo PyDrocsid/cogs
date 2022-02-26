@@ -90,7 +90,7 @@ Required Permissions:
 
 #### `description`
 
-This command can be used to set a new description for an already existing filter.
+Sets a new description for an existing filter.
 
 ```css
 .content_filter update [description|d] <pattern_id> <new_description>
