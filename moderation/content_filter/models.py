@@ -29,7 +29,7 @@ class BadWord(Base):
 
     @staticmethod
     async def create(regex: str, deleted: bool, description: str):
-        await db.add(BadWord(description=description, regex=regex, delete=deleted))
+        await db.add(BadWord(description=description, regex=regex, delete=deleted, timestamp=utcnow()))
         await sync_redis()
 
     async def remove(self):
