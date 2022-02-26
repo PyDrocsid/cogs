@@ -56,7 +56,7 @@ Required Permissions:
 
 ### `remove`
 
-This command is used to remove an expressions from the filter. <br>
+Removes a regular expression from the filter.
 
 ```css
 .content_filter [remove|-] <pattern_id>
