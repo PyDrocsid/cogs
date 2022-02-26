@@ -11,11 +11,10 @@ from PyDrocsid.redis import redis
 
 
 async def sync_redis():
-    regex_list = await db.stream(filter_by(BadWord))
     await redis.delete("content_filter")
 
     regex: BadWord
-    async for regex in regex_list:
+    async for regex in await db.stream(select(BadWord)):
         await redis.lpush("content_filter", regex.regex)
 
 
