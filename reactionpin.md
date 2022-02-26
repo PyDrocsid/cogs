@@ -14,7 +14,7 @@ the user who added the reaction `:pushpin` (📌) has the `reactionpin.pin` perm
 
 b)
 
-1.`:pushpin:` (📌) is added as a reaction to a message AND
+1. `:pushpin:` (📌) is added as a reaction to a message AND
 
 2. the reaction is added by the author of the message AND
 
@@ -26,6 +26,8 @@ b)
 As soon as the message author or a Team-Member removes his reaction `:pushpin:` 📌, the message will be removed from the pinned messages.
 
 ---
+
+
 ## `reactionpin`  
 
 
@@ -48,6 +50,7 @@ Aliases:
 
 
 ---
+
 
 ### `add`
 
@@ -77,6 +80,7 @@ Aliases:
 
 
 ---
+
 
 ### `remove`
 
@@ -111,6 +115,7 @@ Aliases
 |`channel`|✔️|Removes the channel from the whitelist|  
 
 ---
+
 
 ### `pin_message`
 
