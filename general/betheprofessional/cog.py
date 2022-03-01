@@ -1,8 +1,8 @@
 import io
 import string
-from typing import List, Union, Optional, Dict, Final
+from typing import List, Union, Optional, Dict, Final, Set
 
-from discord import Member, Embed, Role, Message, File
+from discord import Member, Embed, Role, Message
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
@@ -585,21 +585,25 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                     await self.bot.guilds[0].get_role(topic.role_id).delete()
                     topic.role_id = None
 
-        # Create new Topic Role and add Role to Users
-        # TODO Optimize from `LOOP all topics: LOOP all Members: add role`
-        #  to `LOOP all Members with Topic: add all roles` and separate the role creating
+        # Create new Topic Roles
+        roles: Dict[int, Role] = {}
         for top_topic in top_topics:
-            if (topic := await db.first(select(BTPTopic).filter_by(id=top_topic, role_id=None))) is not None:
-                topic.role_id = (await self.bot.guilds[0].create_role(name=topic.name)).id
-                for btp_user in await db.all(select(BTPUser).filter_by(topic=topic.id)):
-                    member = await self.bot.guilds[0].fetch_member(btp_user.user_id)
-                    if not member:
-                        continue
-                    role = self.bot.guilds[0].get_role(topic.role_id)
-                    if role:
-                        await member.add_roles(role, atomic=False)
-                    else:
-                        await send_alert(self.bot.guilds[0], t.fetching_topic_role_failed(topic.name, topic.role_id))
+            topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=top_topic))
+            if topic.role_id is None:
+                role = await self.bot.guilds[0].create_role(name=topic.name)
+                topic.role_id = role.id
+                roles[topic.id] = role
+        # Iterate over all members(with topics) and add the role to them
+        member_ids: Set[int] = {btp_user.user_id for btp_user in await db.all(select(BTPUser))}
+        for member_id in member_ids:
+            member: Member = self.bot.guilds[0].get_member(member_id)
+            if member is None:
+                continue
+            member_roles: List[Role] = [
+                roles.get(btp_user.topic) for btp_user in await db.all(select(BTPUser).filter_by(user_id=member_id))
+            ]
+            member_roles = [item for item in member_roles if item is not None]
+            await member.add_roles(*member_roles, atomic=False)
 
         logger.info("Created Top Topic Roles")
 
