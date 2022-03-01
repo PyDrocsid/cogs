@@ -1,0 +1,7 @@
+commands:
+  nekosbest: "get images/gifs from the [nekos.best API](https://nekos.best/)"
+
+endpoints: Endpoints
+endpoint_list: "`{}`"
+
+description: "[Sauce]({}) | [{}]({})"
