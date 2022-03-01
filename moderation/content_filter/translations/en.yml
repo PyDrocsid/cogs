@@ -4,13 +4,14 @@ permissions:
   write: write content filter configuration
 
 commands:
-  content_filter: manage content filter settings
-  add: add an regex to the blacklist
-  remove: remove an regex from the blacklist
-  update: update a content filter pattern
-  update_description: update the description from a pattern
-  update_regex: update regex from a pattern
-  delete_message: activate/deactivate the delete from a pattern
+  content_filter: "manage content filter settings"
+  add: "add an regex to the blacklist"
+  remove: "remove an regex from the blacklist"
+  check: "check if a pattern matches a filter \n(if `-1` is given all filter will be checked)"
+  update: "update a content filter pattern"
+  update_description: "update the description from a pattern"
+  update_regex: "update regex from a pattern"
+  delete_message: "activate/deactivate the delete from a pattern"
 
 ulog_message: ":roll_of_paper: **Sent** a message with the forbidden string `{}` in <#{}> (not deleted)."
 ulog_message_deleted: ":roll_of_paper: **Sent** a message with the forbidden string `{}` in <#{}> (deleted)."
@@ -18,6 +19,7 @@ ulog_message_deleted: ":roll_of_paper: **Sent** a message with the forbidden str
 already_blacklisted: "This regex is already in the list!"
 not_blacklisted: "This regex is not in the blacklist!"
 description_length: "The description has to be 500 or less characters long!"
+invalid_regex: "Not a valid regular expression!"
 
 log_content_filter_added: "**Regex** `{}` was **added** to **Blacklist** by {}"
 confirm: "Confirm"
@@ -41,3 +43,5 @@ embed_field_name: ":dna: ID `{}` - {}"
 embed_field_value: "Regex: `{}`\nDelete: *{}*"
 delete: "True"
 not_delete: "False"
+
+checked_expressions: "Checked Expressions"

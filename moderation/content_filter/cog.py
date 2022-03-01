@@ -3,6 +3,7 @@ import re
 from discord import Embed, Forbidden, Message
 from discord.ext import commands
 from discord.ext.commands import guild_only, Context, Converter, CommandError, UserInputError
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import confirm, docs
@@ -28,10 +29,20 @@ class ContentFilterConverter(Converter):
         else:
             row = await db.get(BadWord, regex=argument)
 
-        if row is not None:
-            return row
+        if not row:
+            raise CommandError(t.not_blacklisted)
 
-        raise CommandError(t.not_blacklisted)
+        return row
+
+
+class RegexConverter(Converter):
+    async def convert(self, ctx: Context, argument: str) -> str:
+        try:
+            re.compile(argument)
+        except re.error:
+            raise CommandError(t.invalid_regex)
+
+        return argument
 
 
 async def check_message(message: Message):
@@ -146,7 +157,8 @@ class ContentFilterCog(Cog, name="Content Filter"):
     @content_filter.command(name="add", aliases=["a", "+"])
     @ContentFilterPermission.write.check
     @docs(t.commands.add)
-    async def add(self, ctx: Context, regex: str, delete: bool, *, description: str):
+    async def add(self, ctx: Context, regex: RegexConverter, delete: bool, *, description: str):
+        regex: str
         if await db.exists(filter_by(BadWord, regex=regex)):
             raise CommandError(t.already_blacklisted)
 
@@ -171,6 +183,28 @@ class ContentFilterCog(Cog, name="Content Filter"):
         await pattern.remove()
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
         await send_to_changelog(ctx.guild, t.log_content_filter_removed(pattern.regex, ctx.author.mention))
+
+    @content_filter.command(name="check", aliases=["c"])
+    @ContentFilterPermission.read.check
+    @docs(t.commands.check)
+    async def check(self, ctx: Context, pattern: ContentFilterConverter | int | RegexConverter, test_string: str):
+        filters: list[BadWord] = []
+        if isinstance(pattern, BadWord):
+            filters.append(pattern)
+        elif isinstance(pattern, int) and pattern == -1:
+            filters = await db.all(filter_by(BadWord))
+        else:
+            filters.append(BadWord(id=0, description="/", delete=False, regex=str(pattern), timestamp=utcnow()))
+
+        out = ""
+        for test_case in filters:
+            matches = re.finditer(test_case.regex, test_string)
+
+            out += f"\n{test_case.id:3}. `{test_case.regex}` - {matches}"
+
+        embed = Embed(title=t.checked_expressions, description=out, color=Colors.ContentFilter)
+
+        await send_long_embed(ctx.channel, embed)
 
     @content_filter.group(name="update", aliases=["u"])
     @ContentFilterPermission.write.check

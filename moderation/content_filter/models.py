@@ -41,6 +41,7 @@ class BadWord(Base):
 
     @staticmethod
     async def get_all_redis() -> list[str]:
+        await sync_redis()
         return await redis.lrange("content_filter", 0, -1)
 
     @staticmethod
