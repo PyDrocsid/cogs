@@ -12,6 +12,7 @@ By default `parent_topic` is the Root Level.
 ```css
 .? [parent_topic]
 ```
+
 Arguments:
 |    Argument    | Required | Description            |
 |:--------------:|:--------:|:-----------------------|
@@ -29,6 +30,7 @@ The `.+` command assigns the user the specified topics.
 ```css
 .+ <topic>
 ```
+
 Arguments:
 | Argument |         Required          | Description                                                                    |
 |:--------:|:-------------------------:|:-------------------------------------------------------------------------------|
@@ -81,6 +83,7 @@ Arguments:
 | `assignable` |                           | Asignability of the created topic/topics                                                     |
 
 Required Permissions:
+
 - `betheprofessional.manage`
 
 
@@ -102,7 +105,9 @@ Arguments:
 | `topic`  | :fontawesome-solid-check: | A topic name. Multible topics can be deleted by separating them using `,` or `;`. |
 
 Required Permissions:
+
 - `betheprofessional.manage`
+
 
 ## `%` (unregister topics)
 
@@ -121,6 +126,7 @@ Arguments:
 Required Permissions:
 
 - `betheprofessional.manage`
+
 
 ## `topic`
 
