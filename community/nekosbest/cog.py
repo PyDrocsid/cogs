@@ -41,24 +41,19 @@ class NekosBestCog(Cog, name="NekosBest"):
 
         if not endpoint or endpoint not in endpoints:
             embed = Embed(
-                title=t.endpoints,
-                description=t.endpoint_list("`, `".join(endpoints)),
-                color=Colors.NekosBest)
+                title=t.endpoints, description=t.endpoint_list("`, `".join(endpoints)), color=Colors.NekosBest
+            )
             await send_long_embed(ctx.channel, embed)
             return
 
         result: dict = await get_request(endpoint)
         if "anime_name" in result:
-            embed = Embed(
-                title=endpoint,
-                description=result["anime_name"],
-                color=Colors.NekosBest
-            )
+            embed = Embed(title=endpoint, description=result["anime_name"], color=Colors.NekosBest)
         else:
             embed = Embed(
                 title=endpoint,
                 description=t.description(result["source_url"], result["artist_name"], result["artist_href"]),
-                color=Colors.NekosBest
+                color=Colors.NekosBest,
             )
         embed.set_image(url=result["url"])
 
