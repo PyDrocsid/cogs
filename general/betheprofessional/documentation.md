@@ -1,9 +1,9 @@
 # BeTheProfessional
 
-This cog contains a system for self-assignable topics
+Contains a system for self-assignable topics
 
 
-## `list_topics`
+## `?` (list topics)
 
 The `.?` command lists all available topics at the level `parent_topic`.
 
@@ -12,13 +12,13 @@ By default `parent_topic` is the Root Level.
 ```css
 .? [parent_topic]
 ```
-
+Arguments:
 |    Argument    | Required | Description            |
 |:--------------:|:--------:|:-----------------------|
 | `parent_topic` |          | Parent Level of Topics |
 
 
-## `assign_topics`
+## `+` (assign topics)
 
 The `.+` command assigns the user the specified topics.
 
@@ -29,13 +29,13 @@ The `.+` command assigns the user the specified topics.
 ```css
 .+ <topic>
 ```
-
+Arguments:
 | Argument |         Required          | Description                                                                    |
 |:--------:|:-------------------------:|:-------------------------------------------------------------------------------|
 | `topic`  | :fontawesome-solid-check: | A topic name. Multible topics can be added by separating them using `,` or `;` |
 
 
-## `unassign_topics`
+## `-` (unassign topics)
 
 The `.-` command unassigns the user the specified topics.
 
@@ -46,15 +46,17 @@ The `.-` command unassigns the user the specified topics.
 .- <topic>
 ```
 
+Arguments:
+
 | Argument |         Required          | Description                                                                       |
 |:--------:|:-------------------------:|:----------------------------------------------------------------------------------|
 | `topic`  | :fontawesome-solid-check: | A topic name. Multible topics can be removed by separating them using `,` or `;`. |
 
-!!! note
+!!! hint
     You can use `.- *` to remove all topics at once.
 
 
-## `register_topics`
+## `*` (register topics)
 
 The `.*` command adds new topics to the list of available topics.
 
@@ -71,13 +73,18 @@ Topic Path Examples:
 .* <topic>
 ```
 
+Arguments:
+
 |   Argument   |         Required          | Description                                                                                  |
 |:------------:|:-------------------------:|:---------------------------------------------------------------------------------------------|
 |   `topic`    | :fontawesome-solid-check: | The new topic's path. Multible topics can be registered by separating them using `,` or `;`. |
 | `assignable` |                           | Asignability of the created topic/topics                                                     |
 
+Required Permissions:
+- `betheprofessional.manage`
 
-## `delete_topics`
+
+## `/` (delete topics)
 
 The `./` command removes topics from the list of available topics and deletes the associated roles.
 
@@ -88,10 +95,32 @@ The `./` command removes topics from the list of available topics and deletes th
 ./ <topic>
 ```
 
+Arguments:
+
 | Argument |         Required          | Description                                                                       |
 |:--------:|:-------------------------:|:----------------------------------------------------------------------------------|
 | `topic`  | :fontawesome-solid-check: | A topic name. Multible topics can be deleted by separating them using `,` or `;`. |
 
+Required Permissions:
+- `betheprofessional.manage`
+
+## `%` (unregister topics)
+
+The `.%` command unregisters topics without deleting the associated roles.
+
+```css
+.% <topic>
+```
+
+Arguments:
+
+| Argument | Required                  | Description                                  |
+|:--------:|:-------------------------:|:---------------------------------------------|
+| `topic` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
+
+Required Permissions:
+
+- `betheprofessional.manage`
 
 ## `topic`
 

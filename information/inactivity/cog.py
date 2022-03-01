@@ -91,7 +91,7 @@ async def scan(ctx: Context, days: int):
     embed = Embed(title=t.updating_members)
     message: Message = await reply(ctx, embed=embed)
 
-    await semaphore_gather(50, *[Activity.update(m.id, ts) for m, ts in members.items()])
+    await semaphore_gather(50, *[db_wrapper(Activity.update)(m.id, ts) for m, ts in members.items()])
 
     await update_msg(message, t.updated_members(cnt=len(members)))
 
