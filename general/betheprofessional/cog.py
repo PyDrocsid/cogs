@@ -1,6 +1,5 @@
-import io
 import string
-from typing import List, Union, Optional, Dict, Final, Set
+from typing import List, Union, Optional, Dict, Final, Set, Tuple
 
 from discord import Member, Embed, Role, Message
 from discord.ext import commands, tasks
@@ -568,6 +567,9 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         for topic in await db.all(select(BTPTopic)):
             topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic=topic.id))
+        # not using dict.items() because of typing
+        topic_count_items: list[Tuple[int, int]] = list(zip(topic_count.keys(), topic_count.values()))
+        topic_count = dict(sorted(topic_count_items, key=lambda x: x[0]))
 
         # Sort Topics By Count, Keep only Topics with a Count of BeTheProfessionalSettings.RoleCreateMinUsers or above
         # Limit Roles to BeTheProfessionalSettings.RoleLimit
