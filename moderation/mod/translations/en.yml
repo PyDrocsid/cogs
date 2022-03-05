@@ -71,7 +71,7 @@ image_link: "{} [[Go to image]]({})"
 no_dm: ":warning: User does not allow direct messages."
 reason_too_long: "Reason is too long. :pencil:"
 invalid_duration_inf: Invalid duration. Try `inf` instead.
-confirmation: Edit confirmation
+confirmation: Confirmation
 edit_canceled: ":x: Edit canceled"
 edit_confirmed: ":white_check_mark: Edit confirmed"
 infinity: Permanent

@@ -33,12 +33,14 @@ from asyncio import sleep
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, UserCommandError, confirm, docs
+from PyDrocsid.config import Config
 from PyDrocsid.converter import UserMemberConverter
-from PyDrocsid.database import db, filter_by, db_wrapper, Base
+from PyDrocsid.database import db, filter_by, db_wrapper, Base, select
+from PyDrocsid.environment import CACHE_TTL
+from PyDrocsid.redis import redis
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler, check_role_assignable
-from PyDrocsid.config import Config
 from .colors import Colors
 from .models import Mute, Ban, Report, Warn, Kick
 from .permissions import ModPermission
@@ -76,6 +78,36 @@ class DurationConverter(Converter):
         if duration >= (1 << 31):
             raise BadArgument(t.invalid_duration_inf)
         return duration
+
+
+async def load_entries():
+    async def fill(db_model: Type[Base]):
+        async with redis.pipeline() as pipe:
+            await pipe.delete(entry_key := f"mod_entries:{db_model.__tablename__}")
+
+            async for entry in await db.stream(filter_by(db_model, active=True)):
+                if entry.minutes == -1:
+                    continue
+
+                expiration_timestamp = entry.timestamp + timedelta(minutes=entry.minutes)
+
+                await pipe.hmset(entry_key, {str(entry.id): str(expiration_timestamp)})
+
+            await pipe.expire(entry_key, CACHE_TTL)
+            await pipe.execute()
+
+
+    if await redis.exists(load_key := "mod_entries_loaded"):
+        return
+
+    await fill(Ban)
+    await fill(Mute)
+
+    await redis.setex("mod_entries_loaded", CACHE_TTL, 1)
+
+
+async def invalidate_entry_cache():
+    await redis.delete("mod_entries_loaded")
 
 
 def time_to_units(minutes: Union[int, float]) -> str:
@@ -147,7 +179,7 @@ async def confirm_no_evidence(ctx: Context):
         color=Colors.ModTools,
     )
 
-    return confirm_action(ctx, conf_embed, t.action_confirmed, t.action_cancelled)
+    return await confirm_action(ctx, conf_embed, t.action_confirmed, t.action_cancelled)
 
 
 async def send_to_changelog_mod(
@@ -210,13 +242,18 @@ class ModCog(Cog, name="Mod Tools"):
         except RuntimeError:
             self.mod_loop.restart()
 
-    @tasks.loop(minutes=30)
+    @tasks.loop(minutes=1)
     @db_wrapper
     async def mod_loop(self):
         guild: Guild = self.bot.guilds[0]
+        await load_entries()
 
-        async for ban in await db.stream(filter_by(Ban, active=True)):
-            if ban.minutes != -1 and utcnow() >= ban.timestamp + timedelta(minutes=ban.minutes):
+        ban_keys = await redis.hkeys(ban_entries_key := f"mod_entries:{Ban.__tablename__}")
+
+        for key in ban_keys:
+            if utcnow() >= datetime.fromisoformat(await redis.hget(ban_entries_key, key)):
+                ban = await db.get(Ban, id=int(key))
+
                 try:
                     await guild.unban(user := await self.bot.fetch_user(ban.member))
                 except NotFound:
@@ -226,6 +263,8 @@ class ModCog(Cog, name="Mod Tools"):
                     continue
 
                 await Ban.deactivate(ban.id)
+
+                await redis.hdel(ban_entries_key, key)
 
                 await send_to_changelog_mod(
                     guild=guild,
@@ -246,8 +285,12 @@ class ModCog(Cog, name="Mod Tools"):
             await send_alert(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
             return
 
-        async for mute in await db.stream(filter_by(Mute, active=True)):
-            if mute.minutes != -1 and utcnow() >= mute.timestamp + timedelta(minutes=mute.minutes):
+        mute_keys = await redis.hkeys(mute_entries_key := f"mod_entries:{Mute.__tablename__}")
+
+        for key in mute_keys:
+            if utcnow() >= datetime.fromisoformat(await redis.hget(mute_entries_key, key)):
+                mute = await db.get(Mute, id=int(key))
+
                 if member := guild.get_member(mute.member):
                     await member.remove_roles(mute_role)
                 else:
@@ -261,7 +304,10 @@ class ModCog(Cog, name="Mod Tools"):
                     member=member,
                     reason=t.log_unmuted_expired,
                 )
+
                 await Mute.deactivate(mute.id)
+
+                await redis.hdel(mute_entries_key, key)
 
     @log_auto_kick.subscribe
     async def handle_log_auto_kick(self, member: Member):
@@ -645,7 +691,7 @@ class ModCog(Cog, name="Mod Tools"):
         evidence_url = evidence.url if attachments else None
 
         if not evidence:
-            if not confirm_no_evidence(ctx):
+            if not await confirm_no_evidence(ctx):
                 return
 
         user_embed = Embed(
@@ -801,7 +847,7 @@ class ModCog(Cog, name="Mod Tools"):
         evidence_url = evidence.url if attachments else None
 
         if not evidence:
-            if not confirm_no_evidence(ctx):
+            if not await confirm_no_evidence(ctx):
                 return
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
@@ -817,6 +863,8 @@ class ModCog(Cog, name="Mod Tools"):
             reason,
             evidence_url,
         )
+
+        await invalidate_entry_cache()
 
         await send_to_changelog_mod(
             guild=ctx.guild,
@@ -946,6 +994,8 @@ class ModCog(Cog, name="Mod Tools"):
 
         await Mute.edit_duration(mute.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
 
+        await invalidate_entry_cache()
+
         user_embed.description = t.mute_edited.duration(
             time_to_units(mute.minutes),
             t.infinity if minutes is None else time_to_units(minutes),
@@ -997,6 +1047,8 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.user_not_found)
 
         await Mute.delete(mute_id)
+
+        await invalidate_entry_cache()
 
         server_embed = Embed(title=t.mute, description=t.mute_deleted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
@@ -1052,6 +1104,9 @@ class ModCog(Cog, name="Mod Tools"):
                 raise CommandError(tg.permission_denied)
 
             await Mute.deactivate(mute.id, ctx.author.id, reason)
+
+            await invalidate_entry_cache()
+
             was_muted = True
         if not was_muted:
             raise UserCommandError(user, t.not_muted)
@@ -1090,7 +1145,7 @@ class ModCog(Cog, name="Mod Tools"):
         evidence_url = evidence.url if attachments else None
 
         if not evidence:
-            if not confirm_no_evidence(ctx):
+            if not await confirm_no_evidence(ctx):
                 return
 
         await Kick.create(member.id, str(member), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
@@ -1266,7 +1321,7 @@ class ModCog(Cog, name="Mod Tools"):
         evidence_url = evidence.url if attachments else None
 
         if not evidence:
-            if not confirm_no_evidence(ctx):
+            if not await confirm_no_evidence(ctx):
                 return
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
@@ -1285,6 +1340,8 @@ class ModCog(Cog, name="Mod Tools"):
             reason,
             evidence_url,
         )
+
+        await invalidate_entry_cache()
 
         await send_to_changelog_mod(
             guild=ctx.guild,
@@ -1408,6 +1465,8 @@ class ModCog(Cog, name="Mod Tools"):
 
         await Ban.edit_duration(ban.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
 
+        await invalidate_entry_cache()
+
         user_embed.description = t.ban_edited.duration(
             time_to_units(ban.minutes),
             t.infinity if minutes is None else time_to_units(minutes),
@@ -1461,6 +1520,8 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.user_not_found)
 
         await Ban.delete(ban_id)
+
+        await invalidate_entry_cache()
 
         server_embed = Embed(title=t.mute, description=t.ban_deleted_response, colour=Colors.ModTools)
 
@@ -1516,6 +1577,9 @@ class ModCog(Cog, name="Mod Tools"):
                 raise CommandError(tg.permission_denied)
 
             await Ban.deactivate(ban.id, ctx.author.id, reason)
+
+            await invalidate_entry_cache()
+
             was_banned = True
         if not was_banned:
             raise UserCommandError(user, t.not_banned)
