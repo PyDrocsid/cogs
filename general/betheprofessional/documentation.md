@@ -1,80 +1,102 @@
 # BeTheProfessional
 
-This cog contains a system for self-assignable roles (further referred to as `topics`).
+Contains a system for self-assignable roles (further referred to as `topics`).
 
 
-## `list_topics`
+## `?` (list topics)
 
-The `.?` command lists all available topics.
+Lists all available topics.
 
 ```css
 .?
 ```
 
 
-## `assign_topics`
+## `+` (assign topics)
 
-The `.+` command assigns the user the specified topics.
-
-```css
-.+ <topic>
-```
-
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`topic`|:fontawesome-solid-check:|A topic. Multible topics can be added by separating them using `,` or `;`|
-
-
-## `unassign_topics`
-
-The `.-` command unassigns the user the specified topics.
+Assigns the user the specified topics.
 
 ```css
-.- <topic>
+.+ <topics>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`topic`|:fontawesome-solid-check:|A topic. Multible topics can be removed by separating them using `,` or `;`.|
+Arguments:
 
-!!! note
+| Argument | Required                  | Description                                  |
+|:--------:|:-------------------------:|:---------------------------------------------|
+| `topics` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
+
+
+## `-` (unassign topics)
+
+Unassigns the user the specified topics.
+
+```css
+.- <topics>
+```
+
+Arguments:
+
+| Argument | Required                  | Description                                  |
+|:--------:|:-------------------------:|:---------------------------------------------|
+| `topics` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
+
+!!! hint
     You can use `.- *` to remove all topics at once.
 
 
-## `register_topics`
+## `*` (register topics)
 
-The `.*` command adds new topics to the list of available topics.
-
-```css
-.* <topic>
-```
-
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`topic`|:fontawesome-solid-check:|The new topic's name. If no role with this name (case insensitive) exists, one is created. Multible topics can be registered by separating them using `,` or `;`.|
-
-
-## `delete_topics`
-
-The `./` command removes topics from the list of available topics and deletes the associated roles.
+Adds new topics to the list of available topics. For each topic a new role will be created if there is no role with the same name yet (case insensitive).
 
 ```css
-./ <topic>
+.* <topics>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`topic`|:fontawesome-solid-check:|A topic. Multible topics can be deleted by separating them using `,` or `;`.|
+Arguments:
+
+| Argument | Required                  | Description                                  |
+|:--------:|:-------------------------:|:---------------------------------------------|
+| `topics` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
+
+Required Permissions:
+
+- `betheprofessional.manage`
 
 
-## `unregister_topics`
+## `/` (delete topics)
 
-The `.%` command unregisters topics without deleting the associated roles.
+Removes topics from the list of available topics and deletes the associated roles.
 
 ```css
-.% <topic>
+./ <topics>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`topic`|:fontawesome-solid-check:|A topic. Multible topics can be unregistered by separating them using `,` or `;`.|
+Arguments:
+
+| Argument | Required                  | Description                                  |
+|:--------:|:-------------------------:|:---------------------------------------------|
+| `topics` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
+
+Required Permissions:
+
+- `betheprofessional.manage`
+
+
+## `%` (unregister topics)
+
+Unregisters topics without deleting the associated roles.
+
+```css
+.% <topics>
+```
+
+Arguments:
+
+| Argument | Required                  | Description                                  |
+|:--------:|:-------------------------:|:---------------------------------------------|
+| `topics` | :fontawesome-solid-check: | One or more topics (separated by `,` or `;`) |
+
+Required Permissions:
+
+- `betheprofessional.manage`

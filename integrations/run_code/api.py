@@ -1,22 +1,47 @@
 from aiohttp import ClientSession
 
 
-class EmkcAPIException(BaseException):
+class PistonException(BaseException):
     @property
     def error(self) -> str:
         return self.args[0]["message"]
 
 
-class Emkc:
-    URL = "https://emkc.org/api/v1/piston/execute"
+class PistonAPI:
+    ENVIRONMENTS_URL = "https://emkc.org/api/v2/piston/runtimes"
+    EXECUTE_URL = "https://emkc.org/api/v2/piston/execute"
 
-    @staticmethod
-    async def run_code(language: str, source: str) -> dict:
+    def __init__(self):
+        self.environments: dict[str, str] = {}
+        self.aliases: dict[str, str] = {}
+
+    def get_language(self, language: str) -> str | None:
+        if language in self.environments:
+            return language
+
+        return self.aliases.get(language)
+
+    async def load_environments(self):
+        async with ClientSession() as session, session.get(self.ENVIRONMENTS_URL) as response:
+            if response.status != 200:
+                raise PistonException
+
+            environments = await response.json()
+
+        self.environments = {env["language"]: env["version"] for env in environments}
+        self.aliases = {alias: env["language"] for env in environments for alias in env["aliases"]}
+
+    async def run_code(self, language: str, source: str, stdin: str = "") -> dict:
         async with ClientSession() as session, session.post(
-            Emkc.URL,
-            json={"language": language, "source": source},
+            PistonAPI.EXECUTE_URL,
+            json={
+                "language": language,
+                "version": self.environments[language],
+                "stdin": stdin,
+                "files": [{"content": source}],
+            },
         ) as response:
             if response.status != 200:
-                raise EmkcAPIException(await response.json())
+                raise PistonException(await response.json())
 
             return await response.json()
