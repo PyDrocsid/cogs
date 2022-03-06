@@ -67,7 +67,10 @@ class DurationConverter(Converter):
         if (match := re.match(r"^(\d+w)?(\d+d)?(\d+h)?(\d+m)?$", argument)) is None:
             raise BadArgument(tg.invalid_duration)
 
-        weeks, days, hours, minutes = [0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 5)]
+        weeks, days, hours, minutes = [
+            0 if (value := match.group(i)) is None else int(value[:-1])
+            for i in range(1, 5)
+        ]
 
         days += weeks * 7
         td = timedelta(days=days, hours=hours, minutes=minutes)
@@ -89,13 +92,14 @@ async def load_entries():
                 if entry.minutes == -1:
                     continue
 
-                expiration_timestamp = entry.timestamp + timedelta(minutes=entry.minutes)
+                expiration_timestamp = entry.timestamp + timedelta(
+                    minutes=entry.minutes
+                )
 
                 await pipe.hmset(entry_key, {str(entry.id): str(expiration_timestamp)})
 
             await pipe.expire(entry_key, CACHE_TTL)
             await pipe.execute()
-
 
     if await redis.exists(load_key := "mod_entries_loaded"):
         return
@@ -122,7 +126,9 @@ def time_to_units(minutes: Union[int, float]) -> str:
         func = getattr(t.times, key)
         return func(cnt=value)
 
-    return ", ".join(get_func(key, time) for key in _keys if (time := getattr(rd, key)) != 0)
+    return ", ".join(
+        get_func(key, time) for key in _keys if (time := getattr(rd, key)) != 0
+    )
 
 
 async def get_mute_role(guild: Guild) -> Role:
@@ -207,7 +213,9 @@ async def send_to_changelog_mod(
     embed.add_field(name=t.log_field.member_id, value=str(member_id), inline=True)
 
     if message:
-        embed.set_footer(text=str(message.author), icon_url=message.author.display_avatar.url)
+        embed.set_footer(
+            text=str(message.author), icon_url=message.author.display_avatar.url
+        )
         embed.add_field(
             name=t.log_field.channel,
             value=t.jump_url(message.channel.mention, message.jump_url),
@@ -218,7 +226,11 @@ async def send_to_changelog_mod(
         embed.add_field(name=t.log_field.duration, value=duration, inline=True)
 
     if evidence:
-        embed.add_field(name=t.log_field.evidence, value=t.image_link(evidence.filename, evidence.url), inline=True)
+        embed.add_field(
+            name=t.log_field.evidence,
+            value=t.image_link(evidence.filename, evidence.url),
+            inline=True,
+        )
 
     embed.add_field(name=t.log_field.reason, value=reason, inline=False)
 
@@ -226,7 +238,12 @@ async def send_to_changelog_mod(
 
 
 class ModCog(Cog, name="Mod Tools"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Florian, Contributor.LoC]
+    CONTRIBUTORS = [
+        Contributor.Defelo,
+        Contributor.wolflu,
+        Contributor.Florian,
+        Contributor.LoC,
+    ]
 
     async def on_ready(self):
         guild: Guild = self.bot.guilds[0]
@@ -248,10 +265,14 @@ class ModCog(Cog, name="Mod Tools"):
         guild: Guild = self.bot.guilds[0]
         await load_entries()
 
-        ban_keys = await redis.hkeys(ban_entries_key := f"mod_entries:{Ban.__tablename__}")
+        ban_keys = await redis.hkeys(
+            ban_entries_key := f"mod_entries:{Ban.__tablename__}"
+        )
 
         for key in ban_keys:
-            if utcnow() >= datetime.fromisoformat(await redis.hget(ban_entries_key, key)):
+            if utcnow() >= datetime.fromisoformat(
+                await redis.hget(ban_entries_key, key)
+            ):
                 ban = await db.get(Ban, id=int(key))
 
                 try:
@@ -285,10 +306,14 @@ class ModCog(Cog, name="Mod Tools"):
             await send_alert(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
             return
 
-        mute_keys = await redis.hkeys(mute_entries_key := f"mod_entries:{Mute.__tablename__}")
+        mute_keys = await redis.hkeys(
+            mute_entries_key := f"mod_entries:{Mute.__tablename__}"
+        )
 
         for key in mute_keys:
-            if utcnow() >= datetime.fromisoformat(await redis.hget(mute_entries_key, key)):
+            if utcnow() >= datetime.fromisoformat(
+                await redis.hget(mute_entries_key, key)
+            ):
                 mute = await db.get(Mute, id=int(key))
 
                 if member := guild.get_member(mute.member):
@@ -314,7 +339,9 @@ class ModCog(Cog, name="Mod Tools"):
         await Kick.create(member.id, str(member), None, None, None, None)
 
     @get_user_info_entries.subscribe
-    async def handle_get_user_stats_entries(self, user_id: int) -> list[tuple[str, str]]:
+    async def handle_get_user_stats_entries(
+        self, user_id: int
+    ) -> list[tuple[str, str]]:
         out: list[tuple[str, str]] = []
 
         async def count(cls):
@@ -326,8 +353,14 @@ class ModCog(Cog, name="Mod Tools"):
             passive = await db.count(filter_by(cls, member=user_id))
 
             if cls is Kick:
-                if auto_kicks := await db.count(filter_by(cls, member=user_id, mod=None)):
-                    return t.active_passive(active, passive - auto_kicks) + "\n" + t.autokicks(cnt=auto_kicks)
+                if auto_kicks := await db.count(
+                    filter_by(cls, member=user_id, mod=None)
+                ):
+                    return (
+                        t.active_passive(active, passive - auto_kicks)
+                        + "\n"
+                        + t.autokicks(cnt=auto_kicks)
+                    )
 
             return t.active_passive(active, passive)
 
@@ -340,19 +373,25 @@ class ModCog(Cog, name="Mod Tools"):
         return out
 
     @get_user_status_entries.subscribe
-    async def handle_get_user_status_entries(self, user_id: int) -> list[tuple[str, str]]:
+    async def handle_get_user_status_entries(
+        self, user_id: int
+    ) -> list[tuple[str, str]]:
         status = t.none
         if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
             if ban.minutes != -1:
                 expiry_date: datetime = ban.timestamp + timedelta(minutes=ban.minutes)
-                time_left = time_to_units((expiry_date - utcnow()).total_seconds() / 60 + 1)
+                time_left = time_to_units(
+                    (expiry_date - utcnow()).total_seconds() / 60 + 1
+                )
                 status = t.status_banned_time(time_to_units(ban.minutes), time_left)
             else:
                 status = t.status_banned
         elif (mute := await db.get(Mute, member=user_id, active=True)) is not None:
             if mute.minutes != -1:
                 expiry_date: datetime = mute.timestamp + timedelta(minutes=mute.minutes)
-                time_left = time_to_units((expiry_date - utcnow()).total_seconds() / 60 + 1)
+                time_left = time_to_units(
+                    (expiry_date - utcnow()).total_seconds() / 60 + 1
+                )
                 status = t.status_muted_time(time_to_units(mute.minutes), time_left)
             else:
                 status = t.status_muted
@@ -365,193 +404,177 @@ class ModCog(Cog, name="Mod Tools"):
         show_ids: bool,
         author: Member,
     ) -> list[tuple[datetime, str]]:
+        def wrap_time_entry(
+            translation,
+            mod: int,
+            reason: str,
+            evidence: str,
+            minutes: Optional[int] = None,
+            entry_id: Optional[int] = None,
+        ) -> str:
+            if minutes:
+                if id:
+                    return translation.temp.id_on(
+                        f"<@{mod}>",
+                        time_to_units(minutes),
+                        reason,
+                        entry_id,
+                        show_evidence(evidence),
+                    )
+                else:
+                    return translation.temp.id_off(
+                        f"<@{mod}>",
+                        time_to_units(minutes),
+                        reason,
+                        show_evidence(evidence),
+                    )
+            else:
+                if id:
+                    return translation.inf.id_on(
+                        f"<@{mod}>", reason, entry_id, show_evidence(evidence)
+                    )
+                else:
+                    return translation.inf.id_on(
+                        f"<@{mod}>", reason, show_evidence(evidence)
+                    )
+
+        def wrap_entry(
+            translation,
+            user: int,
+            reason: str,
+            evidence: Optional[str],
+            entry_id: Optional[int] = None,
+        ) -> str:
+            if entry_id:
+                return translation.id_on(
+                    f"<@{user}>", reason, entry_id, show_evidence(evidence)
+                )
+            else:
+                return translation.id_off(f"<@{user}>", reason, show_evidence(evidence))
+
         out: list[tuple[datetime, str]] = []
 
         if await is_teamler(author):
             report: Report
             async for report in await db.stream(filter_by(Report, member=user_id)):
-                if show_ids:
-                    out.append(
-                        (
-                            report.timestamp,
-                            t.ulog.reported.id_on(
-                                f"<@{report.reporter}>",
-                                report.reason,
-                                report.id,
-                                show_evidence(report.evidence),
-                            ),
+                out.append(
+                    (
+                        report.timestamp,
+                        wrap_entry(
+                            t.ulog.reported,
+                            report.reporter,
+                            report.reason,
+                            report.evidence,
+                            report.id if show_ids else None,
                         ),
-                    )
-                else:
-                    out.append(
-                        (
-                            report.timestamp,
-                            t.ulog.reported.id_off(
-                                f"<@{report.reporter}>",
-                                report.reason,
-                                show_evidence(report.evidence),
-                            ),
-                        ),
-                    )
+                    ),
+                )
 
         warn: Warn
         async for warn in await db.stream(filter_by(Warn, member=user_id)):
-            if show_ids:
-                out.append(
-                    (
-                        warn.timestamp,
-                        t.ulog.warned.id_on(f"<@{warn.mod}>", warn.reason, warn.id, show_evidence(warn.evidence)),
+            out.append(
+                (
+                    warn.timestamp,
+                    wrap_entry(
+                        t.ulog.warned,
+                        warn.mod,
+                        warn.reason,
+                        warn.evidence,
+                        warn.id if show_ids else None,
                     ),
-                )
-            else:
-                out.append(
-                    (warn.timestamp, t.ulog.warned.id_off(f"<@{warn.mod}>", warn.reason, show_evidence(warn.evidence))),
-                )
+                ),
+            )
 
         mute: Mute
         async for mute in await db.stream(filter_by(Mute, member=user_id)):
-            if mute.minutes == -1:
-                if show_ids:
-                    out.append(
-                        (
-                            mute.timestamp,
-                            t.ulog.muted.inf.id_on(f"<@{mute.mod}>", mute.reason, mute.id, show_evidence(mute.evidence)),
-                        ),
-                    )
-                else:
-                    out.append(
-                        (mute.timestamp, t.ulog.muted.inf.id_off(f"<@{mute.mod}>", mute.reason, show_evidence(mute.evidence))),
-                    )
-            else:
-                if show_ids:
-                    out.append(
-                        (
-                            mute.timestamp,
-                            t.ulog.muted.temp.id_on(
-                                f"<@{mute.mod}>",
-                                time_to_units(mute.minutes),
-                                mute.reason,
-                                mute.id,
-                                show_evidence(mute.evidence),
-                            ),
-                        ),
-                    )
-                else:
-                    out.append(
-                        (
-                            mute.timestamp,
-                            t.ulog.muted.temp.id_off(
-                                f"<@{mute.mod}>",
-                                time_to_units(mute.minutes),
-                                mute.reason,
-                                show_evidence(mute.evidence),
-                            ),
-                        ),
-                    )
+            out.append(
+                (
+                    mute.timestamp,
+                    wrap_time_entry(
+                        translation=t.muted,
+                        mod=mute.mod,
+                        reason=mute.reason,
+                        evidence=mute.evidence,
+                        minutes=mute.minutes if mute.minutes != -1 else None,
+                        entry_id=mute.id if show_ids else None,
+                    ),
+                ),
+            )
 
             if not mute.active:
                 if mute.unmute_mod is None:
                     out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
                 else:
-                    if show_ids:
-                        out.append(
-                            (
-                                mute.deactivation_timestamp,
-                                t.ulog.unmuted.id_on(f"<@{mute.unmute_mod}>", mute.unmute_reason, mute.id),
+                    out.append(
+                        (
+                            mute.deactivation_timestamp,
+                            wrap_entry(
+                                translation=t.unmuted,
+                                user=mute.unmute_mod,
+                                reason=mute.unmute_reason,
+                                evidence=None,
+                                entry_id=mute.id if show_ids else None,
                             ),
                         )
-                    else:
-                        out.append(
-                            (
-                                mute.deactivation_timestamp,
-                                t.ulog.unmuted.id_off(f"<@{mute.unmute_mod}>", mute.unmute_reason),
-                            ),
-                        )
+                    )
 
         kick: Kick
         async for kick in await db.stream(filter_by(Kick, member=user_id)):
             if kick.mod is not None:
-                if show_ids:
-                    out.append(
-                        (
-                            kick.timestamp,
-                            t.ulog.kicked.id_on(f"<@{kick.mod}>", kick.reason, kick.id, show_evidence(kick.evidence)),
+                out.append(
+                    (
+                        kick.timestamp,
+                        wrap_entry(
+                            t.ulog.kicked,
+                            kick.mod,
+                            kick.reason,
+                            kick.evidence,
+                            kick.id if show_ids else None,
                         ),
-                    )
-                else:
-                    out.append(
-                        (
-                            kick.timestamp,
-                            t.ulog.kicked.id_off(f"<@{kick.mod}>", kick.reason, show_evidence(kick.evidence)),
-                        ),
-                    )
+                    ),
+                )
             else:
                 out.append((kick.timestamp, t.ulog.autokicked))
 
         ban: Ban
         async for ban in await db.stream(filter_by(Ban, member=user_id)):
-            if ban.minutes == -1:
-                if show_ids:
-                    out.append(
-                        (
-                            ban.timestamp,
-                            t.ulog.banned.inf.id_on(f"<@{ban.mod}>", ban.reason, ban.id, show_evidence(ban.evidence)),
-                        ),
-                    )
-                else:
-                    out.append(
-                        (ban.timestamp, t.ulog.banned.inf.id_off(f"<@{ban.mod}>", ban.reason, show_evidence(ban.evidence))),
-                    )
-            else:
-                if show_ids:
-                    out.append(
-                        (
-                            ban.timestamp,
-                            t.ulog.banned.temp.id_on(
-                                f"<@{ban.mod}>",
-                                time_to_units(ban.minutes),
-                                ban.reason,
-                                ban.id,
-                                show_evidence(ban.evidence),
-                            ),
-                        ),
-                    )
-                else:
-                    out.append(
-                        (
-                            ban.timestamp,
-                            t.ulog.banned.temp.id_off(
-                                f"<@{ban.mod}>",
-                                time_to_units(ban.minutes),
-                                ban.reason,
-                                show_evidence(ban.evidence),
-                            ),
-                        ),
-                    )
+            out.append(
+                (
+                    ban.timestamp,
+                    wrap_time_entry(
+                        translation=t.banned,
+                        mod=ban.mod,
+                        reason=ban.reason,
+                        evidence=ban.evidence,
+                        minutes=ban.minutes if ban.minutes != -1 else None,
+                        entry_id=ban.id if show_ids else None,
+                    ),
+                ),
+            )
 
             if not ban.active:
                 if ban.unban_mod is None:
                     out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
                 else:
-                    if show_ids:
-                        out.append(
-                            (
-                                ban.deactivation_timestamp,
-                                t.ulog.unbanned.id_on(f"<@{ban.unban_mod}>", ban.unban_reason, ban.id),
+                    out.append(
+                        (
+                            ban.deactivation_timestamp,
+                            wrap_entry(
+                                translation=t.unbanned,
+                                user=ban.unban_mod,
+                                reason=ban.unban_reason,
+                                evidence=None,
+                                entry_id=ban.id if show_ids else None,
                             ),
                         )
-                    else:
-                        out.append(
-                            (
-                                ban.deactivation_timestamp,
-                                t.ulog.unbanned.id_off(f"<@{ban.unban_mod}>", ban.unban_reason),
-                            ),
-                        )
+                    )
 
         return out
 
     async def on_member_join(self, member: Member):
-        mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get("mute"))
+        mute_role: Optional[Role] = member.guild.get_role(
+            await RoleSettings.get("mute")
+        )
         if mute_role is None:
             return
 
@@ -564,7 +587,9 @@ class ModCog(Cog, name="Mod Tools"):
 
             try:
                 entry: AuditLogEntry
-                async for entry in guild.audit_logs(limit=search_limit, action=AuditLogAction.ban):
+                async for entry in guild.audit_logs(
+                    limit=search_limit, action=AuditLogAction.ban
+                ):
                     if entry.user == self.bot.user:
                         continue
 
@@ -593,14 +618,17 @@ class ModCog(Cog, name="Mod Tools"):
                         )
 
                     else:
-                        await send_alert(guild, t.alert_member_banned(str(entry.target), str(entry.user)))
+                        await send_alert(
+                            guild,
+                            t.alert_member_banned(str(entry.target), str(entry.user)),
+                        )
 
                     return
 
             except Forbidden:
                 await send_alert(guild, t.cannot_fetch_audit_logs)
 
-            await sleep(delay=i*10)
+            await sleep(delay=i * 10)
             search_limit -= i * 10
 
     @commands.command()
@@ -639,7 +667,9 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        if not await confirm_action(ctx, conf_embed, t.report_confirmed, t.report_canceled):
+        if not await confirm_action(
+            ctx, conf_embed, t.report_confirmed, t.report_canceled
+        ):
             return
 
         attachments = ctx.message.attachments
@@ -647,7 +677,9 @@ class ModCog(Cog, name="Mod Tools"):
         evidence_url = evidence.url if attachments else None
 
         await Report.create(user.id, str(user), ctx.author.id, reason, evidence_url)
-        server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.report, description=t.reported_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
 
@@ -700,14 +732,23 @@ class ModCog(Cog, name="Mod Tools"):
             description=t.warned(ctx.author.mention, ctx.guild.name, reason),
         )
 
-        server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.warn, description=t.warned_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         try:
             await user.send(embed=user_embed)
         except (Forbidden, HTTPException):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
-        await Warn.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
+        await Warn.create(
+            user.id,
+            str(user),
+            ctx.author.id,
+            await get_mod_level(ctx.author),
+            reason,
+            evidence_url,
+        )
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(
             guild=ctx.guild,
@@ -716,7 +757,7 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.log_warned,
             member=user,
             reason=reason,
-            evidence=evidence
+            evidence=evidence,
         )
 
     @commands.command(aliases=["warn_edit"])
@@ -748,7 +789,9 @@ class ModCog(Cog, name="Mod Tools"):
             description=t.warn_edited(warn.reason, reason),
             colour=Colors.ModTools,
         )
-        server_embed = Embed(title=t.warn, description=t.warn_edited_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.warn, description=t.warn_edited_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         await Warn.edit(warn_id, ctx.author.id, await get_mod_level(ctx.author), reason)
@@ -765,7 +808,7 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.warn,
             title=t.log_warn_edited,
             member=user,
-            reason=reason
+            reason=reason,
         )
 
     @commands.command(aliases=["warn_delete"])
@@ -791,7 +834,9 @@ class ModCog(Cog, name="Mod Tools"):
         except (NotFound, HTTPException):
             raise CommandError(t.user_not_found)
 
-        server_embed = Embed(title=t.warn, description=t.warn_deleted_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.warn, description=t.warn_deleted_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         if await ModSettings.send_delete_user_message.get():
@@ -814,14 +859,21 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.warn,
             title=t.log_warn_deleted,
             member=user,
-            reason=warn.reason
+            reason=warn.reason,
         )
 
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
     @docs(t.commands.mute)
-    async def mute(self, ctx: Context, user: UserMemberConverter, time: DurationConverter, *, reason: str):
+    async def mute(
+        self,
+        ctx: Context,
+        user: UserMemberConverter,
+        time: DurationConverter,
+        *,
+        reason: str,
+    ):
         user: Union[Member, User]
 
         time: Optional[int]
@@ -851,7 +903,9 @@ class ModCog(Cog, name="Mod Tools"):
                 return
 
         user_embed = Embed(title=t.mute, colour=Colors.ModTools)
-        server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.mute, description=t.muted_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         await Mute.create(
@@ -873,14 +927,20 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.log_muted,
             member=user,
             reason=reason,
-            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            duration=time_to_units(minutes)
+            if minutes is not None
+            else t.log_field.infinity,
             evidence=evidence,
         )
 
         if minutes is not None:
-            user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
+            user_embed.description = t.muted(
+                ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason
+            )
         else:
-            user_embed.description = t.muted_inf(ctx.author.mention, ctx.guild.name, reason)
+            user_embed.description = t.muted_inf(
+                ctx.author.mention, ctx.guild.name, reason
+            )
 
         try:
             await user.send(embed=user_embed)
@@ -925,10 +985,14 @@ class ModCog(Cog, name="Mod Tools"):
             description=t.mute_edited.reason(mute.reason, reason),
             colour=Colors.ModTools,
         )
-        server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await Mute.edit_reason(mute_id, ctx.author.id, await get_mod_level(ctx.author), reason)
+        await Mute.edit_reason(
+            mute_id, ctx.author.id, await get_mod_level(ctx.author), reason
+        )
 
         try:
             await user.send(embed=user_embed)
@@ -942,18 +1006,21 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.mute,
             title=t.log_mute_edited,
             member=user,
-            reason=reason
+            reason=reason,
         )
 
     @edit_mute.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_mute_duration)
-    async def edit_mute_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
+    async def edit_mute_duration(
+        self, ctx: Context, user: UserMemberConverter, time: DurationConverter
+    ):
         user: Union[Member, User]
         time: Optional[int]
         minutes = time
 
         active_mutes: List[Mute] = sorted(
-            await db.all(filter_by(Mute, active=True, member=user.id)), key=lambda active_mute: active_mute.timestamp,
+            await db.all(filter_by(Mute, active=True, member=user.id)),
+            key=lambda active_mute: active_mute.timestamp,
         )
 
         if not active_mutes:
@@ -961,7 +1028,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         mute = active_mutes[0]
 
-        if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
+        if (
+            not await compare_mod_level(ctx.author, mute.mod_level)
+            or not ctx.author.id == mute.mod
+        ):
             raise CommandError(tg.permission_denied)
 
         if mute.minutes == minutes or (mute.minutes == -1 and minutes is None):
@@ -977,7 +1047,9 @@ class ModCog(Cog, name="Mod Tools"):
         if minutes is None:
             conf_embed.description = t.confirm_mute_edit.duration(old_time, t.infinity)
         else:
-            conf_embed.description = t.confirm_mute_edit.duration(old_time, time_to_units(minutes))
+            conf_embed.description = t.confirm_mute_edit.duration(
+                old_time, time_to_units(minutes)
+            )
 
         if not await confirm_action(ctx, conf_embed):
             return
@@ -989,10 +1061,14 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.mute,
             colour=Colors.ModTools,
         )
-        server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await Mute.edit_duration(mute.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
+        await Mute.edit_duration(
+            mute.id, ctx.author.id, await get_mod_level(ctx.author), minutes
+        )
 
         await invalidate_entry_cache()
 
@@ -1007,7 +1083,9 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.log_mute_edited,
             member=user,
             reason=Mute.reason,
-            duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
+            duration=t.log_field.infinity
+            if minutes is None
+            else time_to_units(minutes),
         )
 
         try:
@@ -1033,7 +1111,9 @@ class ModCog(Cog, name="Mod Tools"):
         if not await confirm_action(ctx, conf_embed):
             return
 
-        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=mute.member))
+        active_mutes: List[Mute] = await db.all(
+            filter_by(Mute, active=True, member=mute.member)
+        )
 
         if len(active_mutes) == 1 and mute in active_mutes:
             user = ctx.guild.get_member(mute.member)
@@ -1050,7 +1130,9 @@ class ModCog(Cog, name="Mod Tools"):
 
         await invalidate_entry_cache()
 
-        server_embed = Embed(title=t.mute, description=t.mute_deleted_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.mute, description=t.mute_deleted_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         if await ModSettings.send_delete_user_message.get():
@@ -1062,7 +1144,9 @@ class ModCog(Cog, name="Mod Tools"):
             if mute.minutes == -1:
                 user_embed.description = t.mute_deleted.inf(mute.reason)
             else:
-                user_embed.description = t.mute_deleted.not_inf(time_to_units(mute.minutes), mute.reason)
+                user_embed.description = t.mute_deleted.not_inf(
+                    time_to_units(mute.minutes), mute.reason
+                )
 
             try:
                 await user.send(embed=user_embed)
@@ -1079,7 +1163,9 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.log_mute_deleted,
             member=user,
             reason=mute.reason,
-            duration=t.log_field_infinity if mute.minutes == -1 else time_to_units(mute.minutes),
+            duration=t.log_field_infinity
+            if mute.minutes == -1
+            else time_to_units(mute.minutes),
         )
 
     @commands.command()
@@ -1100,7 +1186,10 @@ class ModCog(Cog, name="Mod Tools"):
             await user.remove_roles(mute_role)
 
         async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
-            if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
+            if (
+                not await compare_mod_level(ctx.author, mute.mod_level)
+                or not ctx.author.id == mute.mod
+            ):
                 raise CommandError(tg.permission_denied)
 
             await Mute.deactivate(mute.id, ctx.author.id, reason)
@@ -1111,7 +1200,9 @@ class ModCog(Cog, name="Mod Tools"):
         if not was_muted:
             raise UserCommandError(user, t.not_muted)
 
-        server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(
@@ -1120,7 +1211,7 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.unmute,
             title=t.log_unmuted,
             member=user,
-            reason=reason
+            reason=reason,
         )
 
     @commands.command()
@@ -1148,7 +1239,14 @@ class ModCog(Cog, name="Mod Tools"):
             if not await confirm_no_evidence(ctx):
                 return
 
-        await Kick.create(member.id, str(member), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
+        await Kick.create(
+            member.id,
+            str(member),
+            ctx.author.id,
+            await get_mod_level(ctx.author),
+            reason,
+            evidence_url,
+        )
         await send_to_changelog_mod(
             guild=ctx.guild,
             message=ctx.message,
@@ -1162,10 +1260,14 @@ class ModCog(Cog, name="Mod Tools"):
         user_embed = Embed(
             title=t.kick,
             colour=Colors.ModTools,
-            description=t.kicked.no_evidence(ctx.author.mention, ctx.guild.name, reason),
+            description=t.kicked.no_evidence(
+                ctx.author.mention, ctx.guild.name, reason
+            ),
         )
 
-        server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.kick, description=t.kicked_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(member), icon_url=member.display_avatar.url)
 
         try:
@@ -1208,7 +1310,9 @@ class ModCog(Cog, name="Mod Tools"):
             description=t.kick_edited(kick.reason, reason),
             colour=Colors.ModTools,
         )
-        server_embed = Embed(title=t.kick, description=t.kick_edited_reponse, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.kick, description=t.kick_edited_reponse, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         await Kick.edit(kick_id, ctx.author.id, await get_mod_level(ctx.author), reason)
@@ -1225,7 +1329,7 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.kick,
             title=t.log_kick_edited,
             member=user,
-            reason=reason
+            reason=reason,
         )
 
     @commands.command(aliases=["kick_delete"])
@@ -1251,7 +1355,9 @@ class ModCog(Cog, name="Mod Tools"):
         except (NotFound, HTTPException):
             raise CommandError(t.user_not_found)
 
-        server_embed = Embed(title=t.warn, description=t.kick_deleted_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.warn, description=t.kick_deleted_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         if await ModSettings.send_delete_user_message.get():
@@ -1274,7 +1380,7 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.kick,
             title=t.log_kick_deleted,
             member=user,
-            reason=kick.reason
+            reason=kick.reason,
         )
 
     @commands.command()
@@ -1305,14 +1411,20 @@ class ModCog(Cog, name="Mod Tools"):
 
         if user == self.bot.user or await is_teamler(user):
             raise UserCommandError(user, t.cannot_ban)
-        if isinstance(user, Member) and (user.top_role >= ctx.guild.me.top_role or user.id == ctx.guild.owner_id):
+        if isinstance(user, Member) and (
+            user.top_role >= ctx.guild.me.top_role or user.id == ctx.guild.owner_id
+        ):
             raise UserCommandError(user, t.cannot_ban)
 
-        active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=user.id))
+        active_bans: List[Ban] = await db.all(
+            filter_by(Ban, active=True, member=user.id)
+        )
         if active_bans:
             raise UserCommandError(user, t.already_banned)
 
-        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
+        active_mutes: List[Mute] = await db.all(
+            filter_by(Mute, active=True, member=user.id)
+        )
         for mute in active_mutes:
             await Mute.deactivate(mute.id, ctx.author.id, t.cancelled_by_ban)
 
@@ -1325,7 +1437,9 @@ class ModCog(Cog, name="Mod Tools"):
                 return
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
-        server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.ban, description=t.banned_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         if active_mutes:
@@ -1348,17 +1462,23 @@ class ModCog(Cog, name="Mod Tools"):
             message=ctx.message,
             colour=Colors.ban,
             title=t.log_banned,
-            member= user,
+            member=user,
             reason=reason,
-            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            duration=time_to_units(minutes)
+            if minutes is not None
+            else t.log_field.infinity,
             evidence=evidence,
         )
 
         if minutes is not None:
-            user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
+            user_embed.description = t.banned(
+                ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason
+            )
 
         else:
-            user_embed.description = t.banned_inf(ctx.author.mention, ctx.guild.name, reason)
+            user_embed.description = t.banned_inf(
+                ctx.author.mention, ctx.guild.name, reason
+            )
 
         try:
             await user.send(embed=user_embed)
@@ -1401,11 +1521,19 @@ class ModCog(Cog, name="Mod Tools"):
         except (NotFound, HTTPException):
             raise CommandError(t.user_not_found)
 
-        user_embed = Embed(title=t.ban, description=t.ban_edited.reason(ban.reason, reason), colour=Colors.ModTools)
-        server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
+        user_embed = Embed(
+            title=t.ban,
+            description=t.ban_edited.reason(ban.reason, reason),
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(
+            title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await Ban.edit_reason(ban_id, ctx.author.id, await get_mod_level(ctx.author), reason)
+        await Ban.edit_reason(
+            ban_id, ctx.author.id, await get_mod_level(ctx.author), reason
+        )
 
         try:
             await user.send(embed=user_embed)
@@ -1419,18 +1547,21 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.ban,
             title=t.log_ban_edited,
             member=user,
-            reason=reason
+            reason=reason,
         )
 
     @edit_ban.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_ban_duration)
-    async def edit_ban_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
+    async def edit_ban_duration(
+        self, ctx: Context, user: UserMemberConverter, time: DurationConverter
+    ):
         user: Union[Member, User]
         time: Optional[int]
         minutes = time
 
         active_bans: List[Ban] = sorted(
-            await db.all(filter_by(Ban, active=True, member=user.id)), key=lambda active_ban: active_ban.timestamp
+            await db.all(filter_by(Ban, active=True, member=user.id)),
+            key=lambda active_ban: active_ban.timestamp,
         )
 
         if not active_bans:
@@ -1438,7 +1569,10 @@ class ModCog(Cog, name="Mod Tools"):
 
         ban = active_bans[0]
 
-        if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
+        if (
+            not await compare_mod_level(ctx.author, ban.mod_level)
+            or not ctx.author.id == ban.mod
+        ):
             raise CommandError(tg.permission_denied)
 
         if ban.minutes == minutes or (ban.minutes == -1 and minutes is None):
@@ -1451,7 +1585,9 @@ class ModCog(Cog, name="Mod Tools"):
         if minutes is None:
             conf_embed.description = t.confirm_ban_edit.duration(old_time, t.infinity)
         else:
-            conf_embed.description = t.confirm_ban_edit.duration(old_time, time_to_units(minutes))
+            conf_embed.description = t.confirm_ban_edit.duration(
+                old_time, time_to_units(minutes)
+            )
 
         if not await confirm_action(ctx, conf_embed):
             return
@@ -1460,10 +1596,14 @@ class ModCog(Cog, name="Mod Tools"):
             await Ban.delete(ban.id)
 
         user_embed = Embed(title=t.ban, colour=Colors.ModTools)
-        server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await Ban.edit_duration(ban.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
+        await Ban.edit_duration(
+            ban.id, ctx.author.id, await get_mod_level(ctx.author), minutes
+        )
 
         await invalidate_entry_cache()
 
@@ -1478,7 +1618,9 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.log_ban_edited,
             member=user,
             reason=ban.reason,
-            duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
+            duration=t.log_field.infinity
+            if minutes is None
+            else time_to_units(minutes),
         )
 
         try:
@@ -1504,7 +1646,9 @@ class ModCog(Cog, name="Mod Tools"):
         if not await confirm_action(ctx, conf_embed):
             return
 
-        active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=ban.member))
+        active_bans: List[Ban] = await db.all(
+            filter_by(Ban, active=True, member=ban.member)
+        )
 
         if len(active_bans) == 1 and ban in active_bans:
             user = ctx.guild.get_member(ban.member)
@@ -1523,7 +1667,9 @@ class ModCog(Cog, name="Mod Tools"):
 
         await invalidate_entry_cache()
 
-        server_embed = Embed(title=t.mute, description=t.ban_deleted_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.mute, description=t.ban_deleted_response, colour=Colors.ModTools
+        )
 
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
@@ -1533,7 +1679,9 @@ class ModCog(Cog, name="Mod Tools"):
             if ban.minutes == -1:
                 user_embed.description = t.ban_deleted.inf(ban.reason)
             else:
-                user_embed.description = t.ban_deleted.not_inf(time_to_units(ban.minutes), ban.reason)
+                user_embed.description = t.ban_deleted.not_inf(
+                    time_to_units(ban.minutes), ban.reason
+                )
 
             try:
                 await user.send(embed=user_embed)
@@ -1550,7 +1698,9 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.log_ban_deleted,
             member=user,
             reason=ban.reason,
-            duration=t.log_field_infinity if ban.minutes == -1 else time_to_units(ban.minutes),
+            duration=t.log_field_infinity
+            if ban.minutes == -1
+            else time_to_units(ban.minutes),
         )
 
     @commands.command()
@@ -1573,7 +1723,10 @@ class ModCog(Cog, name="Mod Tools"):
             was_banned = False
 
         async for ban in await db.stream(filter_by(Ban, active=True, member=user.id)):
-            if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
+            if (
+                not await compare_mod_level(ctx.author, ban.mod_level)
+                or not ctx.author.id == ban.mod
+            ):
                 raise CommandError(tg.permission_denied)
 
             await Ban.deactivate(ban.id, ctx.author.id, reason)
@@ -1584,7 +1737,9 @@ class ModCog(Cog, name="Mod Tools"):
         if not was_banned:
             raise UserCommandError(user, t.not_banned)
 
-        server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
+        server_embed = Embed(
+            title=t.unban, description=t.unbanned_response, colour=Colors.ModTools
+        )
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(
@@ -1593,5 +1748,5 @@ class ModCog(Cog, name="Mod Tools"):
             colour=Colors.unban,
             title=t.log_unbanned,
             member=user,
-            reason=reason
+            reason=reason,
         )
