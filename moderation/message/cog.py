@@ -43,11 +43,7 @@ class MessageCog(Cog, name="Message Commands"):
     async def send_text(self, ctx: Context, channel: TextChannel):
         check_message_send_permissions(channel)
 
-        embed = Embed(
-            title=t.messages,
-            colour=Colors.MessageCommands,
-            description=t.send_message(t.cancel),
-        )
+        embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.send_message(t.cancel))
         await reply(ctx, embed=embed)
         content, files = await self.get_message_cancel(ctx.channel, ctx.author)
 
@@ -67,11 +63,7 @@ class MessageCog(Cog, name="Message Commands"):
     async def send_embed(self, ctx: Context, channel: TextChannel, color: Optional[Color] = None):
         check_message_send_permissions(channel, check_embed=True)
 
-        embed = Embed(
-            title=t.messages,
-            colour=Colors.MessageCommands,
-            description=t.send_embed_title(t.cancel),
-        )
+        embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.send_embed_title(t.cancel))
         await reply(ctx, embed=embed)
         title, _ = await self.get_message_cancel(ctx.channel, ctx.author)
         if title is None:
@@ -129,11 +121,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.could_not_edit)
         check_message_send_permissions(message.channel, check_send=False)
 
-        embed = Embed(
-            title=t.messages,
-            colour=Colors.MessageCommands,
-            description=t.send_new_message(t.cancel),
-        )
+        embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.send_new_message(t.cancel))
         await reply(ctx, embed=embed)
         content, files = await self.get_message_cancel(ctx.channel, ctx.author)
 
@@ -154,11 +142,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.could_not_edit)
         check_message_send_permissions(message.channel, check_send=False, check_embed=True)
 
-        embed = Embed(
-            title=t.messages,
-            colour=Colors.MessageCommands,
-            description=t.send_embed_title(t.cancel),
-        )
+        embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.send_embed_title(t.cancel))
         await reply(ctx, embed=embed)
         title, _ = await self.get_message_cancel(ctx.channel, ctx.author)
 
@@ -226,9 +210,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.count_between)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm(channel.mention, cnt=count),
-            color=Colors.MessageCommands,
+            title=t.confirmation, description=t.confirm(channel.mention, cnt=count), color=Colors.MessageCommands
         )
         async with confirm(ctx, conf_embed, danger=True) as (result, msg):
             if not result:

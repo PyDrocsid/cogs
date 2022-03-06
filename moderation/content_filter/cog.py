@@ -133,10 +133,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
     async def content_filter(self, ctx: Context):
         out = False
 
-        embed = Embed(
-            title=t.bad_word_list_header,
-            colour=Colors.ContentFilter,
-        )
+        embed = Embed(title=t.bad_word_list_header, colour=Colors.ContentFilter)
 
         reg: BadWord
         async for reg in await db.stream(filter_by(BadWord)):
@@ -224,10 +221,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
         pattern.description = new_description
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-        await send_to_changelog(
-            ctx.guild,
-            t.log_description_updated(pattern.regex, old, new_description),
-        )
+        await send_to_changelog(ctx.guild, t.log_description_updated(pattern.regex, old, new_description))
 
     @update.command(name="regex", aliases=["r"])
     @docs(t.commands.update_regex)
@@ -238,10 +232,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
         pattern.regex = new_regex
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-        await send_to_changelog(
-            ctx.guild,
-            t.log_regex_updated(pattern.regex, old, new_regex),
-        )
+        await send_to_changelog(ctx.guild, t.log_regex_updated(pattern.regex, old, new_regex))
 
     @update.command(name="delete_message", aliases=["del", "del_message", "dm"])
     @docs(t.commands.delete_message)
@@ -250,7 +241,4 @@ class ContentFilterCog(Cog, name="Content Filter"):
         pattern.delete = delete
 
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
-        await send_to_changelog(
-            ctx.guild,
-            t.log_delete_updated(pattern.delete, pattern.regex),
-        )
+        await send_to_changelog(ctx.guild, t.log_delete_updated(pattern.delete, pattern.regex))

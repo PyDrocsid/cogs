@@ -57,11 +57,6 @@ class MediaOnlyDeletion(Base):
 
     @staticmethod
     async def create(member: int, member_name: str, channel: int) -> MediaOnlyDeletion:
-        row = MediaOnlyDeletion(
-            member=member,
-            member_name=member_name,
-            timestamp=utcnow(),
-            channel=channel,
-        )
+        row = MediaOnlyDeletion(member=member, member_name=member_name, timestamp=utcnow(), channel=channel)
         await db.add(row)
         return row

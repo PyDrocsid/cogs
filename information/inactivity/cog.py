@@ -179,11 +179,8 @@ class InactivityCog(Cog, name="Inactivity"):
             else:
                 out.append(
                     t.user_inactive_since(
-                        status_icon(member.status),
-                        member.mention,
-                        f"@{member}",
-                        format_dt(timestamp, style="R"),
-                    ),
+                        status_icon(member.status), member.mention, f"@{member}", format_dt(timestamp, style="R")
+                    )
                 )
 
         embed = Embed(title=t.inactive_users, colour=0x256BE6)

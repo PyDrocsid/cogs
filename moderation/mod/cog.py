@@ -4,12 +4,7 @@ from typing import Optional, Union, List, Tuple
 
 from discord import Role, Guild, Member, Forbidden, HTTPException, User, Embed, NotFound, Message
 from discord.ext import commands, tasks
-from discord.ext.commands import (
-    guild_only,
-    Context,
-    CommandError,
-    Converter,
-)
+from discord.ext.commands import guild_only, Context, CommandError, Converter
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
@@ -83,9 +78,7 @@ async def send_to_changelog_mod(
     if message:
         embed.set_footer(text=str(message.author), icon_url=message.author.display_avatar.url)
         embed.add_field(
-            name=t.log_field.channel,
-            value=t.jump_url(message.channel.mention, message.jump_url),
-            inline=True,
+            name=t.log_field.channel, value=t.jump_url(message.channel.mention, message.jump_url), inline=True
         )
 
     if duration:
@@ -133,14 +126,7 @@ class ModCog(Cog, name="Mod Tools"):
                     except Forbidden:
                         await send_alert(guild, t.cannot_unban_user_permissions(user.mention, user.id))
 
-                await send_to_changelog_mod(
-                    guild,
-                    None,
-                    Colors.unban,
-                    t.log_unbanned,
-                    user,
-                    t.log_unbanned_expired,
-                )
+                await send_to_changelog_mod(guild, None, Colors.unban, t.log_unbanned, user, t.log_unbanned_expired)
 
         mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
@@ -159,14 +145,7 @@ class ModCog(Cog, name="Mod Tools"):
                 else:
                     member = mute.member, mute.member_name
 
-                await send_to_changelog_mod(
-                    guild,
-                    None,
-                    Colors.unmute,
-                    t.log_unmuted,
-                    member,
-                    t.log_unmuted_expired,
-                )
+                await send_to_changelog_mod(guild, None, Colors.unmute, t.log_unmuted, member, t.log_unmuted_expired)
                 await Mute.deactivate(mute.id)
 
     @log_auto_kick.subscribe
@@ -245,10 +224,7 @@ class ModCog(Cog, name="Mod Tools"):
                     out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
                 else:
                     out.append(
-                        (
-                            mute.deactivation_timestamp,
-                            t.ulog.unmuted(f"<@{mute.unmute_mod}>", mute.unmute_reason),
-                        ),
+                        (mute.deactivation_timestamp, t.ulog.unmuted(f"<@{mute.unmute_mod}>", mute.unmute_reason))
                     )
 
         kick: Kick
@@ -271,12 +247,7 @@ class ModCog(Cog, name="Mod Tools"):
                 if ban.unban_mod is None:
                     out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
                 else:
-                    out.append(
-                        (
-                            ban.deactivation_timestamp,
-                            t.ulog.unbanned(f"<@{ban.unban_mod}>", ban.unban_reason),
-                        ),
-                    )
+                    out.append((ban.deactivation_timestamp, t.ulog.unbanned(f"<@{ban.unban_mod}>", ban.unban_reason)))
 
         return out
 
@@ -328,9 +299,7 @@ class ModCog(Cog, name="Mod Tools"):
             raise UserCommandError(user, t.cannot_warn)
 
         user_embed = Embed(
-            title=t.warn,
-            description=t.warned(ctx.author.mention, ctx.guild.name, reason),
-            colour=Colors.ModTools,
+            title=t.warn, description=t.warned(ctx.author.mention, ctx.guild.name, reason), colour=Colors.ModTools
         )
         server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
@@ -389,25 +358,13 @@ class ModCog(Cog, name="Mod Tools"):
             await Mute.create(user.id, str(user), ctx.author.id, days, reason, bool(active_mutes))
             user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, reason, cnt=days)
             await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_muted,
-                user,
-                reason,
-                duration=t.log_field.days(cnt=days),
+                ctx.guild, ctx.message, Colors.mute, t.log_muted, user, reason, duration=t.log_field.days(cnt=days)
             )
         else:
             await Mute.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_mutes))
             user_embed.description = t.muted_inf(ctx.author.mention, ctx.guild.name, reason)
             await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.mute,
-                t.log_muted,
-                user,
-                reason,
-                duration=t.log_field.days_infinity,
+                ctx.guild, ctx.message, Colors.mute, t.log_muted, user, reason, duration=t.log_field.days_infinity
             )
 
         try:
@@ -474,9 +431,7 @@ class ModCog(Cog, name="Mod Tools"):
         await send_to_changelog_mod(ctx.guild, ctx.message, Colors.kick, t.log_kicked, member, reason)
 
         user_embed = Embed(
-            title=t.kick,
-            description=t.kicked(ctx.author.mention, ctx.guild.name, reason),
-            colour=Colors.ModTools,
+            title=t.kick, description=t.kicked(ctx.author.mention, ctx.guild.name, reason), colour=Colors.ModTools
         )
         server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(member), icon_url=member.display_avatar.url)
@@ -496,13 +451,7 @@ class ModCog(Cog, name="Mod Tools"):
     @ModPermission.ban.check
     @guild_only()
     async def ban(
-        self,
-        ctx: Context,
-        user: UserMemberConverter,
-        ban_days: DurationConverter,
-        delete_days: int,
-        *,
-        reason: str,
+        self, ctx: Context, user: UserMemberConverter, ban_days: DurationConverter, delete_days: int, *, reason: str
     ):
         """
         ban a user
@@ -547,25 +496,13 @@ class ModCog(Cog, name="Mod Tools"):
             await Ban.create(user.id, str(user), ctx.author.id, ban_days, reason, bool(active_bans))
             user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, reason, cnt=ban_days)
             await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.ban,
-                t.log_banned,
-                user,
-                reason,
-                duration=t.log_field.days(cnt=ban_days),
+                ctx.guild, ctx.message, Colors.ban, t.log_banned, user, reason, duration=t.log_field.days(cnt=ban_days)
             )
         else:
             await Ban.create(user.id, str(user), ctx.author.id, -1, reason, bool(active_bans))
             user_embed.description = t.banned_inf(ctx.author.mention, ctx.guild.name, reason)
             await send_to_changelog_mod(
-                ctx.guild,
-                ctx.message,
-                Colors.ban,
-                t.log_banned,
-                user,
-                reason,
-                duration=t.log_field.days_infinity,
+                ctx.guild, ctx.message, Colors.ban, t.log_banned, user, reason, duration=t.log_field.days_infinity
             )
 
         try:
