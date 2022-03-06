@@ -37,7 +37,7 @@ class UserNoteCog(Cog, name="User Notes"):
         note: UserNote
         async for note in await db.stream(select(UserNote).filter_by(member_id=user_id)):
             out.append(
-                (note.timestamp, t.ulog_entry(f"<@{note.author_id}>", "\n" * ("\n" in note.content) + note.content)),
+                (note.timestamp, t.ulog_entry(f"<@{note.author_id}>", "\n" * ("\n" in note.content) + note.content))
             )
 
         return out
@@ -92,19 +92,12 @@ class UserNoteCog(Cog, name="User Notes"):
         if not user_note:
             raise CommandError(t.note_not_found)
 
-        conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm(
-                f"<@{user_note.member_id}>",
-                user_note.content,
-            ),
-        )
+        conf_embed = Embed(title=t.confirmation, description=t.confirm(f"<@{user_note.member_id}>", user_note.content))
         async with confirm(ctx, conf_embed, danger=True) as (result, _):
             if not result:
                 return
 
         await db.delete(user_note)
         await send_to_changelog(
-            ctx.guild,
-            t.removed_note(ctx.author.mention, f"<@{user_note.member_id}>", user_note.content),
+            ctx.guild, t.removed_note(ctx.author.mention, f"<@{user_note.member_id}>", user_note.content)
         )

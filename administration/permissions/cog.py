@@ -35,7 +35,7 @@ async def list_permissions(ctx: Context, title: str, min_level: BasePermissionLe
     for permission, level in zip(permissions, levels):
         if min_level.level >= level.level:
             out.setdefault((level.level, level.description), []).append(
-                f"`{permission.fullname}` - {permission.description}",
+                f"`{permission.fullname}` - {permission.description}"
             )
 
     embed = Embed(title=title, colour=Colors.error)
@@ -104,11 +104,7 @@ class PermissionsCog(Cog, name="Permissions"):
         await permission.set(level)
 
         description = permission.fullname, level.description
-        embed = Embed(
-            title=t.permissions_title,
-            colour=Colors.Permissions,
-            description=t.permission_set(*description),
-        )
+        embed = Embed(title=t.permissions_title, colour=Colors.Permissions, description=t.permission_set(*description))
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_permission_set(*description))
 

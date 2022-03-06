@@ -21,13 +21,7 @@ class Report(Base):
 
     @staticmethod
     async def create(member: int, member_name: str, reporter: int, reason: str) -> Report:
-        row = Report(
-            member=member,
-            member_name=member_name,
-            reporter=reporter,
-            timestamp=utcnow(),
-            reason=reason,
-        )
+        row = Report(member=member, member_name=member_name, reporter=reporter, timestamp=utcnow(), reason=reason)
         await db.add(row)
         return row
 

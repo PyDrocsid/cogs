@@ -86,12 +86,7 @@ class RoleNotificationsCog(Cog, name="Role Notifications"):
     @role_notifications.command(name="add", aliases=["a", "+"])
     @RoleNotificationsPermission.write.check
     async def role_notifications_add(
-        self,
-        ctx: Context,
-        role: Role,
-        channel: TextChannel,
-        ping_role: bool,
-        ping_user: bool,
+        self, ctx: Context, role: Role, channel: TextChannel, ping_role: bool, ping_user: bool
     ):
         """
         add a role notification link

@@ -223,8 +223,7 @@ async def create_discohook_url(command: CustomCommand) -> Optional[str]:
     data = json.dumps({"messages": [{"data": msg} for msg in json.loads(command.data)]})
     url = "https://discohook.org/?data=" + base64.urlsafe_b64encode(data.encode()).decode().rstrip("=")
     async with ClientSession() as session, session.post(
-        "https://share.discohook.app/create",
-        json={"url": url},
+        "https://share.discohook.app/create", json={"url": url}
     ) as response:
         url: Optional[str] = (await response.json()).get("url")
         if not response.ok or not url:
@@ -373,8 +372,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         embed.add_field(name=t.user_parameter, value=tg.enabled if command.user_parameter else tg.disabled)
         embed.add_field(
-            name=t.requires_confirmation,
-            value=tg.enabled if command.requires_confirmation else tg.disabled,
+            name=t.requires_confirmation, value=tg.enabled if command.requires_confirmation else tg.disabled
         )
         embed.add_field(name=t.delete_command, value=tg.enabled if command.delete_command else tg.disabled)
 
@@ -443,11 +441,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="description", aliases=["desc", "d"])
     @docs(t.commands.edit.description)
     async def custom_commands_edit_description(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        *,
-        description: str = None,
+        self, ctx: Context, command: CustomCommandConverter, *, description: str = None
     ):
         command: CustomCommand
 
@@ -465,10 +459,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="channel_parameter", aliases=["cp"])
     @docs(t.commands.edit.channel_parameter_enabled)
     async def custom_commands_edit_channel_parameter(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        enabled: bool,
+        self, ctx: Context, command: CustomCommandConverter, enabled: bool
     ):
         command: CustomCommand
 
@@ -488,11 +479,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="channel", aliases=["c"])
     @docs(t.commands.edit.channel)
     async def custom_commands_edit_channel(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        *,
-        channel: TextChannel = None,
+        self, ctx: Context, command: CustomCommandConverter, *, channel: TextChannel = None
     ):
         command: CustomCommand
 
@@ -531,10 +518,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="permission_level", aliases=["pl"])
     @docs(t.commands.edit.permission_level)
     async def custom_commands_edit_permission_level(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        level: PermissionLevelConverter,
+        self, ctx: Context, command: CustomCommandConverter, level: PermissionLevelConverter
     ):
         command: CustomCommand
         level: BasePermissionLevel
@@ -550,10 +534,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="requires_confirmation", aliases=["rc"])
     @docs(t.commands.edit.requires_confirmation)
     async def custom_commands_edit_requires_confirmation(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        enabled: bool,
+        self, ctx: Context, command: CustomCommandConverter, enabled: bool
     ):
         command: CustomCommand
 
@@ -572,12 +553,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
     @custom_commands_edit.command(name="user_parameter", aliases=["up"])
     @docs(t.commands.edit.user_parameter)
-    async def custom_commands_edit_user_parameter(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        enabled: bool,
-    ):
+    async def custom_commands_edit_user_parameter(self, ctx: Context, command: CustomCommandConverter, enabled: bool):
         command: CustomCommand
 
         if command.user_parameter and enabled:
