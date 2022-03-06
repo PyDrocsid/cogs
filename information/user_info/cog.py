@@ -62,9 +62,7 @@ def date_diff_to_str(date1: datetime, date2: datetime):
 
 
 async def get_user(
-    ctx: Context,
-    user: Optional[Union[User, int]],
-    permission: UserInfoPermission,
+    ctx: Context, user: Optional[Union[User, int]], permission: UserInfoPermission
 ) -> tuple[Union[User, int], int, bool]:
     arg_passed = len(ctx.message.content.strip(ctx.prefix).split()) >= 2
     if user is None:
@@ -122,7 +120,7 @@ class UserInfoCog(Cog, name="User Information"):
         asyncio.create_task(trigger_join_event())
 
         last_verification: Optional[Verification] = await db.first(
-            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
+            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc())
         )
         if not last_verification or not last_verification.accepted:
             return
@@ -151,9 +149,7 @@ class UserInfoCog(Cog, name="User Information"):
         for _ in range(10):
             async with db_context():
                 join: Optional[Join] = await db.get(
-                    Join,
-                    member=member.id,
-                    timestamp=member.joined_at.replace(microsecond=0),
+                    Join, member=member.id, timestamp=member.joined_at.replace(microsecond=0)
                 )
                 if not join or not join.join_msg_id or not join.join_msg_channel_id:
                     await asyncio.sleep(2)
@@ -187,7 +183,7 @@ class UserInfoCog(Cog, name="User Information"):
         asyncio.create_task(self.update_verification_reaction(member, add=True))
 
         last_verification: Optional[Verification] = await db.first(
-            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
+            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc())
         )
         if last_verification and last_verification.accepted:
             return
@@ -318,14 +314,12 @@ class UserInfoCog(Cog, name="User Information"):
 
         member = member or ctx.author
         verification: Optional[Verification] = await db.first(
-            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
+            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc())
         )
         ts: datetime = verification.timestamp if verification else member.joined_at
 
         embed = Embed(
-            title=t.userinfo,
-            description=f"{member.mention} {date_diff_to_str(utcnow(), ts)}",
-            color=Colors.joined,
+            title=t.userinfo, description=f"{member.mention} {date_diff_to_str(utcnow(), ts)}", color=Colors.joined
         )
         embed.set_author(name=str(member), icon_url=member.display_avatar.url)
         await reply(ctx, embed=embed)
@@ -342,9 +336,7 @@ class UserInfoCog(Cog, name="User Information"):
         guild: Guild = ctx.guild
 
         embed = Embed(
-            title=t.init_join_log,
-            description=t.filling_join_log(cnt=len(guild.members)),
-            color=Colors.UserInfo,
+            title=t.init_join_log, description=t.filling_join_log(cnt=len(guild.members)), color=Colors.UserInfo
         )
         await reply(ctx, embed=embed)
 
@@ -353,7 +345,7 @@ class UserInfoCog(Cog, name="User Information"):
             await Join.update(member.id, str(member), member.joined_at)
 
             relevant_join: Optional[Join] = await db.first(
-                filter_by(Join, member=member.id).order_by(Join.timestamp.asc()),
+                filter_by(Join, member=member.id).order_by(Join.timestamp.asc())
             )
 
             if not relevant_join:
@@ -363,14 +355,7 @@ class UserInfoCog(Cog, name="User Information"):
             if await db.exists(filter_by(Verification, member=member.id, accepted=True, timestamp=timestamp)):
                 return
 
-            await db.add(
-                Verification(
-                    member=member.id,
-                    member_name=str(member),
-                    accepted=True,
-                    timestamp=timestamp,
-                ),
-            )
+            await db.add(Verification(member=member.id, member_name=str(member), accepted=True, timestamp=timestamp))
 
         ts = time.time()
         await semaphore_gather(50, *[update(m) for m in guild.members])

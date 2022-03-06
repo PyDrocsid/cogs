@@ -63,9 +63,7 @@ def get_discord_invite(url) -> Optional[str]:
         return None
 
     if match := re.match(
-        r"^https?://discord\.com/(\.*/)*invite/(\.*/)*(?P<code>[a-zA-Z0-9\-]+).*$",
-        url,
-        re.IGNORECASE,
+        r"^https?://discord\.com/(\.*/)*invite/(\.*/)*(?P<code>[a-zA-Z0-9\-]+).*$", url, re.IGNORECASE
     ):
         return match.group("code")
 
@@ -151,27 +149,21 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
 
             prefix = await get_prefix()
             embed = Embed(
-                title=t.invites,
-                description=t.illegal_invite_link(prefix + "invites list"),
-                color=Colors.error,
+                title=t.invites, description=t.illegal_invite_link(prefix + "invites list"), color=Colors.error
             )
             await message.channel.send(content=author.mention, embed=embed, delete_after=30)
             if can_delete:
                 await send_alert(
                     message.guild,
                     t.log_illegal_invite(
-                        f"{author.mention} (`@{author}`, {author.id})",
-                        message.channel.mention,
-                        ", ".join(forbidden),
+                        f"{author.mention} (`@{author}`, {author.id})", message.channel.mention, ", ".join(forbidden)
                     ),
                 )
             else:
                 await send_alert(
                     message.guild,
                     t.log_illegal_invite_not_deleted(
-                        f"{author.mention} (`@{author}`, {author.id})",
-                        message.channel.mention,
-                        ", ".join(forbidden),
+                        f"{author.mention} (`@{author}`, {author.id})", message.channel.mention, ", ".join(forbidden)
                     ),
                 )
             return False
@@ -301,11 +293,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             raise CommandError(tg.not_allowed)
 
         await AllowedInvite.update(guild.id, invite.code, guild.name)
-        embed = Embed(
-            title=t.invites,
-            description=t.invite_updated(guild.name),
-            color=Colors.Invites,
-        )
+        embed = Embed(title=t.invites, description=t.invite_updated(guild.name), color=Colors.Invites)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_invite_updated(ctx.author.mention, guild.name))
 
@@ -350,8 +338,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
             ),
         )
         await send_to_changelog(
-            ctx.guild,
-            t.log_description_updated(ctx.author.mention, server.guild_name, old, description),
+            ctx.guild, t.log_description_updated(ctx.author.mention, server.guild_name, old, description)
         )
 
     @invites.command(name="remove", aliases=["r", "del", "d", "-"])
