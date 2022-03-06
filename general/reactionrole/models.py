@@ -18,12 +18,7 @@ class ReactionRole(Base):
 
     @staticmethod
     async def create(
-        channel_id: int,
-        message_id: int,
-        emoji: str,
-        role_id: int,
-        reverse: bool,
-        auto_remove: bool,
+        channel_id: int, message_id: int, emoji: str, role_id: int, reverse: bool, auto_remove: bool
     ) -> ReactionRole:
         row = ReactionRole(
             channel_id=channel_id,
@@ -38,6 +33,4 @@ class ReactionRole(Base):
 
     @staticmethod
     async def get(channel_id: int, message_id: int, emoji: str) -> Optional[ReactionRole]:
-        return await db.first(
-            select(ReactionRole).filter_by(channel_id=channel_id, message_id=message_id, emoji=emoji),
-        )
+        return await db.first(select(ReactionRole).filter_by(channel_id=channel_id, message_id=message_id, emoji=emoji))

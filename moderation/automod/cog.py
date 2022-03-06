@@ -30,11 +30,7 @@ async def kick(member: Member) -> bool:
         return False
 
     try:
-        embed = Embed(
-            title=t.autokick,
-            description=t.autokicked(member.guild.name),
-            colour=Colors.AutoMod,
-        )
+        embed = Embed(title=t.autokick, description=t.autokicked(member.guild.name), colour=Colors.AutoMod)
         await member.send(embed=embed)
     except (Forbidden, HTTPException):
         pass

@@ -59,13 +59,7 @@ class UsernameUpdate(Base):
 
     @staticmethod
     async def create(member: int, member_name: str, new_name: str, nick: bool) -> UsernameUpdate:
-        row = UsernameUpdate(
-            member=member,
-            member_name=member_name,
-            new_name=new_name,
-            nick=nick,
-            timestamp=utcnow(),
-        )
+        row = UsernameUpdate(member=member, member_name=member_name, new_name=new_name, nick=nick, timestamp=utcnow())
         await db.add(row)
         return row
 

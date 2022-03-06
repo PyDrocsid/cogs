@@ -76,7 +76,7 @@ class AOCConfig:
                     cls._leaderboard["members"].items(),
                     reverse=True,
                     key=lambda m: (m[1]["local_score"], m[1]["stars"], -int(m[1]["last_star_ts"])),
-                ),
+                )
             )
             for i, member in enumerate(members.values()):
                 member["rank"] = i + 1
@@ -234,9 +234,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         return aoc_member, None, None
 
     async def get_from_discord(
-        self,
-        member: User,
-        ignore_link: bool,
+        self, member: User, ignore_link: bool
     ) -> tuple[Optional[dict], Optional[User], Optional[AOCLink]]:
         aoc_member, link = await AOCConfig.find_member(member)
         if not aoc_member:
@@ -270,9 +268,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         await reply(
             ctx,
             embed=Embed(
-                title=t.join_title,
-                colour=Colors.AdventOfCode,
-                description=t.join_instructions(AOCConfig.INVITE_CODE),
+                title=t.join_title, colour=Colors.AdventOfCode, description=t.join_instructions(AOCConfig.INVITE_CODE)
             ),
         )
 
@@ -288,7 +284,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             [
                 (m["rank"], m["local_score"], m["stars"], escape_aoc_name(m["name"]) or f"[anonymous user #{m['id']}]")
                 for i, m in enumerate(list(leaderboard["members"].values())[:20])
-            ],
+            ]
         )
 
         embed = Embed(
@@ -322,8 +318,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
         trophy = "trophy"
         rank = str(aoc_member["rank"]) + {1: "st", 2: "nd", 3: "rd"}.get(
-            aoc_member["rank"] % 10 * (aoc_member["rank"] // 10 % 10 != 1),
-            "th",
+            aoc_member["rank"] % 10 * (aoc_member["rank"] // 10 % 10 != 1), "th"
         )
         if aoc_member["rank"] <= await AdventOfCodeSettings.rank.get():
             rank = f"**{rank}**"

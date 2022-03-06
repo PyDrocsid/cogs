@@ -91,8 +91,7 @@ async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
     embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
     embed.description = t.topics_unregistered(cnt=len(roles))
     await send_to_changelog(
-        ctx.guild,
-        t.log_topics_unregistered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
+        ctx.guild, t.log_topics_unregistered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles))
     )
     await send_long_embed(ctx, embed)
 
@@ -209,8 +208,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_registered(cnt=len(roles))
         await send_to_changelog(
-            ctx.guild,
-            t.log_topics_registered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
+            ctx.guild, t.log_topics_registered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles))
         )
         await reply(ctx, embed=embed)
 

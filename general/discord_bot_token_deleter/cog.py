@@ -33,8 +33,7 @@ class DiscordBotTokenDeleterCog(Cog, name="Discord Bot Token Deleter"):
                 continue
 
             async with ClientSession() as session, session.get(
-                "https://discord.com/api/users/@me",
-                headers={"Authorization": f"Bot {match.group(0)}"},
+                "https://discord.com/api/users/@me", headers={"Authorization": f"Bot {match.group(0)}"}
             ) as response:
                 if response.ok:
                     break
