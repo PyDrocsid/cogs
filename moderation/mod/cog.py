@@ -89,7 +89,7 @@ async def load_entries():
             await pipe.expire(entry_key, CACHE_TTL)
             await pipe.execute()
 
-    if await redis.exists(load_key := "mod_entries_loaded"):
+    if await redis.exists("mod_entries_loaded"):
         return
 
     await fill(Ban)
