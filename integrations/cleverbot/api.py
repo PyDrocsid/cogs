@@ -33,7 +33,7 @@ class CleverBot:
                     "cb_settings_scripting": "no",
                     "islearning": "1",
                     "icognoid": "wsf",
-                },
+                }
             ).encode()
             d += b"&icognocheck="
             d += md5(d)
@@ -79,7 +79,7 @@ class CleverBot:
                     "cb_settings_scripting": "no",
                     "islearning": "1",
                     "icognoid": "wsf",
-                },
+                }
             ).encode()
             d += b"&icognocheck="
             d += md5(d)

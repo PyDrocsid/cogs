@@ -35,11 +35,7 @@ async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optiona
 
 
 async def send_poll(
-    ctx: Context,
-    title: str,
-    args: str,
-    field: Optional[Tuple[str, str]] = None,
-    allow_delete: bool = True,
+    ctx: Context, title: str, args: str, field: Optional[Tuple[str, str]] = None, allow_delete: bool = True
 ):
     question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
 
@@ -176,11 +172,7 @@ class PollsCog(Cog, name="Polls"):
         """
 
         await send_poll(
-            ctx,
-            t.team_poll,
-            args,
-            field=(tg.status, await self.get_reacted_teamlers()),
-            allow_delete=False,
+            ctx, t.team_poll, args, field=(tg.status, await self.get_reacted_teamlers()), allow_delete=False
         )
 
     @commands.command(aliases=["yn"])

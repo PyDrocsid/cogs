@@ -152,7 +152,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                             else "`"
                         )
                         for topic in topics
-                    ],
+                    ]
                 ),
                 inline=False,
             )
@@ -274,10 +274,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         for registered_topic in registered_topics:
             await BTPTopic.create(
-                registered_topic[0],
-                None,
-                True,
-                registered_topic[2][-1].id if len(registered_topic[2]) > 0 else None,
+                registered_topic[0], None, True, registered_topic[2][-1].id if len(registered_topic[2]) > 0 else None
             )
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
@@ -285,8 +282,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         await send_to_changelog(
             ctx.guild,
             t.log_topics_registered(
-                cnt=len(registered_topics),
-                topics=", ".join(f"`{r[0]}`" for r in registered_topics),
+                cnt=len(registered_topics), topics=", ".join(f"`{r[0]}`" for r in registered_topics)
             ),
         )
         await reply(ctx, embed=embed)
@@ -315,9 +311,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
                 while len(queue) != 0:
                     topic_id = queue.pop()
-                    for child_topic in await db.all(
-                        select(BTPTopic).filter_by(parent=topic_id),
-                    ):
+                    for child_topic in await db.all(select(BTPTopic).filter_by(parent=topic_id)):
                         delete_topics.insert(0, child_topic)
                         queue.append(child_topic.id)
         for topic in delete_topics:
@@ -374,9 +368,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         for setting_item in t.settings.__dict__["_fallback"].keys():
             data = getattr(t.settings, setting_item)
             embed.add_field(
-                name=data.name,
-                value=await getattr(BeTheProfessionalSettings, data.internal_name).get(),
-                inline=False,
+                name=data.name, value=await getattr(BeTheProfessionalSettings, data.internal_name).get(), inline=False
             )
         await reply(ctx, embed=embed)
 
@@ -577,7 +569,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             filter(
                 lambda topic_id: topic_count[topic_id] >= role_create_min_users,
                 sorted(topic_count, key=lambda x: topic_count[x], reverse=True),
-            ),
+            )
         )[: await BeTheProfessionalSettings.RoleLimit.get()]
 
         # Delete old Top Topic Roles

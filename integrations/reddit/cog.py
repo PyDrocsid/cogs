@@ -73,7 +73,7 @@ async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]
                     "permalink": post["data"]["permalink"],
                     "url": post["data"]["url"],
                     "subreddit": post["data"]["subreddit"],
-                },
+                }
             )
     return posts
 
