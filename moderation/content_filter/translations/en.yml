@@ -45,3 +45,8 @@ delete: "True"
 not_delete: "False"
 
 checked_expressions: "Checked Expressions"
+matches: "Matches:"
+no_matches: "No matches found!"
+
+out: "`{}` - {}"
+out_more: "\n{}. `{}` - {}"

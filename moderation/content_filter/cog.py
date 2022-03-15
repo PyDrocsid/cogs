@@ -187,7 +187,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
     @content_filter.command(name="check", aliases=["c"])
     @ContentFilterPermission.read.check
     @docs(t.commands.check)
-    async def check(self, ctx: Context, pattern: ContentFilterConverter | int | RegexConverter, test_string: str):
+    async def check(self, ctx: Context, pattern: ContentFilterConverter | int | RegexConverter, *, test_string: str):
         filters: list[BadWord] = []
         if isinstance(pattern, BadWord):
             filters.append(pattern)
@@ -198,13 +198,18 @@ class ContentFilterCog(Cog, name="Content Filter"):
 
         out = ""
         for test_case in filters:
-            matches = re.finditer(test_case.regex, test_string)
+            matches = re.findall(test_case.regex, test_string)
+            if matches and pattern == -1:
+                out += t.out_more(test_case.id, test_case.regex, matches)
+            elif matches:
+                out += t.out(test_case.regex, matches)
+        if not out:
+            out = t.no_matches
 
-            out += f"\n{test_case.id:3}. `{test_case.regex}` - {matches}"
+        embed = Embed(title=t.checked_expressions, description=f"**{test_string}**", color=Colors.ContentFilter)
+        embed.add_field(name=t.matches, value=out)
 
-        embed = Embed(title=t.checked_expressions, description=out, color=Colors.ContentFilter)
-
-        await send_long_embed(ctx.channel, embed)
+        await send_long_embed(ctx, embed, paginate=True)
 
     @content_filter.group(name="update", aliases=["u"])
     @ContentFilterPermission.write.check
