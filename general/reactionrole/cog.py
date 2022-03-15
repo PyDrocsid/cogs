@@ -56,8 +56,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
                 await member.add_roles(role)
         except (Forbidden, HTTPException):
             raise PermissionError(
-                message.guild,
-                t.manage_role_error(role=role, member=member, message=message, emoji=emoji),
+                message.guild, t.manage_role_error(role=role, member=member, message=message, emoji=emoji)
             )
 
         if link.auto_remove:
@@ -65,8 +64,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
                 await message.remove_reaction(emoji, member)
             except (HTTPException, Forbidden, NotFound):
                 raise PermissionError(
-                    message.guild,
-                    t.remove_emoji_error(role=role, member=member, message=message, emoji=emoji),
+                    message.guild, t.remove_emoji_error(role=role, member=member, message=message, emoji=emoji)
                 )
 
         raise StopEventHandling
@@ -86,8 +84,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
                 await member.remove_roles(role)
         except (Forbidden, HTTPException):
             raise PermissionError(
-                message.guild,
-                t.manage_role_error(role=role, member=member, message=message, emoji=emoji),
+                message.guild, t.manage_role_error(role=role, member=member, message=message, emoji=emoji)
             )
 
         raise StopEventHandling
@@ -179,13 +176,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
     @ReactionRolePermission.write.check
     @docs(t.commands.reactionrole_add)
     async def reactionrole_add(
-        self,
-        ctx: Context,
-        msg: Message,
-        emoji: EmojiConverter,
-        role: Role,
-        reverse: bool,
-        auto_remove: bool,
+        self, ctx: Context, msg: Message, emoji: EmojiConverter, role: Role, reverse: bool, auto_remove: bool
     ):
         emoji: PartialEmoji
 
@@ -209,11 +200,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
     @ReactionRolePermission.write.check
     @docs(t.commands.reactionrole_remove)
     async def reactionrole_remove(
-        self,
-        ctx: Context,
-        msg: Message,
-        emoji: EmojiConverter,
-        remove_reactions: bool = True,
+        self, ctx: Context, msg: Message, emoji: EmojiConverter, remove_reactions: bool = True
     ):
         emoji: PartialEmoji
 
@@ -235,8 +222,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
         await reply(ctx, embed=embed)
         await send_to_changelog(
-            ctx.guild,
-            t.log_rr_link_removed(emoji, link.role_id, msg.jump_url, msg.channel.mention),
+            ctx.guild, t.log_rr_link_removed(emoji, link.role_id, msg.jump_url, msg.channel.mention)
         )
 
     @reactionrole.command(name="reinitialize", aliases=["reinit"])

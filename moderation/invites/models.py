@@ -78,12 +78,6 @@ class IllegalInvitePost(Base):
 
     @staticmethod
     async def create(member: int, member_name: str, channel: int, name: str) -> IllegalInvitePost:
-        row = IllegalInvitePost(
-            member=member,
-            member_name=member_name,
-            timestamp=utcnow(),
-            channel=channel,
-            name=name,
-        )
+        row = IllegalInvitePost(member=member, member_name=member_name, timestamp=utcnow(), channel=channel, name=name)
         await db.add(row)
         return row

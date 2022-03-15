@@ -24,12 +24,7 @@ class CustomCommand(Base):
     requires_confirmation: Union[Column, bool] = Column(Boolean)
     user_parameter: Union[Column, bool] = Column(Boolean)
     data: Union[Column, str] = Column(Text)
-    aliases: list[Alias] = relationship(
-        "Alias",
-        back_populates="command",
-        cascade="all, delete",
-        order_by="Alias.name",
-    )
+    aliases: list[Alias] = relationship("Alias", back_populates="command", cascade="all, delete", order_by="Alias.name")
 
     @staticmethod
     async def create(name: str, data: str, disabled: bool, permission_level: BasePermissionLevel) -> CustomCommand:

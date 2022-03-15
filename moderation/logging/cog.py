@@ -96,11 +96,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
     @docs(getattr(t.channels, name).disable_description)
     async def disable_channel(ctx: Context):
         await getattr(LoggingSettings, f"{name}_channel").reset()
-        embed = Embed(
-            title=t.logging,
-            description=(text := getattr(t.channels, name).disabled),
-            color=Colors.Logging,
-        )
+        embed = Embed(title=t.logging, description=(text := getattr(t.channels, name).disabled), color=Colors.Logging)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, text)
 
