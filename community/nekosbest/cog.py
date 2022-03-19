@@ -1,6 +1,6 @@
 from aiohttp import ClientSession
 
-from discord import Embed, Member
+from discord import Embed
 from discord.ext import commands
 from discord.ext.commands import Context
 
