@@ -6,19 +6,28 @@ from typing import Union
 from discord.utils import utcnow
 from sqlalchemy import Column, BigInteger, Boolean, Integer, Text
 
-from PyDrocsid.database import Base, db, filter_by, select, UTCDateTime
+from PyDrocsid.database import Base, db, select, UTCDateTime
+from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 
 
-async def sync_redis():
-    await redis.delete("content_filter")
+async def sync_redis() -> list[str]:
+    out = []
 
-    regex: BadWord
     async with redis.pipeline() as pipe:
+        await pipe.delete("content_filter")
+
+        regex: BadWord
         async for regex in await db.stream(select(BadWord)):
+            out.append(regex.regex)
             await pipe.lpush("content_filter", regex.regex)
 
+        await pipe.lpush("content_filter", "")
+        await pipe.expire("content_filter", CACHE_TTL)
+
         await pipe.execute()
+
+    return out
 
 
 class BadWord(Base):
@@ -31,22 +40,26 @@ class BadWord(Base):
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
-    async def create(regex: str, deleted: bool, description: str):
-        await db.add(BadWord(description=description, regex=regex, delete=deleted, timestamp=utcnow()))
+    async def create(regex: str, description: str, delete: bool) -> BadWord:
+        row = BadWord(regex=regex, description=description, delete=delete, timestamp=utcnow())
+        await db.add(row)
         await sync_redis()
+        return row
 
-    async def remove(self):
+    async def remove(self) -> None:
         await db.delete(self)
         await sync_redis()
 
     @staticmethod
     async def get_all_redis() -> list[str]:
-        await sync_redis()
-        return await redis.lrange("content_filter", 0, -1)
+        if out := await redis.lrange("content_filter", 0, -1):
+            return [x for x in out if x]
+
+        return await sync_redis()
 
     @staticmethod
     async def get_all_db() -> list[BadWord]:
-        return await db.all(filter_by(BadWord))
+        return await db.all(select(BadWord))
 
 
 class BadWordPost(Base):
@@ -65,10 +78,10 @@ class BadWordPost(Base):
         row = BadWordPost(
             member=member,
             member_name=member_name,
-            timestamp=utcnow(),
             channel=channel,
             content=content,
             deleted_message=deleted,
+            timestamp=utcnow(),
         )
         await db.add(row)
         return row

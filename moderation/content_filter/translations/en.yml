@@ -13,8 +13,8 @@ commands:
   update_regex: "update regex from a pattern"
   delete_message: "activate/deactivate the delete from a pattern"
 
-ulog_message: ":roll_of_paper: **Sent** a message with the forbidden string `{}` in <#{}> (not deleted)."
-ulog_message_deleted: ":roll_of_paper: **Sent** a message with the forbidden string `{}` in <#{}> (deleted)."
+ulog_message: ":stop_sign: **Sent** a message with the forbidden string `{}` in <#{}> (not deleted)."
+ulog_message_deleted: ":stop_sign: **Sent** a message with the forbidden string `{}` in <#{}> (deleted)."
 
 already_blacklisted: "This regex is already in the list!"
 not_blacklisted: "This regex is not in the blacklist!"
@@ -23,7 +23,7 @@ invalid_regex: "Not a valid regular expression!"
 
 log_content_filter_added: "**Regex** `{}` was **added** to **Blacklist** by {}"
 confirm: "Confirm"
-confirm_text: "Are you sure that you want to remove this filter pattern?"
+confirm_text: "Are you sure that you want to remove the filter `{}` ({})?"
 log_content_filter_removed: "**Regex** `{}` was **removed** to **Blacklist** by {}"
 log_description_updated: "**Description** was **updated** for regex *{}*\nfrom: `{}`\nto: `{}`"
 log_regex_updated: "**Regex** was **updated**\nfrom: `{}`\nto: `{}`"
@@ -47,6 +47,4 @@ not_delete: "False"
 checked_expressions: "Checked Expressions"
 matches: "Matches:"
 no_matches: "No matches found!"
-
-out: "`{}` - {}"
-out_more: "\n{}. `{}` - {}"
+invalid_pattern: "Invalid pattern!"
