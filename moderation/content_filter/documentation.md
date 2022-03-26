@@ -1,6 +1,6 @@
 # Content Filter
 
-Contains commands to do setup a list with expressions, which will be filtered in every message.
+Contains commands to setup a list of regular expressions, which will be filtered in every message.
 
 !!! note
     Users with the `content_filter.bypass` permission are not affected by these checks.
@@ -34,7 +34,7 @@ Arguments:
 |:-------------:|:-------------------------:|:-------------------------------------------------------------------------------------------|
 | `regex`       | :fontawesome-solid-check: | The [regex](https://regex101.com/) the filter should use                                   |
 | `delete`      | :fontawesome-solid-check: | True/False to indicate if the message should be deleted if a match for the regex was found |
-| `description` | :fontawesome-solid-check: | A description for the entry (shown on the list)                                            |
+| `description` | :fontawesome-solid-check: | A description for the entry (shown in the list)                                            |
 
 Required Permissions:
 
@@ -47,14 +47,14 @@ Required Permissions:
 Removes a regular expression from the filter.
 
 ```css
-.content_filter [remove|del|r|d|-] <pattern_id>
+.content_filter [remove|del|r|d|-] <pattern>
 ```
 
 Arguments:
 
-| Argument  | Required                  | Description                              |
-|:---------:|:-------------------------:|:-----------------------------------------|
-| `pattern` | :fontawesome-solid-check: | The ID from the pattern (shown by `.cf`) |
+| Argument  | Required                  | Description                            |
+|:---------:|:-------------------------:|:---------------------------------------|
+| `pattern` | :fontawesome-solid-check: | The ID of the pattern (shown by `.cf`) |
 
 Required Permissions:
 
@@ -64,7 +64,7 @@ Required Permissions:
 
 ### `update`
 
-Contains subcommands to do edit the content filter.
+Contains subcommands to edit the content filter.
 
 ```css
 .content_filter [update|u]
@@ -81,15 +81,15 @@ Required Permissions:
 Sets a new description for an existing filter.
 
 ```css
-.content_filter update [description|d] <pattern_id> <new_description>
+.content_filter update [description|d] <pattern> <new_description>
 ```
 
 Arguments:
 
-| Argument          | Required                  | Description                              |
-|:-----------------:|:-------------------------:|:-----------------------------------------|
-| `pattern`         | :fontawesome-solid-check: | The ID from the pattern (shown by `.cf`) |
-| `new_description` | :fontawesome-solid-check: | The new description for the filter       |
+| Argument          | Required                  | Description                            |
+|:-----------------:|:-------------------------:|:---------------------------------------|
+| `pattern`         | :fontawesome-solid-check: | The ID of the pattern (shown by `.cf`) |
+| `new_description` | :fontawesome-solid-check: | The new description for the filter     |
 
 Required Permissions:
 
@@ -102,15 +102,15 @@ Required Permissions:
 Edits the regular expression of an existing filter.
 
 ```css
-.content_filter update [regex|r] <pattern_id> <new_regex>
+.content_filter update [regex|r] <pattern> <new_regex>
 ```
 
 Arguments:
 
-| Argument    | Required                  | Description                                     |
-|:-----------:|:-------------------------:|:------------------------------------------------|
-| `pattern`   | :fontawesome-solid-check: | The ID from the pattern (shown by `.cf`)        |
-| `new_regex` | :fontawesome-solid-check: | The new regex for the filter to check for       |
+| Argument    | Required                  | Description                               |
+|:-----------:|:-------------------------:|:------------------------------------------|
+| `pattern`   | :fontawesome-solid-check: | The ID of the pattern (shown by `.cf`)    |
+| `new_regex` | :fontawesome-solid-check: | The new regex for the filter to check for |
 
 Required Permissions:
 
@@ -120,17 +120,17 @@ Required Permissions:
 
 #### `delete_message`
 
-This command can be used to change the delete-status for an already existing filter.
+Changes whether to delete messages matched by an existing filter.
 
 ```css
-.content_filter update [delete_message|del|del_message|dm] <pattern_id> <delete>
+.content_filter update [delete_message|del|del_message|dm] <pattern> <delete>
 ```
 
 Arguments:
 
 | Argument  | Required                  | Description                                                                                |
 |:---------:|:-------------------------:|:-------------------------------------------------------------------------------------------|
-| `pattern` | :fontawesome-solid-check: | The ID from the pattern (shown by `.cf`)                                                   |
+| `pattern` | :fontawesome-solid-check: | The ID of the pattern (shown by `.cf`)                                                     |
 | `delete`  | :fontawesome-solid-check: | True/False to indicate if the message should be deleted if a match for the regex was found |
 
 Required Permissions:
