@@ -7,7 +7,7 @@ import requests
 
 
 def md5(data):
-    return hashlib.md5(data[7:33]).hexdigest().encode()  # noqa: S303
+    return hashlib.md5(data[7:33]).hexdigest().encode()  # noqa: S324
 
 
 class CleverBot:
