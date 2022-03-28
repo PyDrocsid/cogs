@@ -137,3 +137,24 @@ Required Permissions:
 
 - `content_filter.read`
 - `content_filter.write`
+
+
+#### `check`
+
+Checks if a given regex has matches on a specific string.
+
+```css
+.content_filter [check|c] <pattern> <test_string>
+```
+
+Arguments:
+
+|   Argument    | Required                  | Description                                                                                                               |
+|:-------------:|:-------------------------:|:--------------------------------------------------------------------------------------------------------------------------|
+|   `pattern`   | :fontawesome-solid-check: | The ID of the pattern (shown by `.cf`). If `-1` is given, all listed patterns will be checked. Can be a manuel regex too. |
+| `test_string` | :fontawesome-solid-check: | A test string                                                                                                             |
+
+Required Permissions:
+
+- `content_filter.read`
+- `content_filter.write`
