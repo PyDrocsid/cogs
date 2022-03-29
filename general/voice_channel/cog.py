@@ -621,7 +621,9 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                     overwrites[team_role] = PermissionOverwrite(read_messages=True)
             try:
                 text_channel = await category.create_text_channel(
-                    voice_channel.name, topic=t.text_channel_for(voice_channel.mention), overwrites=overwrites
+                    voice_channel.name,
+                    topic=t.text_channel_for(voice_channel.mention),
+                    overwrites=overwrites
                 )
             except (Forbidden, HTTPException):
                 await send_alert(voice_channel.guild, t.could_not_create_text_channel(voice_channel.mention))
