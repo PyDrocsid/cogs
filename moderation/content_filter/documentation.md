@@ -139,9 +139,9 @@ Required Permissions:
 - `content_filter.write`
 
 
-#### `check`
+### `check`
 
-Checks if a given regex has matches on a specific string.
+Checks if a given regex matches a specific string.
 
 ```css
 .content_filter [check|c] <pattern> <test_string>
@@ -149,12 +149,11 @@ Checks if a given regex has matches on a specific string.
 
 Arguments:
 
-|   Argument    | Required                  | Description                                                                                                               |
-|:-------------:|:-------------------------:|:--------------------------------------------------------------------------------------------------------------------------|
-|   `pattern`   | :fontawesome-solid-check: | The ID of the pattern (shown by `.cf`). If `-1` is given, all listed patterns will be checked. Can be a manuel regex too. |
-| `test_string` | :fontawesome-solid-check: | A test string                                                                                                             |
+| Argument      | Required                  | Description                                                                                    |
+|:-------------:|:-------------------------:|:-----------------------------------------------------------------------------------------------|
+| `pattern`     | :fontawesome-solid-check: | A regex, the id of an existing pattern (shown by `.cf`) or `-1` to check all existing patterns |
+| `test_string` | :fontawesome-solid-check: | A test string                                                                                  |
 
 Required Permissions:
 
 - `content_filter.read`
-- `content_filter.write`
