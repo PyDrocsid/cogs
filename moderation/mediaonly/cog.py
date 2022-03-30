@@ -135,11 +135,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
             raise CommandError(t.media_only_not_changed_no_permissions)
 
         await MediaOnlyChannel.add(channel.id)
-        embed = Embed(
-            title=t.media_only_channels_header,
-            description=t.channel_now_media_only,
-            colour=Colors.MediaOnly,
-        )
+        embed = Embed(title=t.media_only_channels_header, description=t.channel_now_media_only, colour=Colors.MediaOnly)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_now_media_only(channel.mention))
 
@@ -152,9 +148,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
 
         await MediaOnlyChannel.remove(channel.id)
         embed = Embed(
-            title=t.media_only_channels_header,
-            description=t.channel_not_media_only_anymore,
-            colour=Colors.MediaOnly,
+            title=t.media_only_channels_header, description=t.channel_not_media_only_anymore, colour=Colors.MediaOnly
         )
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_not_media_only_anymore(channel.mention))

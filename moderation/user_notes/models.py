@@ -20,11 +20,6 @@ class UserNote(Base):
 
     @staticmethod
     async def create(member_id: int, author_id: int, content: str) -> UserNote:
-        row = UserNote(
-            member_id=member_id,
-            author_id=author_id,
-            content=content,
-            timestamp=utcnow(),
-        )
+        row = UserNote(member_id=member_id, author_id=author_id, content=content, timestamp=utcnow())
         await db.add(row)
         return row

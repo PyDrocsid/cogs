@@ -37,10 +37,7 @@ class DynChannel(Base):
     owner_id: Union[Column, str] = Column(String(36))
     owner_override: Union[Column, int] = Column(BigInteger)
     members: list[DynChannelMember] = relationship(
-        "DynChannelMember",
-        back_populates="channel",
-        cascade="all, delete",
-        order_by="DynChannelMember.timestamp",
+        "DynChannelMember", back_populates="channel", cascade="all, delete", order_by="DynChannelMember.timestamp"
     )
 
     @staticmethod
@@ -51,12 +48,7 @@ class DynChannel(Base):
 
     @staticmethod
     async def get(**kwargs) -> Optional[DynChannel]:
-        return await db.get(
-            DynChannel,
-            [DynChannel.group, DynGroup.channels],
-            DynChannel.members,
-            **kwargs,
-        )
+        return await db.get(DynChannel, [DynChannel.group, DynGroup.channels], DynChannel.members, **kwargs)
 
 
 class DynChannelMember(Base):
@@ -70,12 +62,7 @@ class DynChannelMember(Base):
 
     @staticmethod
     async def create(member_id: int, channel_id: int) -> DynChannelMember:
-        member = DynChannelMember(
-            id=str(uuid4()),
-            member_id=member_id,
-            channel_id=channel_id,
-            timestamp=utcnow(),
-        )
+        member = DynChannelMember(id=str(uuid4()), member_id=member_id, channel_id=channel_id, timestamp=utcnow())
         await db.add(member)
         return member
 

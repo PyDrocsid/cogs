@@ -74,11 +74,7 @@ class InfoComponent:
     @staticmethod
     def bugs_features(inline: bool):
         async def inner(_, embed: Embed):
-            embed.add_field(
-                name=t.bugs_features_title,
-                value=t.bugs_features(repo=Config.REPO_LINK),
-                inline=inline,
-            )
+            embed.add_field(name=t.bugs_features_title, value=t.bugs_features(repo=Config.REPO_LINK), inline=inline)
 
         return inner
 
@@ -86,8 +82,7 @@ class InfoComponent:
     def pydrocsid(inline: bool):
         async def inner(_, embed: Embed):
             async with ClientSession() as session, session.head(
-                Config.DISCORD_INVITE,
-                allow_redirects=True,
+                Config.DISCORD_INVITE, allow_redirects=True
             ) as response:
                 url = str(response.url)
             code = url.split("/")[-1]
@@ -226,9 +221,7 @@ class BotInfoCog(Cog, name="Bot Information"):
             description.append(f":small_orange_diamond: {name} (`{cog.__class__.__name__}`)")
 
         await send_long_embed(
-            ctx,
-            Embed(title=t.enabled_cogs, color=Colors.info, description="\n".join(description)),
-            paginate=True,
+            ctx, Embed(title=t.enabled_cogs, color=Colors.info, description="\n".join(description)), paginate=True
         )
 
     async def on_bot_ping(self, message: Message):

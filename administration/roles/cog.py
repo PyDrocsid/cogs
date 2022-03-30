@@ -31,10 +31,7 @@ async def configure_role(ctx: Context, role_name: str, role: Role, check_assigna
 
     await RoleSettings.set(role_name, role.id)
     await reply(ctx, t.role_set)
-    await send_to_changelog(
-        ctx.guild,
-        t.log_role_set(Config.ROLES[role_name][0], role.name, role.id),
-    )
+    await send_to_changelog(ctx.guild, t.log_role_set(Config.ROLES[role_name][0], role.name, role.id))
 
 
 async def is_authorized(author: Member, target_role: Role, *, perma: bool) -> bool:
@@ -69,15 +66,9 @@ async def reassign(member: Member, role: Role):
     try:
         await member.add_roles(role)
     except Forbidden:
-        await send_alert(
-            member.guild,
-            t.could_not_reassign(role.mention, member.mention, member),
-        )
+        await send_alert(member.guild, t.could_not_reassign(role.mention, member.mention, member))
     else:
-        await send_alert(
-            member.guild,
-            t.perma_reassigned(role.mention, member.mention, member, await get_prefix()),
-        )
+        await send_alert(member.guild, t.perma_reassigned(role.mention, member.mention, member, await get_prefix()))
 
 
 def add_role_command(roles_config: Group, name: str, title: str, check_assignable: bool):
@@ -380,7 +371,7 @@ class RolesCog(Cog, name="Roles"):
             member_ids.remove(member_id)
 
         members.sort(
-            key=lambda m: ([Status.online, Status.idle, Status.dnd, Status.offline].index(m.status), str(m), m.id),
+            key=lambda m: ([Status.online, Status.idle, Status.dnd, Status.offline].index(m.status), str(m), m.id)
         )
 
         out = []

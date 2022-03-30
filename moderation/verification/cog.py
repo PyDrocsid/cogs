@@ -130,13 +130,11 @@ class VerificationCog(Cog, name="Verification"):
 
         if normal:
             embed.add_field(
-                name=t.roles_normal,
-                value="\n".join(f":small_orange_diamond: {role.mention}" for role in normal),
+                name=t.roles_normal, value="\n".join(f":small_orange_diamond: {role.mention}" for role in normal)
             )
         if reverse:
             embed.add_field(
-                name=t.roles_reverse,
-                value="\n".join(f":small_blue_diamond: {role.mention}" for role in reverse),
+                name=t.roles_reverse, value="\n".join(f":small_blue_diamond: {role.mention}" for role in reverse)
             )
 
         await reply(ctx, embed=embed)
@@ -156,11 +154,7 @@ class VerificationCog(Cog, name="Verification"):
             raise CommandError(t.verification_role_already_set)
 
         await VerificationRole.create(role.id, reverse)
-        embed = Embed(
-            title=t.verification,
-            description=t.verification_role_added,
-            colour=Colors.Verification,
-        )
+        embed = Embed(title=t.verification, description=t.verification_role_added, colour=Colors.Verification)
         await reply(ctx, embed=embed)
         if reverse:
             await send_to_changelog(ctx.guild, t.log_verification_role_added_reverse(role.name, role.id))
@@ -178,11 +172,7 @@ class VerificationCog(Cog, name="Verification"):
             raise CommandError(t.verification_role_not_set)
 
         await db.delete(row)
-        embed = Embed(
-            title=t.verification,
-            description=t.verification_role_removed,
-            colour=Colors.Verification,
-        )
+        embed = Embed(title=t.verification, description=t.verification_role_removed, colour=Colors.Verification)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_verification_role_removed(role.name, role.id))
 
@@ -197,11 +187,7 @@ class VerificationCog(Cog, name="Verification"):
             raise CommandError(t.password_too_long)
 
         await VerificationSettings.password.set(password)
-        embed = Embed(
-            title=t.verification,
-            description=t.verification_password_configured,
-            colour=Colors.Verification,
-        )
+        embed = Embed(title=t.verification, description=t.verification_password_configured, colour=Colors.Verification)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_verification_password_configured(password))
 
