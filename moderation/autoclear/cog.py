@@ -29,11 +29,7 @@ async def clear_channel(channel: TextChannel, minutes: int, limit: Optional[int]
         return
 
     message: Message
-    async for message in channel.history(
-        before=utcnow() - timedelta(minutes=minutes),
-        limit=limit,
-        oldest_first=True,
-    ):
+    async for message in channel.history(before=utcnow() - timedelta(minutes=minutes), limit=limit, oldest_first=True):
         if message.pinned:
             continue
 

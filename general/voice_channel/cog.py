@@ -55,8 +55,7 @@ Overwrites = dict[Union[Member, Role], PermissionOverwrite]
 
 
 def merge_permission_overwrites(
-    overwrites: Overwrites,
-    *args: tuple[Union[Member, Role], PermissionOverwrite],
+    overwrites: Overwrites, *args: tuple[Union[Member, Role], PermissionOverwrite]
 ) -> Overwrites:
     out = {k: PermissionOverwrite.from_pair(*v.pair()) for k, v in overwrites.items()}
     for k, v in args:
@@ -139,19 +138,13 @@ def remove_lock_overrides(
         return overwrites
 
     user_role = voice_channel.guild.get_role(channel.group.user_role)
-    overwrites = merge_permission_overwrites(
-        overwrites,
-        (user_role, PermissionOverwrite(view_channel=True)),
-    )
+    overwrites = merge_permission_overwrites(overwrites, (user_role, PermissionOverwrite(view_channel=True)))
     overwrites[user_role].update(connect=None)
     return overwrites
 
 
 async def safe_create_voice_channel(
-    category: Union[CategoryChannel, Guild],
-    channel: DynChannel,
-    name: str,
-    overwrites: Overwrites,
+    category: Union[CategoryChannel, Guild], channel: DynChannel, name: str, overwrites: Overwrites
 ) -> VoiceChannel:
     guild: Guild = category.guild if isinstance(category, CategoryChannel) else category
     user_role: Role = get_user_role(guild, channel)
@@ -163,6 +156,7 @@ async def safe_create_voice_channel(
 
     ov = overwrites.pop(user_role, None)
     voice_channel: VoiceChannel = await category.create_voice_channel(name, overwrites=overwrites)
+
     if ov:
         overwrites[user_role] = ov
         await voice_channel.edit(overwrites=overwrites)
@@ -178,6 +172,7 @@ class ControlMessage(View):
         self.message = message
 
         _, locked, hidden = self.get_status()
+
         self.children: list[Button]
         self.children[2].label = t.buttons["unlock" if locked else "lock"]
         self.children[2].emoji = name_to_emoji["unlock" if locked else "lock"]
@@ -330,11 +325,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             self._owners.pop(channel.channel_id, None)
         elif old_owner != new_owner:
             self._owners[channel.channel_id] = new_owner
-            await self.send_voice_msg(
-                channel,
-                t.voice_channel,
-                t.voice_owner_changed(new_owner.mention),
-            )
+            await self.send_voice_msg(channel, t.voice_channel, t.voice_owner_changed(new_owner.mention))
 
         return new_owner
 
@@ -417,21 +408,14 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         raise CommandError(t.private_voice_owner_required)
 
     async def get_channel(
-        self,
-        member: Member,
-        *,
-        check_owner: bool,
-        check_locked: bool = False,
+        self, member: Member, *, check_owner: bool, check_locked: bool = False
     ) -> tuple[DynChannel, VoiceChannel]:
         if member.voice is None or member.voice.channel is None:
             raise CommandError(t.not_in_voice)
 
         voice_channel: VoiceChannel = member.voice.channel
         channel: Optional[DynChannel] = await db.get(
-            DynChannel,
-            [DynChannel.group, DynGroup.channels],
-            DynChannel.members,
-            channel_id=voice_channel.id,
+            DynChannel, [DynChannel.group, DynGroup.channels], DynChannel.members, channel_id=voice_channel.id
         )
         if not channel:
             raise CommandError(t.not_in_voice)
@@ -539,20 +523,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             await self.send_voice_msg(channel, t.voice_channel, t.locked(member.mention), force_new_embed=True)
 
     async def unlock_channel(
-        self,
-        member: Optional[Member],
-        channel: DynChannel,
-        voice_channel: VoiceChannel,
-        *,
-        skip_text: bool = False,
+        self, member: Optional[Member], channel: DynChannel, voice_channel: VoiceChannel, *, skip_text: bool = False
     ):
         channel.locked = False
         overwrites = remove_lock_overrides(
-            channel,
-            voice_channel,
-            voice_channel.overwrites,
-            keep_members=False,
-            reset_user_role=True,
+            channel, voice_channel, voice_channel.overwrites, keep_members=False, reset_user_role=True
         )
 
         try:
@@ -567,12 +542,8 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         try:
             await text_channel.edit(
                 overwrites=remove_lock_overrides(
-                    channel,
-                    voice_channel,
-                    text_channel.overwrites,
-                    keep_members=True,
-                    reset_user_role=False,
-                ),
+                    channel, voice_channel, text_channel.overwrites, keep_members=True, reset_user_role=False
+                )
             )
         except Forbidden:
             raise CommandError(t.could_not_overwrite_permissions(text_channel.mention))
@@ -652,9 +623,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                     overwrites[team_role] = PermissionOverwrite(read_messages=True)
             try:
                 text_channel = await category.create_text_channel(
-                    voice_channel.name,
-                    topic=t.text_channel_for(voice_channel.mention),
-                    overwrites=overwrites,
+                    voice_channel.name, topic=t.text_channel_for(voice_channel.mention), overwrites=overwrites
                 )
             except (Forbidden, HTTPException):
                 await send_alert(voice_channel.guild, t.could_not_create_text_channel(voice_channel.mention))
@@ -678,9 +647,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 await send_alert(voice_channel.guild, *e.args)
 
         channel_member: Optional[DynChannelMember] = await db.get(
-            DynChannelMember,
-            member_id=member.id,
-            channel_id=voice_channel.id,
+            DynChannelMember, member_id=member.id, channel_id=voice_channel.id
         )
         if not channel_member:
             channel.members.append(channel_member := await DynChannelMember.create(member.id, voice_channel.id))
@@ -698,18 +665,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             overwrites = voice_channel.overwrites
             if channel.locked:
                 overwrites = remove_lock_overrides(
-                    channel,
-                    voice_channel,
-                    overwrites,
-                    keep_members=False,
-                    reset_user_role=True,
+                    channel, voice_channel, overwrites, keep_members=False, reset_user_role=True
                 )
             try:
                 new_channel = await safe_create_voice_channel(
-                    category,
-                    channel,
-                    await self.get_channel_name(guild),
-                    overwrites,
+                    category, channel, await self.get_channel_name(guild), overwrites
                 )
             except (Forbidden, HTTPException):
                 await send_alert(voice_channel.guild, t.could_not_create_voice_channel)
@@ -778,18 +738,11 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             overwrites = voice_channel.overwrites
             if channel.locked:
                 overwrites = remove_lock_overrides(
-                    channel,
-                    voice_channel,
-                    overwrites,
-                    keep_members=False,
-                    reset_user_role=True,
+                    channel, voice_channel, overwrites, keep_members=False, reset_user_role=True
                 )
             try:
                 new_channel = await safe_create_voice_channel(
-                    category,
-                    channel,
-                    await self.get_channel_name(guild),
-                    overwrites,
+                    category, channel, await self.get_channel_name(guild), overwrites
                 )
             except (Forbidden, HTTPException):
                 await send_alert(guild, t.could_not_create_voice_channel)
@@ -829,7 +782,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 task.cancel()
             elif key not in task_dict:
                 task_dict[key] = asyncio.create_task(
-                    delayed(delay, dyn_channel.group_id, func, lambda: task_dict.pop(key, None), *key),
+                    delayed(delay, dyn_channel.group_id, func, lambda: task_dict.pop(key, None), *key)
                 )
 
         remove: set[Role] = set()
@@ -929,10 +882,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
     @docs(t.commands.voice_dynamic_remove)
     async def voice_dynamic_remove(self, ctx: Context, *, voice_channel: VoiceChannel):
         channel: Optional[DynChannel] = await db.get(
-            DynChannel,
-            [DynChannel.group, DynGroup.channels],
-            DynChannel.members,
-            channel_id=voice_channel.id,
+            DynChannel, [DynChannel.group, DynGroup.channels], DynChannel.members, channel_id=voice_channel.id
         )
         if not channel:
             raise CommandError(t.dyn_group_not_found)
@@ -980,10 +930,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
             voice_channel = member.voice.channel
 
         channel: Optional[DynChannel] = await db.get(
-            DynChannel,
-            [DynChannel.group, DynGroup.channels],
-            DynChannel.members,
-            channel_id=voice_channel.id,
+            DynChannel, [DynChannel.group, DynGroup.channels], DynChannel.members, channel_id=voice_channel.id
         )
         if not channel:
             raise CommandError(t.dyn_group_not_found)
@@ -1003,10 +950,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         else:
             state = t.state.unlocked
 
-        embed = Embed(
-            title=t.voice_info,
-            color=[Colors.unlocked, Colors.locked][channel.locked],
-        )
+        embed = Embed(title=t.voice_info, color=[Colors.unlocked, Colors.locked][channel.locked])
         embed.add_field(name=t.voice_name, value=voice_channel.name)
         embed.add_field(name=t.voice_state, value=state)
 
@@ -1263,11 +1207,7 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
         for m in self.gather_members(channel, voice_channel):
             asyncio.create_task(update_roles(m, add={role}))
 
-        embed = Embed(
-            title=t.voice_channel,
-            colour=Colors.Voice,
-            description=t.link_created(voice_channel, role.id),
-        )
+        embed = Embed(title=t.voice_channel, colour=Colors.Voice, description=t.link_created(voice_channel, role.id))
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_link_created(voice_channel, role))
 

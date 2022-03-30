@@ -209,10 +209,7 @@ async def do_rtfm(ctx: Context, key: str, obj: Optional[str]):
 
     if not matches:
         embed = Embed(
-            title=t.documentation(key.capitalize()),
-            url=page_types[key],
-            description=t.no_results,
-            colour=Colors.error,
+            title=t.documentation(key.capitalize()), url=page_types[key], description=t.no_results, colour=Colors.error
         )
         return await reply(ctx, embed=embed)
 
