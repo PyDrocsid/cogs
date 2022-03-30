@@ -70,10 +70,10 @@ class ThreadsCog(Cog, name="Thread Utils"):
                         for channel in ctx.guild.text_channels
                         if channel.permissions_for(ctx.guild.me).read_message_history
                         and channel.permissions_for(ctx.author).view_channel
-                    ],
+                    ]
                 )
                 for thread in threads
-            },
+            }
         ]
         threads.sort(key=lambda x: last_timestamp(x[0]), reverse=True)
 
