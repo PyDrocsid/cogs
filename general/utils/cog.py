@@ -21,6 +21,7 @@ tg = t.g
 t = t.utils
 
 
+@run_in_thread
 def generate_color(colors: list[tuple[float, float, float]], n: int, a: float) -> tuple[float, float, float]:
     guess = [random() for _ in range(3)]  # noqa: S311
     last = None
@@ -94,7 +95,7 @@ class UtilsCog(Cog, name="Utils"):
         colors = [[int(x, 16) / 255 for x in [c[:2], c[2:4], c[4:]]] for c in colors]
         colors += itertools.product(range(2), repeat=3)
 
-        color = await run_in_thread(generate_color, colors, 2000, 5e-5)
+        color = await generate_color(colors, 2000, 5e-5)
         color = "%02X" * 3 % tuple([round(float(c) * 255) for c in color])
 
         embed = Embed(title="#" + color, color=int(color, 16))

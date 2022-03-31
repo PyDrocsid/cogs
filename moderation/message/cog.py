@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply, confirm
+from PyDrocsid.command import docs, reply, Confirmation
 from PyDrocsid.converter import Color
 from PyDrocsid.translations import t
 from PyDrocsid.util import read_normal_message, read_complete_message, check_message_send_permissions
@@ -209,14 +209,8 @@ class MessageCog(Cog, name="Message Commands"):
         if count not in range(1, 101):
             raise CommandError(t.count_between)
 
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm(channel.mention, cnt=count), color=Colors.MessageCommands
-        )
-        async with confirm(ctx, conf_embed, danger=True) as (result, msg):
-            if not result:
-                return
-            if msg:
-                await msg.delete(delay=5)
+        if not await Confirmation().run(ctx, t.confirm(channel.mention, cnt=count)):
+            return
 
         messages = (await channel.history(limit=count + 2).flatten())[2:]
         try:

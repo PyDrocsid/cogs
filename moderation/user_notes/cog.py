@@ -7,7 +7,7 @@ from discord.ext.commands import Context, UserInputError, guild_only, CommandErr
 from discord.utils import format_dt
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import confirm, docs
+from PyDrocsid.command import docs, Confirmation
 from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import db, select
 from PyDrocsid.embeds import send_long_embed
@@ -92,10 +92,8 @@ class UserNoteCog(Cog, name="User Notes"):
         if not user_note:
             raise CommandError(t.note_not_found)
 
-        conf_embed = Embed(title=t.confirmation, description=t.confirm(f"<@{user_note.member_id}>", user_note.content))
-        async with confirm(ctx, conf_embed, danger=True) as (result, _):
-            if not result:
-                return
+        if not await Confirmation().run(ctx, t.confirm(f"<@{user_note.member_id}>", user_note.content)):
+            return
 
         await db.delete(user_note)
         await send_to_changelog(

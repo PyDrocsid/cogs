@@ -32,7 +32,7 @@ from discord.utils import utcnow, format_dt
 
 from PyDrocsid.async_thread import gather_any, GatherAnyError
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply, confirm, optional_permissions
+from PyDrocsid.command import docs, reply, optional_permissions, Confirmation
 from PyDrocsid.database import filter_by, db, select, delete, db_context, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -999,12 +999,8 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 raise CommandError(t.no_custom_name)
 
         if any(c.id != voice_channel.id and name == c.name for c in voice_channel.guild.voice_channels):
-            conf_embed = Embed(title=t.rename_confirmation, description=t.rename_description, color=Colors.Voice)
-            async with confirm(ctx, conf_embed) as (result, msg):
-                if not result:
-                    return
-                if msg:
-                    await msg.delete(delay=5)
+            if not await Confirmation().run(ctx, t.rename_description):
+                return
 
         try:
             await rename_channel(voice_channel, name)

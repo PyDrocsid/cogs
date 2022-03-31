@@ -2,13 +2,13 @@ from typing import Union
 
 from sqlalchemy import Column, BigInteger
 
-from PyDrocsid.async_thread import LockDeco
+from PyDrocsid.async_thread import lock_deco
 from PyDrocsid.database import db, select, delete, Base
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 
 
-@LockDeco
+@lock_deco
 async def load_cache():
     if await redis.exists(load_key := "autorole_loaded"):
         return
