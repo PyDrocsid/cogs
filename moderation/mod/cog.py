@@ -352,18 +352,25 @@ class ModCog(Cog, name="Mod Tools"):
             minutes: Optional[int] = None,
             entry_id: Optional[int] = None,
         ) -> str:
+            args = [mod]
+
             if minutes:
-                if id:
-                    return translation.temp.id_on(
-                        f"<@{mod}>", time_to_units(minutes), reason, entry_id, show_evidence(evidence)
-                    )
-                else:
-                    return translation.temp.id_off(f"<@{mod}>", time_to_units(minutes), reason, show_evidence(evidence))
+                translation = translation.temp
+                args.append(minutes)
             else:
-                if id:
-                    return translation.inf.id_on(f"<@{mod}>", reason, entry_id, show_evidence(evidence))
-                else:
-                    return translation.inf.id_on(f"<@{mod}>", reason, show_evidence(evidence))
+                translation = translation.inf
+
+            args.append(reason)
+
+            if entry_id:
+                translation = translation.id_on
+                args.append(entry_id)
+            else:
+                translation = translation.id_off
+
+            args.append(evidence)
+
+            return translation(*args)
 
         def wrap_entry(
             translation, user: int, reason: str, evidence: Optional[str], entry_id: Optional[int] = None
