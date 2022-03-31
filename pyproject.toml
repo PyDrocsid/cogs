@@ -38,6 +38,14 @@ black = "black ."
 lint = ["black", "flake8"]
 pre-commit = ["lint"]
 
+[tool.poe.tasks.setup]
+shell = """
+set -ex
+poetry install --no-root
+./pre-commit.sh install
+"""
+interpreter = "bash"
+
 [tool.black]
 target-version = ["py310"]
 line-length = 120
