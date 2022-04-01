@@ -5,7 +5,7 @@ from typing import Union
 
 from sqlalchemy import BigInteger, Column
 
-from PyDrocsid.database import Base, UTCDateTime, db, db_wrapper
+from PyDrocsid.database import Base, UTCDateTime, db
 
 
 class Activity(Base):
