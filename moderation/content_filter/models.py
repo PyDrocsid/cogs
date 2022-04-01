@@ -97,7 +97,7 @@ class BadWordPost(Base):
         if Counter(last_matches) == Counter(matches):
             return True, []
         else:
-            new_matches = sorted(set(match for match in matches if match not in last_matches))
+            new_matches = sorted({match for match in matches if match not in last_matches})
             async with redis.pipeline() as pipe:
                 for match in new_matches:
                     await pipe.lpush(f"content_filter:alert:{message_id}", match)
