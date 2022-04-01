@@ -10,7 +10,8 @@ repository = "https://github.com/PyDrocsid/cogs"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-PyDrocsid = "^2.3.0dev0"
+# PyDrocsid = "^2.3.0dev0"
+PyDrocsid = {git = "https://github.com/PyDrocsid/library", branch = "mypy"}
 SQLAlchemy = "^1.4.32"
 aiohttp = "^3.8.1"
 
@@ -57,6 +58,7 @@ skip-magic-trailing-comma = true
 strict = true
 ignore_missing_imports = true
 no_incremental = true
+namespace_packages = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 [build-system]
