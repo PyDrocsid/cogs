@@ -1,18 +1,19 @@
-from typing import Optional, Tuple, Dict, Set
+from typing import Dict, Optional, Set, Tuple
 
-from discord import Message, Role, PartialEmoji, TextChannel, Member, NotFound, Embed, HTTPException, Forbidden
+from discord import Embed, Forbidden, HTTPException, Member, Message, NotFound, PartialEmoji, Role, TextChannel
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs, add_reactions
+from PyDrocsid.command import add_reactions, docs, reply
 from PyDrocsid.converter import EmojiConverter
-from PyDrocsid.database import db, select, filter_by
+from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
+
 from .colors import Colors
 from .models import ReactionRole
 from .permissions import ReactionRolePermission

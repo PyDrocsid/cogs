@@ -1,14 +1,15 @@
 from typing import Optional
 
-from discord import TextChannel, Message, HTTPException, Forbidden, Permissions, Embed, Member, File, NotFound
+from discord import Embed, File, Forbidden, HTTPException, Member, Message, NotFound, Permissions, TextChannel
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply, confirm
+from PyDrocsid.command import confirm, docs, reply
 from PyDrocsid.converter import Color
 from PyDrocsid.translations import t
-from PyDrocsid.util import read_normal_message, read_complete_message, check_message_send_permissions
+from PyDrocsid.util import check_message_send_permissions, read_complete_message, read_normal_message
+
 from .colors import Colors
 from .permissions import MessagePermission
 from ...contributor import Contributor

@@ -2,23 +2,23 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 
-from discord import Message, Guild, Member, Embed, Role, Permissions, NotFound, TextChannel, Status
+from discord import Embed, Guild, Member, Message, NotFound, Permissions, Role, Status, TextChannel
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, max_concurrency
+from discord.ext.commands import CommandError, Context, guild_only, max_concurrency
+from discord.utils import format_dt, utcnow
 
-from PyDrocsid.async_thread import semaphore_gather, run_as_task
+from PyDrocsid.async_thread import run_as_task, semaphore_gather
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, optional_permissions
+from PyDrocsid.command import optional_permissions, reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
-from discord.utils import utcnow, format_dt
 
 from .models import Activity
 from .permissions import InactivityPermission
 from .settings import InactivitySettings
-from ...pubsub import ignore_message_edit, send_to_changelog, get_user_status_entries
+from ...pubsub import get_user_status_entries, ignore_message_edit, send_to_changelog
 
 tg = t.g
 t = t.inactivity

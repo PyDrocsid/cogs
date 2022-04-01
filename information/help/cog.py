@@ -1,8 +1,8 @@
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
-from discord import Message, Embed
+from discord import Embed, Message
 from discord.ext import commands
-from discord.ext.commands import Command, Group, CommandError, Context
+from discord.ext.commands import Command, CommandError, Context, Group
 
 from PyDrocsid.cog import Cog, get_documentation
 from PyDrocsid.command import can_run_command, docs, get_optional_permissions
@@ -10,6 +10,7 @@ from PyDrocsid.config import Contributor
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.permission import BasePermission, BasePermissionLevel
 from PyDrocsid.translations import t
+
 from .colors import Colors
 
 tg = t.g

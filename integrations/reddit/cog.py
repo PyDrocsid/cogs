@@ -1,25 +1,26 @@
-from datetime import datetime
-from typing import Optional, List
 import re
+from datetime import datetime
+from typing import List, Optional
 
 from aiohttp import ClientSession
 from discord import Embed, TextChannel
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.config import Config
-from PyDrocsid.database import db, select, filter_by, db_wrapper
+from PyDrocsid.database import db, db_wrapper, filter_by, select
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions
+
 from .colors import Colors
-from .models import RedditPost, RedditChannel
+from .models import RedditChannel, RedditPost
 from .permissions import RedditPermission
 from .settings import RedditSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert
+from ...pubsub import send_alert, send_to_changelog
 
 tg = t.g
 t = t.reddit

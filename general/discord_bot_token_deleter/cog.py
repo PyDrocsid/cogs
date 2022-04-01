@@ -3,11 +3,12 @@ import binascii
 import re
 
 from aiohttp import ClientSession
-from discord import Message, Embed, Forbidden
+from discord import Embed, Forbidden, Message
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.material_colors import MaterialColors
 from PyDrocsid.translations import t
+
 from ...contributor import Contributor
 from ...pubsub import send_alert
 

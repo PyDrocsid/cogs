@@ -3,15 +3,16 @@ from typing import Optional
 
 from discord import Embed, Role
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, Converter, BadArgument, CommandError, UserInputError
+from discord.ext.commands import BadArgument, CommandError, Context, Converter, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.config import Config, get_subclasses_in_enabled_packages
 from PyDrocsid.embeds import send_long_embed
-from PyDrocsid.permission import BasePermissionLevel, BasePermission
+from PyDrocsid.permission import BasePermission, BasePermissionLevel
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .permissions import PermissionsPermission
 from ...contributor import Contributor

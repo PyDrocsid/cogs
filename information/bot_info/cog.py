@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-from typing import Optional, Awaitable, Callable
+from typing import Awaitable, Callable, Optional
 
 from aiohttp import ClientSession
-from discord import Embed, Message, Status, Game
+from discord import Embed, Game, Message, Status
 from discord.ext import commands, tasks
 from discord.ext.commands import Context
 
 from PyDrocsid.cog import Cog, get_documentation
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.config import Config
 from PyDrocsid.embeds import send_long_embed
-from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
+from PyDrocsid.github_api import GitHubUser, get_repo_description, get_users
 from PyDrocsid.prefix import get_prefix
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from ...contributor import Contributor
 

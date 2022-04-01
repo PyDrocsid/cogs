@@ -1,7 +1,8 @@
 from typing import Union
 
-from PyDrocsid.database import db, Base
-from sqlalchemy import Column, BigInteger, Text
+from sqlalchemy import BigInteger, Column, Text
+
+from PyDrocsid.database import Base, db
 
 
 class AOCLink(Base):

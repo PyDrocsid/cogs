@@ -2,17 +2,18 @@ import time
 
 from discord import Embed, Member, VoiceState
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, UserInputError
+from discord.ext.commands import Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .permissions import SpamDetectionPermission
 from .settings import SpamDetectionSettings
-from ...pubsub import send_to_changelog, send_alert
+from ...pubsub import send_alert, send_to_changelog
 
 tg = t.g
 t = t.spam_detection

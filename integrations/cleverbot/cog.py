@@ -1,16 +1,17 @@
 import asyncio
 import string
-from typing import Optional, Dict
+from typing import Dict, Optional
 
-from discord import TextChannel, Message, Guild, Embed
+from discord import Embed, Guild, Message, TextChannel
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.database import db, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
+
 from .api import CleverBot
 from .colors import Colors
 from .models import CleverBotChannel

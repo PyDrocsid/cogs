@@ -5,41 +5,42 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Optional, Union
 
+from dateutil.relativedelta import relativedelta
+from discord import (
+    Embed,
+    Forbidden,
+    Guild,
+    HTTPException,
+    Member,
+    Message,
+    MessageType,
+    NotFound,
+    Role,
+    TextChannel,
+    User,
+)
+from discord.ext import commands
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only, max_concurrency
+from discord.utils import format_dt, snowflake_time, utcnow
+
 from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, optional_permissions
+from PyDrocsid.command import optional_permissions, reply
 from PyDrocsid.config import Contributor
-from PyDrocsid.database import db, filter_by, db_wrapper, db_context
+from PyDrocsid.database import db, db_context, db_wrapper, filter_by
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.logger import get_logger
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from dateutil.relativedelta import relativedelta
-from discord import (
-    User,
-    NotFound,
-    Embed,
-    Guild,
-    Forbidden,
-    HTTPException,
-    Member,
-    Role,
-    Message,
-    MessageType,
-    TextChannel,
-)
-from discord.ext import commands
-from discord.ext.commands import Context, UserInputError, CommandError, max_concurrency, guild_only
-from discord.utils import snowflake_time, utcnow, format_dt
 
 from .colors import Colors
 from .models import Join, Leave, UsernameUpdate, Verification
 from .permissions import UserInfoPermission
 from ...pubsub import (
-    get_userlog_entries,
     get_user_info_entries,
     get_user_status_entries,
+    get_userlog_entries,
     revoke_verification,
     send_alert,
 )

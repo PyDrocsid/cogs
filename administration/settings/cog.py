@@ -2,12 +2,13 @@ import string
 
 from discord import Embed
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError
+from discord.ext.commands import CommandError, Context, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.prefix import set_prefix
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .permissions import SettingsPermission
 from ...contributor import Contributor

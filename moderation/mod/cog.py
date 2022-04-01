@@ -1,31 +1,32 @@
 import re
 from datetime import datetime, timedelta
-from typing import Optional, Union, List, Tuple
+from typing import List, Optional, Tuple, Union
 
-from discord import Role, Guild, Member, Forbidden, HTTPException, User, Embed, NotFound, Message
+from discord import Embed, Forbidden, Guild, HTTPException, Member, Message, NotFound, Role, User
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, Converter
+from discord.ext.commands import CommandError, Context, Converter, guild_only
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, UserCommandError
+from PyDrocsid.command import UserCommandError, reply
 from PyDrocsid.converter import UserMemberConverter
-from PyDrocsid.database import db, filter_by, db_wrapper
+from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import is_teamler, check_role_assignable
+from PyDrocsid.util import check_role_assignable, is_teamler
+
 from .colors import Colors
-from .models import Mute, Ban, Report, Warn, Kick
+from .models import Ban, Kick, Mute, Report, Warn
 from .permissions import ModPermission
 from ...contributor import Contributor
 from ...pubsub import (
-    send_to_changelog,
-    log_auto_kick,
-    get_userlog_entries,
     get_user_info_entries,
     get_user_status_entries,
+    get_userlog_entries,
+    log_auto_kick,
     revoke_verification,
     send_alert,
+    send_to_changelog,
 )
 
 tg = t.g

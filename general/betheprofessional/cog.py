@@ -1,9 +1,9 @@
 import string
 from typing import List
 
-from discord import Role, Guild, Member, Embed
+from discord import Embed, Guild, Member, Role
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
@@ -11,6 +11,7 @@ from PyDrocsid.database import db, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, check_role_assignable
+
 from .colors import Colors
 from .models import BTPRole
 from .permissions import BeTheProfessionalPermission
