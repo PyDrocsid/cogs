@@ -16,6 +16,7 @@ from .settings import AutoKickMode, AutoModSettings
 from ...contributor import Contributor
 from ...pubsub import log_auto_kick, revoke_verification, send_alert, send_to_changelog
 
+
 tg = t.g
 t = t.automod
 

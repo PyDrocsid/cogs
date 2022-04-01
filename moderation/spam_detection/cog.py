@@ -15,6 +15,7 @@ from .permissions import SpamDetectionPermission
 from .settings import SpamDetectionSettings
 from ...pubsub import send_alert, send_to_changelog
 
+
 tg = t.g
 t = t.spam_detection
 

@@ -18,6 +18,7 @@ from .permissions import NewsPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
 
+
 tg = t.g
 t = t.news
 

@@ -20,6 +20,7 @@ from .permissions import MediaOnlyPermission
 from ...contributor import Contributor
 from ...pubsub import can_respond_on_reaction, get_userlog_entries, send_alert, send_to_changelog
 
+
 tg = t.g
 t = t.mediaonly
 

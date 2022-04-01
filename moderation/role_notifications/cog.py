@@ -17,6 +17,7 @@ from .models import RoleNotification
 from .permissions import RoleNotificationsPermission
 from ...pubsub import send_alert, send_to_changelog
 
+
 tg = t.g
 t = t.role_notifications
 

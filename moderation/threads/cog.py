@@ -19,6 +19,7 @@ from .permissions import ThreadsPermission
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
+
 tg = t.g
 t = t.threads
 

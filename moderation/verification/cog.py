@@ -18,6 +18,7 @@ from .settings import VerificationSettings
 from ...contributor import Contributor
 from ...pubsub import send_alert, send_to_changelog
 
+
 tg = t.g
 t = t.verification
 

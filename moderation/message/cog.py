@@ -15,6 +15,7 @@ from .permissions import MessagePermission
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
+
 tg = t.g
 t = t.message
 

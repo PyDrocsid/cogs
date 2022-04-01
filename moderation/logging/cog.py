@@ -24,6 +24,7 @@ from .settings import LoggingSettings
 from ...contributor import Contributor
 from ...pubsub import can_respond_on_reaction, ignore_message_delete, ignore_message_edit, send_alert, send_to_changelog
 
+
 logger = get_logger(__name__)
 
 tg = t.g

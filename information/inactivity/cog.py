@@ -20,6 +20,7 @@ from .permissions import InactivityPermission
 from .settings import InactivitySettings
 from ...pubsub import get_user_status_entries, ignore_message_edit, send_to_changelog
 
+
 tg = t.g
 t = t.inactivity
 

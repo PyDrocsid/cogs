@@ -21,6 +21,7 @@ from .permissions import UserNotePermission
 from ...contributor import Contributor
 from ...pubsub import get_userlog_entries, send_to_changelog
 
+
 tg = t.g
 t = t.user_notes
 

@@ -12,6 +12,7 @@ from PyDrocsid.translations import t
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
+
 tg = t.g
 t = t.discord_bot_token_deleter
 

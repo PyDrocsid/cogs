@@ -19,6 +19,7 @@ from .settings import ReactionPinSettings
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
 
+
 tg = t.g
 t = t.reactionpin
 

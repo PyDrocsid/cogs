@@ -24,6 +24,7 @@ from .settings import AdventOfCodeSettings
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
 
+
 tg = t.g
 t = t.adventofcode
 

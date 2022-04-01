@@ -24,6 +24,7 @@ from .permissions import InvitesPermission
 from ...contributor import Contributor
 from ...pubsub import get_userlog_entries, send_alert, send_to_changelog
 
+
 tg = t.g
 t = t.invites
 

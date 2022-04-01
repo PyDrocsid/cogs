@@ -16,6 +16,7 @@ from PyDrocsid.translations import t
 from .api import PistonAPI, PistonException
 from ...contributor import Contributor
 
+
 logger = get_logger(__name__)
 
 tg = t.g

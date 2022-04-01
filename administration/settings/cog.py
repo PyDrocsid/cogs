@@ -14,6 +14,7 @@ from .permissions import SettingsPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
 
+
 tg = t.g
 t = t.settings
 

@@ -8,6 +8,7 @@ from PyDrocsid.translations import t
 from ...contributor import Contributor
 from ...pubsub import send_alert
 
+
 tg = t.g
 t = t.remind_me
 

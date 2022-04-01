@@ -16,6 +16,7 @@ from .models import AutoRole
 from .permissions import AutoRolePermission
 from ...pubsub import send_to_changelog
 
+
 tg = t.g
 t = t.autorole
 
