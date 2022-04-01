@@ -9,15 +9,13 @@ if [[ "$1" = "install" ]]; then
     exit 0
 fi
 
-tmp=$(mktemp)
-git diff > $tmp
-git apply --allow-empty -R $tmp
+git diff > unstaged.patch
+git apply --allow-empty -R unstaged.patch
 
 $HOME/.local/bin/poe pre-commit
 code=$?
 
 git add -u
-git apply --allow-empty $tmp
-rm $tmp
+git apply --allow-empty unstaged.patch && rm unstaged.patch
 
 exit $code
