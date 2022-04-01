@@ -69,10 +69,12 @@ async def check_message(message: Message) -> None:
         return
 
     delete_message = False
+    bad_word_ids: set = set()
     for regex in violation_regexs:
-        if (bad_word := await db.get(BadWord, regex=regex)) and bad_word.delete:
-            delete_message = True
-            break
+        if bad_word := await db.get(BadWord, regex=regex):
+            if bad_word.delete:
+                delete_message = True
+            bad_word_ids.add(str(bad_word.id))
 
     was_deleted = False
     if delete_message:
@@ -86,23 +88,26 @@ async def check_message(message: Message) -> None:
     else:
         log_text = t.log_forbidden_posted
 
-    await send_alert(
-        message.guild,
-        log_text(
-            f"{author.mention} (`@{author}`, {author.id})",
-            message.jump_url,
-            message.channel.mention,
-            ", ".join(violation_matches),
-        ),
-    )
+    last_posted = await BadWordPost.last_posted(message.id, violation_matches)
+    if last_posted[1] and not last_posted[0]:
+        await send_alert(
+            message.guild,
+            log_text(
+                f"{author.mention} (`@{author}`, {author.id})",
+                message.jump_url,
+                message.channel.mention,
+                ", ".join(last_posted[1]),
+                ", ".join(sorted(bad_word_ids))
+            ),
+        )
 
-    for post in violation_matches:
-        await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
+        for post in violation_matches:
+            await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
 
-    if was_deleted:
-        raise StopEventHandling
+        if was_deleted:
+            raise StopEventHandling
 
-    await message.add_reaction(name_to_emoji["warning"])
+        await message.add_reaction(name_to_emoji["warning"])
 
 
 class ContentFilterCog(Cog, name="Content Filter"):

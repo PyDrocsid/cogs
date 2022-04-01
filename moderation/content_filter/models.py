@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime
 from typing import Union
 
@@ -85,3 +86,25 @@ class BadWordPost(Base):
         )
         await db.add(row)
         return row
+
+    @staticmethod
+    async def last_posted(message_id: int, matches: set) -> tuple[bool, list]:
+        last_matches: list = []
+
+        if out := await redis.lrange(f"content_filter:alert:{message_id}", 0, -1):
+            last_matches = [x for x in out if x]
+
+        if Counter(last_matches) == Counter(matches):
+            return True, []
+        else:
+            new_matches = sorted(set([match for match in matches if match not in last_matches]))
+            async with redis.pipeline() as pipe:
+                for match in new_matches:
+                    await pipe.lpush(f"content_filter:alert:{message_id}", match)
+
+                await pipe.lpush(f"content_filter:alert:{message_id}", "")
+                await pipe.expire(f"content_filter:alert:{message_id}", CACHE_TTL)
+
+                await pipe.execute()
+
+            return False, new_matches

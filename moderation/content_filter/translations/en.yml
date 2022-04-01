@@ -29,11 +29,14 @@ log_description_updated: "**Description** was **updated** for regex *{}*\nfrom: 
 log_regex_updated: "**Regex** was **updated**\nfrom: `{}`\nto: `{}`"
 log_delete_updated: "**Delete** was set to **{}** for `{}`"
 log_forbidden_posted: |
-  {} sent a **[message]({})** in {}, which contained one or more **forbidden expressions**: {} (no delete required)
+  {} sent a **[message]({})** in {}, which contained one or more new **forbidden expressions**: `{}` (no delete required)
+  All matched ID's: `{}`
 log_forbidden_posted_deleted: |
-  {}'s **[message]({})** in {} was **deleted** because it contained one or more **forbidden expressions**: {}
+  {}'s **[message]({})** in {} was **deleted** because it contained one or more new **forbidden expressions**: `{}`
+  All matched ID's: `{}`
 log_forbidden_posted_not_deleted: |
-  {} sent a **[message]({})** in {}, which contained one or more **forbidden expressions**: {}
+  {} sent a **[message]({})** in {}, which contained one or more new **forbidden expressions**: `{}`
+  All matched ID's: `{}`
   **The message could not be deleted** because I do not have `manage_messages` permission in this channel.
 
 bad_word_list_header: "Blacklisted Expressions"
