@@ -97,7 +97,7 @@ async def check_message(message: Message) -> None:
                 message.jump_url,
                 message.channel.mention,
                 ", ".join(last_posted[1]),
-                ", ".join(sorted(bad_word_ids))
+                ", ".join(sorted(bad_word_ids)),
             ),
         )
 
