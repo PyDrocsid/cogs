@@ -9,7 +9,9 @@ from PyDrocsid.command import confirm, docs, add_reactions
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
+from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.events import StopEventHandling
+from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from .colors import Colors
 from .models import BadWord, BadWordPost, sync_redis
@@ -48,6 +50,18 @@ def findall(regex: str, text: str) -> list[str]:
     return [match[0] for match in re.finditer(regex, text)]
 
 
+async def get_new_matches(message_id: int, matches: set[str]) -> set[str]:
+    new_matches = matches - set(await redis.lrange(key := f"content_filter:alert:{message_id}", 0, -1))
+
+    async with redis.pipeline() as pipe:
+        for match in new_matches:
+            await pipe.lpush(key, match)
+        await pipe.expire(key, CACHE_TTL)
+        await pipe.execute()
+
+    return new_matches
+
+
 async def check_message(message: Message) -> None:
     author = message.author
 
@@ -68,13 +82,9 @@ async def check_message(message: Message) -> None:
     if not violation_regexs:
         return
 
-    delete_message = False
-    bad_word_ids: set = set()
-    for regex in violation_regexs:
-        if bad_word := await db.get(BadWord, regex=regex):
-            if bad_word.delete:
-                delete_message = True
-            bad_word_ids.add(str(bad_word.id))
+    bad_words: list[BadWord] = await db.all(select(BadWord).where(BadWord.regex.in_(violation_regexs)))
+    bad_word_ids: set[int] = {bad_word.id for bad_word in bad_words}
+    delete_message = any(bad_word.delete for bad_word in bad_words)
 
     was_deleted = False
     if delete_message:
@@ -88,26 +98,26 @@ async def check_message(message: Message) -> None:
     else:
         log_text = t.log_forbidden_posted
 
-    last_posted = await BadWordPost.last_posted(message.id, violation_matches)
-    if last_posted[1] and not last_posted[0]:
+    new_matches: set[str] = await get_new_matches(message.id, violation_matches)
+    if new_matches:
         await send_alert(
             message.guild,
             log_text(
                 f"{author.mention} (`@{author}`, {author.id})",
                 message.jump_url,
                 message.channel.mention,
-                ", ".join(last_posted[1]),
-                ", ".join(sorted(bad_word_ids)),
+                ", ".join(sorted(new_matches)),
+                ", ".join(map(str, sorted(bad_word_ids))),
             ),
         )
 
-        for post in violation_matches:
-            await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
+    for post in new_matches:
+        await BadWordPost.create(author.id, author.name, message.channel.id, post, was_deleted)
 
-        if was_deleted:
-            raise StopEventHandling
+    if was_deleted:
+        raise StopEventHandling
 
-        await message.add_reaction(name_to_emoji["warning"])
+    await message.add_reaction(name_to_emoji["warning"])
 
 
 class ContentFilterCog(Cog, name="Content Filter"):
