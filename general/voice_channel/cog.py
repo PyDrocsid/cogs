@@ -156,6 +156,7 @@ async def safe_create_voice_channel(
 
     ov = overwrites.pop(user_role, None)
     voice_channel: VoiceChannel = await category.create_voice_channel(name, overwrites=overwrites)
+
     if ov:
         overwrites[user_role] = ov
         await voice_channel.edit(overwrites=overwrites)
@@ -171,6 +172,7 @@ class ControlMessage(View):
         self.message = message
 
         _, locked, hidden = self.get_status()
+
         self.children: list[Button]
         self.children[2].label = t.buttons["unlock" if locked else "lock"]
         self.children[2].emoji = name_to_emoji["unlock" if locked else "lock"]
