@@ -60,10 +60,14 @@ async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]
 
         data = (await response.json())["data"]
 
+    filter_nsfw = await RedditSettings.filter_nsfw.get()
     posts: List[dict] = []
     for post in data["children"]:
         # t3 = link
         if post["kind"] == "t3" and post["data"].get("post_hint") == "image":
+            if post["data"]["over_18"] and filter_nsfw:
+                continue
+
             posts.append(
                 {
                     "id": post["data"]["id"],
@@ -162,6 +166,9 @@ class RedditCog(Cog, name="Reddit"):
         limit = await RedditSettings.limit.get()
         embed.add_field(name=t.limit, value=str(limit))
 
+        filter_nsfw = await RedditSettings.filter_nsfw.get()
+        embed.add_field(name=t.nsfw_filter, value=tg.enabled if filter_nsfw else tg.disabled, inline=False)
+
         out = []
         async for reddit_channel in await db.stream(select(RedditChannel)):  # type: RedditChannel
             text_channel: Optional[TextChannel] = self.bot.get_channel(reddit_channel.channel)
@@ -241,6 +248,23 @@ class RedditCog(Cog, name="Reddit"):
         embed = Embed(title=t.reddit, colour=Colors.Reddit, description=t.reddit_limit_set)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_reddit_limit_set(limit))
+
+    @reddit.command(name="nsfw_filter", aliases=["nsfw"])
+    @RedditPermission.write.check
+    async def reddit_nsfw_filter(self, ctx: Context, enabled: bool):
+        """
+        enable/disable nsfw filter for posts
+        """
+
+        embed = Embed(title=t.reddit, colour=Colors.Reddit)
+        await RedditSettings.filter_nsfw.set(enabled)
+        if enabled:
+            embed.description = t.nsfw_filter_now_enabled
+            await send_to_changelog(ctx.guild, t.log_nsfw_filter_now_enabled)
+        else:
+            embed.description = t.nsfw_filter_now_disabled
+            await send_to_changelog(ctx.guild, t.log_nsfw_filter_now_disabled)
+        await reply(ctx, embed=embed)
 
     @reddit.command(name="trigger", aliases=["t"])
     @RedditPermission.trigger.check
