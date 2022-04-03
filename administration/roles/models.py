@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Union
 
-from sqlalchemy import Column, BigInteger, Boolean
+from sqlalchemy import BigInteger, Boolean, Column
 
-from PyDrocsid.database import db, select
+from PyDrocsid.database import Base, db, select
 
 
-class RoleAuth(db.Base):
+class RoleAuth(Base):
     __tablename__ = "role_auth"
 
     source: Union[Column, int] = Column(BigInteger, primary_key=True)
@@ -23,7 +23,7 @@ class RoleAuth(db.Base):
         return await db.exists(select(RoleAuth).filter_by(source=source, target=target))
 
 
-class PermaRole(db.Base):
+class PermaRole(Base):
     __tablename__ = "perma_role"
 
     member_id: Union[Column, int] = Column(BigInteger, primary_key=True)

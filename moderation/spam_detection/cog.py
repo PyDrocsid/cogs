@@ -2,17 +2,19 @@ import time
 
 from discord import Embed, Member, VoiceState
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, UserInputError
+from discord.ext.commands import Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .permissions import SpamDetectionPermission
 from .settings import SpamDetectionSettings
-from ...pubsub import send_to_changelog, send_alert
+from ...pubsub import send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.spam_detection
@@ -33,11 +35,11 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         if max_hops <= 0:
             return
 
-        ts = int(time.time() * 1000)
-        await redis.zremrangebyscore(key := f"channel_hops:user={member.id}", max=ts - 60 * 1000)
-        await redis.zadd(key, ts, ts)
+        ts = time.time()
+        await redis.zremrangebyscore(key := f"channel_hops:user={member.id}", min="-inf", max=ts - 60)
+        await redis.zadd(key, {str(ts): ts})
         await redis.expire(key, 60)
-        hops: int = await redis.zcount(key)
+        hops: int = await redis.zcount(key, "-inf", "inf")
 
         if hops <= max_hops:
             return
@@ -50,7 +52,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         embed = Embed(title=t.channel_hopping, color=Colors.SpamDetection, description=t.hops_in_last_minute(cnt=hops))
         embed.add_field(name=tg.member, value=member.mention)
         embed.add_field(name=t.member_id, value=member.id)
-        embed.set_author(name=str(member), icon_url=member.avatar_url)
+        embed.set_author(name=str(member), icon_url=member.display_avatar.url)
         if after.channel:
             embed.add_field(name=t.current_channel, value=after.channel.name)
 

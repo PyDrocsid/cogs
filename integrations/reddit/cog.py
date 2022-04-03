@@ -1,24 +1,27 @@
+import re
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
 from aiohttp import ClientSession
 from discord import Embed, TextChannel
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.config import Config
-from PyDrocsid.database import db, select, filter_by, db_wrapper
+from PyDrocsid.database import db, db_wrapper, filter_by, select
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions
+
 from .colors import Colors
-from .models import RedditPost, RedditChannel
+from .models import RedditChannel, RedditPost
 from .permissions import RedditPermission
 from .settings import RedditSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert
+from ...pubsub import send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.reddit
@@ -26,25 +29,26 @@ t = t.reddit
 logger = get_logger(__name__)
 
 
-async def exists_subreddit(subreddit: str) -> bool:
+def remove_prefix(subreddit: str) -> str:
+    return re.sub("^(/r/|r/)", "", subreddit)
+
+
+async def get_subreddit_name(subreddit: str) -> str | None:
+    subreddit = remove_prefix(subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
         headers={"User-agent": f"{Config.NAME}/{Config.VERSION}"},
+        allow_redirects=False,
     ) as response:
-        return response.ok
+        if response.status != 200:
+            return None
 
-
-async def get_subreddit_name(subreddit: str) -> str:
-    async with ClientSession() as session, session.get(
-        # raw_json=1 as parameter to get unicode characters instead of html escape sequences
-        f"https://www.reddit.com/r/{subreddit}/about.json?raw_json=1",
-        headers={"User-agent": f"{Config.NAME}/{Config.VERSION}"},
-    ) as response:
         return (await response.json())["data"]["display_name"]
 
 
 async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]:
+    subreddit = remove_prefix(subreddit)
     async with ClientSession() as session, session.get(
         # raw_json=1 as parameter to get unicode characters instead of html escape sequences
         f"https://www.reddit.com/r/{subreddit}/hot.json?raw_json=1",
@@ -75,7 +79,7 @@ async def fetch_reddit_posts(subreddit: str, limit: int) -> Optional[List[dict]]
                     "permalink": post["data"]["permalink"],
                     "url": post["data"]["url"],
                     "subreddit": post["data"]["subreddit"],
-                },
+                }
             )
     return posts
 
@@ -184,12 +188,11 @@ class RedditCog(Cog, name="Reddit"):
         create a link between a subreddit and a channel
         """
 
-        if not await exists_subreddit(subreddit):
+        if not (subreddit := await get_subreddit_name(subreddit)):
             raise CommandError(t.subreddit_not_found)
 
         check_message_send_permissions(channel, check_embed=True)
 
-        subreddit = await get_subreddit_name(subreddit)
         if await db.exists(filter_by(RedditChannel, subreddit=subreddit, channel=channel.id)):
             raise CommandError(t.reddit_link_already_exists)
 
@@ -205,7 +208,7 @@ class RedditCog(Cog, name="Reddit"):
         remove a reddit link
         """
 
-        subreddit = await get_subreddit_name(subreddit)
+        subreddit = await get_subreddit_name(subreddit) or subreddit
         link: Optional[RedditChannel] = await db.get(RedditChannel, subreddit=subreddit, channel=channel.id)
         if link is None:
             raise CommandError(t.reddit_link_not_found)

@@ -5,44 +5,46 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Optional, Union
 
+from dateutil.relativedelta import relativedelta
+from discord import (
+    Embed,
+    Forbidden,
+    Guild,
+    HTTPException,
+    Member,
+    Message,
+    MessageType,
+    NotFound,
+    Role,
+    TextChannel,
+    User,
+)
+from discord.ext import commands
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only, max_concurrency
+from discord.utils import format_dt, snowflake_time, utcnow
+
 from PyDrocsid.async_thread import semaphore_gather
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, optional_permissions
+from PyDrocsid.command import optional_permissions, reply
 from PyDrocsid.config import Contributor
-from PyDrocsid.database import db, filter_by, db_wrapper, db_context
+from PyDrocsid.database import db, db_context, db_wrapper, filter_by
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.logger import get_logger
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from dateutil.relativedelta import relativedelta
-from discord import (
-    User,
-    NotFound,
-    Embed,
-    Guild,
-    Forbidden,
-    HTTPException,
-    Member,
-    Role,
-    Message,
-    MessageType,
-    TextChannel,
-)
-from discord.ext import commands
-from discord.ext.commands import Context, UserInputError, CommandError, max_concurrency, guild_only
-from discord.utils import snowflake_time
 
 from .colors import Colors
 from .models import Join, Leave, UsernameUpdate, Verification
 from .permissions import UserInfoPermission
 from ...pubsub import (
-    get_userlog_entries,
     get_user_info_entries,
     get_user_status_entries,
+    get_userlog_entries,
     revoke_verification,
     send_alert,
 )
+
 
 logger = get_logger(__name__)
 
@@ -62,9 +64,7 @@ def date_diff_to_str(date1: datetime, date2: datetime):
 
 
 async def get_user(
-    ctx: Context,
-    user: Optional[Union[User, int]],
-    permission: UserInfoPermission,
+    ctx: Context, user: Optional[Union[User, int]], permission: UserInfoPermission
 ) -> tuple[Union[User, int], int, bool]:
     arg_passed = len(ctx.message.content.strip(ctx.prefix).split()) >= 2
     if user is None:
@@ -122,7 +122,7 @@ class UserInfoCog(Cog, name="User Information"):
         asyncio.create_task(trigger_join_event())
 
         last_verification: Optional[Verification] = await db.first(
-            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
+            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc())
         )
         if not last_verification or not last_verification.accepted:
             return
@@ -151,9 +151,7 @@ class UserInfoCog(Cog, name="User Information"):
         for _ in range(10):
             async with db_context():
                 join: Optional[Join] = await db.get(
-                    Join,
-                    member=member.id,
-                    timestamp=member.joined_at.replace(microsecond=0),
+                    Join, member=member.id, timestamp=member.joined_at.replace(microsecond=0)
                 )
                 if not join or not join.join_msg_id or not join.join_msg_channel_id:
                     await asyncio.sleep(2)
@@ -187,7 +185,7 @@ class UserInfoCog(Cog, name="User Information"):
         asyncio.create_task(self.update_verification_reaction(member, add=True))
 
         last_verification: Optional[Verification] = await db.first(
-            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
+            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc())
         )
         if last_verification and last_verification.accepted:
             return
@@ -219,14 +217,14 @@ class UserInfoCog(Cog, name="User Information"):
         if isinstance(user, int):
             embed.set_author(name=str(user))
         else:
-            embed.set_author(name=f"{user} ({user_id})", icon_url=user.avatar_url)
+            embed.set_author(name=f"{user} ({user_id})", icon_url=user.display_avatar.url)
 
         for response in await get_user_info_entries(user_id):
             for name, value in response:
                 embed.add_field(name=name, value=value, inline=True)
 
         if (member := self.bot.guilds[0].get_member(user_id)) is not None:
-            status = t.member_since(member.joined_at.strftime("%d.%m.%Y %H:%M:%S"))
+            status = t.member_since(format_dt(member.joined_at))
         else:
             status = t.not_a_member
         embed.add_field(name=t.membership, value=status, inline=False)
@@ -259,7 +257,7 @@ class UserInfoCog(Cog, name="User Information"):
 
         join: Join
         async for join in await db.stream(filter_by(Join, member=user_id)):
-            out.append((join.timestamp, t.ulog.joined))
+            out.append((join.timestamp, t.ulog.joined(join.member_name)))
 
         leave: Leave
         async for leave in await db.stream(filter_by(Leave, member=user_id)):
@@ -294,13 +292,11 @@ class UserInfoCog(Cog, name="User Information"):
         if isinstance(user, int):
             embed.set_author(name=str(user))
         else:
-            embed.set_author(name=f"{user} ({user_id})", icon_url=user.avatar_url)
+            embed.set_author(name=f"{user} ({user_id})", icon_url=user.display_avatar.url)
         for row in out:
-            name = row[0].strftime("%d.%m.%Y %H:%M:%S")
+            name = format_dt(row[0], style="D") + " " + format_dt(row[0], style="T")
             value = row[1]
             embed.add_field(name=name, value=value, inline=False)
-
-        embed.set_footer(text=t.utc_note)
 
         if arg_passed:
             await send_long_embed(ctx, embed, paginate=True)
@@ -320,14 +316,14 @@ class UserInfoCog(Cog, name="User Information"):
 
         member = member or ctx.author
         verification: Optional[Verification] = await db.first(
-            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc()),
+            filter_by(Verification, member=member.id).order_by(Verification.timestamp.desc())
         )
         ts: datetime = verification.timestamp if verification else member.joined_at
 
         embed = Embed(
-            title=t.userinfo,
-            description=f"{member.mention} {date_diff_to_str(datetime.today(), ts)}",
+            title=t.userinfo, description=f"{member.mention} {date_diff_to_str(utcnow(), ts)}", color=Colors.joined
         )
+        embed.set_author(name=str(member), icon_url=member.display_avatar.url)
         await reply(ctx, embed=embed)
 
     @commands.command()
@@ -342,9 +338,7 @@ class UserInfoCog(Cog, name="User Information"):
         guild: Guild = ctx.guild
 
         embed = Embed(
-            title=t.init_join_log,
-            description=t.filling_join_log(cnt=len(guild.members)),
-            color=Colors.UserInfo,
+            title=t.init_join_log, description=t.filling_join_log(cnt=len(guild.members)), color=Colors.UserInfo
         )
         await reply(ctx, embed=embed)
 
@@ -353,7 +347,7 @@ class UserInfoCog(Cog, name="User Information"):
             await Join.update(member.id, str(member), member.joined_at)
 
             relevant_join: Optional[Join] = await db.first(
-                filter_by(Join, member=member.id).order_by(Join.timestamp.asc()),
+                filter_by(Join, member=member.id).order_by(Join.timestamp.asc())
             )
 
             if not relevant_join:
@@ -363,14 +357,7 @@ class UserInfoCog(Cog, name="User Information"):
             if await db.exists(filter_by(Verification, member=member.id, accepted=True, timestamp=timestamp)):
                 return
 
-            await db.add(
-                Verification(
-                    member=member.id,
-                    member_name=str(member),
-                    accepted=True,
-                    timestamp=timestamp,
-                ),
-            )
+            await db.add(Verification(member=member.id, member_name=str(member), accepted=True, timestamp=timestamp))
 
         ts = time.time()
         await semaphore_gather(50, *[update(m) for m in guild.members])

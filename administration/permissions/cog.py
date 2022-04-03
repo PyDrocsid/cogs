@@ -3,19 +3,21 @@ from typing import Optional
 
 from discord import Embed, Role
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, Converter, BadArgument, CommandError, UserInputError
+from discord.ext.commands import BadArgument, CommandError, Context, Converter, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.config import Config, get_subclasses_in_enabled_packages
 from PyDrocsid.embeds import send_long_embed
-from PyDrocsid.permission import BasePermissionLevel, BasePermission
+from PyDrocsid.permission import BasePermission, BasePermissionLevel
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .permissions import PermissionsPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
+
 
 tg = t.g
 t = t.permissions
@@ -35,13 +37,13 @@ async def list_permissions(ctx: Context, title: str, min_level: BasePermissionLe
     for permission, level in zip(permissions, levels):
         if min_level.level >= level.level:
             out.setdefault((level.level, level.description), []).append(
-                f"`{permission.fullname}` - {permission.description}",
+                f"`{permission.fullname}` - {permission.description}"
             )
 
     embed = Embed(title=title, colour=Colors.error)
     if not out:
         embed.description = t.no_permissions
-        await ctx.send(embed=embed)
+        await reply(ctx, embed=embed)
         return
 
     embed.colour = Colors.Permissions
@@ -104,11 +106,7 @@ class PermissionsCog(Cog, name="Permissions"):
         await permission.set(level)
 
         description = permission.fullname, level.description
-        embed = Embed(
-            title=t.permissions_title,
-            colour=Colors.Permissions,
-            description=t.permission_set(*description),
-        )
+        embed = Embed(title=t.permissions_title, colour=Colors.Permissions, description=t.permission_set(*description))
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_permission_set(*description))
 

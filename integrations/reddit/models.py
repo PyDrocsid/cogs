@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Union
 
-from sqlalchemy import Column, String, BigInteger, DateTime
+from discord.utils import utcnow
+from sqlalchemy import BigInteger, Column, String
 
-from PyDrocsid.database import db, delete, filter_by
+from PyDrocsid.database import Base, UTCDateTime, db, delete, filter_by
 
 
-class RedditChannel(db.Base):
+class RedditChannel(Base):
     __tablename__ = "reddit_channel"
 
     subreddit: Union[Column, str] = Column(String(32), primary_key=True)
@@ -21,21 +22,21 @@ class RedditChannel(db.Base):
         return row
 
 
-class RedditPost(db.Base):
+class RedditPost(Base):
     __tablename__ = "reddit_post"
 
     post_id: Union[Column, str] = Column(String(16), primary_key=True, unique=True)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
     async def create(post_id: str) -> RedditPost:
-        row = RedditPost(post_id=post_id, timestamp=datetime.utcnow())
+        row = RedditPost(post_id=post_id, timestamp=utcnow())
         await db.add(row)
         return row
 
     @staticmethod
     async def clean():
-        drop_before_timestamp = datetime.utcnow() - timedelta(weeks=1)
+        drop_before_timestamp = utcnow() - timedelta(weeks=1)
         await db.exec(delete(RedditPost).filter(RedditPost.timestamp < drop_before_timestamp))
 
     @staticmethod

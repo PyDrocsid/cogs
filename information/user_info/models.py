@@ -1,25 +1,26 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Union, Optional
+from typing import Optional, Union
 
-from sqlalchemy import Column, Integer, BigInteger, DateTime, Text, Boolean
+from discord.utils import utcnow
+from sqlalchemy import BigInteger, Boolean, Column, Integer, Text
 
-from PyDrocsid.database import db, filter_by
+from PyDrocsid.database import Base, UTCDateTime, db, filter_by
 
 
-class Join(db.Base):
+class Join(Base):
     __tablename__ = "join"
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    member_name: Union[Column, str] = Column(Text)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
     join_msg_channel_id: Union[Column, int] = Column(BigInteger, nullable=True)
     join_msg_id: Union[Column, int] = Column(BigInteger, nullable=True)
 
     @staticmethod
     async def create(member: int, member_name: str, timestamp: Optional[datetime] = None) -> Join:
-        row = Join(member=member, member_name=member_name, timestamp=timestamp or datetime.utcnow())
+        row = Join(member=member, member_name=member_name, timestamp=timestamp or utcnow())
         await db.add(row)
         await db.session.flush()
         return row
@@ -32,54 +33,48 @@ class Join(db.Base):
         await Join.create(member, member_name, joined_at)
 
 
-class Leave(db.Base):
+class Leave(Base):
     __tablename__ = "leave"
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    member_name: Union[Column, str] = Column(Text)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
     async def create(member: int, member_name: str) -> Leave:
-        row = Leave(member=member, member_name=member_name, timestamp=datetime.utcnow())
+        row = Leave(member=member, member_name=member_name, timestamp=utcnow())
         await db.add(row)
         return row
 
 
-class UsernameUpdate(db.Base):
+class UsernameUpdate(Base):
     __tablename__ = "username_update"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    new_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    member_name: Union[Column, str] = Column(Text)
+    new_name: Union[Column, str] = Column(Text)
     nick: Union[Column, bool] = Column(Boolean)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
     async def create(member: int, member_name: str, new_name: str, nick: bool) -> UsernameUpdate:
-        row = UsernameUpdate(
-            member=member,
-            member_name=member_name,
-            new_name=new_name,
-            nick=nick,
-            timestamp=datetime.utcnow(),
-        )
+        row = UsernameUpdate(member=member, member_name=member_name, new_name=new_name, nick=nick, timestamp=utcnow())
         await db.add(row)
         return row
 
 
-class Verification(db.Base):
+class Verification(Base):
     __tablename__ = "verification"
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+    member_name: Union[Column, str] = Column(Text)
     accepted: Union[Column, bool] = Column(Boolean)
-    timestamp: Union[Column, datetime] = Column(DateTime)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
     async def create(member: int, member_name: str, accepted: bool) -> Verification:
-        row = Verification(member=member, member_name=member_name, accepted=accepted, timestamp=datetime.utcnow())
+        row = Verification(member=member, member_name=member_name, accepted=accepted, timestamp=utcnow())
         await db.add(row)
         return row

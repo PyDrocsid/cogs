@@ -7,16 +7,16 @@ from typing import Optional
 
 import requests
 from aiohttp import ClientSession
-from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException, AllowedMentions, User
+from discord import AllowedMentions, Embed, Forbidden, HTTPException, NotFound, TextChannel, User
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, UserInputError, Converter, CommandError, Command
+from discord.ext.commands import Command, CommandError, Context, Converter, UserInputError, guild_only
 from urllib3.exceptions import LocationParseError
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs, confirm, no_documentation, add_reactions
+from PyDrocsid.command import add_reactions, confirm, docs, no_documentation, reply
 from PyDrocsid.command_edit import link_response
-from PyDrocsid.config import Contributor, Config
+from PyDrocsid.config import Config, Contributor
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.logger import get_logger
@@ -24,11 +24,13 @@ from PyDrocsid.permission import BasePermissionLevel
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions
+
 from .colors import Colors
-from .models import CustomCommand, Alias
+from .models import Alias, CustomCommand
 from .permissions import CustomCommandsPermission
-from ...administration.permissions.cog import PermissionsCog, PermissionLevelConverter
-from ...pubsub import send_to_changelog, send_alert
+from ...administration.permissions.cog import PermissionLevelConverter, PermissionsCog
+from ...pubsub import send_alert, send_to_changelog
+
 
 logger = get_logger(__name__)
 
@@ -80,10 +82,7 @@ async def send_custom_command_message(
         conf_embed = Embed(title=t.confirmation, description=t.confirm(custom_command.name, channel.mention))
         async with confirm(ctx, conf_embed) as (result, msg):
             if not result:
-                conf_embed.description += "\n\n" + t.canceled
                 return
-
-            conf_embed.description += "\n\n" + t.confirmed
             if msg:
                 await msg.delete(delay=5)
 
@@ -226,8 +225,7 @@ async def create_discohook_url(command: CustomCommand) -> Optional[str]:
     data = json.dumps({"messages": [{"data": msg} for msg in json.loads(command.data)]})
     url = "https://discohook.org/?data=" + base64.urlsafe_b64encode(data.encode()).decode().rstrip("=")
     async with ClientSession() as session, session.post(
-        "https://share.discohook.app/create",
-        json={"url": url},
+        "https://share.discohook.app/create", json={"url": url}
     ) as response:
         url: Optional[str] = (await response.json()).get("url")
         if not response.ok or not url:
@@ -257,10 +255,7 @@ async def ask_cc_test(ctx: Context, command: CustomCommand):
     )
     async with confirm(ctx, embed) as (result, _):
         if not result:
-            embed.description += "\n\n" + t.canceled
             return
-
-        embed.description += "\n\n" + t.confirmed
 
     await send_custom_command_message(ctx, command, ctx.channel, test=True)
 
@@ -379,8 +374,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
         embed.add_field(name=t.user_parameter, value=tg.enabled if command.user_parameter else tg.disabled)
         embed.add_field(
-            name=t.requires_confirmation,
-            value=tg.enabled if command.requires_confirmation else tg.disabled,
+            name=t.requires_confirmation, value=tg.enabled if command.requires_confirmation else tg.disabled
         )
         embed.add_field(name=t.delete_command, value=tg.enabled if command.delete_command else tg.disabled)
 
@@ -449,11 +443,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="description", aliases=["desc", "d"])
     @docs(t.commands.edit.description)
     async def custom_commands_edit_description(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        *,
-        description: str = None,
+        self, ctx: Context, command: CustomCommandConverter, *, description: str = None
     ):
         command: CustomCommand
 
@@ -471,10 +461,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="channel_parameter", aliases=["cp"])
     @docs(t.commands.edit.channel_parameter_enabled)
     async def custom_commands_edit_channel_parameter(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        enabled: bool,
+        self, ctx: Context, command: CustomCommandConverter, enabled: bool
     ):
         command: CustomCommand
 
@@ -494,11 +481,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="channel", aliases=["c"])
     @docs(t.commands.edit.channel)
     async def custom_commands_edit_channel(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        *,
-        channel: TextChannel = None,
+        self, ctx: Context, command: CustomCommandConverter, *, channel: TextChannel = None
     ):
         command: CustomCommand
 
@@ -537,10 +520,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="permission_level", aliases=["pl"])
     @docs(t.commands.edit.permission_level)
     async def custom_commands_edit_permission_level(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        level: PermissionLevelConverter,
+        self, ctx: Context, command: CustomCommandConverter, level: PermissionLevelConverter
     ):
         command: CustomCommand
         level: BasePermissionLevel
@@ -556,10 +536,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
     @custom_commands_edit.command(name="requires_confirmation", aliases=["rc"])
     @docs(t.commands.edit.requires_confirmation)
     async def custom_commands_edit_requires_confirmation(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        enabled: bool,
+        self, ctx: Context, command: CustomCommandConverter, enabled: bool
     ):
         command: CustomCommand
 
@@ -578,12 +555,7 @@ class CustomCommandsCog(Cog, name="Custom Commands"):
 
     @custom_commands_edit.command(name="user_parameter", aliases=["up"])
     @docs(t.commands.edit.user_parameter)
-    async def custom_commands_edit_user_parameter(
-        self,
-        ctx: Context,
-        command: CustomCommandConverter,
-        enabled: bool,
-    ):
+    async def custom_commands_edit_user_parameter(self, ctx: Context, command: CustomCommandConverter, enabled: bool):
         command: CustomCommand
 
         if command.user_parameter and enabled:

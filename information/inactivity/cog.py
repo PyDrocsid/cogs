@@ -2,21 +2,24 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 
-from discord import Message, Guild, Member, Embed, Role, Permissions, NotFound, TextChannel, Status
+from discord import Embed, Guild, Member, Message, NotFound, Permissions, Role, Status, TextChannel
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, max_concurrency
+from discord.ext.commands import CommandError, Context, guild_only, max_concurrency
+from discord.utils import format_dt, utcnow
 
-from PyDrocsid.async_thread import semaphore_gather, run_as_task
+from PyDrocsid.async_thread import run_as_task, semaphore_gather
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, optional_permissions
+from PyDrocsid.command import optional_permissions, reply
 from PyDrocsid.config import Contributor
 from PyDrocsid.database import db, db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
+
 from .models import Activity
 from .permissions import InactivityPermission
 from .settings import InactivitySettings
-from ...pubsub import ignore_message_edit, send_to_changelog, get_user_status_entries
+from ...pubsub import get_user_status_entries, ignore_message_edit, send_to_changelog
+
 
 tg = t.g
 t = t.inactivity
@@ -35,7 +38,7 @@ def status_icon(status: Status) -> str:
 async def scan(ctx: Context, days: int):
     async def update_msg(m: Message, content):
         embed.description = content
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = utcnow()
         await ignore_message_edit(m)
         try:
             await m.edit(embed=embed)
@@ -43,7 +46,7 @@ async def scan(ctx: Context, days: int):
             return await reply(ctx, embed=embed)
         return m
 
-    embed = Embed(title=t.scanning, timestamp=datetime.utcnow())
+    embed = Embed(title=t.scanning, timestamp=utcnow())
     message: list[Message] = [await reply(ctx, embed=embed)]
     guild: Guild = ctx.guild
     members: dict[Member, datetime] = {}
@@ -54,7 +57,7 @@ async def scan(ctx: Context, days: int):
         while len(completed) < len(channels):
             content = t.scanning_channel(len(completed), len(channels), cnt=len(active))
             for a, d in active.items():
-                channel_age = (datetime.utcnow() - a.created_at).days
+                channel_age = (utcnow() - a.created_at).days
                 content += f"\n:small_orange_diamond: {a.mention} ({d} / {min(channel_age, days)})"
             message[0] = await update_msg(message[0], content)
             await asyncio.sleep(2)
@@ -63,7 +66,7 @@ async def scan(ctx: Context, days: int):
         active[c] = 0
 
         async for msg in c.history(limit=None, oldest_first=False):
-            s = (datetime.utcnow() - msg.created_at).total_seconds()
+            s = (utcnow() - msg.created_at).total_seconds()
             if s > days * 24 * 60 * 60:
                 break
             members[msg.author] = max(members.get(msg.author, msg.created_at), msg.created_at)
@@ -89,7 +92,7 @@ async def scan(ctx: Context, days: int):
     embed = Embed(title=t.updating_members)
     message: Message = await reply(ctx, embed=embed)
 
-    await semaphore_gather(50, *[Activity.update(m.id, ts) for m, ts in members.items()])
+    await semaphore_gather(50, *[db_wrapper(Activity.update)(m.id, ts) for m, ts in members.items()])
 
     await update_msg(message, t.updated_members(cnt=len(members)))
 
@@ -129,10 +132,10 @@ class InactivityCog(Cog, name="Inactivity"):
 
         if activity is None:
             status = t.status.inactive
-        elif (days := (datetime.utcnow() - activity.timestamp).days) >= inactive_days:
-            status = t.status.inactive_since(activity.timestamp.strftime("%d.%m.%Y %H:%M:%S"))
+        elif (utcnow() - activity.timestamp).days >= inactive_days:
+            status = t.status.inactive_since(format_dt(activity.timestamp, style="R"))
         else:
-            status = t.status.active(cnt=days)
+            status = t.status.active(format_dt(activity.timestamp, style="R"))
 
         return [(t.activity, status)]
 
@@ -153,7 +156,7 @@ class InactivityCog(Cog, name="Inactivity"):
         elif days not in range(1, 10001):
             raise CommandError(tg.invalid_duration)
 
-        now = datetime.utcnow()
+        now = utcnow()
 
         @db_wrapper
         async def load_member(m: Member) -> tuple[Member, Optional[datetime]]:
@@ -177,11 +180,8 @@ class InactivityCog(Cog, name="Inactivity"):
             else:
                 out.append(
                     t.user_inactive_since(
-                        status_icon(member.status),
-                        member.mention,
-                        f"@{member}",
-                        timestamp.strftime("%d.%m.%Y %H:%M:%S"),
-                    ),
+                        status_icon(member.status), member.mention, f"@{member}", format_dt(timestamp, style="R")
+                    )
                 )
 
         embed = Embed(title=t.inactive_users, colour=0x256BE6)

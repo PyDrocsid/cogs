@@ -1,18 +1,21 @@
 from typing import Optional
 
-from discord import Member, Embed, Role
+from discord import Embed, Member, Role
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, UserInputError, CommandError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply
 from PyDrocsid.config import Contributor
+from PyDrocsid.embeds import send_long_embed
+from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
+
 from .colors import Colors
 from .models import AutoRole
 from .permissions import AutoRolePermission
 from ...pubsub import send_to_changelog
+
 
 tg = t.g
 t = t.autorole
@@ -71,7 +74,7 @@ class AutoRoleCog(Cog, name="AutoRole"):
             embed.colour = Colors.error
         else:
             embed.description = "\n".join(out)
-        await ctx.send(embed=embed)
+        await send_long_embed(ctx, embed)
 
     @autorole.command(name="add", aliases=["a", "+"])
     @AutoRolePermission.write.check
@@ -86,7 +89,7 @@ class AutoRoleCog(Cog, name="AutoRole"):
         check_role_assignable(role)
 
         await AutoRole.add(role.id)
-        await reply(ctx, t.ar_added)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
         await send_to_changelog(ctx.guild, t.log_ar_added(role))
 
     @autorole.command(name="remove", aliases=["r", "del", "d", "-"])
@@ -100,5 +103,5 @@ class AutoRoleCog(Cog, name="AutoRole"):
             raise CommandError(t.ar_not_set)
 
         await AutoRole.remove(role.id)
-        await reply(ctx, t.ar_removed)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
         await send_to_changelog(ctx.guild, t.log_ar_removed(role))

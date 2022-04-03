@@ -1,15 +1,19 @@
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
-from discord import User, Forbidden
+from discord import Forbidden, User
 from discord.ext import tasks
+from discord.utils import format_dt, utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
 from PyDrocsid.environment import OWNER_ID
 from PyDrocsid.translations import t
 from PyDrocsid.util import send_editable_log
+
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.heartbeat
@@ -36,8 +40,9 @@ class HeartbeatCog(Cog, name="Heartbeat"):
                 t.online_status,
                 t.status_description(Config.NAME, Config.VERSION),
                 t.heartbeat,
-                datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S UTC"),
+                format_dt(now := utcnow(), style="D") + " " + format_dt(now, style="T"),
             )
+            Path("health").write_text(str(int(datetime.now().timestamp())))
         except Forbidden:
             pass
 
@@ -49,7 +54,7 @@ class HeartbeatCog(Cog, name="Heartbeat"):
                     t.online_status,
                     t.status_description(Config.NAME, Config.VERSION),
                     t.logged_in,
-                    datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S UTC"),
+                    format_dt(now := utcnow(), style="D") + " " + format_dt(now, style="T"),
                     force_resend=True,
                     force_new_embed=not self.initialized,
                 )

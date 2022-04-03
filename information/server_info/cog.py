@@ -1,15 +1,17 @@
 from typing import List
 
-from discord import Embed, Guild, Status, Member
+from discord import Embed, Guild, Member, Status
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, UserInputError
+from discord.ext.commands import Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.server_info
@@ -35,7 +37,8 @@ class ServerInfoCog(Cog, name="Server Information"):
 
         guild: Guild = ctx.guild
         embed = Embed(title=guild.name, description=t.info_description, color=Colors.ServerInformation)
-        embed.set_thumbnail(url=guild.icon_url)
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon.url)
         created = guild.created_at.date()
         embed.add_field(name=t.creation_date, value=f"{created.day}.{created.month}.{created.year}")
         online_count = sum([m.status != Status.offline for m in guild.members])
@@ -70,18 +73,16 @@ class ServerInfoCog(Cog, name="Server Information"):
         if not cnt:
             embed.colour = Colors.error
             embed.description = t.no_bots
-            await ctx.send(embed=embed)
+            await reply(ctx, embed=embed)
             return
 
         if cnt := len(online):
             embed.add_field(
-                name=t.online(cnt=cnt),
-                value="\n".join(":small_orange_diamond: " + m.mention for m in online),
+                name=t.online(cnt=cnt), value="\n".join(":small_orange_diamond: " + m.mention for m in online)
             )
         if cnt := len(offline):
             embed.add_field(
-                name=t.offline(cnt=cnt),
-                value="\n".join(":small_blue_diamond: " + m.mention for m in offline),
+                name=t.offline(cnt=cnt), value="\n".join(":small_blue_diamond: " + m.mention for m in offline)
             )
 
         await send_long_embed(ctx, embed=embed)

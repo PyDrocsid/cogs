@@ -1,14 +1,15 @@
 # MediaOnly
 
-This cog contains the `mediaonly` command to set up and manage channels only pictures can be sent to.
+Contains the `mediaonly` command to set up and manage channels only pictures can be sent to.
 
 
-## `list`
+## `mediaonly`
 
-The `list` subcommand shows a list of all media-only channels.
+Contains subcommands to manage media-only channels. <br>
+If no subcommand is given, this command shows a list of all media-only channels.
 
 ```css
-.mediaonly [list|l|?]
+.[mediaonly|mo]
 ```
 
 Required Permissions:
@@ -16,17 +17,19 @@ Required Permissions:
 - `mediaonly.read`
 
 
-## `add`
+### `add`
 
-The `add` subcommand sets the media-only flag for a given text channel.
+Sets the media-only flag for a given text channel.
 
 ```css
 .mediaonly [add|a|+] <channel>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel|
+Arguments:
+
+| Argument  | Required                  | Description |
+|:---------:|:-------------------------:|:------------|
+| `channel` | :fontawesome-solid-check: | The channel |
 
 Required Permissions:
 
@@ -37,17 +40,19 @@ Required Permissions:
     Responses to [slash commands](https://blog.discord.com/slash-commands-are-here-8db0a385d9e6){target=_blank} are ignored by the bot, so you should disable slash commands manually in media-only channels.
 
 
-## `remove`
+### `remove`
 
-The `remove` subcommand removes the media-only flag from a given text channel.
+Removes the media-only flag from a given text channel.
 
 ```css
 .mediaonly [remove|del|r|d|-] <channel>
 ```
 
-|Argument|Required|Description|
-|:------:|:------:|:----------|
-|`channel`|:heavy_check_mark:|The channel|
+Arguments:
+
+| Argument  | Required                  | Description |
+|:---------:|:-------------------------:|:------------|
+| `channel` | :fontawesome-solid-check: | The channel |
 
 Required Permissions:
 

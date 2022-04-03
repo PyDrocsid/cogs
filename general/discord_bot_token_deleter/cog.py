@@ -3,13 +3,15 @@ import binascii
 import re
 
 from aiohttp import ClientSession
-from discord import Message, Embed, Forbidden
+from discord import Embed, Forbidden, Message
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.material_colors import MaterialColors
 from PyDrocsid.translations import t
+
 from ...contributor import Contributor
 from ...pubsub import send_alert
+
 
 tg = t.g
 t = t.discord_bot_token_deleter
@@ -33,8 +35,7 @@ class DiscordBotTokenDeleterCog(Cog, name="Discord Bot Token Deleter"):
                 continue
 
             async with ClientSession() as session, session.get(
-                "https://discord.com/api/users/@me",
-                headers={"Authorization": f"Bot {match.group(0)}"},
+                "https://discord.com/api/users/@me", headers={"Authorization": f"Bot {match.group(0)}"}
             ) as response:
                 if response.ok:
                     break

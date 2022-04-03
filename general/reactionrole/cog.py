@@ -1,23 +1,25 @@
-from typing import Optional, Tuple, Dict, Set
+from typing import Dict, Optional, Set, Tuple
 
-from discord import Message, Role, PartialEmoji, TextChannel, Member, NotFound, Embed, HTTPException, Forbidden
+from discord import Embed, Forbidden, HTTPException, Member, Message, NotFound, PartialEmoji, Role, TextChannel
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs, add_reactions
+from PyDrocsid.command import add_reactions, docs, reply
 from PyDrocsid.converter import EmojiConverter
-from PyDrocsid.database import db, select, filter_by
+from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.logger import get_logger
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
+
 from .colors import Colors
 from .models import ReactionRole
 from .permissions import ReactionRolePermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
+
 
 tg = t.g
 t = t.reactionrole
@@ -56,8 +58,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
                 await member.add_roles(role)
         except (Forbidden, HTTPException):
             raise PermissionError(
-                message.guild,
-                t.manage_role_error(role=role, member=member, message=message, emoji=emoji),
+                message.guild, t.manage_role_error(role=role, member=member, message=message, emoji=emoji)
             )
 
         if link.auto_remove:
@@ -65,8 +66,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
                 await message.remove_reaction(emoji, member)
             except (HTTPException, Forbidden, NotFound):
                 raise PermissionError(
-                    message.guild,
-                    t.remove_emoji_error(role=role, member=member, message=message, emoji=emoji),
+                    message.guild, t.remove_emoji_error(role=role, member=member, message=message, emoji=emoji)
                 )
 
         raise StopEventHandling
@@ -86,8 +86,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
                 await member.remove_roles(role)
         except (Forbidden, HTTPException):
             raise PermissionError(
-                message.guild,
-                t.manage_role_error(role=role, member=member, message=message, emoji=emoji),
+                message.guild, t.manage_role_error(role=role, member=member, message=message, emoji=emoji)
             )
 
         raise StopEventHandling
@@ -179,13 +178,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
     @ReactionRolePermission.write.check
     @docs(t.commands.reactionrole_add)
     async def reactionrole_add(
-        self,
-        ctx: Context,
-        msg: Message,
-        emoji: EmojiConverter,
-        role: Role,
-        reverse: bool,
-        auto_remove: bool,
+        self, ctx: Context, msg: Message, emoji: EmojiConverter, role: Role, reverse: bool, auto_remove: bool
     ):
         emoji: PartialEmoji
 
@@ -209,11 +202,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
     @ReactionRolePermission.write.check
     @docs(t.commands.reactionrole_remove)
     async def reactionrole_remove(
-        self,
-        ctx: Context,
-        msg: Message,
-        emoji: EmojiConverter,
-        remove_reactions: bool = True,
+        self, ctx: Context, msg: Message, emoji: EmojiConverter, remove_reactions: bool = True
     ):
         emoji: PartialEmoji
 
@@ -235,8 +224,7 @@ class ReactionRoleCog(Cog, name="ReactionRole"):
 
         await reply(ctx, embed=embed)
         await send_to_changelog(
-            ctx.guild,
-            t.log_rr_link_removed(emoji, link.role_id, msg.jump_url, msg.channel.mention),
+            ctx.guild, t.log_rr_link_removed(emoji, link.role_id, msg.jump_url, msg.channel.mention)
         )
 
     @reactionrole.command(name="reinitialize", aliases=["reinit"])

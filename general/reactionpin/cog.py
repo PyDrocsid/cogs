@@ -1,8 +1,8 @@
 from typing import Optional
 
-from discord import TextChannel, Message, Guild, Member, MessageType, HTTPException, PartialEmoji, Embed
+from discord import Embed, Guild, HTTPException, Member, Message, MessageType, PartialEmoji, TextChannel
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import make_error, reply
@@ -11,12 +11,14 @@ from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .models import ReactionPinChannel
 from .permissions import ReactionPinPermission
 from .settings import ReactionPinSettings
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
+
 
 tg = t.g
 t = t.reactionpin
@@ -42,7 +44,7 @@ class ReactionPinCog(Cog, name="ReactionPin"):
 
         blocked_role = await RoleSettings.get("mute")
         if access or (member == message.author and all(r.id != blocked_role for r in member.roles)):
-            if message.type != MessageType.default:
+            if message.type not in (MessageType.default, MessageType.reply):
                 await message.remove_reaction(emoji, member)
                 await message.channel.send(embed=make_error(t.msg_not_pinned_system))
                 raise StopEventHandling

@@ -120,6 +120,7 @@ Subscriptions:
 - [Invite Whitelist](/cogs/moderation/invites)
 - [MediaOnly](/cogs/moderation/mediaonly)
 - [Mod Tools](/cogs/moderation/mod)
+- [User Notes](/cogs/moderation/user_notes)
 
 
 ## `revoke_verification`

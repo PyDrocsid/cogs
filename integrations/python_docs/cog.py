@@ -28,7 +28,7 @@ import io
 import os
 import re
 import zlib
-from typing import Iterable, Optional, Callable
+from typing import Callable, Iterable, Optional
 
 import aiohttp
 import discord
@@ -42,11 +42,13 @@ from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.logger import get_logger
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from ...contributor import Contributor
 
+
 tg = t.g
-t = t.discordpy_documentation
+t = t.python_docs
 
 logger = get_logger(__name__)
 
@@ -145,7 +147,7 @@ def parse_object_inv(stream: SphinxObjectFileReader, url: str):
         key = name if dispname == "-" else dispname
         prefix = f"{subdirective}:" if domain == "std" else ""
 
-        if projname == "discord.py":
+        if projname == "Pycord":
             key = key.replace("discord.ext.commands.", "").replace("discord.", "")
 
         result[f"{prefix}{key}"] = os.path.join(url, location)
@@ -174,25 +176,26 @@ async def get_lookup_table(ctx: Context, name: str, url: str) -> dict[str, str]:
     if table:
         logger.debug(f"documentation for {name} ({url}) has been loaded")
 
-    await redis.hmset_dict(key, table)
+    await redis.hset(key, mapping=table)
     await redis.expire(key, CACHE_TTL)
     return table
 
 
 async def do_rtfm(ctx: Context, key: str, obj: Optional[str]):
-    page_types = {"discord.py": "https://discordpy.readthedocs.io/en/latest", "python": "https://docs.python.org/3"}
+    page_types = {"pycord": "https://docs.pycord.dev/en/master", "python": "https://docs.python.org/3"}
 
     if obj is None:
         embed = Embed(
             title=t.documentation(key.capitalize()),
+            url=page_types[key],
             description=page_types[key],
-            colour=Colors.DiscordPy,
+            colour=Colors.PythonDocs,
         )
         return await reply(ctx, embed=embed)
 
     obj = re.sub(r"^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
 
-    if key.startswith("discord.py"):
+    if key.startswith("pycord"):
         # point the abc.Messageable types properly:
         q = obj.lower()
         for name in dir(discord.abc.Messageable):
@@ -208,19 +211,17 @@ async def do_rtfm(ctx: Context, key: str, obj: Optional[str]):
 
     if not matches:
         embed = Embed(
-            title=t.documentation(key.capitalize()),
-            description=t.no_results,
-            colour=Colors.error,
+            title=t.documentation(key.capitalize()), url=page_types[key], description=t.no_results, colour=Colors.error
         )
         return await reply(ctx, embed=embed)
 
-    e = discord.Embed(colour=Colors.DiscordPy, title=t.documentation(key.capitalize()))
+    e = discord.Embed(colour=Colors.PythonDocs, url=page_types[key], title=t.documentation(key.capitalize()))
     e.description = "\n".join(f"[`{key}`]({url})" for key, url in matches)
-    e.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
+    e.set_footer(text=tg.requested_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
     await reply(ctx, embed=e)
 
 
-class DiscordpyDocumentationCog(Cog, name="Discordpy Documentation"):
+class PythonDocsCog(Cog, name="Python Documentation"):
     """
     Cog to have fancy discordpy doc embeds
 
@@ -229,18 +230,18 @@ class DiscordpyDocumentationCog(Cog, name="Discordpy Documentation"):
 
     CONTRIBUTORS = [Contributor.pohlium, Contributor.Defelo, Contributor.wolflu]
 
-    @commands.command(aliases=["dpy"])
-    async def dpy_docs(self, ctx: Context, *, obj: str = None):
+    @commands.command(aliases=["pycord", "pyc", "dpy"])
+    async def pycord_docs(self, ctx: Context, *, entity: str = None):
         """
-        search the official discord.py documentation
+        search the official pycord documentation
         """
 
-        await do_rtfm(ctx, "discord.py", obj)
+        await do_rtfm(ctx, "pycord", entity)
 
     @commands.command(aliases=["py"])
-    async def py_docs(self, ctx: Context, *, obj: str = None):
+    async def python_docs(self, ctx: Context, *, entity: str = None):
         """
         search the official python documentation
         """
 
-        await do_rtfm(ctx, "python", obj)
+        await do_rtfm(ctx, "python", entity)

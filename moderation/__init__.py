@@ -8,5 +8,23 @@ from .message import MessageCog
 from .mod import ModCog
 from .role_notifications import RoleNotificationsCog
 from .spam_detection import SpamDetectionCog
+from .threads import ThreadsCog
 from .user_notes import UserNoteCog
 from .verification import VerificationCog
+
+
+__all__ = [
+    "AutoClearCog",
+    "AutoModCog",
+    "AutoRoleCog",
+    "InvitesCog",
+    "LoggingCog",
+    "MediaOnlyCog",
+    "MessageCog",
+    "ModCog",
+    "RoleNotificationsCog",
+    "SpamDetectionCog",
+    "ThreadsCog",
+    "UserNoteCog",
+    "VerificationCog",
+]

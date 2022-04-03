@@ -1,18 +1,20 @@
 from typing import Optional
 
-from discord import TextChannel, Message, HTTPException, Forbidden, Permissions, Embed, Member, File, NotFound
+from discord import Embed, File, Forbidden, HTTPException, Member, Message, NotFound, Permissions, TextChannel
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply, confirm
+from PyDrocsid.command import confirm, docs, reply
 from PyDrocsid.converter import Color
 from PyDrocsid.translations import t
-from PyDrocsid.util import read_normal_message, read_complete_message, check_message_send_permissions
+from PyDrocsid.util import check_message_send_permissions, read_complete_message, read_normal_message
+
 from .colors import Colors
 from .permissions import MessagePermission
 from ...contributor import Contributor
 from ...pubsub import send_alert
+
 
 tg = t.g
 t = t.message
@@ -43,11 +45,7 @@ class MessageCog(Cog, name="Message Commands"):
     async def send_text(self, ctx: Context, channel: TextChannel):
         check_message_send_permissions(channel)
 
-        embed = Embed(
-            title=t.messages,
-            colour=Colors.MessageCommands,
-            description=t.send_message(t.cancel),
-        )
+        embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.send_message(t.cancel))
         await reply(ctx, embed=embed)
         content, files = await self.get_message_cancel(ctx.channel, ctx.author)
 
@@ -67,11 +65,7 @@ class MessageCog(Cog, name="Message Commands"):
     async def send_embed(self, ctx: Context, channel: TextChannel, color: Optional[Color] = None):
         check_message_send_permissions(channel, check_embed=True)
 
-        embed = Embed(
-            title=t.messages,
-            colour=Colors.MessageCommands,
-            description=t.send_embed_title(t.cancel),
-        )
+        embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.send_embed_title(t.cancel))
         await reply(ctx, embed=embed)
         title, _ = await self.get_message_cancel(ctx.channel, ctx.author)
         if title is None:
@@ -129,11 +123,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.could_not_edit)
         check_message_send_permissions(message.channel, check_send=False)
 
-        embed = Embed(
-            title=t.messages,
-            colour=Colors.MessageCommands,
-            description=t.send_new_message(t.cancel),
-        )
+        embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.send_new_message(t.cancel))
         await reply(ctx, embed=embed)
         content, files = await self.get_message_cancel(ctx.channel, ctx.author)
 
@@ -154,11 +144,7 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.could_not_edit)
         check_message_send_permissions(message.channel, check_send=False, check_embed=True)
 
-        embed = Embed(
-            title=t.messages,
-            colour=Colors.MessageCommands,
-            description=t.send_embed_title(t.cancel),
-        )
+        embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.send_embed_title(t.cancel))
         await reply(ctx, embed=embed)
         title, _ = await self.get_message_cancel(ctx.channel, ctx.author)
 
@@ -178,6 +164,8 @@ class MessageCog(Cog, name="Message Commands"):
 
         if color is not None:
             send_embed.colour = color
+        elif message.embeds and message.embeds[0].color is not Embed.Empty:
+            send_embed.colour = message.embeds[0].color
 
         await message.edit(content=None, files=[], embed=send_embed)
         embed.description = t.msg_edited
@@ -224,16 +212,11 @@ class MessageCog(Cog, name="Message Commands"):
             raise CommandError(t.count_between)
 
         conf_embed = Embed(
-            title=t.confirmation,
-            description=t.confirm(channel.mention, cnt=count),
-            color=Colors.MessageCommands,
+            title=t.confirmation, description=t.confirm(channel.mention, cnt=count), color=Colors.MessageCommands
         )
-        async with confirm(ctx, conf_embed) as (result, msg):
+        async with confirm(ctx, conf_embed, danger=True) as (result, msg):
             if not result:
-                conf_embed.description += "\n\n" + t.canceled
                 return
-
-            conf_embed.description += "\n\n" + t.confirmed
             if msg:
                 await msg.delete(delay=5)
 

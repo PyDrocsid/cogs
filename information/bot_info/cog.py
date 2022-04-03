@@ -1,22 +1,23 @@
 from __future__ import annotations
 
-from collections import Callable
-from typing import Optional, Awaitable
+from typing import Awaitable, Callable, Optional
 
 from aiohttp import ClientSession
-from discord import Embed, Message, Status, Game
+from discord import Embed, Game, Message, Status
 from discord.ext import commands, tasks
 from discord.ext.commands import Context
 
 from PyDrocsid.cog import Cog, get_documentation
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.config import Config
 from PyDrocsid.embeds import send_long_embed
-from PyDrocsid.github_api import GitHubUser, get_users, get_repo_description
+from PyDrocsid.github_api import GitHubUser, get_repo_description, get_users
 from PyDrocsid.prefix import get_prefix
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.bot_info
@@ -75,19 +76,17 @@ class InfoComponent:
     @staticmethod
     def bugs_features(inline: bool):
         async def inner(_, embed: Embed):
-            embed.add_field(
-                name=t.bugs_features_title,
-                value=t.bugs_features(repo=Config.REPO_LINK),
-                inline=inline,
-            )
+            embed.add_field(name=t.bugs_features_title, value=t.bugs_features(repo=Config.REPO_LINK), inline=inline)
 
         return inner
 
     @staticmethod
     def pydrocsid(inline: bool):
         async def inner(_, embed: Embed):
-            async with ClientSession() as session, session.head("https://discord.pydrocsid.ml") as response:
-                url = response.headers["location"]
+            async with ClientSession() as session, session.head(
+                Config.DISCORD_INVITE, allow_redirects=True
+            ) as response:
+                url = str(response.url)
             code = url.split("/")[-1]
 
             embed.add_field(name=t.pydrocsid, value=t.pydrocsid_info(code=code), inline=inline)
@@ -224,9 +223,7 @@ class BotInfoCog(Cog, name="Bot Information"):
             description.append(f":small_orange_diamond: {name} (`{cog.__class__.__name__}`)")
 
         await send_long_embed(
-            ctx,
-            Embed(title=t.enabled_cogs, color=Colors.info, description="\n".join(description)),
-            paginate=True,
+            ctx, Embed(title=t.enabled_cogs, color=Colors.info, description="\n".join(description)), paginate=True
         )
 
     async def on_bot_ping(self, message: Message):

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Union
 
-from sqlalchemy import Column, BigInteger, Integer
+from sqlalchemy import BigInteger, Column, Integer
 
-from PyDrocsid.database import db
+from PyDrocsid.database import Base, db
 
 
-class AutoClearChannel(db.Base):
+class AutoClearChannel(Base):
     __tablename__ = "autoclear_channel"
 
     channel: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)

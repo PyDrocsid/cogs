@@ -1,22 +1,24 @@
 import re
 import string
-from datetime import datetime
 from typing import Optional, Tuple
 
-from discord import Embed, Message, PartialEmoji, Member, Forbidden, Guild
+from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, CommandError
+from discord.ext.commands import CommandError, Context, guild_only
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.embeds import EmbedLimits
-from PyDrocsid.emojis import name_to_emoji, emoji_to_name
+from PyDrocsid.emojis import emoji_to_name, name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import is_teamler, check_wastebasket
+from PyDrocsid.util import check_wastebasket, is_teamler
+
 from .colors import Colors
 from .permissions import PollsPermission
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.polls
@@ -35,11 +37,7 @@ async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optiona
 
 
 async def send_poll(
-    ctx: Context,
-    title: str,
-    args: str,
-    field: Optional[Tuple[str, str]] = None,
-    allow_delete: bool = True,
+    ctx: Context, title: str, args: str, field: Optional[Tuple[str, str]] = None, allow_delete: bool = True
 ):
     question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
 
@@ -53,10 +51,10 @@ async def send_poll(
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
-    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=datetime.utcnow())
-    embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
+    embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
     if allow_delete:
-        embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.avatar_url)
+        embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
 
     if len(set(map(lambda x: x.emoji, options))) < len(options):
         raise CommandError(t.option_duplicated)
@@ -176,11 +174,7 @@ class PollsCog(Cog, name="Polls"):
         """
 
         await send_poll(
-            ctx,
-            t.team_poll,
-            args,
-            field=(tg.status, await self.get_reacted_teamlers()),
-            allow_delete=False,
+            ctx, t.team_poll, args, field=(tg.status, await self.get_reacted_teamlers()), allow_delete=False
         )
 
     @commands.command(aliases=["yn"])
@@ -216,8 +210,8 @@ class PollsCog(Cog, name="Polls"):
         Starts a yes/no poll and shows, which teamler has not voted yet.
         """
 
-        embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=datetime.utcnow())
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+        embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=utcnow())
+        embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
 
         embed.add_field(name=tg.status, value=await self.get_reacted_teamlers(), inline=False)
 

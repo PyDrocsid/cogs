@@ -1,8 +1,8 @@
 import sys
 
-from discord import TextChannel, Message
+from discord import Message, TextChannel
 from discord.ext import commands
-from discord.ext.commands import check, Context, CheckFailure
+from discord.ext.commands import CheckFailure, Context, check
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Config
@@ -12,8 +12,10 @@ from PyDrocsid.events import call_event_handlers
 from PyDrocsid.permission import permission_override
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
+
 from .permissions import SudoPermission
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.sudo
@@ -58,7 +60,7 @@ class SudoCog(Cog, name="Sudo"):
     @commands.command()
     @SudoPermission.clear_cache.check
     async def clear_cache(self, ctx: Context):
-        await redis.flushall()
+        await redis.flushdb()
         await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @commands.command()

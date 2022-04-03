@@ -1,11 +1,11 @@
 from typing import Union
 
-from sqlalchemy import Column, BigInteger
+from sqlalchemy import BigInteger, Column
 
-from PyDrocsid.database import db, filter_by, select, delete
+from PyDrocsid.database import Base, db, delete, filter_by, select
 
 
-class LogExclude(db.Base):
+class LogExclude(Base):
     __tablename__ = "log_exclude"
 
     channel_id: Union[Column, int] = Column(BigInteger, primary_key=True, unique=True)

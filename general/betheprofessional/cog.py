@@ -1,9 +1,9 @@
 import string
 from typing import List
 
-from discord import Role, Guild, Member, Embed
+from discord import Embed, Guild, Member, Role
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
@@ -11,11 +11,13 @@ from PyDrocsid.database import db, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, check_role_assignable
+
 from .colors import Colors
 from .models import BTPRole
 from .permissions import BeTheProfessionalPermission
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
+
 
 tg = t.g
 t = t.betheprofessional
@@ -91,8 +93,7 @@ async def unregister_roles(ctx: Context, topics: str, *, delete_roles: bool):
     embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
     embed.description = t.topics_unregistered(cnt=len(roles))
     await send_to_changelog(
-        ctx.guild,
-        t.log_topics_unregistered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
+        ctx.guild, t.log_topics_unregistered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles))
     )
     await send_long_embed(ctx, embed)
 
@@ -132,7 +133,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         for role in roles:
             check_role_assignable(role)
 
-        await member.add_roles(*roles)
+        await member.add_roles(*roles, atomic=False)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_added(cnt=len(roles))
@@ -158,7 +159,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         for role in roles:
             check_role_assignable(role)
 
-        await member.remove_roles(*roles)
+        await member.remove_roles(*roles, atomic=False)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_removed(cnt=len(roles))
@@ -209,8 +210,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_registered(cnt=len(roles))
         await send_to_changelog(
-            ctx.guild,
-            t.log_topics_registered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles)),
+            ctx.guild, t.log_topics_registered(cnt=len(roles), topics=", ".join(f"`{r}`" for r in roles))
         )
         await reply(ctx, embed=embed)
 

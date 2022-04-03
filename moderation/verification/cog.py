@@ -1,21 +1,23 @@
-from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
-from discord import Role, Member, Guild, Embed
+from discord import Embed, Guild, Member, Role
 from discord.ext import commands
-from discord.ext.commands import Context, CommandError, CheckFailure, check, guild_only, UserInputError
+from discord.ext.commands import CheckFailure, CommandError, Context, UserInputError, check, guild_only
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.database import db, select
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
+
 from .colors import Colors
 from .models import VerificationRole
 from .permissions import VerificationPermission
 from .settings import VerificationSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert
+from ...pubsub import send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.verification
@@ -48,7 +50,7 @@ class VerificationCog(Cog, name="Verification"):
         member: Member = guild.get_member(ctx.author.id)
 
         delay: int = await VerificationSettings.delay.get()
-        if delay != -1 and (datetime.utcnow() - member.joined_at).total_seconds() < delay:
+        if delay != -1 and (utcnow() - member.joined_at).total_seconds() < delay:
             raise CommandError(t.too_soon)
 
         add: List[Role] = []
@@ -130,13 +132,11 @@ class VerificationCog(Cog, name="Verification"):
 
         if normal:
             embed.add_field(
-                name=t.roles_normal,
-                value="\n".join(f":small_orange_diamond: {role.mention}" for role in normal),
+                name=t.roles_normal, value="\n".join(f":small_orange_diamond: {role.mention}" for role in normal)
             )
         if reverse:
             embed.add_field(
-                name=t.roles_reverse,
-                value="\n".join(f":small_blue_diamond: {role.mention}" for role in reverse),
+                name=t.roles_reverse, value="\n".join(f":small_blue_diamond: {role.mention}" for role in reverse)
             )
 
         await reply(ctx, embed=embed)
@@ -156,11 +156,7 @@ class VerificationCog(Cog, name="Verification"):
             raise CommandError(t.verification_role_already_set)
 
         await VerificationRole.create(role.id, reverse)
-        embed = Embed(
-            title=t.verification,
-            description=t.verification_role_added,
-            colour=Colors.Verification,
-        )
+        embed = Embed(title=t.verification, description=t.verification_role_added, colour=Colors.Verification)
         await reply(ctx, embed=embed)
         if reverse:
             await send_to_changelog(ctx.guild, t.log_verification_role_added_reverse(role.name, role.id))
@@ -178,11 +174,7 @@ class VerificationCog(Cog, name="Verification"):
             raise CommandError(t.verification_role_not_set)
 
         await db.delete(row)
-        embed = Embed(
-            title=t.verification,
-            description=t.verification_role_removed,
-            colour=Colors.Verification,
-        )
+        embed = Embed(title=t.verification, description=t.verification_role_removed, colour=Colors.Verification)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_verification_role_removed(role.name, role.id))
 
@@ -197,11 +189,7 @@ class VerificationCog(Cog, name="Verification"):
             raise CommandError(t.password_too_long)
 
         await VerificationSettings.password.set(password)
-        embed = Embed(
-            title=t.verification,
-            description=t.verification_password_configured,
-            colour=Colors.Verification,
-        )
+        embed = Embed(title=t.verification, description=t.verification_password_configured, colour=Colors.Verification)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_verification_password_configured(password))
 

@@ -2,22 +2,24 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from aiohttp import ClientSession, ClientError
-from discord import Guild, TextChannel, Message, Embed, Forbidden
+from aiohttp import ClientError, ClientSession
+from discord import Embed, Forbidden, Guild, Message, TextChannel
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.database import db, filter_by
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .models import MediaOnlyChannel, MediaOnlyDeletion
 from .permissions import MediaOnlyPermission
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, can_respond_on_reaction, send_alert, get_userlog_entries
+from ...pubsub import can_respond_on_reaction, get_userlog_entries, send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.mediaonly
@@ -135,11 +137,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
             raise CommandError(t.media_only_not_changed_no_permissions)
 
         await MediaOnlyChannel.add(channel.id)
-        embed = Embed(
-            title=t.media_only_channels_header,
-            description=t.channel_now_media_only,
-            colour=Colors.MediaOnly,
-        )
+        embed = Embed(title=t.media_only_channels_header, description=t.channel_now_media_only, colour=Colors.MediaOnly)
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_now_media_only(channel.mention))
 
@@ -152,9 +150,7 @@ class MediaOnlyCog(Cog, name="MediaOnly"):
 
         await MediaOnlyChannel.remove(channel.id)
         embed = Embed(
-            title=t.media_only_channels_header,
-            description=t.channel_not_media_only_anymore,
-            colour=Colors.MediaOnly,
+            title=t.media_only_channels_header, description=t.channel_not_media_only_anymore, colour=Colors.MediaOnly
         )
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.log_channel_not_media_only_anymore(channel.mention))
