@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Union
 
-from PyDrocsid.database import db, db_wrapper, UTCDateTime, Base
-from sqlalchemy import Column, BigInteger
+from sqlalchemy import BigInteger, Column
+
+from PyDrocsid.database import Base, UTCDateTime, db
 
 
 class Activity(Base):

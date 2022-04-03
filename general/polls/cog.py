@@ -2,21 +2,23 @@ import re
 import string
 from typing import Optional, Tuple
 
-from discord import Embed, Message, PartialEmoji, Member, Forbidden, Guild
+from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, CommandError
+from discord.ext.commands import CommandError, Context, guild_only
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.embeds import EmbedLimits
-from PyDrocsid.emojis import name_to_emoji, emoji_to_name
+from PyDrocsid.emojis import emoji_to_name, name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import is_teamler, check_wastebasket
+from PyDrocsid.util import check_wastebasket, is_teamler
+
 from .colors import Colors
 from .permissions import PollsPermission
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.polls

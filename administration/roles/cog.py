@@ -1,25 +1,27 @@
-from typing import Optional, Union, Dict, List
+from typing import Dict, List, Optional, Union
 
-from discord import Role, Embed, Member, Status, Guild, NotFound, User, Forbidden, Permissions
+from discord import Embed, Forbidden, Guild, Member, NotFound, Permissions, Role, Status, User
 from discord.ext import commands
-from discord.ext.commands import CommandError, Context, guild_only, UserInputError, Group
+from discord.ext.commands import CommandError, Context, Group, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs, optional_permissions
+from PyDrocsid.command import docs, optional_permissions, reply
 from PyDrocsid.config import Config
 from PyDrocsid.converter import UserMemberConverter
-from PyDrocsid.database import db, select, filter_by
+from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.prefix import get_prefix
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
+
 from .colors import Colors
-from .models import RoleAuth, PermaRole
+from .models import PermaRole, RoleAuth
 from .permissions import RolesPermission
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert
+from ...pubsub import send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.roles

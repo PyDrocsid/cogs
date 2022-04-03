@@ -2,20 +2,22 @@ import itertools
 from random import random
 from typing import Optional, Union
 
-from discord import Embed, User, Member
+from discord import Embed, Member, User
 from discord.ext import commands
-from discord.ext.commands import Context, CommandError, max_concurrency, guild_only
-from discord.utils import snowflake_time, format_dt
+from discord.ext.commands import CommandError, Context, guild_only, max_concurrency
+from discord.utils import format_dt, snowflake_time
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.converter import Color, UserMemberConverter
 from PyDrocsid.translations import t
 from PyDrocsid.util import measure_latency
+
 from .colors import Colors
 from .permissions import UtilsPermission
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.utils

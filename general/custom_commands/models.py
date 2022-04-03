@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Union, Optional
+from typing import Optional, Union
 from uuid import uuid4
 
-from sqlalchemy import Column, Text, Boolean, BigInteger, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import db, Base
+from PyDrocsid.database import Base, db
 from PyDrocsid.permission import BasePermissionLevel
 
 
