@@ -167,15 +167,17 @@ async def confirm_no_evidence(ctx: Context):
 
 
 async def send_to_changelog_mod(
-    guild: Guild,
-    message: Optional[Message],
-    colour: int,
-    title: str,
-    member: Union[Member, User, Tuple[int, str]],
-    reason: str,
-    *,
-    duration: Optional[str] = None,
-    evidence: Optional[Attachment] = None,
+        guild: Guild,
+        message: Optional[Message],
+        colour: int,
+        title: str,
+        member: Union[Member, User, Tuple[int, str]],
+        reason: str,
+        *,
+        duration: Optional[str] = None,
+        evidence: Optional[Attachment] = None,
+        mod: Optional[Union[Member, User]] = None,
+        original_reason: Optional[str] = None,
 ):
     embed = Embed(title=title, colour=colour, timestamp=utcnow())
 
@@ -201,6 +203,12 @@ async def send_to_changelog_mod(
 
     if evidence:
         embed.add_field(name=t.log_field.evidence, value=t.image_link(evidence.filename, evidence.url), inline=True)
+
+    if mod:
+        embed.add_field(name=t.log_field.mod, value=f"<@{mod.id}>", inline=True)
+
+    if original_reason:
+        embed.add_field(name=t.log_field_original_reason, value=original_reason, inline=True)
 
     embed.add_field(name=t.log_field.reason, value=reason, inline=False)
 
@@ -998,23 +1006,36 @@ class ModCog(Cog, name="Mod Tools"):
             was_muted = True
             await user.remove_roles(mute_role)
 
+        minutes = 0
         async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
             if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
                 raise CommandError(tg.permission_denied)
 
             await Mute.deactivate(mute.id, ctx.author.id, reason)
 
-            await invalidate_entry_cache()
-
             was_muted = True
+
+            if mute.minutes > minutes or mute.minutes == -1:
+                minutes = mute.minutes
+
         if not was_muted:
             raise UserCommandError(user, t.not_muted)
+
+        await invalidate_entry_cache()
 
         server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(
-            guild=ctx.guild, message=ctx.message, colour=Colors.unmute, title=t.log_unmuted, member=user, reason=reason
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.unmute,
+            title=t.log_unmuted,
+            member=user,
+            reason=reason,
+            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            mod=ctx.author,
+            original_reason=mute.reason,
         )
 
     @commands.command()
@@ -1438,21 +1459,34 @@ class ModCog(Cog, name="Mod Tools"):
         except HTTPException:
             was_banned = False
 
+        minutes = 0
         async for ban in await db.stream(filter_by(Ban, active=True, member=user.id)):
             if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
                 raise CommandError(tg.permission_denied)
 
             await Ban.deactivate(ban.id, ctx.author.id, reason)
 
-            await invalidate_entry_cache()
-
             was_banned = True
+
+            if ban.minutes > minutes or ban.minutes == -1:
+                minutes = ban.minutes
+
         if not was_banned:
             raise UserCommandError(user, t.not_banned)
+
+        await invalidate_entry_cache()
 
         server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(
-            guild=ctx.guild, message=ctx.message, colour=Colors.unban, title=t.log_unbanned, member=user, reason=reason
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=Colors.unban,
+            title=t.log_unbanned,
+            member=user,
+            reason=reason,
+            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            mod=ctx.author,
+            original_reason=ban.reason,
         )

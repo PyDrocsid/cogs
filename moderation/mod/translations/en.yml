@@ -52,6 +52,8 @@ log_field:
   reason: ":scroll: Reason"
   infinity: "*Permanent*"
   evidence: ":file_cabinet: Evidence image"
+  mod: ":key: Mod"
+  original_reason: ":pencil: Original reason"
 
 not_found:
   warn: No warn with this ID could be found
