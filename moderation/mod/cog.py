@@ -167,17 +167,17 @@ async def confirm_no_evidence(ctx: Context):
 
 
 async def send_to_changelog_mod(
-        guild: Guild,
-        message: Optional[Message],
-        colour: int,
-        title: str,
-        member: Union[Member, User, Tuple[int, str]],
-        reason: str,
-        *,
-        duration: Optional[str] = None,
-        evidence: Optional[Attachment] = None,
-        mod: Optional[Union[Member, User]] = None,
-        original_reason: Optional[str] = None,
+    guild: Guild,
+    message: Optional[Message],
+    colour: int,
+    title: str,
+    member: Union[Member, User, Tuple[int, str]],
+    reason: str,
+    *,
+    duration: Optional[str] = None,
+    evidence: Optional[Attachment] = None,
+    mod: Optional[Union[Member, User]] = None,
+    original_reason: Optional[str] = None,
 ):
     embed = Embed(title=title, colour=colour, timestamp=utcnow())
 
