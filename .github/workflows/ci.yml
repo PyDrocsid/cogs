@@ -9,6 +9,7 @@ env:
 
 jobs:
   codestyle:
+    name: Codestyle (black+isort)
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
 
@@ -32,6 +33,7 @@ jobs:
         run: poe black --diff --check && poe isort --diff --check
 
 #  mypy:
+#    name: mypy
 #    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
 #    runs-on: ubuntu-latest
 #
@@ -55,6 +57,8 @@ jobs:
 #        run: poe mypy
 
   linter:
+    name: Linter (flake8)
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
 
     steps:
@@ -84,6 +88,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.github_token }}
 
   docs:
+    name: Documentation
     runs-on: ubuntu-latest
 
     steps:
