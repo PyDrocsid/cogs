@@ -1,5 +1,7 @@
+<!-- markdownlint-disable-next-line MD033 -->
 <p>
 
+  <!-- markdownlint-disable-next-line MD041 -->
   [![CI](https://github.com/PyDrocsid/cogs/actions/workflows/ci.yml/badge.svg)](https://github.com/PyDrocsid/cogs/actions/workflows/ci.yml)
   [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
   [![Maintainability](https://api.codeclimate.com/v1/badges/58eddbda41411d6e4876/maintainability)](https://codeclimate.com/github/PyDrocsid/cogs/maintainability)
@@ -8,5 +10,7 @@
 
 </p>
 
+
 # PyDrocsid Cog Library
+
 The official cog library used by PyDrocsid bots
