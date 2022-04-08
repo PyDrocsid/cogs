@@ -5,9 +5,9 @@ from discord.ext import commands
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import Confirmation, docs, reply
+from PyDrocsid.command import Confirmation, add_reactions, docs, reply
 from PyDrocsid.converter import Color
-from PyDrocsid.discohook import create_discohook_link
+from PyDrocsid.discohook import DISCOHOOK_EMPTY_MESSAGE, MessageContent, create_discohook_link, load_discohook_link
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions, read_complete_message, read_normal_message
 
@@ -108,6 +108,26 @@ class MessageCog(Cog, name="Message Commands"):
         else:
             embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.msg_sent)
             await reply(ctx, embed=embed)
+
+    @send.command(name="discohook", aliases=["dh"])
+    @docs(t.commands.send_discohook(DISCOHOOK_EMPTY_MESSAGE))
+    async def send_discohook(self, ctx: Context, channel: TextChannel, *, discohook_url: str):
+        messages: list[MessageContent] = await load_discohook_link(discohook_url)
+
+        check_message_send_permissions(channel, check_embed=any(m.embeds for m in messages))
+
+        try:
+            for message in messages:
+                if message.is_empty:
+                    continue
+                content: str | None = message.content
+                for embed in message.embeds or [None]:
+                    await channel.send(content=content, embed=embed)
+                    content = None
+        except (HTTPException, Forbidden):
+            raise CommandError(t.msg_could_not_be_sent)
+
+        await add_reactions(ctx.message, "white_check_mark")
 
     @commands.group()
     @MessagePermission.edit.check

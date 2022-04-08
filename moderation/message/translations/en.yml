@@ -9,6 +9,9 @@ commands:
   send_text: send a normal message
   send_embed: send an embed
   send_copy: copy a message (specify message link)
+  send_discohook: |
+    send a discohook message
+    Go to {}, compose your message, click on `Share Message` and copy the link.
   edit: edit messages sent by the bot
   edit_text: edit a normal message (specify message link)
   edit_embed: edit an embed (specify message link)
