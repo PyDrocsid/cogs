@@ -1,5 +1,5 @@
 import string
-from typing import List, Union, Optional, Dict, Final, Set, Tuple
+from typing import List, Union, Optional, Dict, Final, Set, Tuple  # TODO remove typing lib
 
 from discord import Member, Embed, Role, Message
 from discord.ext import commands, tasks
@@ -40,7 +40,9 @@ async def split_parents(topics: List[str], assignable: bool) -> List[tuple[str, 
         topic_tree = topic.split("/")
 
         parents: List[Union[BTPTopic, None, CommandError]] = [
+            # TODO use filter_by provided by the library
             await db.first(select(BTPTopic).filter_by(name=topic))
+            # TODO use filter_by provided by the library
             if await db.exists(select(BTPTopic).filter_by(name=topic))
             else CommandError(t.parent_not_exists(topic))
             for topic in topic_tree[:-1]
@@ -64,6 +66,7 @@ async def parse_topics(topics_str: str) -> List[BTPTopic]:
         raise CommandError(t.no_topics_registered)
 
     for topic_name in split_topics(topics_str):
+        # TODO use filter_by provided by the library
         topic = await db.first(select(BTPTopic).filter_by(name=topic_name))
 
         if topic is None and len(all_topics) > 0:
@@ -115,6 +118,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         parent: Union[BTPTopic, None, CommandError] = (
             None
             if parent_topic is None
+            # TODO use filter_by provided by the library
             else await db.first(select(BTPTopic).filter_by(name=parent_topic))
             or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
@@ -123,6 +127,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         embed = Embed(title=t.available_topics_header, colour=Colors.BeTheProfessional)
         sorted_topics: Dict[str, List[str]] = {}
+            # TODO use filter_by provided by the library
         topics: List[BTPTopic] = await db.all(select(BTPTopic).filter_by(parent=None if parent is None else parent.id))
         if not topics:
             embed.colour = Colors.error
@@ -132,6 +137,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         topics.sort(key=lambda btp_topic: btp_topic.name.lower())
         root_topic: Union[BTPTopic, None] = (
+            # TODO use filter_by provided by the library
             None if parent_topic is None else await db.first(select(BTPTopic).filter_by(name=parent_topic))
         )
         for topic in topics:
@@ -148,6 +154,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                         f"`{topic.name}"
                         + (  # noqa: W503
                             f" ({c})`"
+            # TODO use filter_by provided by the library
                             if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id))) > 0
                             else "`"
                         )
@@ -169,7 +176,9 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         topics: List[BTPTopic] = [
             topic
             for topic in await parse_topics(topics)
+            # TODO use filter_by provided by the library
             if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
+            # TODO use filter_by provided by the library
             and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
 
@@ -215,12 +224,14 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             topics: List[BTPTopic] = await parse_topics(topics)
         affected_topics: List[BTPTopic] = []
         for topic in topics:
+            # TODO use filter_by provided by the library
             if await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)):
                 affected_topics.append(topic)
 
         roles: List[Role] = []
 
         for topic in affected_topics:
+            # TODO use filter_by provided by the library
             await db.delete(await db.first(select(BTPUser).filter_by(topic=topic.id)))
             if topic.role_id:
                 roles.append(ctx.guild.get_role(topic.role_id))
@@ -267,6 +278,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
 
+            # TODO use filter_by provided by the library
             if await db.exists(select(BTPTopic).filter_by(name=topic[0])):
                 raise CommandError(t.topic_already_registered(topic[0]))
             else:
@@ -300,6 +312,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         delete_topics: list[BTPTopic] = []
 
         for topic in topics:
+            # TODO two selects for the same thing? and use filter_by provided by the library
             if not await db.exists(select(BTPTopic).filter_by(name=topic)):
                 raise CommandError(t.topic_not_registered(topic))
             else:
@@ -307,6 +320,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
                 delete_topics.append(btp_topic)
 
+                # TODO use relationships for children
                 queue: list[int] = [btp_topic.id]
 
                 while len(queue) != 0:
@@ -314,12 +328,17 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                     for child_topic in await db.all(select(BTPTopic).filter_by(parent=topic_id)):
                         delete_topics.insert(0, child_topic)
                         queue.append(child_topic.id)
+
         for topic in delete_topics:
             if topic.role_id is not None:
+                # TODO what if role is None?
                 role: Role = ctx.guild.get_role(topic.role_id)
                 await role.delete()
+            # TODO use filter_by provided by the library
             for user_topic in await db.all(select(BTPUser).filter_by(topic=topic.id)):
+                # TODO use db.exec
                 await db.delete(user_topic)
+                # TODO do not commit for each one separately
                 await db.commit()
             await db.delete(topic)
 
@@ -343,9 +362,10 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if topic is None:
             raise CommandError(t.topic_not_found(topic_name))
         if topic.role_id is not None:
-            mention = ctx.guild.get_role(topic.role_id).mention
+            mention = ctx.guild.get_role(topic.role_id).mention         # TODO use <@&ID>
         else:
             topic_members: List[BTPUser] = await db.all(select(BTPUser).filter_by(topic=topic.id))
+            # TODO what if member does not exist? Why don't you use `<@ID>`?
             members: List[Member] = [ctx.guild.get_member(member.user_id) for member in topic_members]
             mention = ", ".join(map(lambda m: m.mention, members))
 
@@ -364,7 +384,9 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             if ctx.invoked_subcommand is None:
                 raise UserInputError
             return
+
         embed = Embed(title=t.betheprofessional, color=Colors.BeTheProfessional)
+        # TODO do not do that!!!!
         for setting_item in t.settings.__dict__["_fallback"].keys():
             data = getattr(t.settings, setting_item)
             embed.add_field(
@@ -372,7 +394,9 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             )
         await reply(ctx, embed=embed)
 
+    # TODO make function, not method, self not used
     async def change_setting(self, ctx: Context, name: str, value: any):
+        # TODO use dictionary
         data = getattr(t.settings, name)
         await getattr(BeTheProfessionalSettings, data.internal_name).set(value)
 
@@ -391,6 +415,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         """
 
         if role_limit <= 0:
+            # TODO use quotes for the name in the embed
             raise CommandError(t.must_be_above_zero(t.settings.role_limit.name))
         await self.change_setting(ctx, "role_limit", role_limit)
 
@@ -403,6 +428,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         """
 
         if role_create_min_users < 0:
+            # TODO use quotes for the name in the embed
             raise CommandError(t.must_be_zero_or_above(t.settings.role_create_min_users.name))
         await self.change_setting(ctx, "role_create_min_users", role_create_min_users)
 
@@ -415,6 +441,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         """
 
         if leaderboard_default_n <= 0:
+            # TODO use quotes for the name in the embed
             raise CommandError(t.must_be_above_zero(t.settings.leaderboard_default_n.name))
         await self.change_setting(ctx, "leaderboard_default_n", leaderboard_default_n)
 
@@ -427,11 +454,13 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         """
 
         if leaderboard_max_n <= 0:
+            # TODO use quotes for the name in the embed
             raise CommandError(t.must_be_above_zero(t.settings.leaderboard_max_n.name))
         await self.change_setting(ctx, "leaderboard_max_n", leaderboard_max_n)
 
     @btp.command(aliases=["lb"])
     @guild_only()
+    # TODO parameters
     async def leaderboard(self, ctx: Context, n: Optional[int] = None, use_cache: bool = True):
         """
         lists the top n topics
@@ -518,6 +547,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if member is None:
             member = ctx.author
 
+        # TODO use relationships and join
         topics_assigns: list[BTPUser] = await db.all(select(BTPUser).filter_by(user_id=member.id))
         topics: list[BTPTopic] = [
             await db.first(select(BTPTopic).filter_by(id=assignment.topic)) for assignment in topics_assigns
@@ -557,9 +587,13 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         logger.info("Started Update Role Loop")
         topic_count: Dict[int, int] = {}
 
+        # TODO rewrite from here....
         for topic in await db.all(select(BTPTopic)):
+            # TODO use relationship and join
             topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic=topic.id))
         # not using dict.items() because of typing
+        # TODO Let db sort topics by count and then by
+        # TODO fix TODO ^^
         topic_count_items: list[Tuple[int, int]] = list(zip(topic_count.keys(), topic_count.values()))
         topic_count = dict(sorted(topic_count_items, key=lambda x: x[0]))
 
@@ -572,8 +606,12 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             )
         )[: await BeTheProfessionalSettings.RoleLimit.get()]
 
+        # TODO until here
+
         # Delete old Top Topic Roles
+        # TODO use filter_by
         for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id is not None)):  # type: BTPTopic
+            # TODO use sql "NOT IN" expression
             if topic.id not in top_topics:
                 if topic.role_id is not None:
                     await self.bot.guilds[0].get_role(topic.role_id).delete()
@@ -581,13 +619,16 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         # Create new Topic Roles
         roles: Dict[int, Role] = {}
+        # TODO use sql "IN" expression
         for top_topic in top_topics:
             topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=top_topic))
             if topic.role_id is None:
                 role = await self.bot.guilds[0].create_role(name=topic.name)
                 topic.role_id = role.id
                 roles[topic.id] = role
+
         # Iterate over all members(with topics) and add the role to them
+        # TODO add filter, only select topics with newly added roles
         member_ids: Set[int] = {btp_user.user_id for btp_user in await db.all(select(BTPUser))}
         for member_id in member_ids:
             member: Member = self.bot.guilds[0].get_member(member_id)
@@ -596,12 +637,14 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             member_roles: List[Role] = [
                 roles.get(btp_user.topic) for btp_user in await db.all(select(BTPUser).filter_by(user_id=member_id))
             ]
+            # TODO use filter or something?
             member_roles = [item for item in member_roles if item is not None]
             await member.add_roles(*member_roles, atomic=False)
 
         logger.info("Created Top Topic Roles")
 
     async def on_member_join(self, member: Member):
+        # TODO use relationship and join
         topics: List[BTPUser] = await db.all(select(BTPUser).filter_by(user_id=member.id))
         role_ids: List[int] = [(await db.first(select(BTPTopic).filter_by(id=topic))).role_id for topic in topics]
         roles: List[Role] = [self.bot.guilds[0].get_role(role_id) for role_id in role_ids]

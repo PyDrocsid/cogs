@@ -8,7 +8,7 @@ missing_cache_bypass_permission: "Missing Cache bypass Permission"
 betheprofessional: BeTheProfessional
 youre_not_the_first_one: "Topic `{}` not found.\nYou're not the first one to try this, {}"
 topic_not_found: Topic `{}` not found.
-topic_not_found_did_you_mean: Topic `{}` not found. Did you mean `{}`?
+topic_not_found_did_you_mean: Topic `{}` not found. Did you mean `{}`?    # TODO use mentions
 available_topics_header: "Available Topics"
 no_topics_registered: No topics have been registered yet.
 
@@ -26,8 +26,8 @@ topic_invalid_chars: Topic name `{}` contains invalid characters.
 topic_too_long: Topic name `{}` is too long.
 topic_already_registered: Topic `{}` has already been registered.
 topic_not_registered: Topic `{}` has not been registered.
-topic_not_registered_too_high: Topic could not be registered because `@{}` is higher than `@{}`.
-topic_not_registered_managed_role: Topic could not be registered because `@{}` cannot be assigned manually.
+topic_not_registered_too_high: Topic could not be registered because `@{}` is higher than `@{}`.              # TODO use mentions
+topic_not_registered_managed_role: Topic could not be registered because `@{}` cannot be assigned manually.   # TODO use mentions
 
 topics_registered:
   one: "Topic has been registered successfully. :white_check_mark:"
@@ -47,8 +47,8 @@ single_un_assign_help: "Hey, did you know, that you can assign multiple topics b
 
 user_topics:
   zero: "{} has no topics assigned"
-  one: "{} has assigned the following topic: {}"
-  many: "{} has assigned the following topics: {}"
+  one: "{} has assigned the following topic: {}"    # TODO use mentions
+  many: "{} has assigned the following topics: {}"  # TODO use mentions
 
 parent_not_exists: "Parent `{}` doesn't exists"
 parent_format_help: "Please write `[Parents/]Topic-Name`"
@@ -66,8 +66,8 @@ leaderboard_colmn_name: "[NAME]"
 leaderboard_colmn_users: "[USERS]"
 leaderboard_title: "Top `{}` - Most assigned Topics"
 
-must_be_above_zero: "{} must be above zero!"
-must_be_zero_or_above: "{} must be zero or above!"
+must_be_above_zero: "{} must be above zero!"        # TODO use quotes
+must_be_zero_or_above: "{} must be zero or above!"  # TODO use quotes
 
 settings:
   role_limit:
