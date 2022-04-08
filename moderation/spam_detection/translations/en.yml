@@ -1,18 +1,48 @@
+commands:
+  spam_detection: view and change spam detection settings
+  channel_hopping: edit spam detection settings
+  alert: set the number of allowed hops before a alert-channel notification is used (0 for disabling)
+  warning: set the number of allowed hops before a dm notification is used (0 for disabling)
+  temp_mute: edit the channel hopping mute settings
+  temp_mute_hops: set the number of allowed hops before a alert-channel notification is used (0 for disabling)
+  temp_mute_duration: set the number of seconds a user is muted (0 for disabling)
+
 permissions:
   read: read spam detection configuration
   write: write spam detection configuration
+  bypass: bypass the channel hopping check
 
 spam_detection: Spam Detection
+
 max_x_hops:
-  one: "Max.: {cnt} channel hop per minute"
-  many: "Max.: {cnt} channel hops per minute"
+  one: "Max.: `{cnt}` channel hop per minute"
+  many: "Max.: `{cnt}` channel hops per minute"
+seconds_muted:
+  one: "{cnt} second"
+  many: "{cnt} seconds"
+
 member_id: Member ID
-channel_hopping: Channel Hopping Detection
+
+channel_hopping: Channel hopping
+channel_hopping_alert: Alert message
+channel_hopping_warning: Direct message
+channel_hopping_mute: Temporare mute
+mute_duration: Mute duration
+reason: was timouted because of channelhopping
+
+cant_mute: "Cant mute {} because of {}"
+error:
+  seconds_smaler_than_1: Amount of seconds for mute cant be smaller than 1
+
 current_channel: Current Channel
-hop_amount_set: "The **maximum amount** of **channel hops per minute** has been **set to {}**."
-hop_detection_disabled: "**Channel Hopping Detection** has been **disabled**."
+
 new_amount: New amount
-max_hops: Maximum channel hops per minute
+hop_amount_set: "The **maximum amount** of **channel hops per minute** has been **set to {}** for **{}**."
+mute_time_set: "The **muted time** for channel hooping has been **set to {}** seconds."
+hop_detection_disabled: "**Channel Hopping Detection** has been **disabled** for {}."
+
 hops_in_last_minute:
   one: "{cnt} hop in the last minute"
   many: "{cnt} hops in the last minute"
+
+channel_hopping_warning_sent: "Please stop channel hopping!"
