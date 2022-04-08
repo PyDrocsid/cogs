@@ -15,6 +15,7 @@ commands:
   edit_copy: copy a message into another message (specify message links)
   delete: delete a message (specify message link)
   clear: "delete the last <count> messages in this channel"
+  discohook: create a discohook link for an existing message
 
 messages: Messages
 send_embed_title: "Send me the title of the embed! Send {} to cancel."
@@ -51,3 +52,5 @@ deleted_messages:
 log_cleared:
   one: "{} deleted {cnt} message in {}."
   many: "{} deleted {cnt} messages in {}."
+
+cannot_read_messages: You cannot read messages in {}.

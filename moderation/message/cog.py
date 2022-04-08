@@ -7,6 +7,7 @@ from discord.ext.commands import CommandError, Context, UserInputError, guild_on
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import Confirmation, docs, reply
 from PyDrocsid.converter import Color
+from PyDrocsid.discohook import create_discohook_link
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions, read_complete_message, read_normal_message
 
@@ -229,3 +230,15 @@ class MessageCog(Cog, name="Message Commands"):
             ),
         )
         await send_alert(ctx.guild, t.log_cleared(ctx.author.mention, channel.mention, cnt=count))
+
+    @commands.command(aliases=["dh"])
+    @docs(t.commands.discohook)
+    async def discohook(self, ctx: Context, *messages: Message):
+        if not messages:
+            raise UserInputError
+        for msg in messages:
+            if not msg.channel.permissions_for(ctx.author).read_message_history:
+                raise CommandError(t.cannot_read_messages(msg.channel.mention))
+
+        url = await create_discohook_link(*messages)
+        await reply(ctx, url)
