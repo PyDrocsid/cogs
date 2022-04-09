@@ -68,7 +68,7 @@ async def is_logging_channel(channel: TextChannel) -> bool:
     return False
 
 
-async def _send_file(channel, embeds: list[Embed], file_name: str):
+async def _send_file(channel: TextChannel, embeds: list[Embed], file_name: str):
     for embed in embeds:
         f = StringIO(json.dumps(embed.to_dict(), indent=4))
         await channel.send(file=File(filename=file_name, fp=f))
