@@ -10,16 +10,37 @@ from PyDrocsid.database import db, UTCDateTime, Base
 from discord.utils import utcnow
 
 
-class Report(Base):
-    __tablename__ = "report"
+class ModBase(Base):
+    __abstract__ = True
 
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
     member_name: Union[Column, str] = Column(Text)
-    reporter: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
     reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
     evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+
+
+class Punishment(ModBase):
+    __abstract__ = True
+
+    mod: Union[Column, int] = Column(BigInteger)
+    mod_level: Union[Column, int] = Column(Integer)
+
+
+class TimedPunishment(Punishment):
+    __abstract__ = True
+
+    active: Union[Column, bool] = Column(Boolean)
+    deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
+    unmute_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
+    unmute_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+
+
+class Report(ModBase):
+    __tablename__ = "report"
+
+    reporter: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
     async def create(member: int, member_name: str, reporter: int, reason: str, evidence: Optional[str]) -> Report:
@@ -35,21 +56,12 @@ class Report(Base):
         return row
 
 
-class Warn(Base):
+class Warn(Punishment):
     __tablename__ = "warn"
-
-    id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text)
-    mod: Union[Column, int] = Column(BigInteger)
-    mod_level: Union[Column, int] = Column(Integer)
-    timestamp: Union[Column, datetime] = Column(UTCDateTime)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
     @staticmethod
     async def create(
-        member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
+            member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
     ) -> Warn:
         row = Warn(
             member=member,
@@ -76,26 +88,12 @@ class Warn(Base):
         await db.delete(row)
 
 
-class Mute(Base):
+class Mute(Punishment):
     __tablename__ = "mute"
-
-    id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text)
-    mod: Union[Column, int] = Column(BigInteger)
-    mod_level: Union[Column, int] = Column(Integer)
-    timestamp: Union[Column, datetime] = Column(UTCDateTime)
-    minutes: Union[Column, int] = Column(Integer)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    active: Union[Column, bool] = Column(Boolean)
-    deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
-    unmute_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
-    unmute_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
 
     @staticmethod
     async def create(
-        member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: Optional[str]
+            member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: Optional[str]
     ) -> Mute:
         row = Mute(
             member=member,
@@ -143,26 +141,17 @@ class Mute(Base):
         await db.delete(row)
 
 
-class Kick(Base):
+class Kick(Punishment):
     __tablename__ = "kick"
-
-    id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text)
-    mod: Union[Column, int] = Column(BigInteger)
-    mod_level: Union[Column, int] = Column(Integer)
-    timestamp: Union[Column, datetime] = Column(UTCDateTime)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
 
     @staticmethod
     async def create(
-        member: int,
-        member_name: str,
-        mod: Optional[int],
-        mod_level: Optional[int],
-        reason: Optional[str],
-        evidence: Optional[str],
+            member: int,
+            member_name: str,
+            mod: Optional[int],
+            mod_level: Optional[int],
+            reason: Optional[str],
+            evidence: Optional[str],
     ) -> Kick:
         row = Kick(
             member=member,
@@ -189,26 +178,12 @@ class Kick(Base):
         await db.delete(row)
 
 
-class Ban(Base):
+class Ban(Punishment):
     __tablename__ = "ban"
-
-    id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text)
-    mod: Union[Column, int] = Column(BigInteger)
-    mod_level: Union[Column, int] = Column(Integer)
-    timestamp: Union[Column, datetime] = Column(UTCDateTime)
-    minutes: Union[Column, int] = Column(Integer)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    active: Union[Column, bool] = Column(Boolean)
-    deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
-    unban_reason: Union[Column, Optional[str]] = Column(Text, nullable=True)
-    unban_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
 
     @staticmethod
     async def create(
-        member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: Optional[str]
+            member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: Optional[str]
     ) -> Ban:
         row = Ban(
             member=member,
