@@ -112,14 +112,14 @@ class MessageCog(Cog, name="Message Commands"):
     @send.command(name="discohook", aliases=["dh"])
     @docs(t.commands.send_discohook(DISCOHOOK_EMPTY_MESSAGE))
     async def send_discohook(self, ctx: Context, channel: TextChannel, *, discohook_url: str):
-        messages: list[MessageContent] = await load_discohook_link(discohook_url)
+        messages: list[MessageContent] = [msg for msg in await load_discohook_link(discohook_url) if not msg.is_empty]
+        if not messages:
+            raise CommandError(t.discohook_empty)
 
         check_message_send_permissions(channel, check_embed=any(m.embeds for m in messages))
 
         try:
             for message in messages:
-                if message.is_empty:
-                    continue
                 content: str | None = message.content
                 for embed in message.embeds or [None]:
                     await channel.send(content=content, embed=embed)
@@ -204,6 +204,29 @@ class MessageCog(Cog, name="Message Commands"):
         await message.edit(content=content, embed=embed)
         embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.msg_edited)
         await reply(ctx, embed=embed)
+
+    @edit.command(name="discohook", aliases=["dh"])
+    @docs(t.commands.edit_discohook(DISCOHOOK_EMPTY_MESSAGE))
+    async def edit_discohook(self, ctx: Context, message: Message, discohook_url: str):
+        if message.author != self.bot.user:
+            raise CommandError(t.could_not_edit)
+
+        messages: list[MessageContent] = [msg for msg in await load_discohook_link(discohook_url) if not msg.is_empty]
+        if not messages:
+            raise CommandError(t.discohook_empty)
+        if len(messages) > 1:
+            raise CommandError(t.discohook_multiple_messages)
+
+        content, embeds = messages[0]
+        if len(embeds) > 1:
+            raise CommandError(t.discohook_multiple_embeds)
+
+        try:
+            await message.edit(content=content, embeds=embeds)
+        except (HTTPException, Forbidden):
+            raise CommandError(t.msg_could_not_be_sent)
+
+        await add_reactions(ctx.message, "white_check_mark")
 
     @commands.command()
     @MessagePermission.delete.check
