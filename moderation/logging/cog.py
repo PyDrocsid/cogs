@@ -68,6 +68,12 @@ async def is_logging_channel(channel: TextChannel) -> bool:
     return False
 
 
+async def _send_file(channel, embeds: list[Embed], file_name: str):
+    for embed in embeds:
+        f = StringIO(json.dumps(embed.to_dict(), indent=4))
+        await channel.send(file=File(filename=file_name, fp=f))
+
+
 channels: list[str] = []
 
 
@@ -215,11 +221,7 @@ class LoggingCog(Cog, name="Logging"):
             add_field(embed, t.new_content, message.content)
         await edit_channel.send(embed=embed)
         if message.embeds:
-            for edit_embed in message.embeds:
-                em_content = edit_embed.to_dict()
-                json_file = json.dumps(em_content, indent=4)
-                f = StringIO(json_file)
-                await edit_channel.send(file=File(filename=t.after_edited_embeds, fp=f))
+            await _send_file(edit_channel, message.embeds, t.after_edited_embeds)
 
     async def on_message_delete(self, message: Message):
         if message.guild is None:
@@ -253,11 +255,7 @@ class LoggingCog(Cog, name="Logging"):
             embed.add_field(name=t.attachments, value="\n".join(out), inline=False)
         await delete_channel.send(embed=embed)
         if message.embeds:
-            for del_embed in message.embeds:
-                em_content = del_embed.to_dict()
-                json_file = json.dumps(em_content, indent=4)
-                f = StringIO(json_file)
-                await delete_channel.send(file=File(filename=t.embed_deleted, fp=f))
+            await _send_file(delete_channel, message.embeds, t.embed_deleted)
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
