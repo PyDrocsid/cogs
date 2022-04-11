@@ -10,14 +10,6 @@ from sqlalchemy.orm import relationship
 from PyDrocsid.database import Base, UTCDateTime, db, select
 
 
-# tabelle für vote stimmen (ForeignKey)
-# konfigutierbar ausschluss der mute-rolle
-# userpolls abspecken
-# default werte in settings
-# wizzard weg (alles eine zeile)
-# yn so lassen
-
-
 class Poll:
     def __init__(self, owner: int, channel: int):
         self.owner: int = owner
