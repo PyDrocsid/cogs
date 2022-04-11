@@ -9,12 +9,14 @@ commands:
       duration: set the default hours a poll should be open
       votes: set the default amount of votes a user can have on polls
       hidden: set hide attribute for votes on polls
+      anonymous: set if user can see who voted on a poll
 
 permissions:
   team_poll: start a team poll
   read: read poll configuration
   write: edit poll configuration
   delete: delete polls
+  anonymous_bypass: can see user, even if poll is anonymous
 
 error:
   weight_too_small: "Weight cant be lower than `0.1`"
@@ -36,6 +38,8 @@ poll_config:
     unlimited: unlimited
   hidden:
     name: "**Hidden Votes**"
+  anonymous:
+    name: "Anonymous"
   roles:
     name: "**Role Weights**"
     ev_row: "{} -> `{}x`"
@@ -60,6 +64,10 @@ votes:
 hidden:
   hidden: made votes hidden
   not_hidden: made votes visible
+
+anonymous:
+  is_on: made default poll votes anonymous
+  is_off: made default poll votes visible
 
 poll: Poll
 team_poll: Team Poll

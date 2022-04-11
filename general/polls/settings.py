@@ -7,3 +7,4 @@ class PollsDefaultSettings(Settings):
     type = "standard"
     hidden = False
     everyone_power = 1.0
+    anonymous = False

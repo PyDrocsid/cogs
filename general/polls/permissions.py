@@ -13,3 +13,4 @@ class PollsPermission(BasePermission):
     read = auto()
     write = auto()
     delete = auto()
+    anonymous_bypass = auto()

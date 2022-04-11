@@ -18,7 +18,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import check_wastebasket, is_teamler
 
 from .colors import Colors
-from .models import RolesWeights
+from .models import RoleWeight
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -203,7 +203,9 @@ class PollsCog(Cog, name="Polls"):
         )
         hide: bool = await PollsDefaultSettings.hidden.get()
         embed.add_field(name=t.poll_config.hidden.name, value=str(hide), inline=False)
-        roles = await RolesWeights.get()
+        anonymous: bool = await PollsDefaultSettings.anonymous.get()
+        embed.add_field(name=t.poll_config.anonymous.name, value=str(anonymous), inline=False)
+        roles = await RoleWeight.get()
         everyone: int = await PollsDefaultSettings.everyone_power.get()
         base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
         if roles:
@@ -216,7 +218,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.roles_weights)
     async def roles_weights(self, ctx: Context, role: Role, weight: float = None):
-        element = await db.get(RolesWeights, role_id=role.id)
+        element = await db.get(RoleWeight, role_id=role.id)
 
         if not weight and not element:
             raise CommandError(t.error.cant_set_weight)
@@ -228,7 +230,7 @@ class PollsCog(Cog, name="Polls"):
             element.weight = weight
             msg: str = t.role_weight.set(role.id, weight)
         elif weight and not element:
-            await RolesWeights.create(role.id, weight)
+            await RoleWeight.create(role.id, weight)
             msg: str = t.role_weight.set(role.id, weight)
         else:
             await element.remove()
@@ -275,6 +277,19 @@ class PollsCog(Cog, name="Polls"):
             msg: str = t.hidden.not_hidden
 
         await PollsDefaultSettings.hidden.set(status)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
+
+    @settings.command(name="anonymous", aliases=["a"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.anonymous)
+    async def anonymous(self, ctx: Context, status: bool):
+        if status:
+            msg: str = t.anonymous.is_on
+        else:
+            msg: str = t.anonymous.is_off
+
+        await PollsDefaultSettings.anonymous.set(status)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
