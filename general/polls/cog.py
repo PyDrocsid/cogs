@@ -4,11 +4,12 @@ from typing import Optional, Tuple
 
 from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
 from discord.ext import commands
-from discord.ext.commands import CommandError, Context, guild_only
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.embeds import EmbedLimits
+from PyDrocsid.command import docs
+from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
@@ -16,7 +17,9 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import check_wastebasket, is_teamler
 
 from .colors import Colors
+from .models import RolesWeights
 from .permissions import PollsPermission
+from .settings import PollsDefaultSettings
 from ...contributor import Contributor
 
 
@@ -77,7 +80,13 @@ async def send_poll(
 
 
 class PollsCog(Cog, name="Polls"):
-    CONTRIBUTORS = [Contributor.MaxiHuHe04, Contributor.Defelo, Contributor.TNT2k, Contributor.wolflu]
+    CONTRIBUTORS = [
+        Contributor.MaxiHuHe04,
+        Contributor.Defelo,
+        Contributor.TNT2k,
+        Contributor.wolflu,
+        Contributor.NekoFanatic,
+    ]
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
@@ -155,14 +164,51 @@ class PollsCog(Cog, name="Polls"):
                 await message.edit(embed=embed)
                 return
 
-    @commands.command(usage=t.poll_usage, aliases=["vote"])
+    @commands.group(name="poll", aliases=["vote"])
     @guild_only()
-    async def poll(self, ctx: Context, *, args: str):
-        """
-        Starts a poll. Multiline options can be specified using a `\\` at the end of a line
-        """
+    @docs(t.commands.poll)
+    async def poll(self, ctx: Context):
+        if not ctx.subcommand_passed:
+            raise UserInputError
+
+    @poll.command(name="quick", usage=t.poll_usage, aliases=["q"])
+    @docs(t.commands.quick)
+    async def quick(self, ctx: Context, *, args: str):
 
         await send_poll(ctx, t.poll, args)
+
+    @poll.group(name="settings", aliases=["s"])
+    @PollsPermission.read.check
+    @docs(t.commands.settings)
+    async def settings(self, ctx: Context):
+        if ctx.subcommand_passed is not None:
+            if ctx.invoked_subcommand is None:
+                raise UserInputError
+            return
+
+        embed = Embed(title=t.poll_config.title, color=Colors.Polls)
+        time: int = await PollsDefaultSettings.duration.get()
+        embed.add_field(
+            name=t.poll_config.duration.name,
+            value=t.poll_config.duration.time(time) if not time <= 0 else t.poll_config.duration.unlimited,
+            inline=False,
+        )
+        choice: int = await PollsDefaultSettings.max_choices.get()
+        embed.add_field(
+            name=t.poll_config.choices.name,
+            value=t.poll_config.choices.amount(choice) if not choice <= 0 else t.poll_config.choices.unlimited,
+            inline=False,
+        )
+        hide: bool = await PollsDefaultSettings.hidden.get()
+        embed.add_field(name=t.poll_config.hidden.name, value=str(hide), inline=False)
+        roles = await RolesWeights.get()
+        everyone: int = await PollsDefaultSettings.everyone_power.get()
+        base: str = t.poll_config.roles.row(ctx.guild.default_role, everyone)
+        if roles:
+            base.join([t.poll_config.roles.row(role.role_id, role.weight) for role in roles])
+        embed.add_field(name=t.poll_config.roles.name, value=base, inline=False)
+
+        await send_long_embed(ctx, embed, paginate=False)
 
     @commands.command(usage=t.poll_usage, aliases=["teamvote", "tp"])
     @PollsPermission.team_poll.check

@@ -1,6 +1,34 @@
+commands:
+  poll: poll commands
+  quick: small poll with default options
+  new: advanced poll with more options
+  settings: poll settings
+
 permissions:
   team_poll: start a team poll
+  read: read poll configuration
+  write: edit poll configuration
   delete: delete polls
+
+poll_config:
+  title: Default poll configuration
+  duration:
+    name: "**Duration**"
+    time:
+      one: "{} hour"
+      many: "{} hours"
+    unlimited: unlimited
+  choices:
+    name: "**Choices per user**"
+    amount:
+      one: "{} choice per user"
+      many: "{} choices per user"
+    unlimited: unlimited
+  hidden:
+    name: "**Hidden Votes**"
+  roles:
+    name: "**Role Weights**"
+    row: "\n{} -> `{}x`"
 
 poll: Poll
 team_poll: Team Poll
