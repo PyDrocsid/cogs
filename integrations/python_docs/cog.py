@@ -28,7 +28,7 @@ import io
 import os
 import re
 import zlib
-from typing import Iterable, Optional, Callable
+from typing import Callable, Iterable, Optional
 
 import aiohttp
 import discord
@@ -42,8 +42,10 @@ from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.logger import get_logger
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.python_docs

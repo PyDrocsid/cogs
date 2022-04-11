@@ -79,6 +79,26 @@ Required Permissions:
 - `message.send`
 
 
+### `discohook`
+
+Sends one or more messages specified by a [discohook.org](https://discohook.org/){target=_blank} link.
+
+```css
+.send [discohook|dh] <channel> <discohook_url>
+```
+
+Arguments:
+
+| Argument        | Required                  | Description                                                                                        |
+|:---------------:|:-------------------------:|:---------------------------------------------------------------------------------------------------|
+| `channel`       | :fontawesome-solid-check: | The channel into which you want to send the message(s)                                             |
+| `discohook_url` | :fontawesome-solid-check: | The [discohook.org](https://discohook.org/){target=_blank} link containing the messages to be sent |
+
+Required Permissions:
+
+- `message.send`
+
+
 ## `edit`
 
 Contains subcommands to edit messages sent by the bot.
@@ -155,6 +175,26 @@ Required Permissions:
 - `message.edit`
 
 
+### `discohook`
+
+Edits a message sent by the bot and replaces it with the message specified by a [discohook.org](https://discohook.org/){target=_blank} link.
+
+```css
+.edit [discohook|dh] <message> <discohook_url>
+```
+
+Arguments:
+
+| Argument        | Required                  | Description                                                                                             |
+|:---------------:|:-------------------------:|:--------------------------------------------------------------------------------------------------------|
+| `message`       | :fontawesome-solid-check: | The message you want to edit (specify the message link)                                                 |
+| `discohook_url` | :fontawesome-solid-check: | The [discohook.org](https://discohook.org/){target=_blank} link containing the message to use as source |
+
+Required Permissions:
+
+- `message.edit`
+
+
 ## `delete`
 
 Deletes any message.
@@ -194,3 +234,18 @@ Required Permissions:
 
 !!! note
     You cannot delete more than 100 messages at once.
+
+
+## `discohook`
+
+Creates a [discohook.org](https://discohook.org/){target=_blank} link for one or more existing messages.
+
+```css
+.[discohook|dh] [messages...]
+```
+
+Arguments:
+
+| Argument   | Required                  | Description                                                                                       |
+|:----------:|:-------------------------:|:--------------------------------------------------------------------------------------------------|
+| `messages` | :fontawesome-solid-check: | The messages you want to create a [discohook.org](https://discohook.org/){target=_blank} link for |

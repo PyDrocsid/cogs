@@ -22,7 +22,6 @@ description_length: "The description has to be 500 or less characters long!"
 invalid_regex: "Not a valid regular expression!"
 
 log_content_filter_added: "**Regex** `{}` was **added** to **Blacklist** by {}"
-confirm: "Confirm"
 confirm_text: "Are you sure that you want to remove the filter `{}` ({})?"
 log_content_filter_removed: "**Regex** `{}` was **removed** from **Blacklist** by {}"
 log_description_updated: "**Description** was **updated** for regex *{}*\nfrom: `{}`\nto: `{}`"

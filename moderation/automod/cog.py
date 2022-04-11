@@ -1,19 +1,21 @@
 import asyncio
 from asyncio import Task
-from typing import Optional, Dict
+from typing import Dict, Optional
 
-from discord import Role, Member, Guild, Forbidden, HTTPException, Embed
+from discord import Embed, Forbidden, Guild, HTTPException, Member, Role
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .permissions import AutoModPermission
-from .settings import AutoModSettings, AutoKickMode
+from .settings import AutoKickMode, AutoModSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, log_auto_kick, revoke_verification, send_alert
+from ...pubsub import log_auto_kick, revoke_verification, send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.automod

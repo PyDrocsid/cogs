@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Union, Optional
+from typing import Optional, Union
 
 from discord.utils import utcnow
-from sqlalchemy import Column, Integer, BigInteger, Text, Boolean
+from sqlalchemy import BigInteger, Boolean, Column, Integer, Text
 
-from PyDrocsid.database import db, filter_by, UTCDateTime, Base
+from PyDrocsid.database import Base, UTCDateTime, db, filter_by
 
 
 class Join(Base):
