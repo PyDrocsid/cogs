@@ -39,8 +39,6 @@ class Punishment(ModBase):
         await db.add(row)
         return row
 
-    # test
-
     @classmethod
     async def edit(cls, entry_id: int, mod: int, mod_level: int, new_reason: str):
         row = await db.get(cls, id=entry_id)
