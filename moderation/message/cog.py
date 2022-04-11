@@ -5,8 +5,9 @@ from discord.ext import commands
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import Confirmation, docs, reply
+from PyDrocsid.command import Confirmation, add_reactions, docs, reply
 from PyDrocsid.converter import Color
+from PyDrocsid.discohook import DISCOHOOK_EMPTY_MESSAGE, MessageContent, create_discohook_link, load_discohook_link
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions, read_complete_message, read_normal_message
 
@@ -108,6 +109,26 @@ class MessageCog(Cog, name="Message Commands"):
             embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.msg_sent)
             await reply(ctx, embed=embed)
 
+    @send.command(name="discohook", aliases=["dh"])
+    @docs(t.commands.send_discohook(DISCOHOOK_EMPTY_MESSAGE))
+    async def send_discohook(self, ctx: Context, channel: TextChannel, *, discohook_url: str):
+        messages: list[MessageContent] = [msg for msg in await load_discohook_link(discohook_url) if not msg.is_empty]
+        if not messages:
+            raise CommandError(t.discohook_empty)
+
+        check_message_send_permissions(channel, check_embed=any(m.embeds for m in messages))
+
+        try:
+            for message in messages:
+                content: str | None = message.content
+                for embed in message.embeds or [None]:
+                    await channel.send(content=content, embed=embed)
+                    content = None
+        except (HTTPException, Forbidden):
+            raise CommandError(t.msg_could_not_be_sent)
+
+        await add_reactions(ctx.message, "white_check_mark")
+
     @commands.group()
     @MessagePermission.edit.check
     @guild_only()
@@ -184,6 +205,29 @@ class MessageCog(Cog, name="Message Commands"):
         embed = Embed(title=t.messages, colour=Colors.MessageCommands, description=t.msg_edited)
         await reply(ctx, embed=embed)
 
+    @edit.command(name="discohook", aliases=["dh"])
+    @docs(t.commands.edit_discohook(DISCOHOOK_EMPTY_MESSAGE))
+    async def edit_discohook(self, ctx: Context, message: Message, discohook_url: str):
+        if message.author != self.bot.user:
+            raise CommandError(t.could_not_edit)
+
+        messages: list[MessageContent] = [msg for msg in await load_discohook_link(discohook_url) if not msg.is_empty]
+        if not messages:
+            raise CommandError(t.discohook_empty)
+        if len(messages) > 1:
+            raise CommandError(t.discohook_multiple_messages)
+
+        content, embeds = messages[0]
+        if len(embeds) > 1:
+            raise CommandError(t.discohook_multiple_embeds)
+
+        try:
+            await message.edit(content=content, embeds=embeds)
+        except (HTTPException, Forbidden):
+            raise CommandError(t.msg_could_not_be_sent)
+
+        await add_reactions(ctx.message, "white_check_mark")
+
     @commands.command()
     @MessagePermission.delete.check
     @guild_only()
@@ -229,3 +273,15 @@ class MessageCog(Cog, name="Message Commands"):
             ),
         )
         await send_alert(ctx.guild, t.log_cleared(ctx.author.mention, channel.mention, cnt=count))
+
+    @commands.command(aliases=["dh"])
+    @docs(t.commands.discohook)
+    async def discohook(self, ctx: Context, *messages: Message):
+        if not messages:
+            raise UserInputError
+        for msg in messages:
+            if not msg.channel.permissions_for(ctx.author).read_message_history:
+                raise CommandError(t.cannot_read_messages(msg.channel.mention))
+
+        url = await create_discohook_link(*messages)
+        await reply(ctx, url)
