@@ -69,6 +69,13 @@ anonymous:
   is_on: made default poll votes anonymous
   is_off: made default poll votes visible
 
+select:
+  place: Select Options
+  placeholder:
+    one: "Select up to {} option!"
+    more: "Select up to {} options!"
+  label: "Option {}."
+
 poll: Poll
 team_poll: Team Poll
 vote_explanation: Vote using the reactions below!

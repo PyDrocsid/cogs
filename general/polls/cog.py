@@ -2,9 +2,10 @@ import re
 import string
 from typing import Optional, Tuple
 
-from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, Role
+from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, Role, SelectOption
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
+from discord.ui import Select, View
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
@@ -28,7 +29,7 @@ from ...pubsub import send_to_changelog
 tg = t.g
 t = t.polls
 
-MAX_OPTIONS = 20  # Discord reactions limit
+MAX_OPTIONS = 25  # Discord select menu limit
 
 default_emojis = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
 
@@ -42,16 +43,22 @@ async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optiona
 
 
 async def send_poll(
-    ctx: Context, title: str, args: str, field: Optional[Tuple[str, str]] = None, allow_delete: bool = True
+    ctx: Context,
+    title: str,
+    args: str,
+    max_choices: int = None,
+    field: Optional[Tuple[str, str]] = None,
+    allow_delete: bool = True,
 ):
     question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
 
     if not options:
         raise CommandError(t.missing_options)
-    if len(options) > MAX_OPTIONS - allow_delete:
-        raise CommandError(t.too_many_options(MAX_OPTIONS - allow_delete))
+    if len(options) > MAX_OPTIONS:
+        raise CommandError(t.too_many_options(MAX_OPTIONS))
 
     options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
+    print([option.__dict__ for option in options])
 
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
@@ -70,15 +77,25 @@ async def send_poll(
     if field:
         embed.add_field(name=field[0], value=field[1], inline=False)
 
-    poll: Message = await ctx.send(embed=embed)
+    if not max_choices:
+        place = t.select.place
+        max_value = len(options)
+    else:
+        place: str = t.select.placeholder(max_choices)
+        max_value = max_choices if not len(options) > max_choices else len(options)
 
-    try:
-        for option in options:
-            await poll.add_reaction(option.emoji)
-        if allow_delete:
-            await poll.add_reaction(name_to_emoji["wastebasket"])
-    except Forbidden:
-        raise CommandError(t.could_not_add_reactions(ctx.channel.mention))
+    select = Select(
+        placeholder=place,
+        max_values=max_value,
+        options=[
+            SelectOption(label=t.select.label(index + 1), emoji=option.emoji, description=option.option)
+            for index, option in enumerate(options)
+        ],
+    )
+
+    view = View()
+    view.add_item(select)
+    await ctx.send(embed=embed, view=view)
 
 
 class PollsCog(Cog, name="Polls"):
@@ -177,7 +194,7 @@ class PollsCog(Cog, name="Polls"):
     @docs(t.commands.poll.quick)
     async def quick(self, ctx: Context, *, args: str):
 
-        await send_poll(ctx, t.poll, args)
+        await send_poll(ctx, t.poll, args, await PollsDefaultSettings.max_choices.get())
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check
@@ -263,6 +280,9 @@ class PollsCog(Cog, name="Polls"):
         else:
             msg: str = t.votes.set(votes)
 
+        if not 0 < votes < 25:
+            votes = 0
+
         await PollsDefaultSettings.max_choices.set(votes)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
@@ -303,7 +323,12 @@ class PollsCog(Cog, name="Polls"):
         """
 
         await send_poll(
-            ctx, t.team_poll, args, field=(tg.status, await self.get_reacted_teamlers()), allow_delete=False
+            ctx,
+            t.team_poll,
+            args,
+            await PollsDefaultSettings.max_choices.get(),
+            field=(tg.status, await self.get_reacted_teamlers()),
+            allow_delete=False,
         )
 
     @commands.command(aliases=["yn"])
