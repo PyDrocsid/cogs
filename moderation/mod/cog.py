@@ -433,7 +433,7 @@ class ModCog(Cog, name="Mod Tools"):
 
             if not mute.active:
                 if mute.deactivate_mod is None:
-    out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
+                    out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
                 else:
                     out.append(
                         (
@@ -478,7 +478,7 @@ class ModCog(Cog, name="Mod Tools"):
 
             if not ban.active:
                 if ban.deactivate_mod is None:
-    out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
+                    out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
                 else:
                     out.append(
                         (
