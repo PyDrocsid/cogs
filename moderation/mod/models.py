@@ -25,7 +25,7 @@ class Punishment(ModBase):
 
     @classmethod
     async def create(
-            cls, member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
+        cls, member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
     ) -> Punishment:
         row = cls(
             member=member,
