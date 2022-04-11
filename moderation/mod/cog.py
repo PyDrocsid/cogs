@@ -360,11 +360,11 @@ class ModCog(Cog, name="Mod Tools"):
             minutes: Optional[int] = None,
             entry_id: Optional[int] = None,
         ) -> str:
-            args = [mod]
+            args = [f"<@{mod}>"]
 
             if minutes:
                 translation = translation.temp
-                args.append(minutes)
+                args.append(time_to_units(minutes))
             else:
                 translation = translation.inf
 
@@ -376,7 +376,7 @@ class ModCog(Cog, name="Mod Tools"):
             else:
                 translation = translation.id_off
 
-            args.append(evidence)
+            args.append(show_evidence(evidence))
 
             return translation(*args)
 
@@ -421,7 +421,7 @@ class ModCog(Cog, name="Mod Tools"):
                 (
                     mute.timestamp,
                     wrap_time_entry(
-                        translation=t.muted,
+                        translation=t.ulog.muted,
                         mod=mute.mod,
                         reason=mute.reason,
                         evidence=mute.evidence,
@@ -432,16 +432,16 @@ class ModCog(Cog, name="Mod Tools"):
             )
 
             if not mute.active:
-                if mute.unmute_mod is None:
-                    out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
+                if mute.deactivate_mod is None:
+    out.append((mute.deactivation_timestamp, t.ulog.unmuted_expired))
                 else:
                     out.append(
                         (
                             mute.deactivation_timestamp,
                             wrap_entry(
                                 translation=t.unmuted,
-                                user=mute.unmute_mod,
-                                reason=mute.unmute_reason,
+                                user=mute.deactivate_mod,
+                                reason=mute.deactivate_reason,
                                 evidence=None,
                                 entry_id=mute.id if show_ids else None,
                             ),
@@ -466,7 +466,7 @@ class ModCog(Cog, name="Mod Tools"):
                 (
                     ban.timestamp,
                     wrap_time_entry(
-                        translation=t.banned,
+                        translation=t.ulog.banned,
                         mod=ban.mod,
                         reason=ban.reason,
                         evidence=ban.evidence,
@@ -477,16 +477,16 @@ class ModCog(Cog, name="Mod Tools"):
             )
 
             if not ban.active:
-                if ban.unban_mod is None:
-                    out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
+                if ban.deactivate_mod is None:
+    out.append((ban.deactivation_timestamp, t.ulog.unbanned_expired))
                 else:
                     out.append(
                         (
                             ban.deactivation_timestamp,
                             wrap_entry(
-                                translation=t.unbanned,
-                                user=ban.unban_mod,
-                                reason=ban.unban_reason,
+                                translation=t.ulog.unbanned,
+                                user=ban.deactivate_mod,
+                                reason=ban.deactivate_reason,
                                 evidence=None,
                                 entry_id=ban.id if show_ids else None,
                             ),
@@ -1077,7 +1077,7 @@ class ModCog(Cog, name="Mod Tools"):
         user_embed = Embed(
             title=t.kick,
             colour=Colors.ModTools,
-            description=t.kicked.no_evidence(ctx.author.mention, ctx.guild.name, reason),
+            description=t.kicked(ctx.author.mention, ctx.guild.name, reason),
         )
 
         server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)

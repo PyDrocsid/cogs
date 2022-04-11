@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, Optional
+from typing import Union, Optional, Type
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, BigInteger, Text, Boolean
@@ -10,9 +10,7 @@ from PyDrocsid.database import db, UTCDateTime, Base
 from discord.utils import utcnow
 
 
-class ModBase(Base):
-    __abstract__ = True
-
+class ModBase:
     id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     member: Union[Column, int] = Column(BigInteger)
     member_name: Union[Column, str] = Column(Text)
@@ -22,22 +20,98 @@ class ModBase(Base):
 
 
 class Punishment(ModBase):
-    __abstract__ = True
-
     mod: Union[Column, int] = Column(BigInteger)
     mod_level: Union[Column, int] = Column(Integer)
 
+    @classmethod
+    async def create(
+            cls, member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
+    ) -> Punishment:
+        row = cls(
+            member=member,
+            member_name=member_name,
+            mod=mod,
+            mod_level=mod_level,
+            timestamp=utcnow(),
+            reason=reason,
+            evidence=evidence,
+        )
+        await db.add(row)
+        return row
 
-class TimedPunishment(Punishment):
-    __abstract__ = True
+    @classmethod
+    async def edit(cls, entry_id: int, mod: int, mod_level: int, new_reason: str):
+        row = await db.get(cls, id=entry_id)
+        row.mod = mod
+        row.mod_level = mod_level
+        row.reason = new_reason
 
+    @classmethod
+    async def delete(cls, entry_id: int):
+        row = await db.get(cls, id=entry_id)
+        await db.delete(row)
+
+
+class TimedPunishment(ModBase):
+    mod: Union[Column, int] = Column(BigInteger)
+    mod_level: Union[Column, int] = Column(Integer)
+    minutes: Union[Column, int] = Column(Integer)
     active: Union[Column, bool] = Column(Boolean)
     deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
-    unmute_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
-    unmute_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+    deactivate_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
+    deactivate_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+
+    @classmethod
+    async def create(
+        cls, member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: Optional[str]
+    ) -> TimedPunishment:
+        row = cls(
+            member=member,
+            member_name=member_name,
+            mod=mod,
+            mod_level=mod_level,
+            timestamp=utcnow(),
+            minutes=minutes,
+            reason=reason,
+            evidence=evidence,
+            active=True,
+            deactivation_timestamp=None,
+            deactivate_mod=None,
+            deactivate_reason=None,
+        )
+        await db.add(row)
+        return row
+
+    @classmethod
+    async def deactivate(cls, mute_id: int, deactivate_mod: int = None, reason: str = None) -> "TimedPunishment":
+        row: TimedPunishment = await db.get(cls, id=mute_id)
+        row.active = False
+        row.deactivation_timestamp = utcnow()
+        row.deactivate_mod = deactivate_mod
+        row.deactivate_reason = reason
+        return row
+
+    @classmethod
+    async def edit_reason(cls, entry_id: int, mod: int, mod_level: int, new_reason: str):
+        row = await db.get(cls, id=entry_id)
+        row.mod = mod
+        row.mod_level = mod_level
+        row.reason = new_reason
+
+    @classmethod
+    async def edit_duration(cls, entry_id: int, mod: int, mod_level: int, new_duration: int):
+        row = await db.get(cls, id=entry_id)
+        row.mod = mod
+        row.mod_level = mod_level
+        row.minutes = new_duration
+
+    @classmethod
+    async def delete(cls, entry_id: int):
+        row = await db.get(cls, id=entry_id)
+        await db.delete(row)
 
 
-class Report(ModBase):
+class Report(ModBase, Base):
     __tablename__ = "report"
 
     reporter: Union[Column, int] = Column(BigInteger)
@@ -56,176 +130,17 @@ class Report(ModBase):
         return row
 
 
-class Warn(Punishment):
+class Warn(Punishment, Base):
     __tablename__ = "warn"
 
-    @staticmethod
-    async def create(
-            member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
-    ) -> Warn:
-        row = Warn(
-            member=member,
-            member_name=member_name,
-            mod=mod,
-            mod_level=mod_level,
-            timestamp=utcnow(),
-            reason=reason,
-            evidence=evidence,
-        )
-        await db.add(row)
-        return row
 
-    @staticmethod
-    async def edit(warn_id: int, mod: int, mod_level: int, new_reason: str):
-        row = await db.get(Warn, id=warn_id)
-        row.mod = mod
-        row.mod_level = mod_level
-        row.reason = new_reason
-
-    @staticmethod
-    async def delete(warn_id: int):
-        row = await db.get(Warn, id=warn_id)
-        await db.delete(row)
-
-
-class Mute(Punishment):
+class Mute(TimedPunishment, Base):
     __tablename__ = "mute"
 
-    @staticmethod
-    async def create(
-            member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: Optional[str]
-    ) -> Mute:
-        row = Mute(
-            member=member,
-            member_name=member_name,
-            mod=mod,
-            mod_level=mod_level,
-            timestamp=utcnow(),
-            minutes=minutes,
-            reason=reason,
-            evidence=evidence,
-            active=True,
-            deactivation_timestamp=None,
-            unmute_mod=None,
-            unmute_reason=None,
-        )
-        await db.add(row)
-        return row
 
-    @staticmethod
-    async def deactivate(mute_id: int, unmute_mod: int = None, reason: str = None) -> "Mute":
-        row: Mute = await db.get(Mute, id=mute_id)
-        row.active = False
-        row.deactivation_timestamp = utcnow()
-        row.unmute_mod = unmute_mod
-        row.unmute_reason = reason
-        return row
-
-    @staticmethod
-    async def edit_reason(mute_id: int, mod: int, mod_level: int, new_reason: str):
-        row = await db.get(Mute, id=mute_id)
-        row.mod = mod
-        row.mod_level = mod_level
-        row.reason = new_reason
-
-    @staticmethod
-    async def edit_duration(mute_id: int, mod: int, mod_level: int, new_duration: int):
-        row = await db.get(Mute, id=mute_id)
-        row.mod = mod
-        row.mod_level = mod_level
-        row.minutes = new_duration
-
-    @staticmethod
-    async def delete(mute_id: int):
-        row = await db.get(Mute, id=mute_id)
-        await db.delete(row)
-
-
-class Kick(Punishment):
+class Kick(Punishment, Base):
     __tablename__ = "kick"
 
-    @staticmethod
-    async def create(
-            member: int,
-            member_name: str,
-            mod: Optional[int],
-            mod_level: Optional[int],
-            reason: Optional[str],
-            evidence: Optional[str],
-    ) -> Kick:
-        row = Kick(
-            member=member,
-            member_name=member_name,
-            mod=mod,
-            mod_level=mod_level,
-            timestamp=utcnow(),
-            reason=reason,
-            evidence=evidence,
-        )
-        await db.add(row)
-        return row
 
-    @staticmethod
-    async def edit(kick_id: int, mod: int, mod_level: int, new_reason: str):
-        row = await db.get(Kick, id=kick_id)
-        row.mod = mod
-        row.mod_level = mod_level
-        row.reason = new_reason
-
-    @staticmethod
-    async def delete(kick_id: int):
-        row = await db.get(Kick, id=kick_id)
-        await db.delete(row)
-
-
-class Ban(Punishment):
+class Ban(TimedPunishment, Base):
     __tablename__ = "ban"
-
-    @staticmethod
-    async def create(
-            member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: Optional[str]
-    ) -> Ban:
-        row = Ban(
-            member=member,
-            member_name=member_name,
-            mod=mod,
-            mod_level=mod_level,
-            timestamp=utcnow(),
-            minutes=minutes,
-            reason=reason,
-            evidence=evidence,
-            active=True,
-            deactivation_timestamp=None,
-            unban_reason=None,
-            unban_mod=None,
-        )
-        await db.add(row)
-        return row
-
-    @staticmethod
-    async def deactivate(ban_id: int, unban_mod: int = None, unban_reason: str = None) -> Ban:
-        row: Ban = await db.get(Ban, id=ban_id)
-        row.active = False
-        row.deactivation_timestamp = utcnow()
-        row.unban_mod = unban_mod
-        row.unban_reason = unban_reason
-        return row
-
-    @staticmethod
-    async def edit_reason(ban_id: int, mod: int, mod_level: int, new_reason: str):
-        row = await db.get(Ban, id=ban_id)
-        row.mod = mod
-        row.mod_level = mod_level
-        row.reason = new_reason
-
-    @staticmethod
-    async def edit_duration(ban_id: int, mod: int, mod_level: int, new_duration: int):
-        row = await db.get(Ban, id=ban_id)
-        row.mod = mod
-        row.mod_level = mod_level
-        row.minutes = new_duration
-
-    @staticmethod
-    async def delete(ban_id: int):
-        row = await db.get(Ban, id=ban_id)
-        await db.delete(row)
