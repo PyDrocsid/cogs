@@ -21,7 +21,7 @@ from .models import LogExclude
 from .permissions import LoggingPermission
 from .settings import LoggingSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction, ignore_message_edit
+from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction, ignore_message_edit, ignore_message_delete
 
 logger = get_logger(__name__)
 
@@ -135,6 +135,10 @@ class LoggingCog(Cog, name="Logging"):
     async def handle_ignore_message_edit(self, message: Message):
         await redis.setex(f"ignore_message_edit:{message.channel.id}:{message.id}", CACHE_TTL, 1)
 
+    @ignore_message_delete.subscribe
+    async def handle_ignore_message_delete(self, message: Message):
+        await redis.setex(f"ignore_message_delete:{message.channel.id}:{message.id}", CACHE_TTL, 1)
+
     async def on_ready(self):
         try:
             self.cleanup_loop.start()
@@ -211,6 +215,8 @@ class LoggingCog(Cog, name="Logging"):
     async def on_message_delete(self, message: Message):
         if message.guild is None:
             return
+        if await redis.delete(f"ignore_message_delete:{message.channel.id}:{message.id}"):
+            return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
         await redis.delete(f"little_diff_message_edit:{message.id}")
@@ -240,6 +246,8 @@ class LoggingCog(Cog, name="Logging"):
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
+            return
+        if await redis.delete(f"ignore_message_delete:{event.channel_id}:{event.message_id}"):
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return

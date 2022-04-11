@@ -1,0 +1,53 @@
+permissions:
+  bypass: bypass content filter checks
+  read: read content filter configuration
+  write: write content filter configuration
+
+commands:
+  content_filter: "manage content filter settings"
+  add: "add a regex to the blacklist"
+  remove: "remove a regex from the blacklist"
+  check: "check if a string matches a regex \n(set `regex` to `-1` to check against all existing patterns)"
+  update: "update a content filter pattern"
+  update_description: "update the description of a pattern"
+  update_regex: "update regex of a pattern"
+  delete_message: "change whether to delete messages that match a pattern"
+
+ulog_message: ":stop_sign: **Sent** a message with the forbidden string `{}` in <#{}> (not deleted)."
+ulog_message_deleted: ":stop_sign: **Sent** a message with the forbidden string `{}` in <#{}> (deleted)."
+
+already_blacklisted: "This regex is already in the list!"
+not_blacklisted: "This regex is not in the blacklist!"
+description_length: "The description has to be 500 or less characters long!"
+invalid_regex: "Not a valid regular expression!"
+
+log_content_filter_added: "**Regex** `{}` was **added** to **Blacklist** by {}"
+confirm: "Confirm"
+confirm_text: "Are you sure that you want to remove the filter `{}` ({})?"
+log_content_filter_removed: "**Regex** `{}` was **removed** from **Blacklist** by {}"
+log_description_updated: "**Description** was **updated** for regex *{}*\nfrom: `{}`\nto: `{}`"
+log_regex_updated: "**Regex** was **updated**\nfrom: `{}`\nto: `{}`"
+log_delete_updated: "**Delete** was set to **{}** for `{}`"
+log_forbidden_posted: |
+  {} sent a **[message]({})** in {}, which contained one or more new **forbidden expressions**: `{}` (no delete required)
+  All matched ID's: `{}`
+log_forbidden_posted_deleted: |
+  {}'s **[message]({})** in {} was **deleted** because it contained one or more new **forbidden expressions**: `{}`
+  All matched ID's: `{}`
+log_forbidden_posted_not_deleted: |
+  {} sent a **[message]({})** in {}, which contained one or more new **forbidden expressions**: `{}`
+  All matched ID's: `{}`
+  **The message could not be deleted** because I do not have `manage_messages` permission in this channel.
+
+bad_word_list_header: "Blacklisted Expressions"
+no_pattern_listed: "No blacklisted patterns yet!"
+
+embed_field_name: ":dna: ID `{}` - {}"
+embed_field_value: "Regex: `{}`\nDelete: *{}*"
+delete: "True"
+not_delete: "False"
+
+checked_expressions: "Checked Expressions"
+matches: "Matches:"
+no_matches: "No matches found!"
+invalid_pattern: "Invalid pattern!"
