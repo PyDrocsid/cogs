@@ -57,6 +57,15 @@ class Polls(Base):
     keep: Union[Column, bool] = Column(Boolean)
 
 
+class Voted(Base):
+    __tablename__ = "voted_user"
+
+    id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
+    user_id: Union[Column, int] = Column(BigInteger)
+    option_id: Options = relationship("Options")
+    vote_weight: Union[Column, float] = Column(Float)
+
+
 class Options(Base):
     __tablename__ = "poll_options"
 
@@ -96,12 +105,3 @@ class RolesWeights(Base):
     @staticmethod
     async def get() -> list[RolesWeights]:
         return await db.all(select(RolesWeights))
-
-
-class Voted(Base):
-    __tablename__ = "voted_user"
-
-    id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
-    user_id: Union[Column, int] = Column(BigInteger)
-    option_id: Options = relationship("Options")
-    vote_weight: Union[Column, float] = Column(Float)

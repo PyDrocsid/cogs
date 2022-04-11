@@ -2,13 +2,14 @@ import re
 import string
 from typing import Optional, Tuple
 
-from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
+from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, Role
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs
+from PyDrocsid.command import add_reactions, docs
+from PyDrocsid.database import db
 from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
 from PyDrocsid.events import StopEventHandling
@@ -21,6 +22,7 @@ from .models import RolesWeights
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
+from ...pubsub import send_to_changelog
 
 
 tg = t.g
@@ -166,20 +168,20 @@ class PollsCog(Cog, name="Polls"):
 
     @commands.group(name="poll", aliases=["vote"])
     @guild_only()
-    @docs(t.commands.poll)
+    @docs(t.commands.poll.poll)
     async def poll(self, ctx: Context):
         if not ctx.subcommand_passed:
             raise UserInputError
 
     @poll.command(name="quick", usage=t.poll_usage, aliases=["q"])
-    @docs(t.commands.quick)
+    @docs(t.commands.poll.quick)
     async def quick(self, ctx: Context, *, args: str):
 
         await send_poll(ctx, t.poll, args)
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check
-    @docs(t.commands.settings)
+    @docs(t.commands.poll.settings.settings)
     async def settings(self, ctx: Context):
         if ctx.subcommand_passed is not None:
             if ctx.invoked_subcommand is None:
@@ -203,12 +205,78 @@ class PollsCog(Cog, name="Polls"):
         embed.add_field(name=t.poll_config.hidden.name, value=str(hide), inline=False)
         roles = await RolesWeights.get()
         everyone: int = await PollsDefaultSettings.everyone_power.get()
-        base: str = t.poll_config.roles.row(ctx.guild.default_role, everyone)
+        base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
         if roles:
-            base.join([t.poll_config.roles.row(role.role_id, role.weight) for role in roles])
+            base += "".join([t.poll_config.roles.row(role.role_id, role.weight) for role in roles])
         embed.add_field(name=t.poll_config.roles.name, value=base, inline=False)
 
         await send_long_embed(ctx, embed, paginate=False)
+
+    @settings.command(name="roles_weights", aliases=["rw"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.roles_weights)
+    async def roles_weights(self, ctx: Context, role: Role, weight: float = None):
+        element = await db.get(RolesWeights, role_id=role.id)
+
+        if not weight and not element:
+            raise CommandError(t.error.cant_set_weight)
+
+        if weight and weight < 0.1:
+            raise CommandError(t.error.weight_too_small)
+
+        if element and weight:
+            element.weight = weight
+            msg: str = t.role_weight.set(role.id, weight)
+        elif weight and not element:
+            await RolesWeights.create(role.id, weight)
+            msg: str = t.role_weight.set(role.id, weight)
+        else:
+            await element.remove()
+            msg: str = t.role_weight.reset(role.id)
+
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
+
+    @settings.command(name="duration", aliases=["d"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.duration)
+    async def duration(self, ctx: Context, hours: int = None):
+        if not hours:
+            hours = 0
+            msg: str = t.duration.reset()
+        else:
+            msg: str = t.duration.set(hours)
+
+        await PollsDefaultSettings.duration.set(hours)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
+
+    @settings.command(name="votes", aliases=["v", "choices", "c"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.votes)
+    async def votes(self, ctx: Context, votes: int = None):
+        if not votes:
+            votes = 0
+            msg: str = t.votes.reset
+        else:
+            msg: str = t.votes.set(votes)
+
+        await PollsDefaultSettings.max_choices.set(votes)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
+
+    @settings.command(name="hidden", aliases=["h"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.hidden)
+    async def hidden(self, ctx: Context, status: bool):
+        if status:
+            msg: str = t.hidden.hidden
+        else:
+            msg: str = t.hidden.not_hidden
+
+        await PollsDefaultSettings.hidden.set(status)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
 
     @commands.command(usage=t.poll_usage, aliases=["teamvote", "tp"])
     @PollsPermission.team_poll.check

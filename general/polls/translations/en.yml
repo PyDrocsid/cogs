@@ -1,14 +1,24 @@
 commands:
-  poll: poll commands
-  quick: small poll with default options
-  new: advanced poll with more options
-  settings: poll settings
+  poll:
+    poll: poll commands
+    quick: small poll with default options
+    new: advanced poll with more options
+    settings:
+      settings: poll settings
+      roles_weights: manage weight for certain roles
+      duration: set the default hours a poll should be open
+      votes: set the default amount of votes a user can have on polls
+      hidden: set hide attribute for votes on polls
 
 permissions:
   team_poll: start a team poll
   read: read poll configuration
   write: edit poll configuration
   delete: delete polls
+
+error:
+  weight_too_small: "Weight cant be lower than `0.1`"
+  cant_set_weight: Can't set weight!
 
 poll_config:
   title: Default poll configuration
@@ -28,7 +38,28 @@ poll_config:
     name: "**Hidden Votes**"
   roles:
     name: "**Role Weights**"
-    row: "\n{} -> `{}x`"
+    ev_row: "{} -> `{}x`"
+    row: "\n<@&{}> -> `{}x`"
+
+role_weight:
+  set: "Set vote weight for <@&{}> to `{}`"
+  reset: "Vote weight was reset for <@&{}>"
+
+duration:
+  set:
+    one: "Set default duration for poll to {} hour"
+    many: "Set default duration for poll to {} hours"
+  reset: "Set the default duration for polls to unlimited"
+
+votes:
+  set:
+    one: "Set default votes for a poll to {} vote"
+    many: "Set default votes for a poll to {} votes"
+  reset: "Set the default votes for polls to unlimited"
+
+hidden:
+  hidden: made votes hidden
+  not_hidden: made votes visible
 
 poll: Poll
 team_poll: Team Poll
