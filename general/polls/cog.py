@@ -58,7 +58,6 @@ async def send_poll(
         raise CommandError(t.too_many_options(MAX_OPTIONS))
 
     options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
-    print([option.__dict__ for option in options])
 
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
@@ -82,7 +81,7 @@ async def send_poll(
         max_value = len(options)
     else:
         place: str = t.select.placeholder(max_choices)
-        max_value = max_choices if not len(options) > max_choices else len(options)
+        max_value = len(options) if max_choices >= len(options) else max_choices
 
     select = Select(
         placeholder=place,

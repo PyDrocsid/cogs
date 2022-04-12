@@ -78,7 +78,7 @@ select:
   place: Select Options
   placeholder:
     one: "Select up to {} option!"
-    more: "Select up to {} options!"
+    many: "Select up to {} options!"
   label: "Option {}."
 
 poll: Poll
