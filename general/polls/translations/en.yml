@@ -10,6 +10,7 @@ commands:
       votes: set the default amount of votes a user can have on polls
       hidden: set hide attribute for votes on polls
       anonymous: set if user can see who voted on a poll
+      everyone: manage role weight for the default role
 
 permissions:
   team_poll: start a team poll
@@ -47,7 +48,11 @@ poll_config:
 
 role_weight:
   set: "Set vote weight for <@&{}> to `{}`"
-  reset: "Vote weight was reset for <@&{}>"
+  reset: "Vote weight has been reset for <@&{}>"
+
+weight_everyone:
+  set: "Set vote weight for the default role to `{}`"
+  reset: Vote weight for the default role has been reset
 
 duration:
   set:

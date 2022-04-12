@@ -313,6 +313,23 @@ class PollsCog(Cog, name="Polls"):
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
+    @settings.command(name="everyone", aliases=["e"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.everyone)
+    async def everyone(self, ctx: Context, weight: float = None):
+        if weight and weight < 0.1:
+            raise CommandError(t.error.weight_too_small)
+
+        if not weight:
+            await PollsDefaultSettings.everyone_power.set(1.0)
+            msg: str = t.weight_everyone.reset
+        else:
+            await PollsDefaultSettings.everyone_power.set(weight)
+            msg: str = t.weight_everyone.set(weight)
+
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
+
     @commands.command(usage=t.poll_usage, aliases=["teamvote", "tp"])
     @PollsPermission.team_poll.check
     @guild_only()
