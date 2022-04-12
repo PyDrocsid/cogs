@@ -10,6 +10,39 @@ from sqlalchemy.orm import relationship
 from PyDrocsid.database import Base, UTCDateTime, db, select
 
 
+class TeamYesNo(Base):
+    __tablename__ = "team_yes_no"
+
+    message_id: Union[Column, int] = Column(BigInteger, unique=True, primary_key=True)
+    users: list[YesNoUser] = relationship("YesNoUser", back_populates="poll", cascade="all, delete")
+    in_favor: Union[Column, int] = Column(Float)
+    against: Union[Column, int] = Column(Float)
+    abstention: Union[Column, int] = Column(Float)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
+
+    @staticmethod
+    async def create(message_id: int) -> TeamYesNo:
+        row = TeamYesNo(message_id=message_id, in_favor=0, against=0, abstention=0, timestamp=utcnow())
+        await db.add(row)
+        return row
+
+
+class YesNoUser(Base):
+    __tablename__ = "team_yes_no_voter"
+
+    id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
+    poll_id: Union[Column, int] = Column(BigInteger, ForeignKey("team_yes_no.message_id"))
+    poll: TeamYesNo = relationship("TeamYesNo", back_populates="users")
+    option: Union[Column, int] = Column(BigInteger)
+    user: Union[Column, int] = Column(BigInteger)
+
+    @staticmethod
+    async def create(user: int, poll_id: int, option: int) -> YesNoUser:
+        row = YesNoUser(user=user, poll_id=poll_id, option=option)
+        await db.add(row)
+        return row
+
+
 class Poll(Base):
     __tablename__ = "poll"
 
@@ -31,16 +64,6 @@ class Poll(Base):
     keep: Union[Column, bool] = Column(Boolean)
 
 
-class Voted(Base):
-    __tablename__ = "voted_user"
-
-    id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
-    user_id: Union[Column, int] = Column(BigInteger)
-    option_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll_option.id"))
-    option: Option = relationship("Option", back_populates="votes", cascade="all, delete")
-    vote_weight: Union[Column, float] = Column(Float)
-
-
 class Option(Base):
     __tablename__ = "poll_option"
 
@@ -57,6 +80,16 @@ class Option(Base):
         await db.add(options)
 
         return options
+
+
+class Voted(Base):
+    __tablename__ = "voted_user"
+
+    id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
+    user_id: Union[Column, int] = Column(BigInteger)
+    option_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll_option.id"))
+    option: Option = relationship("Option", back_populates="votes", cascade="all, delete")
+    vote_weight: Union[Column, float] = Column(Float)
 
 
 class RoleWeight(Base):

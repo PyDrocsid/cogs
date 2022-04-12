@@ -96,6 +96,7 @@ yes_no:
 
 poll: Poll
 team_poll: Team Poll
+team_yn_poll: Team Yes-No Poll
 vote_explanation: Vote using the reactions below!
 too_many_options: You specified too many options. The maximum amount is {}.
 option_too_long: Options are limited to {} characters.

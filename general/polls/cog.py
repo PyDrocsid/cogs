@@ -12,17 +12,15 @@ from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import add_reactions, docs
-from PyDrocsid.database import db
+from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
-
-# from PyDrocsid.redis import redis
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import RoleWeight
+from .models import RoleWeight, TeamYesNo, YesNoUser
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -44,6 +42,12 @@ def create_select_view(select: Select) -> View:
     return view
 
 
+def get_percentage(values: list[float]) -> list[tuple[float, float]]:
+    together = sum(values)
+
+    return [(value, round(((value / together) * 100), 2)) for value in values]
+
+
 async def get_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--type", "-T", default="standard", choices=["standard", "team"], type=str)
@@ -56,12 +60,12 @@ async def get_parser() -> ArgumentParser:
     return parser
 
 
-async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
+async def get_teampoll_embed(message: Message) -> Tuple[Optional[str], Optional[Embed], Optional[int]]:
     for embed in message.embeds:
         for i, field in enumerate(embed.fields):
             if tg.status == field.name:
-                return embed, i
-    return None, None
+                return embed.title, embed, i
+    return None, None, None
 
 
 async def send_poll(
@@ -118,20 +122,90 @@ async def send_poll(
     await ctx.send(embed=embed, view=create_select_view(select))
 
 
-async def edit_team_embed(embed: Embed, user: int, option: str):
-    pass
+async def edit_team_yn(embed: Embed, poll: TeamYesNo, missing: list[Member]) -> Embed:
+    calc = get_percentage([poll.in_favor, poll.against, poll.abstention])
+    for index, field in enumerate(embed.fields):
+        if field.name == t.yes_no.in_favor:
+            embed.set_field_at(index, name=field.name, value=t.yes_no.count(calc[0][1], cnt=calc[0][0]))
+        elif field.name == t.yes_no.against:
+            embed.set_field_at(index, name=field.name, value=t.yes_no.count(calc[1][1], cnt=calc[1][0]))
+        elif field.name == t.yes_no.abstention:
+            embed.set_field_at(index, name=field.name, value=t.yes_no.count(calc[2][1], cnt=calc[2][0]))
+        if field.name == tg.status:
+            missing.sort(key=lambda m: str(m).lower())
+            *teamlers, last = (x.mention for x in missing)
+            teamlers: list[str]
+            embed.set_field_at(
+                index,
+                name=field.name,
+                value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
+            )
+
+    return embed
+
+
+async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
+    teamlers: set[Member] = set()
+    for role_name in team_roles:
+        if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
+            continue
+
+        teamlers.update(member for member in team_role.members if not member.bot)
+
+    return teamlers
 
 
 class MySelect(Select):
+    @db_wrapper
     async def callback(self, interaction):
         message: Message = interaction.message
+        teamlers: set[Member] = await get_teamler(interaction.guild, ["team"])
+        team_poll = await get_teampoll_embed(message)
 
-        if await get_teampoll_embed(message) != (None, None):
-            pass
+        if team_poll[0] == t.team_yn_poll:
+            if interaction.user not in teamlers:
+                return
+
+            poll = await db.get(TeamYesNo, message_id=message.id)
+
+            if not (user := await db.get(YesNoUser, poll_id=message.id)):
+                user = await YesNoUser.create(interaction.user.id, message.id, int(self.values[0]))
+                if int(self.values[0]) == 0:
+                    poll.in_favor += 1
+                elif int(self.values[0]) == 1:
+                    poll.against += 1
+                else:
+                    poll.abstention += 1
+            else:
+                old_user_option = int(user.option)
+                user.option = int(self.values[0])
+                if int(self.values[0]) == 0:
+                    poll.in_favor += 1
+                elif int(self.values[0]) == 1:
+                    poll.against += 1
+                else:
+                    poll.abstention += 1
+
+                if old_user_option == 0:
+                    poll.in_favor -= 1
+                elif old_user_option == 1:
+                    poll.against -= 1
+                else:
+                    poll.abstention -= 1
+
+            rows = await db.all(filter_by(YesNoUser, poll_id=message.id))
+            user_ids = [user.user for user in rows]
+            missing: list[Member] = [team for team in teamlers if team.id not in user_ids]
+
+            embed = await edit_team_yn(team_poll[1], poll, missing)
+            await message.edit(embed=embed)
+
+        elif team_poll[0] == t.team_poll:
+            if interaction.user.id not in teamlers:
+                return
+
         else:
             pass
-        print(self.values, interaction.user.id)
-        return interaction.user.id, self.values
 
 
 class PollsCog(Cog, name="Polls"):
@@ -353,12 +427,12 @@ class PollsCog(Cog, name="Polls"):
     @guild_only()
     @docs(t.commands.team_yes_no)
     async def team_yesno(self, ctx: Context, *, text: str):
-        ops = [(t.yes_no.in_favor, "thumbsup"), (t.yes_no.against, "thumbsdown"), (t.yes_no.abstention, "zzz")]
+        ops = [(t.yes_no.in_favor, "thumbsup", 0), (t.yes_no.against, "thumbsdown", 1), (t.yes_no.abstention, "zzz", 2)]
         select = MySelect(
             placeholder=t.select.placeholder(cnt=1),
-            options=[SelectOption(label=op[0], emoji=name_to_emoji[op[1]]) for op in ops],
+            options=[SelectOption(label=op[0], emoji=name_to_emoji[op[1]], value=str(op[2])) for op in ops],
         )
-        embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=utcnow())
+        embed = Embed(title=t.team_yn_poll, description=text, color=Colors.Polls, timestamp=utcnow())
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
 
         embed.add_field(name=t.yes_no.in_favor, value=t.yes_no.count(0, cnt=0), inline=True)
@@ -366,7 +440,8 @@ class PollsCog(Cog, name="Polls"):
         embed.add_field(name=t.yes_no.abstention, value=t.yes_no.count(0, cnt=0), inline=True)
         embed.add_field(name=tg.status, value=await self.get_reacted_teamlers(), inline=False)
 
-        await ctx.send(embed=embed, view=create_select_view(select))
+        msg: Message = await ctx.send(embed=embed, view=create_select_view(select))
+        await TeamYesNo.create(msg.id)
 
 
 class PollOption:
