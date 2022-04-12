@@ -168,8 +168,8 @@ class MySelect(Select):
 
             poll = await db.get(TeamYesNo, message_id=message.id)
 
-            if not (user := await db.get(YesNoUser, poll_id=message.id)):
-                user = await YesNoUser.create(interaction.user.id, message.id, int(self.values[0]))
+            if not (user := await db.get(YesNoUser, poll_id=message.id, user=interaction.user.id)):
+                await YesNoUser.create(interaction.user.id, message.id, int(self.values[0]))
                 if int(self.values[0]) == 0:
                     poll.in_favor += 1
                 elif int(self.values[0]) == 1:
