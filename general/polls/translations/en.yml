@@ -11,6 +11,8 @@ commands:
       hidden: set hide attribute for votes on polls
       anonymous: set if user can see who voted on a poll
       everyone: manage role weight for the default role
+  yes_no: add thumbs-up/down emotes on a message
+  team_yes_no: starts a yes/no poll and shows, which teamler has not voted yet.
 
 permissions:
   team_poll: start a team poll
@@ -28,14 +30,14 @@ poll_config:
   duration:
     name: "**Duration**"
     time:
-      one: "{} hour"
-      many: "{} hours"
+      one: "{cnt} hour"
+      many: "{cnt} hours"
     unlimited: unlimited
   choices:
     name: "**Choices per user**"
     amount:
-      one: "{} choice per user"
-      many: "{} choices per user"
+      one: "{cnt} choice per user"
+      many: "{cnt} choices per user"
     unlimited: unlimited
   hidden:
     name: "**Hidden Votes**"
@@ -56,14 +58,14 @@ weight_everyone:
 
 duration:
   set:
-    one: "Set default duration for poll to {} hour"
-    many: "Set default duration for poll to {} hours"
+    one: "Set default duration for poll to {cnt} hour"
+    many: "Set default duration for poll to {cnt} hours"
   reset: "Set the default duration for polls to unlimited"
 
 votes:
   set:
-    one: "Set default votes for a poll to {} vote"
-    many: "Set default votes for a poll to {} votes"
+    one: "Set default votes for a poll to {cnt} vote"
+    many: "Set default votes for a poll to {cnt} votes"
   reset: "Set the default votes for polls to unlimited"
 
 hidden:
@@ -77,9 +79,20 @@ anonymous:
 select:
   place: Select Options
   placeholder:
-    one: "Select up to {} option!"
-    many: "Select up to {} options!"
+    one: "Select an option!"
+    many: "Select up to {cnt} options!"
   label: "Option {}."
+
+usage:
+  new: "[--type {standard,team}] [--deadline DEADLINE] [--anonymous ANONYMOUS] [--choices CHOICES]"
+
+yes_no:
+  in_favor: "Yes"
+  against: "No"
+  abstention: "Abstention"
+  count:
+    one: "{cnt} vote ({}%)"
+    many: "{cnt} votes ({}%)"
 
 poll: Poll
 team_poll: Team Poll

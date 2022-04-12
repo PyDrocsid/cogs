@@ -1,8 +1,10 @@
 import re
 import string
-from typing import Optional, Tuple
+from argparse import ArgumentParser
+from datetime import datetime
+from typing import Optional, Tuple, Union
 
-from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, Role, SelectOption
+from discord import Embed, Forbidden, Guild, Member, Message, Role, SelectOption
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 from discord.ui import Select, View
@@ -13,10 +15,11 @@ from PyDrocsid.command import add_reactions, docs
 from PyDrocsid.database import db
 from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
-from PyDrocsid.events import StopEventHandling
+
+# from PyDrocsid.redis import redis
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import check_wastebasket, is_teamler
+from PyDrocsid.util import is_teamler
 
 from .colors import Colors
 from .models import RoleWeight
@@ -32,6 +35,25 @@ t = t.polls
 MAX_OPTIONS = 25  # Discord select menu limit
 
 default_emojis = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
+
+
+def create_select_view(select: Select) -> View:
+    view = View()
+    view.add_item(select)
+
+    return view
+
+
+async def get_parser() -> ArgumentParser:
+    parser = ArgumentParser()
+    parser.add_argument("--type", "-T", default="standard", choices=["standard", "team"], type=str)
+    parser.add_argument(
+        "--deadline", "-D", default=await PollsDefaultSettings.duration.get(), type=Union[int, datetime]
+    )
+    parser.add_argument("--anonymous", "-A", default=await PollsDefaultSettings.anonymous.get(), type=bool)
+    parser.add_argument("--choices", "-C", default=await PollsDefaultSettings.max_choices.get(), type=int)
+
+    return parser
 
 
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
@@ -80,10 +102,11 @@ async def send_poll(
         place = t.select.place
         max_value = len(options)
     else:
-        place: str = t.select.placeholder(max_choices)
-        max_value = len(options) if max_choices >= len(options) else max_choices
+        use = len(options) if max_choices >= len(options) else max_choices
+        place: str = t.select.placeholder(cnt=use)
+        max_value = use
 
-    select = Select(
+    select = MySelect(
         placeholder=place,
         max_values=max_value,
         options=[
@@ -92,9 +115,23 @@ async def send_poll(
         ],
     )
 
-    view = View()
-    view.add_item(select)
-    await ctx.send(embed=embed, view=view)
+    await ctx.send(embed=embed, view=create_select_view(select))
+
+
+async def edit_team_embed(embed: Embed, user: int, option: str):
+    pass
+
+
+class MySelect(Select):
+    async def callback(self, interaction):
+        message: Message = interaction.message
+
+        if await get_teampoll_embed(message) != (None, None):
+            pass
+        else:
+            pass
+        print(self.values, interaction.user.id)
+        return interaction.user.id, self.values
 
 
 class PollsCog(Cog, name="Polls"):
@@ -134,66 +171,12 @@ class PollsCog(Cog, name="Polls"):
         teamlers: list[str]
         return t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1)
 
-    async def on_raw_reaction_add(self, message: Message, emoji: PartialEmoji, member: Member):
-        if member.bot or message.guild is None:
-            return
-
-        if await check_wastebasket(message, member, emoji, t.created_by, PollsPermission.delete):
-            await message.delete()
-            raise StopEventHandling
-
-        embed, index = await get_teampoll_embed(message)
-        if embed is None:
-            return
-
-        if not await is_teamler(member):
-            try:
-                await message.remove_reaction(emoji, member)
-            except Forbidden:
-                pass
-            raise StopEventHandling
-
-        for reaction in message.reactions:
-            if reaction.emoji == emoji.name:
-                break
-        else:
-            return
-
-        if not reaction.me:
-            return
-
-        value = await self.get_reacted_teamlers(message)
-        embed.set_field_at(index, name=tg.status, value=value, inline=False)
-        await message.edit(embed=embed)
-
-    async def on_raw_reaction_remove(self, message: Message, _, member: Member):
-        if member.bot or message.guild is None:
-            return
-        embed, index = await get_teampoll_embed(message)
-        if embed is not None:
-            user_reacted = False
-            for reaction in message.reactions:
-                if reaction.me and member in await reaction.users().flatten():
-                    user_reacted = True
-                    break
-            if not user_reacted and await is_teamler(member):
-                value = await self.get_reacted_teamlers(message)
-                embed.set_field_at(index, name=tg.status, value=value, inline=False)
-                await message.edit(embed=embed)
-                return
-
     @commands.group(name="poll", aliases=["vote"])
     @guild_only()
     @docs(t.commands.poll.poll)
     async def poll(self, ctx: Context):
         if not ctx.subcommand_passed:
             raise UserInputError
-
-    @poll.command(name="quick", usage=t.poll_usage, aliases=["q"])
-    @docs(t.commands.poll.quick)
-    async def quick(self, ctx: Context, *, args: str):
-
-        await send_poll(ctx, t.poll, args, await PollsDefaultSettings.max_choices.get())
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check
@@ -208,13 +191,13 @@ class PollsCog(Cog, name="Polls"):
         time: int = await PollsDefaultSettings.duration.get()
         embed.add_field(
             name=t.poll_config.duration.name,
-            value=t.poll_config.duration.time(time) if not time <= 0 else t.poll_config.duration.unlimited,
+            value=t.poll_config.duration.time(cnt=time) if not time <= 0 else t.poll_config.duration.unlimited,
             inline=False,
         )
         choice: int = await PollsDefaultSettings.max_choices.get()
         embed.add_field(
             name=t.poll_config.choices.name,
-            value=t.poll_config.choices.amount(choice) if not choice <= 0 else t.poll_config.choices.unlimited,
+            value=t.poll_config.choices.amount(cnt=choice) if not choice <= 0 else t.poll_config.choices.unlimited,
             inline=False,
         )
         hide: bool = await PollsDefaultSettings.hidden.get()
@@ -263,7 +246,7 @@ class PollsCog(Cog, name="Polls"):
             hours = 0
             msg: str = t.duration.reset()
         else:
-            msg: str = t.duration.set(hours)
+            msg: str = t.duration.set(cnt=hours)
 
         await PollsDefaultSettings.duration.set(hours)
         await add_reactions(ctx.message, "white_check_mark")
@@ -277,7 +260,7 @@ class PollsCog(Cog, name="Polls"):
             votes = 0
             msg: str = t.votes.reset
         else:
-            msg: str = t.votes.set(votes)
+            msg: str = t.votes.set(cnt=votes)
 
         if not 0 < votes < 25:
             votes = 0
@@ -324,36 +307,29 @@ class PollsCog(Cog, name="Polls"):
             msg: str = t.weight_everyone.reset
         else:
             await PollsDefaultSettings.everyone_power.set(weight)
-            msg: str = t.weight_everyone.set(weight)
+            msg: str = t.weight_everyone.set(cnt=weight)
 
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
-    @commands.command(usage=t.poll_usage, aliases=["teamvote", "tp"])
-    @PollsPermission.team_poll.check
-    @guild_only()
-    async def teampoll(self, ctx: Context, *, args: str):
-        """
-        Starts a poll and shows, which teamler has not voted yet.
-         Multiline options can be specified using a `\\` at the end of a line
-        """
+    @poll.command(name="quick", usage=t.poll_usage, aliases=["q"])
+    @docs(t.commands.poll.quick)
+    async def quick(self, ctx: Context, *, args: str):
 
-        await send_poll(
-            ctx,
-            t.team_poll,
-            args,
-            await PollsDefaultSettings.max_choices.get(),
-            field=(tg.status, await self.get_reacted_teamlers()),
-            allow_delete=False,
-        )
+        await send_poll(ctx, t.poll, args, await PollsDefaultSettings.max_choices.get())
+
+    @poll.command(name="new", usage=t.usage.new)
+    @docs(t.commands.poll.new)
+    async def new(self, ctx: Context, *, args: str = None):
+        parser = await get_parser()
+        parsed = parser.parse_known_args(args)
+
+        print(parsed)
 
     @commands.command(aliases=["yn"])
     @guild_only()
+    @docs(t.commands.yes_no)
     async def yesno(self, ctx: Context, message: Optional[Message] = None, text: Optional[str] = None):
-        """
-        adds thumbsup and thumbsdown reactions to the message
-        """
-
         if message is None or message.guild is None or text:
             message = ctx.message
 
@@ -375,22 +351,22 @@ class PollsCog(Cog, name="Polls"):
     @commands.command(aliases=["tyn"])
     @PollsPermission.team_poll.check
     @guild_only()
+    @docs(t.commands.team_yes_no)
     async def team_yesno(self, ctx: Context, *, text: str):
-        """
-        Starts a yes/no poll and shows, which teamler has not voted yet.
-        """
-
+        ops = [(t.yes_no.in_favor, "thumbsup"), (t.yes_no.against, "thumbsdown"), (t.yes_no.abstention, "zzz")]
+        select = MySelect(
+            placeholder=t.select.placeholder(cnt=1),
+            options=[SelectOption(label=op[0], emoji=name_to_emoji[op[1]]) for op in ops],
+        )
         embed = Embed(title=t.team_poll, description=text, color=Colors.Polls, timestamp=utcnow())
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
 
+        embed.add_field(name=t.yes_no.in_favor, value=t.yes_no.count(0, cnt=0), inline=True)
+        embed.add_field(name=t.yes_no.against, value=t.yes_no.count(0, cnt=0), inline=True)
+        embed.add_field(name=t.yes_no.abstention, value=t.yes_no.count(0, cnt=0), inline=True)
         embed.add_field(name=tg.status, value=await self.get_reacted_teamlers(), inline=False)
 
-        message: Message = await ctx.send(embed=embed)
-        try:
-            await message.add_reaction(name_to_emoji["+1"])
-            await message.add_reaction(name_to_emoji["-1"])
-        except Forbidden:
-            raise CommandError(t.could_not_add_reactions(message.channel.mention))
+        await ctx.send(embed=embed, view=create_select_view(select))
 
 
 class PollOption:
