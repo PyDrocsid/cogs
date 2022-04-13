@@ -35,8 +35,8 @@ MAX_OPTIONS = 25  # Discord select menu limit
 default_emojis = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
 
 
-def create_select_view(select: Select) -> View:
-    view = View()
+def create_select_view(select: Select, timeout: float = None) -> View:
+    view = View(timeout=timeout)
     view.add_item(select)
 
     return view
@@ -158,12 +158,13 @@ async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
 class MySelect(Select):
     @db_wrapper
     async def callback(self, interaction):
-        message: Message = interaction.message
+        message: Message = await interaction.channel.fetch_message(interaction.custom_id)
         teamlers: set[Member] = await get_teamler(interaction.guild, ["team"])
         team_poll = await get_teampoll_embed(message)
 
         if team_poll[0] == t.team_yn_poll:
             if interaction.user not in teamlers:
+                await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
                 return
 
             poll = await db.get(TeamYesNo, message_id=message.id)
@@ -201,7 +202,8 @@ class MySelect(Select):
             await message.edit(embed=embed)
 
         elif team_poll[0] == t.team_poll:
-            if interaction.user.id not in teamlers:
+            if interaction.user not in teamlers:
+                await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
                 return
 
         else:
@@ -219,31 +221,6 @@ class PollsCog(Cog, name="Polls"):
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
-
-    async def get_reacted_teamlers(self, message: Optional[Message] = None) -> str:
-        guild: Guild = self.bot.guilds[0]
-
-        teamlers: set[Member] = set()
-        for role_name in self.team_roles:
-            if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
-                continue
-
-            teamlers.update(member for member in team_role.members if not member.bot)
-
-        if message:
-            for reaction in message.reactions:
-                if reaction.me:
-                    teamlers.difference_update(await reaction.users().flatten())
-
-        teamlers: list[Member] = list(teamlers)
-        if not teamlers:
-            return t.teampoll_all_voted
-
-        teamlers.sort(key=lambda m: str(m).lower())
-
-        *teamlers, last = (x.mention for x in teamlers)
-        teamlers: list[str]
-        return t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1)
 
     @commands.group(name="poll", aliases=["vote"])
     @guild_only()
@@ -428,20 +405,31 @@ class PollsCog(Cog, name="Polls"):
     @docs(t.commands.team_yes_no)
     async def team_yesno(self, ctx: Context, *, text: str):
         ops = [(t.yes_no.in_favor, "thumbsup", 0), (t.yes_no.against, "thumbsdown", 1), (t.yes_no.abstention, "zzz", 2)]
-        select = MySelect(
-            placeholder=t.select.placeholder(cnt=1),
-            options=[SelectOption(label=op[0], emoji=name_to_emoji[op[1]], value=str(op[2])) for op in ops],
-        )
+
         embed = Embed(title=t.team_yn_poll, description=text, color=Colors.Polls, timestamp=utcnow())
         embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
 
         embed.add_field(name=t.yes_no.in_favor, value=t.yes_no.count(0, cnt=0), inline=True)
         embed.add_field(name=t.yes_no.against, value=t.yes_no.count(0, cnt=0), inline=True)
         embed.add_field(name=t.yes_no.abstention, value=t.yes_no.count(0, cnt=0), inline=True)
-        embed.add_field(name=tg.status, value=await self.get_reacted_teamlers(), inline=False)
+        missing = list(await get_teamler(self.bot.guilds[0], ["team"]))
+        missing.sort(key=lambda m: str(m).lower())
+        *teamlers, last = (x.mention for x in missing)
+        teamlers: list[str]
+        embed.add_field(
+            name=tg.status,
+            value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
+            inline=False,
+        )
 
-        msg: Message = await ctx.send(embed=embed, view=create_select_view(select))
-        await TeamYesNo.create(msg.id)
+        embed_msg: Message = await ctx.send(embed=embed)
+        select = MySelect(
+            custom_id=str(embed_msg.id),
+            placeholder=t.select.placeholder(cnt=1),
+            options=[SelectOption(label=op[0], emoji=name_to_emoji[op[1]], value=str(op[2])) for op in ops],
+        )
+        await ctx.send(view=create_select_view(select))
+        await TeamYesNo.create(embed_msg.id)
 
 
 class PollOption:
