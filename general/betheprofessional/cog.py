@@ -90,6 +90,17 @@ async def get_topics() -> list[BTPTopic]:
     return topics
 
 
+async def change_setting(ctx: Context, name: str, value: any):
+    data = t.settings[name]
+    await getattr(BeTheProfessionalSettings, data["internal_name"]).set(value)
+
+    embed = Embed(title=t.betheprofessional, color=Colors.green)
+    embed.description = data["updated"].format(value)
+
+    await reply(ctx, embed=embed)
+    await send_to_changelog(ctx.guild, embed.description)
+
+
 class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
     CONTRIBUTORS = [
         Contributor.Defelo,
@@ -300,7 +311,6 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         delete_topics: list[BTPTopic] = []
 
         for topic in topics:
-            # TODO two selects for the same thing? and use filter_by provided by the library
             if not (btp_topic := await db.exists(filter_by(BTPTopic, name=topic))):
                 raise CommandError(t.topic_not_registered(topic))
             else:
@@ -323,8 +333,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             for user_topic in await db.all(filter_by(BTPUser, topic=topic.id)):
                 # TODO use db.exec
                 await db.delete(user_topic)
-                # TODO do not commit for each one separately
-                await db.commit()
+            await db.commit()
             await db.delete(topic)
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
@@ -377,18 +386,6 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             )
         await reply(ctx, embed=embed)
 
-    # TODO make function, not method, self not used
-    async def change_setting(self, ctx: Context, name: str, value: any):
-        # TODO use dictionary
-        data = getattr(t.settings, name)
-        await getattr(BeTheProfessionalSettings, data.internal_name).set(value)
-
-        embed = Embed(title=t.betheprofessional, color=Colors.green)
-        embed.description = data.updated(value)
-
-        await reply(ctx, embed=embed)
-        await send_to_changelog(ctx.guild, embed.description)
-
     @btp.command()
     @guild_only()
     @BeTheProfessionalPermission.manage.check
@@ -400,7 +397,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if role_limit <= 0:
             # TODO use quotes for the name in the embed
             raise CommandError(t.must_be_above_zero(t.settings.role_limit.name))
-        await self.change_setting(ctx, "role_limit", role_limit)
+        await change_setting(ctx, "role_limit", role_limit)
 
     @btp.command()
     @guild_only()
@@ -413,7 +410,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if role_create_min_users < 0:
             # TODO use quotes for the name in the embed
             raise CommandError(t.must_be_zero_or_above(t.settings.role_create_min_users.name))
-        await self.change_setting(ctx, "role_create_min_users", role_create_min_users)
+        await change_setting(ctx, "role_create_min_users", role_create_min_users)
 
     @btp.command()
     @guild_only()
@@ -426,7 +423,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if leaderboard_default_n <= 0:
             # TODO use quotes for the name in the embed
             raise CommandError(t.must_be_above_zero(t.settings.leaderboard_default_n.name))
-        await self.change_setting(ctx, "leaderboard_default_n", leaderboard_default_n)
+        await change_setting(ctx, "leaderboard_default_n", leaderboard_default_n)
 
     @btp.command()
     @guild_only()
@@ -439,7 +436,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if leaderboard_max_n <= 0:
             # TODO use quotes for the name in the embed
             raise CommandError(t.must_be_above_zero(t.settings.leaderboard_max_n.name))
-        await self.change_setting(ctx, "leaderboard_max_n", leaderboard_max_n)
+        await change_setting(ctx, "leaderboard_max_n", leaderboard_max_n)
 
     @btp.command(aliases=["lb"])
     @guild_only()
@@ -593,7 +590,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         # Delete old Top Topic Roles
         # TODO use filter_by
-        for topic in await db.all(select().filter(BTPTopic.role_id is not None)):  # type: BTPTopic
+        for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id is not None)):  # type: BTPTopic
             # TODO use sql "NOT IN" expression
             if topic.id not in top_topics:
                 if topic.role_id is not None:
