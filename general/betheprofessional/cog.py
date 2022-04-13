@@ -7,7 +7,7 @@ from discord.ext.commands import guild_only, Context, CommandError, UserInputErr
 import PyDrocsid.embeds
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
-from PyDrocsid.database import db, select, db_wrapper
+from PyDrocsid.database import db, select, db_wrapper, filter_by
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.logger import get_logger
@@ -39,10 +39,9 @@ async def split_parents(topics: list[str], assignable: bool) -> list[tuple[str, 
         topic_tree = topic.split("/")
 
         parents: list[BTPTopic | None | CommandError] = [
-            # TODO use filter_by provided by the library
-            await db.first(select(BTPTopic).filter_by(name=topic))
-            # TODO use filter_by provided by the library
-            if await db.exists(select(BTPTopic).filter_by(name=topic))
+            await db.first(filter_by(BTPTopic, name=topic))
+
+            if await db.exists(filter_by(BTPTopic, name=topic))
             else CommandError(t.parent_not_exists(topic))
             for topic in topic_tree[:-1]
         ]
@@ -65,8 +64,7 @@ async def parse_topics(topics_str: str) -> list[BTPTopic]:
         raise CommandError(t.no_topics_registered)
 
     for topic_name in split_topics(topics_str):
-        # TODO use filter_by provided by the library
-        topic = await db.first(select(BTPTopic).filter_by(name=topic_name))
+        topic = await db.first(filter_by(BTPTopic, name=topic_name))
 
         if topic is None and len(all_topics) > 0:
 
@@ -117,8 +115,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         parent: BTPTopic | None | CommandError = (
             None
             if parent_topic is None
-            # TODO use filter_by provided by the library
-            else await db.first(select(BTPTopic).filter_by(name=parent_topic))
+            else await db.first(filter_by(BTPTopic, name=parent_topic))
             or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
@@ -126,8 +123,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         embed = Embed(title=t.available_topics_header, colour=Colors.BeTheProfessional)
         sorted_topics: dict[str, list[str]] = {}
-            # TODO use filter_by provided by the library
-        topics: list[BTPTopic] = await db.all(select(BTPTopic).filter_by(parent=None if parent is None else parent.id))
+        topics: list[BTPTopic] = await db.all(filter_by(BTPTopic, parent=None if parent is None else parent.id))
         if not topics:
             embed.colour = Colors.error
             embed.description = t.no_topics_registered
@@ -136,8 +132,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         topics.sort(key=lambda btp_topic: btp_topic.name.lower())
         root_topic: BTPTopic | None = (
-            # TODO use filter_by provided by the library
-            None if parent_topic is None else await db.first(select(BTPTopic).filter_by(name=parent_topic))
+            None if parent_topic is None else await db.first(filter_by(BTPTopic, name=parent_topic))
         )
         for topic in topics:
             if (root_topic.name if root_topic is not None else "Topics") not in sorted_topics.keys():
@@ -153,8 +148,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                         f"`{topic.name}"
                         + (  # noqa: W503
                             f" ({c})`"
-            # TODO use filter_by provided by the library
-                            if (c := await db.count(select(BTPTopic).filter_by(parent=topic.id))) > 0
+                            if (c := await db.count(filter_by(BTPTopic, parent=topic.id))) > 0
                             else "`"
                         )
                         for topic in topics
@@ -175,10 +169,8 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         topics: list[BTPTopic] = [
             topic
             for topic in await parse_topics(topics)
-            # TODO use filter_by provided by the library
-            if (await db.exists(select(BTPTopic).filter_by(id=topic.id)))
-            # TODO use filter_by provided by the library
-            and not (await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)))  # noqa: W503
+            if (await db.exists(filter_by(BTPTopic, id=topic.id)))
+            and not (await db.exists(filter_by(BTPUser, user_id=member.id, topic=topic.id)))  # noqa: W503
         ]
 
         roles: list[Role] = []
@@ -223,15 +215,13 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             topics: list[BTPTopic] = await parse_topics(topics)
         affected_topics: list[BTPTopic] = []
         for topic in topics:
-            # TODO use filter_by provided by the library
-            if await db.exists(select(BTPUser).filter_by(user_id=member.id, topic=topic.id)):
+            if await db.exists(filter_by(BTPUser, user_id=member.id, topic=topic.id)):
                 affected_topics.append(topic)
 
         roles: list[Role] = []
 
         for topic in affected_topics:
-            # TODO use filter_by provided by the library
-            await db.delete(await db.first(select(BTPUser).filter_by(topic=topic.id)))
+            await db.delete(await db.first(filter_by(BTPUser, topic=topic.id)))
             if topic.role_id:
                 roles.append(ctx.guild.get_role(topic.role_id))
 
@@ -277,8 +267,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
 
-            # TODO use filter_by provided by the library
-            if await db.exists(select(BTPTopic).filter_by(name=topic[0])):
+            if await db.exists(filter_by(BTPTopic, name=topic[0])):
                 raise CommandError(t.topic_already_registered(topic[0]))
             else:
                 registered_topics.append(topic)
@@ -312,11 +301,9 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         for topic in topics:
             # TODO two selects for the same thing? and use filter_by provided by the library
-            if not await db.exists(select(BTPTopic).filter_by(name=topic)):
+            if not (btp_topic := await db.exists(filter_by(BTPTopic, name=topic))):
                 raise CommandError(t.topic_not_registered(topic))
             else:
-                btp_topic: BTPTopic = await db.first(select(BTPTopic).filter_by(name=topic))
-
                 delete_topics.append(btp_topic)
 
                 # TODO use relationships for children
@@ -330,11 +317,10 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         for topic in delete_topics:
             if topic.role_id is not None:
-                # TODO what if role is None?
                 role: Role = ctx.guild.get_role(topic.role_id)
-                await role.delete()
-            # TODO use filter_by provided by the library
-            for user_topic in await db.all(select(BTPUser).filter_by(topic=topic.id)):
+                if role is not None:
+                    await role.delete()
+            for user_topic in await db.all(filter_by(BTPUser, topic=topic.id)):
                 # TODO use db.exec
                 await db.delete(user_topic)
                 # TODO do not commit for each one separately
@@ -361,12 +347,10 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if topic is None:
             raise CommandError(t.topic_not_found(topic_name))
         if topic.role_id is not None:
-            mention = ctx.guild.get_role(topic.role_id).mention         # TODO use <@&ID>
+            mention = f"<@&{topic.role_id}>"
         else:
             topic_members: list[BTPUser] = await db.all(select(BTPUser).filter_by(topic=topic.id))
-            # TODO what if member does not exist? Why don't you use `<@ID>`?
-            members: list[Member] = [ctx.guild.get_member(member.user_id) for member in topic_members]
-            mention = ", ".join(map(lambda m: m.mention, members))
+            mention = ", ".join(map(lambda m: f"<@{m.user_id}>", topic_members))
 
         if mention == "":
             raise CommandError(t.nobody_has_topic(topic_name))
@@ -609,7 +593,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         # Delete old Top Topic Roles
         # TODO use filter_by
-        for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id is not None)):  # type: BTPTopic
+        for topic in await db.all(select().filter(BTPTopic.role_id is not None)):  # type: BTPTopic
             # TODO use sql "NOT IN" expression
             if topic.id not in top_topics:
                 if topic.role_id is not None:
