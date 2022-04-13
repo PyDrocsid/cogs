@@ -84,7 +84,10 @@ select:
   label: "Option {}."
 
 usage:
-  new: "[--type {standard,team}] [--deadline DEADLINE] [--anonymous ANONYMOUS] [--choices CHOICES]"
+  poll: |
+    <question>
+    [emoji1] <option1>
+    [emojiX] [optionX]
 
 yes_no:
   in_favor: "Yes"
@@ -93,6 +96,47 @@ yes_no:
   count:
     one: "{cnt} vote ({}%)"
     many: "{cnt} votes ({}%)"
+
+title:
+  poll:
+    un: "{} (multiple choice)"
+    mo:
+      one: "{} ({cnt} choice)"
+      many: "{} ({cnt} choices)"
+
+option:
+  field:
+    name: "**Voted: {}, Percentage: {}%**"
+
+skip:
+  message: skip
+  title: Skipped
+  description: Skipped poll wizard -> default poll created!
+
+wizard:
+  title: Poll wizard
+  description: Set arguments for an advanced poll
+  skip:
+    name: Skip setup
+    value: To skip the setup type `skip`
+  arg: Arguments
+  args: |
+    ```
+    --type {standard,team}, -T {standard,team} 
+    standard or team embed [Default: 'standard']
+    --deadline DEADLINE, -D DEADLINE
+    time when the poll should be closed [Default: server settings]
+    --anonymous ANONYMOUS, -A ANONYMOUS 
+    people can see who voted or not [Default: server settings]
+    --choices CHOICES, -C CHOICES 
+    the amount of votes someone can set
+    ```
+  example:
+    name: Example
+    value: |
+      `--duration 6 --choices 4 -A True`
+      
+      --> Creates an anonymous, 6 hours long poll with 4 select choices for every user
 
 poll: Poll
 team_poll: Team Poll
@@ -104,17 +148,13 @@ option_too_long: Options are limited to {} characters.
 missing_options: Missing options
 option_duplicated: You may not use the same emoji twice!
 empty_option: Empty option
-poll_usage: |
-  <question>
-  [emoji1] <option1>
-  [emojiX] [optionX]
 team_role_not_set: Team role is not set.
 team_role_no_members: The team role has no members.
 teampoll_all_voted: "All teamlers voted :white_check_mark:"
 teamlers_missing:
   one: "{last} hasn't voted yet."
   many: "{teamlers} and {last} haven't voted yet."
-created_by: Created by @{} ({})
+footer: Ends at `{}`
 can_not_use_wastebucket_as_option: "You can not use :wastebasket: as option"
 foreign_message: "You are not allowed to add yes/no reactions to foreign messages!"
 could_not_add_reactions: Could not add reactions because I don't have `add_reactions` permission in {}.

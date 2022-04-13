@@ -58,7 +58,6 @@ class Poll(Base):
     poll_type: Union[Column, str] = Column(Text(50))
     end_time: Union[Column, datetime] = Column(UTCDateTime)
     anonymous: Union[Column, bool] = Column(Boolean)
-    votes_amount: Union[Column, int] = Column(BigInteger)
     poll_open: Union[Column, bool] = Column(Boolean)
     can_delete: Union[Column, bool] = Column(Boolean)
     keep: Union[Column, bool] = Column(Boolean)
