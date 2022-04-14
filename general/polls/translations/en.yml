@@ -97,13 +97,6 @@ yes_no:
     one: "{cnt} vote ({}%)"
     many: "{cnt} votes ({}%)"
 
-title:
-  poll:
-    un: "{} (multiple choice)"
-    mo:
-      one: "{} ({cnt} choice)"
-      many: "{} ({cnt} choices)"
-
 option:
   field:
     name: "**Voted: {}, Percentage: {}%**"

@@ -142,12 +142,7 @@ async def send_poll(
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
-    if isinstance(max_choices, str) or await PollsDefaultSettings.max_choices.get() == 0 or len(options) == max_choices:
-        embed = Embed(title=t.title.poll.un(title), description=question, color=Colors.Polls, timestamp=utcnow())
-    else:
-        embed = Embed(
-            title=t.title.poll.mo(title, cnt=max_choices), description=question, color=Colors.Polls, timestamp=utcnow()
-        )
+    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
     if end_time:
         embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M:%S")))
@@ -455,12 +450,13 @@ class PollsCog(Cog, name="Polls"):
 
         parser = await get_parser()
         parsed: Namespace = parser.parse_known_args(args.split(" "))[0]
-        print(parsed)
 
+        title: str = t.team_poll
         poll_type: str = parsed.type
-        print(poll_type)
         if poll_type.lower() == "team" and not await PollsPermission.team_poll.check_permissions(ctx.author):
             poll_type = "standard"
+        if poll_type == "standard":
+            title: str = t.poll
         deadline: Union[list[str, str], int] = parsed.deadline
         if isinstance(deadline, int):
             deadline: int = deadline
@@ -480,7 +476,7 @@ class PollsCog(Cog, name="Polls"):
             field = None
 
         poll_message, parsed_options = await send_poll(
-            ctx=ctx, title=t.poll, poll_args=options, max_choices=choices, field=field, deadline=deadline
+            ctx=ctx, title=title, poll_args=options, max_choices=choices, field=field, deadline=deadline
         )
         await ctx.message.delete()
 
