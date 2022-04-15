@@ -62,12 +62,46 @@ class Poll(Base):
     can_delete: Union[Column, bool] = Column(Boolean)
     keep: Union[Column, bool] = Column(Boolean)
 
+    @staticmethod
+    async def create(
+        message_id: int,
+        channel: int,
+        owner: int,
+        title: str,
+        options: list,
+        end: int,
+        anonymous: bool,
+        can_delete: bool,
+        keep: bool,
+        poll_type: str,
+    ) -> Poll:
+        row = Poll(
+            message_id=message_id,
+            poll_channel=channel,
+            owner_id=owner,
+            timestamp=utcnow(),
+            title=title,
+            poll_type=poll_type,
+            end=end,
+            anonymous=anonymous,
+            can_delete=can_delete,
+            keep=keep,
+        )
+        for poll_option in options:
+            await Option.create(poll=message_id, emote=poll_option.emoji, option_text=poll_option.option)
+
+        await db.add(row)
+        return row
+
+    async def remove(self):
+        await db.delete(self)
+
 
 class Option(Base):
     __tablename__ = "poll_option"
 
     id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
-    poll_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll.id"))
+    poll_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll.message_id"))
     votes: list[Voted] = relationship("Voted", back_populates="option")
     poll: Poll = relationship("Poll", back_populates="options")
     emote: Union[Column, str] = Column(Text(30))
@@ -89,6 +123,11 @@ class Voted(Base):
     option_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll_option.id"))
     option: Option = relationship("Option", back_populates="votes", cascade="all, delete")
     vote_weight: Union[Column, float] = Column(Float)
+
+    @staticmethod
+    async def create(user_id: int, option_id: int, vote_weight: float):
+        row = Voted(user_id=user_id, option_id=option_id, vote_weight=vote_weight)
+        await db.add(row)
 
 
 class RoleWeight(Base):
