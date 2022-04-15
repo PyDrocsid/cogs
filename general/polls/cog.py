@@ -142,7 +142,7 @@ async def send_poll(
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
-    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
+    embed = Embed(title=title, description=t.poll_titles(question), color=Colors.Polls, timestamp=utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
     if end_time:
         embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M:%S")))
@@ -308,8 +308,6 @@ class PollsCog(Cog, name="Polls"):
             value=t.poll_config.choices.amount(cnt=choice) if not choice <= 0 else t.poll_config.choices.unlimited,
             inline=False,
         )
-        hide: bool = await PollsDefaultSettings.hidden.get()
-        embed.add_field(name=t.poll_config.hidden.name, value=str(hide), inline=False)
         anonymous: bool = await PollsDefaultSettings.anonymous.get()
         embed.add_field(name=t.poll_config.anonymous.name, value=str(anonymous), inline=False)
         roles = await RoleWeight.get()
@@ -374,19 +372,6 @@ class PollsCog(Cog, name="Polls"):
             votes = 0
 
         await PollsDefaultSettings.max_choices.set(votes)
-        await add_reactions(ctx.message, "white_check_mark")
-        await send_to_changelog(ctx.guild, msg)
-
-    @settings.command(name="hidden", aliases=["h"])
-    @PollsPermission.write.check
-    @docs(t.commands.poll.settings.hidden)
-    async def hidden(self, ctx: Context, status: bool):
-        if status:
-            msg: str = t.hidden.hidden
-        else:
-            msg: str = t.hidden.not_hidden
-
-        await PollsDefaultSettings.hidden.set(status)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 

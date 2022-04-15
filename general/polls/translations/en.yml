@@ -8,7 +8,6 @@ commands:
       roles_weights: manage weight for certain roles
       duration: set the default hours a poll should be open
       votes: set the default amount of votes a user can have on polls
-      hidden: set hide attribute for votes on polls
       anonymous: set if user can see who voted on a poll
       everyone: manage role weight for the default role
   yes_no: add thumbs-up/down emotes on a message
@@ -39,8 +38,6 @@ poll_config:
       one: "{cnt} choice per user"
       many: "{cnt} choices per user"
     unlimited: unlimited
-  hidden:
-    name: "**Hidden Votes**"
   anonymous:
     name: "Anonymous"
   roles:
@@ -67,10 +64,6 @@ votes:
     one: "Set default votes for a poll to {cnt} vote"
     many: "Set default votes for a poll to {cnt} votes"
   reset: "Set the default votes for polls to unlimited"
-
-hidden:
-  hidden: made votes hidden
-  not_hidden: made votes visible
 
 anonymous:
   is_on: made default poll votes anonymous
@@ -131,6 +124,7 @@ wizard:
       
       --> Creates an anonymous, 6 hours long poll with 4 select choices for every user
 
+poll_titles: "**`{}`**"
 poll: Poll
 team_poll: Team Poll
 team_yn_poll: Team Yes-No Poll
