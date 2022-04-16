@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, Optional, Type
+from typing import TYPE_CHECKING
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, BigInteger, Text, Boolean
@@ -10,22 +10,22 @@ from PyDrocsid.database import db, UTCDateTime, Base
 from discord.utils import utcnow
 
 
-class ModBase:
-    id: Union[Column, int] = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    member: Union[Column, int] = Column(BigInteger)
-    member_name: Union[Column, str] = Column(Text)
-    timestamp: Union[Column, datetime] = Column(UTCDateTime)
-    reason: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    evidence: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
+class ModBase(Base if TYPE_CHECKING else object):
+    id: Column | int = Column(Integer, primary_key=True, unique=True, autoincrement=True)
+    member: Column | int = Column(BigInteger)
+    member_name: Column | str = Column(Text)
+    timestamp: Column | datetime = Column(UTCDateTime)
+    reason: Column | str = Column(Text(collation="utf8mb4_bin"))
+    evidence: Column | str = Column(Text(collation="utf8mb4_bin"))
 
 
 class Punishment(ModBase):
-    mod: Union[Column, int] = Column(BigInteger)
-    mod_level: Union[Column, int] = Column(Integer)
+    mod: Column | int = Column(BigInteger)
+    mod_level: Column | int = Column(Integer)
 
     @classmethod
     async def create(
-        cls, member: int, member_name: str, mod: int, mod_level: int, reason: str, evidence: Optional[str]
+        cls, member: int, member_name: str, mod: int | None, mod_level: int | None, reason: str | None, evidence: str | None
     ) -> Punishment:
         row = cls(
             member=member,
@@ -53,17 +53,17 @@ class Punishment(ModBase):
 
 
 class TimedPunishment(ModBase):
-    mod: Union[Column, int] = Column(BigInteger)
-    mod_level: Union[Column, int] = Column(Integer)
-    minutes: Union[Column, int] = Column(Integer)
-    active: Union[Column, bool] = Column(Boolean)
-    deactivation_timestamp: Union[Column, Optional[datetime]] = Column(UTCDateTime, nullable=True)
-    deactivate_mod: Union[Column, Optional[int]] = Column(BigInteger, nullable=True)
-    deactivate_reason: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+    mod: Column | int = Column(BigInteger)
+    mod_level: Column | int = Column(Integer)
+    minutes: Column | int = Column(Integer)
+    active: Column | bool = Column(Boolean)
+    deactivation_timestamp: Column | datetime | None = Column(UTCDateTime, nullable=True)
+    deactivate_mod: Column | int | None = Column(BigInteger, nullable=True)
+    deactivate_reason: Column | str | None = Column(Text(collation="utf8mb4_bin"), nullable=True)
 
     @classmethod
     async def create(
-        cls, member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: Optional[str]
+        cls, member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: str | None
     ) -> TimedPunishment:
         row = cls(
             member=member,
@@ -83,7 +83,7 @@ class TimedPunishment(ModBase):
         return row
 
     @classmethod
-    async def deactivate(cls, mute_id: int, deactivate_mod: int = None, reason: str = None) -> "TimedPunishment":
+    async def deactivate(cls, mute_id: int, deactivate_mod: int = None, reason: str = None) -> TimedPunishment:
         row: TimedPunishment = await db.get(cls, id=mute_id)
         row.active = False
         row.deactivation_timestamp = utcnow()
@@ -114,10 +114,10 @@ class TimedPunishment(ModBase):
 class Report(ModBase, Base):
     __tablename__ = "report"
 
-    reporter: Union[Column, int] = Column(BigInteger)
+    reporter: Column | int = Column(BigInteger)
 
     @staticmethod
-    async def create(member: int, member_name: str, reporter: int, reason: str, evidence: Optional[str]) -> Report:
+    async def create(member: int, member_name: str, reporter: int, reason: str, evidence: str | None) -> Report:
         row = Report(
             member=member,
             member_name=member_name,

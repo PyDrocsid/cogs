@@ -1,8 +1,9 @@
 import re
+from asyncio import sleep
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from typing import Optional, Union, List, Tuple, Type
+from typing import List, Tuple, Type, TypeVar
 
+from dateutil.relativedelta import relativedelta
 from discord import (
     Role,
     Guild,
@@ -19,16 +20,15 @@ from discord import (
     TextChannel,
     Thread,
 )
-from discord.utils import utcnow
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, Converter, BadArgument, UserInputError
-from asyncio import sleep
+from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, UserCommandError, confirm, docs
 from PyDrocsid.config import Config
 from PyDrocsid.converter import UserMemberConverter
-from PyDrocsid.database import db, filter_by, db_wrapper, Base, select
+from PyDrocsid.database import db, filter_by, db_wrapper, Base as DBBase
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 from PyDrocsid.settings import RoleSettings
@@ -51,10 +51,11 @@ from ...pubsub import (
 
 tg = t.g
 t = t.mod
+TBase = TypeVar("TBase", bound=DBBase)
 
 
 class DurationConverter(Converter):
-    async def convert(self, ctx, argument: str) -> Optional[int]:
+    async def convert(self, ctx, argument: str) -> int | None:
         if argument.lower() in ("inf", "perm", "permanent", "-1", "∞"):
             return None
         if (match := re.match(r"^(\d+w)?(\d+d)?(\d+h)?(\d+m)?$", argument)) is None:
@@ -74,7 +75,7 @@ class DurationConverter(Converter):
 
 
 async def load_entries():
-    async def fill(db_model: Type[Base]):
+    async def fill(db_model: Type[TBase]):
         async with redis.pipeline() as pipe:
             await pipe.delete(entry_key := f"mod_entries:{db_model.__tablename__}")
 
@@ -102,7 +103,7 @@ async def invalidate_entry_cache():
     await redis.delete("mod_entries_loaded")
 
 
-def time_to_units(minutes: Union[int, float]) -> str:
+def time_to_units(minutes: int | float) -> str:
     _keys = ("years", "months", "days", "hours", "minutes")
 
     rd = relativedelta(
@@ -117,13 +118,13 @@ def time_to_units(minutes: Union[int, float]) -> str:
 
 
 async def get_mute_role(guild: Guild) -> Role:
-    mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
+    mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
     if mute_role is None:
         await send_alert(guild, t.mute_role_not_set)
     return mute_role
 
 
-def show_evidence(evidence: Optional[str]) -> str:
+def show_evidence(evidence: str | None) -> str:
     return t.ulog.evidence(evidence) if evidence else ""
 
 
@@ -135,7 +136,7 @@ async def compare_mod_level(mod: Member, mod_level: int) -> bool:
     return await get_mod_level(mod) > mod_level or mod == mod.guild.owner
 
 
-async def get_and_compare_entry(entry_format: Type[Base], entry_id: int, mod: Member):
+async def get_and_compare_entry(entry_format: Type[TBase], entry_id: int, mod: Member) -> TBase:
     entry = await db.get(entry_format, id=entry_id)
     if entry is None:
         raise CommandError(getattr(t.not_found, entry_format.__tablename__))
@@ -168,16 +169,16 @@ async def confirm_no_evidence(ctx: Context):
 
 async def send_to_changelog_mod(
     guild: Guild,
-    message: Optional[Message],
+    message: Message | None,
     colour: int,
     title: str,
-    member: Union[Member, User, Tuple[int, str]],
+    member: Member | User | Tuple[int, str],
     reason: str,
     *,
-    duration: Optional[str] = None,
-    evidence: Optional[Attachment] = None,
-    mod: Optional[Union[Member, User]] = None,
-    original_reason: Optional[str] = None,
+    duration: str | None = None,
+    evidence: Attachment | None = None,
+    mod: Member | User | None = None,
+    original_reason: str | None = None,
 ):
     embed = Embed(title=title, colour=colour, timestamp=utcnow())
 
@@ -220,10 +221,10 @@ class ModCog(Cog, name="Mod Tools"):
 
     async def on_ready(self):
         guild: Guild = self.bot.guilds[0]
-        mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
+        mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
         if mute_role is not None:
             async for mute in await db.stream(filter_by(Mute, active=True)):
-                member: Optional[Member] = guild.get_member(mute.member)
+                member: Member | None = guild.get_member(mute.member)
                 if member is not None:
                     await member.add_roles(mute_role)
 
@@ -265,7 +266,7 @@ class ModCog(Cog, name="Mod Tools"):
                     reason=t.log_unbanned_expired,
                 )
 
-        mute_role: Optional[Role] = guild.get_role(await RoleSettings.get("mute"))
+        mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
             return
 
@@ -357,8 +358,8 @@ class ModCog(Cog, name="Mod Tools"):
             mod: int,
             reason: str,
             evidence: str,
-            minutes: Optional[int] = None,
-            entry_id: Optional[int] = None,
+            minutes: int | None = None,
+            entry_id: int | None = None,
         ) -> str:
             args = [f"<@{mod}>"]
 
@@ -380,9 +381,7 @@ class ModCog(Cog, name="Mod Tools"):
 
             return translation(*args)
 
-        def wrap_entry(
-            translation, user: int, reason: str, evidence: Optional[str], entry_id: Optional[int] = None
-        ) -> str:
+        def wrap_entry(translation, user: int, reason: str, evidence: str | None, entry_id: int | None = None) -> str:
             if entry_id:
                 return translation.id_on(f"<@{user}>", reason, entry_id, show_evidence(evidence))
             else:
@@ -496,7 +495,7 @@ class ModCog(Cog, name="Mod Tools"):
         return out
 
     async def on_member_join(self, member: Member):
-        mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get("mute"))
+        mute_role: Role | None = member.guild.get_role(await RoleSettings.get("mute"))
         if mute_role is None:
             return
 
@@ -552,7 +551,7 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     @ModPermission.modtools_write.check
     @docs(t.commands.send_delete_message)
-    async def send_delete_message(self, ctx: Context, send: Optional[bool] = None):
+    async def send_delete_message(self, ctx: Context, send: bool | None = None):
         embed = Embed(title=t.modtools, color=Colors.ModTools)
 
         if send is None:
@@ -568,7 +567,7 @@ class ModCog(Cog, name="Mod Tools"):
     @commands.command()
     @docs(t.commands.report)
     async def report(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        user: Union[Member, User]
+        user: Member | User
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -617,7 +616,7 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     @docs(t.commands.warn)
     async def warn(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        user: Union[Member, User]
+        user: Member | User
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -747,9 +746,9 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     @docs(t.commands.mute)
     async def mute(self, ctx: Context, user: UserMemberConverter, time: DurationConverter, *, reason: str):
-        user: Union[Member, User]
+        user: Member | User
 
-        time: Optional[int]
+        time: int | None
         minutes = time
 
         if len(reason) > 900:
@@ -867,8 +866,8 @@ class ModCog(Cog, name="Mod Tools"):
     @edit_mute.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_mute_duration)
     async def edit_mute_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
-        user: Union[Member, User]
-        time: Optional[int]
+        user: Member | User
+        time: int | None
         minutes = time
 
         active_mutes: List[Mute] = sorted(
@@ -994,7 +993,7 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     @docs(t.commands.unmute)
     async def unmute(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        user: Union[Member, User]
+        user: Member | User
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -1187,10 +1186,10 @@ class ModCog(Cog, name="Mod Tools"):
     async def ban(
         self, ctx: Context, user: UserMemberConverter, time: DurationConverter, delete_days: int, *, reason: str
     ):
-        time: Optional[int]
+        time: int | None
         minutes = time
 
-        user: Union[Member, User]
+        user: Member | User
 
         if not ctx.guild.me.guild_permissions.ban_members:
             raise CommandError(t.cannot_ban_permissions)
@@ -1263,7 +1262,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
 
-        await ctx.guild.ban(user, delete_message_days=delete_days, reason=reason)
+        await ctx.guild.ban(user, reason=reason, delete_message_days=delete_days)
         await revoke_verification(user)
 
         await reply(ctx, embed=server_embed)
@@ -1315,8 +1314,8 @@ class ModCog(Cog, name="Mod Tools"):
     @edit_ban.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_ban_duration)
     async def edit_ban_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
-        user: Union[Member, User]
-        time: Optional[int]
+        user: Member | User
+        time: int | None
         minutes = time
 
         active_bans: List[Ban] = sorted(
@@ -1445,7 +1444,7 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     @docs(t.commands.unban)
     async def unban(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        user: Union[Member, User]
+        user: Member | User
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
