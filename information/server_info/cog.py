@@ -1,15 +1,17 @@
 from typing import List
 
-from discord import Embed, Guild, Status, Member
+from discord import Embed, Guild, Member, Status
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, UserInputError
+from discord.ext.commands import Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.server_info

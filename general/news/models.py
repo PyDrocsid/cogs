@@ -1,7 +1,8 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
-from PyDrocsid.database import db, Base
-from sqlalchemy import Column, BigInteger
+from sqlalchemy import BigInteger, Column
+
+from PyDrocsid.database import Base, db
 
 
 class NewsAuthorization(Base):

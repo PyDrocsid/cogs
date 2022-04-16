@@ -9,12 +9,19 @@ commands:
   send_text: send a normal message
   send_embed: send an embed
   send_copy: copy a message (specify message link)
+  send_discohook: |
+    send a discohook message
+    Go to {}, compose your message, click on `Share Message` and copy the link.
   edit: edit messages sent by the bot
   edit_text: edit a normal message (specify message link)
   edit_embed: edit an embed (specify message link)
   edit_copy: copy a message into another message (specify message links)
+  edit_discohook: |
+    edit a discohook message
+    Go to {}, compose your message, click on `Share Message` and copy the link.
   delete: delete a message (specify message link)
   clear: "delete the last <count> messages in this channel"
+  discohook: create a discohook link for an existing message
 
 messages: Messages
 send_embed_title: "Send me the title of the embed! Send {} to cancel."
@@ -51,3 +58,10 @@ deleted_messages:
 log_cleared:
   one: "{} deleted {cnt} message in {}."
   many: "{} deleted {cnt} messages in {}."
+
+cannot_read_messages: You cannot read messages in {}.
+discohook_empty: This discohook link does not contain any messages.
+discohook_multiple_messages: This discohook link contains more than one message.
+discohook_multiple_embeds: This discohook link contains more than one embed.
+discohook_create_failed: Discohook link could not be created.
+discohook_invalid: Invalid discohook link

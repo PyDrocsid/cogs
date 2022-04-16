@@ -7,33 +7,33 @@ from pathlib import Path
 from typing import Optional, Union
 
 from discord import (
-    VoiceChannel,
-    Embed,
-    TextChannel,
-    Member,
-    VoiceState,
     CategoryChannel,
-    Guild,
-    PermissionOverwrite,
-    Role,
+    Embed,
     Forbidden,
+    Guild,
     HTTPException,
-    Message,
-    NotFound,
-    ui,
     Interaction,
     InteractionResponse,
+    Member,
+    Message,
+    NotFound,
+    PermissionOverwrite,
+    Role,
+    TextChannel,
+    VoiceChannel,
+    VoiceState,
+    ui,
 )
 from discord.abc import Messageable
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, UserInputError, CommandError, Greedy
-from discord.ui import View, Button
-from discord.utils import utcnow, format_dt
+from discord.ext.commands import CommandError, Context, Greedy, UserInputError, guild_only
+from discord.ui import Button, View
+from discord.utils import format_dt, utcnow
 
-from PyDrocsid.async_thread import gather_any, GatherAnyError
+from PyDrocsid.async_thread import GatherAnyError, gather_any
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import docs, reply, confirm, optional_permissions
-from PyDrocsid.database import filter_by, db, select, delete, db_context, db_wrapper
+from PyDrocsid.command import Confirmation, docs, optional_permissions, reply
+from PyDrocsid.database import db, db_context, db_wrapper, delete, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.multilock import MultiLock
@@ -41,12 +41,14 @@ from PyDrocsid.prefix import get_prefix
 from PyDrocsid.redis import redis
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import send_editable_log, check_role_assignable
+from PyDrocsid.util import check_role_assignable, send_editable_log
+
 from .colors import Colors
-from .models import DynGroup, DynChannel, DynChannelMember, RoleVoiceLink
+from .models import DynChannel, DynChannelMember, DynGroup, RoleVoiceLink
 from .permissions import VoiceChannelPermission
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert
+from ...pubsub import send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.voice_channel
@@ -999,12 +1001,8 @@ class VoiceChannelCog(Cog, name="Voice Channels"):
                 raise CommandError(t.no_custom_name)
 
         if any(c.id != voice_channel.id and name == c.name for c in voice_channel.guild.voice_channels):
-            conf_embed = Embed(title=t.rename_confirmation, description=t.rename_description, color=Colors.Voice)
-            async with confirm(ctx, conf_embed) as (result, msg):
-                if not result:
-                    return
-                if msg:
-                    await msg.delete(delay=5)
+            if not await Confirmation().run(ctx, t.rename_description):
+                return
 
         try:
             await rename_channel(voice_channel, name)

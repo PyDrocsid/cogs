@@ -3,7 +3,7 @@ from datetime import timedelta
 from io import StringIO
 from typing import Optional, Union
 
-from discord import Embed, Forbidden, File, Guild, Member, Message, RawMessageDeleteEvent, TextChannel
+from discord import Embed, File, Forbidden, Guild, Member, Message, RawMessageDeleteEvent, TextChannel
 from discord.ext import commands, tasks
 from discord.ext.commands import Command, CommandError, Context, Group, UserInputError, guild_only
 from discord.utils import utcnow

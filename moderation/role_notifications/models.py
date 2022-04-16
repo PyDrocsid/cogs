@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Union
 
-from PyDrocsid.database import db, Base
-from sqlalchemy import Column, BigInteger, Boolean
+from sqlalchemy import BigInteger, Boolean, Column
+
+from PyDrocsid.database import Base, db
 
 
 class RoleNotification(Base):
