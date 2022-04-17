@@ -7,7 +7,13 @@ from discord.ext.commands import CommandError, Context, UserInputError, guild_on
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import Confirmation, add_reactions, docs, reply
 from PyDrocsid.converter import Color
-from PyDrocsid.discohook import DISCOHOOK_EMPTY_MESSAGE, MessageContent, create_discohook_link, load_discohook_link
+from PyDrocsid.discohook import (
+    DISCOHOOK_EMPTY_MESSAGE,
+    DiscoHookError,
+    MessageContent,
+    create_discohook_link,
+    load_discohook_link,
+)
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions, read_complete_message, read_normal_message
 
@@ -112,7 +118,13 @@ class MessageCog(Cog, name="Message Commands"):
     @send.command(name="discohook", aliases=["dh"])
     @docs(t.commands.send_discohook(DISCOHOOK_EMPTY_MESSAGE))
     async def send_discohook(self, ctx: Context, channel: TextChannel, *, discohook_url: str):
-        messages: list[MessageContent] = [msg for msg in await load_discohook_link(discohook_url) if not msg.is_empty]
+        try:
+            messages: list[MessageContent] = [
+                msg for msg in await load_discohook_link(discohook_url) if not msg.is_empty
+            ]
+        except DiscoHookError:
+            raise CommandError(t.discohook_invalid)
+
         if not messages:
             raise CommandError(t.discohook_empty)
 
@@ -211,7 +223,13 @@ class MessageCog(Cog, name="Message Commands"):
         if message.author != self.bot.user:
             raise CommandError(t.could_not_edit)
 
-        messages: list[MessageContent] = [msg for msg in await load_discohook_link(discohook_url) if not msg.is_empty]
+        try:
+            messages: list[MessageContent] = [
+                msg for msg in await load_discohook_link(discohook_url) if not msg.is_empty
+            ]
+        except DiscoHookError:
+            raise CommandError(t.discohook_invalid)
+
         if not messages:
             raise CommandError(t.discohook_empty)
         if len(messages) > 1:
@@ -283,5 +301,9 @@ class MessageCog(Cog, name="Message Commands"):
             if not msg.channel.permissions_for(ctx.author).read_message_history:
                 raise CommandError(t.cannot_read_messages(msg.channel.mention))
 
-        url = await create_discohook_link(*messages)
+        try:
+            url = await create_discohook_link(*messages)
+        except DiscoHookError:
+            raise CommandError(t.discohook_create_failed)
+
         await reply(ctx, url)

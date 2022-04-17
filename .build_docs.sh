@@ -1,7 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 
-git clone https://github.com/PyDrocsid/documentation.git
-cd documentation
-rmdir cogs
-ln -s .. cogs
-./build.sh
+repo=$(mktemp -d)
+git clone --recursive https://github.com/PyDrocsid/documentation.git $repo
+rm -rf $repo/cogs
+mkdir $repo/cogs
+cp -r * $repo/cogs/
+pushd $repo
+
+./pages_build.sh
+
+popd
+mv $repo/site .
+rm -rf $repo
