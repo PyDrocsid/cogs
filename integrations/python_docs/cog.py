@@ -182,7 +182,11 @@ async def get_lookup_table(ctx: Context, name: str, url: str) -> dict[str, str]:
 
 
 async def do_rtfm(ctx: Context, key: str, obj: Optional[str]):
-    page_types = {"pycord": "https://docs.pycord.dev/en/master", "python": "https://docs.python.org/3"}
+    page_types = {
+        "pycord": "https://docs.pycord.dev/en/master",
+        "python": "https://docs.python.org/3",
+        "discordpy": "https://discordpy.readthedocs.io/en/stable/",
+    }
 
     if obj is None:
         embed = Embed(
@@ -230,7 +234,15 @@ class PythonDocsCog(Cog, name="Python Documentation"):
 
     CONTRIBUTORS = [Contributor.pohlium, Contributor.Defelo, Contributor.wolflu]
 
-    @commands.command(aliases=["pycord", "pyc", "dpy"])
+    @commands.command(aliases=["dpy", "discordpy"])
+    async def discordpy_docs(self, ctx: Context, *, entity: str = None):
+        """
+        search the official discordpy documentation
+        """
+
+        await do_rtfm(ctx, "discordpy", entity)
+
+    @commands.command(aliases=["pycord", "pyc"])
     async def pycord_docs(self, ctx: Context, *, entity: str = None):
         """
         search the official pycord documentation
