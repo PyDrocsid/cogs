@@ -2,7 +2,7 @@ import re
 import string
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 from dateutil.relativedelta import relativedelta
 from discord import Embed, Forbidden, Guild, Member, Message, Role, SelectOption
@@ -21,7 +21,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import RoleWeight, TeamYesNo, YesNoUser
+from .models import Option, Poll, RoleWeight, Voted
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -59,9 +59,6 @@ class PollOption:
         else:
             self.emoji = default_emojis[number]
             self.option = line
-
-        if name_to_emoji["wastebasket"] == self.emoji:
-            raise CommandError(t.can_not_use_wastebucket_as_option)
 
     def __str__(self):
         return f"{self.emoji} {self.option}" if self.option else self.emoji
@@ -104,12 +101,10 @@ async def get_parser() -> ArgumentParser:
     return parser
 
 
-async def get_teampoll_embed(message: Message) -> Tuple[Optional[str], Optional[Embed], Optional[int]]:
-    for embed in message.embeds:
-        for i, field in enumerate(embed.fields):
-            if tg.status == field.name:
-                return embed.title, embed, i
-    return None, None, None
+def calc_end_time(duration: Optional[float]) -> Optional[datetime]:
+    if duration != 0 and not None:
+        return datetime.today() + relativedelta(hours=int(duration))
+    return
 
 
 async def send_poll(
@@ -117,13 +112,9 @@ async def send_poll(
     title: str,
     poll_args: str,
     max_choices: int = None,
-    field: Optional[Tuple[str, str]] = None,
-    deadline: float = 0,
-) -> tuple[Message, list[PollOption]]:
-    if deadline != 0:
-        end_time: Optional[datetime] = datetime.today() + relativedelta(hours=int(deadline))
-    else:
-        end_time = None
+    field: Optional[tuple[str, str]] = None,
+    deadline: Optional[float] = None,
+) -> tuple[Message, Message, list[tuple[str, str]], str]:
 
     if not max_choices or max_choices == 0:
         max_choices = t.poll_config.choices.unlimited
@@ -142,8 +133,10 @@ async def send_poll(
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
-    embed = Embed(title=title, description=t.poll_titles(question), color=Colors.Polls, timestamp=utcnow())
+    embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
+
+    end_time = calc_end_time(deadline)
     if end_time:
         embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M:%S")))
 
@@ -174,20 +167,19 @@ async def send_poll(
             for index, option in enumerate(options)
         ],
     )
-    await ctx.send(view=create_select_view(select))
+    view_msg = await ctx.send(view=create_select_view(select=select, timeout=deadline))
+    parsed_options: list[tuple[str, str]] = [
+        (obj.emoji, t.select.label(index + 1)) for index, obj in enumerate(options)
+    ]
 
-    return msg, options
+    return msg, view_msg, parsed_options, question
 
 
-async def edit_team_yn(embed: Embed, poll: TeamYesNo, missing: list[Member]) -> Embed:
-    calc = get_percentage([poll.in_favor, poll.against, poll.abstention])
+async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
+    calc = get_percentage([])  # TODO: option votes
+    print(calc)
     for index, field in enumerate(embed.fields):
-        if field.name == t.yes_no.in_favor:
-            embed.set_field_at(index, name=field.name, value=t.yes_no.count(calc[0][1], cnt=calc[0][0]))
-        elif field.name == t.yes_no.against:
-            embed.set_field_at(index, name=field.name, value=t.yes_no.count(calc[1][1], cnt=calc[1][0]))
-        elif field.name == t.yes_no.abstention:
-            embed.set_field_at(index, name=field.name, value=t.yes_no.count(calc[2][1], cnt=calc[2][0]))
+        # TODO hier errechnen
         if field.name == tg.status:
             missing.sort(key=lambda m: str(m).lower())
             *teamlers, last = (x.mention for x in missing)
@@ -215,56 +207,39 @@ async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
 class MySelect(Select):
     @db_wrapper
     async def callback(self, interaction):
+        user = interaction.user
+        selected_options: list = self.values
         message: Message = await interaction.channel.fetch_message(interaction.custom_id)
-        teamlers: set[Member] = await get_teamler(interaction.guild, ["team"])
-        team_poll = await get_teampoll_embed(message)
+        embed: Embed = message.embeds[0] if message.embeds else None
+        poll: Poll = await db.get(Poll, message_id=message.id)
+        if not poll or not embed:
+            return
 
-        if team_poll[0] == t.team_yn_poll:
-            if interaction.user not in teamlers:
-                await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
-                return
+        options: list[Option] = await poll.get_options()
+        options: list[Option] = [option for option in options if option.option in selected_options]
+        missing: list[Member] = []
+        print(missing)
 
-            poll = await db.get(TeamYesNo, message_id=message.id)
+        old_selected: list[Voted] = await db.all(filter_by(Voted, user_id=user.id, poll_id=message.id))
+        if old_selected:
+            for old in old_selected:
+                await old.remove()
 
-            if not (user := await db.get(YesNoUser, poll_id=message.id, user=interaction.user.id)):
-                await YesNoUser.create(interaction.user.id, message.id, int(self.values[0]))
-                if int(self.values[0]) == 0:
-                    poll.in_favor += 1
-                elif int(self.values[0]) == 1:
-                    poll.against += 1
-                else:
-                    poll.abstention += 1
-            else:
-                old_user_option = int(user.option)
-                user.option = int(self.values[0])
-                if int(self.values[0]) == 0:
-                    poll.in_favor += 1
-                elif int(self.values[0]) == 1:
-                    poll.against += 1
-                else:
-                    poll.abstention += 1
-
-                if old_user_option == 0:
-                    poll.in_favor -= 1
-                elif old_user_option == 1:
-                    poll.against -= 1
-                else:
-                    poll.abstention -= 1
-
-            rows = await db.all(filter_by(YesNoUser, poll_id=message.id))
-            user_ids = [user.user for user in rows]
-            missing: list[Member] = [team for team in teamlers if team.id not in user_ids]
-
-            embed = await edit_team_yn(team_poll[1], poll, missing)
-            await message.edit(embed=embed)
-
-        elif team_poll[0] == t.team_poll:
-            if interaction.user not in teamlers:
-                await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
-                return
-
+        if poll.fair:
+            user_weight: float = await PollsDefaultSettings.everyone_power.get()
         else:
-            pass
+            user_weight: float = 1.0  # TODO: Add function to get user vote weight
+        for option in options:
+            await Voted.create(option_id=option.id, user_id=user.id, poll_id=poll.id, vote_weight=user_weight)
+        print(await poll.get_voted_user())
+        if poll.poll_type == "team":
+            teamlers: set[Member] = await get_teamler(interaction.guild, ["team"])
+            missing: list[Member] = []
+            if user not in teamlers:
+                await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
+                return
+
+        # await edit_poll_embed(embed, poll, missing)
 
 
 class PollsCog(Cog, name="Polls"):
@@ -408,13 +383,25 @@ class PollsCog(Cog, name="Polls"):
     @poll.command(name="quick", usage=t.usage.poll, aliases=["q"])
     @docs(t.commands.poll.quick)
     async def quick(self, ctx: Context, *, args: str):
+        deadline = await PollsDefaultSettings.duration.get()
+        max_choices = await PollsDefaultSettings.max_choices.get()
+        anonymous = await PollsDefaultSettings.anonymous.get()
+        message, interaction, parsed_options, question = await send_poll(
+            ctx=ctx, title=t.poll, poll_args=args, max_choices=max_choices, deadline=deadline
+        )
 
-        await send_poll(
-            ctx=ctx,
-            title=t.poll,
-            poll_args=args,
-            max_choices=await PollsDefaultSettings.max_choices.get(),
-            deadline=await PollsDefaultSettings.duration.get(),
+        await Poll.create(
+            message_id=message.id,
+            channel=message.channel.id,
+            owner=ctx.author.id,
+            title=question,
+            end=calc_end_time(deadline),
+            anonymous=anonymous,
+            can_delete=True,
+            options=parsed_options,
+            poll_type="standard",
+            interaction=interaction.id,
+            fair=False,
         )
 
     @poll.command(name="new", usage=t.usage.poll)
@@ -423,6 +410,7 @@ class PollsCog(Cog, name="Polls"):
         def check(m: Message):
             return m.author == ctx.author
 
+        print(options)
         wizard = await ctx.send(embed=build_wizard())
         mess: Message = await self.bot.wait_for("message", check=check, timeout=60.0)
         args = mess.content
@@ -448,22 +436,37 @@ class PollsCog(Cog, name="Polls"):
         else:
             deadline = await PollsDefaultSettings.duration.get()  # TODO implement parsing for datetimes
         anonymous: bool = parsed.anonymous
-        print(anonymous)
         choices: int = parsed.choices
 
         if poll_type.lower() == "team":
+            can_delete, fair = False, True
             missing = list(await get_teamler(self.bot.guilds[0], ["team"]))
             missing.sort(key=lambda m: str(m).lower())
             *teamlers, last = (x.mention for x in missing)
             teamlers: list[str]
             field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
         else:
+            can_delete, fair = True, False
             field = None
 
-        poll_message, parsed_options = await send_poll(
+        message, interaction, parsed_options, question = await send_poll(
             ctx=ctx, title=title, poll_args=options, max_choices=choices, field=field, deadline=deadline
         )
         await ctx.message.delete()
+
+        await Poll.create(
+            message_id=message.id,
+            channel=message.channel.id,
+            owner=ctx.author.id,
+            title=question,
+            end=calc_end_time(deadline),
+            anonymous=anonymous,
+            can_delete=can_delete,
+            options=parsed_options,
+            poll_type=poll_type.lower(),
+            interaction=interaction.id,
+            fair=fair,
+        )
 
     @commands.command(aliases=["yn"])
     @guild_only()
@@ -492,29 +495,14 @@ class PollsCog(Cog, name="Polls"):
     @guild_only()
     @docs(t.commands.team_yes_no)
     async def team_yesno(self, ctx: Context, *, text: str):
-        ops = [(t.yes_no.in_favor, "thumbsup", 0), (t.yes_no.against, "thumbsdown", 1), (t.yes_no.abstention, "zzz", 2)]
+        options = t.yes_no.option_string(text)
 
-        embed = Embed(title=t.team_yn_poll, description=text, color=Colors.Polls, timestamp=utcnow())
-        embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
-
-        embed.add_field(name=t.yes_no.in_favor, value=t.yes_no.count(0, cnt=0), inline=True)
-        embed.add_field(name=t.yes_no.against, value=t.yes_no.count(0, cnt=0), inline=True)
-        embed.add_field(name=t.yes_no.abstention, value=t.yes_no.count(0, cnt=0), inline=True)
         missing = list(await get_teamler(self.bot.guilds[0], ["team"]))
         missing.sort(key=lambda m: str(m).lower())
         *teamlers, last = (x.mention for x in missing)
         teamlers: list[str]
-        embed.add_field(
-            name=tg.status,
-            value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
-            inline=False,
-        )
+        field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
 
-        embed_msg: Message = await ctx.send(embed=embed)
-        select = MySelect(
-            custom_id=str(embed_msg.id),
-            placeholder=t.select.placeholder(cnt=1),
-            options=[SelectOption(label=op[0], emoji=name_to_emoji[op[1]], value=str(op[2])) for op in ops],
+        embed_msg, interaction, parsed_options, question = await send_poll(
+            ctx=ctx, title=t.team_poll, max_choices=1, poll_args=options, field=field
         )
-        await ctx.send(view=create_select_view(select))
-        await TeamYesNo.create(embed_msg.id)

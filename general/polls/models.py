@@ -1,46 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 from discord.utils import utcnow
 from sqlalchemy import BigInteger, Boolean, Column, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import Base, UTCDateTime, db, select
-
-
-class TeamYesNo(Base):
-    __tablename__ = "team_yes_no"
-
-    message_id: Union[Column, int] = Column(BigInteger, unique=True, primary_key=True)
-    users: list[YesNoUser] = relationship("YesNoUser", back_populates="poll", cascade="all, delete")
-    in_favor: Union[Column, int] = Column(Float)
-    against: Union[Column, int] = Column(Float)
-    abstention: Union[Column, int] = Column(Float)
-    timestamp: Union[Column, datetime] = Column(UTCDateTime)
-
-    @staticmethod
-    async def create(message_id: int) -> TeamYesNo:
-        row = TeamYesNo(message_id=message_id, in_favor=0, against=0, abstention=0, timestamp=utcnow())
-        await db.add(row)
-        return row
-
-
-class YesNoUser(Base):
-    __tablename__ = "team_yes_no_voter"
-
-    id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
-    poll_id: Union[Column, int] = Column(BigInteger, ForeignKey("team_yes_no.message_id"))
-    poll: TeamYesNo = relationship("TeamYesNo", back_populates="users")
-    option: Union[Column, int] = Column(BigInteger)
-    user: Union[Column, int] = Column(BigInteger)
-
-    @staticmethod
-    async def create(user: int, poll_id: int, option: int) -> YesNoUser:
-        row = YesNoUser(user=user, poll_id=poll_id, option=option)
-        await db.add(row)
-        return row
+from PyDrocsid.database import Base, UTCDateTime, db, filter_by, select
 
 
 class Poll(Base):
@@ -51,16 +18,16 @@ class Poll(Base):
     options: list[Option] = relationship("Option", back_populates="poll", cascade="all, delete")
 
     message_id: Union[Column, int] = Column(BigInteger, unique=True)
-    poll_channel: Union[Column, int] = Column(BigInteger)
+    interaction_message_id: Union[Column, int] = Column(BigInteger, unique=True)
+    channel_id: Union[Column, int] = Column(BigInteger)
     owner_id: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
     title: Union[Column, str] = Column(Text(256))
     poll_type: Union[Column, str] = Column(Text(50))
     end_time: Union[Column, datetime] = Column(UTCDateTime)
     anonymous: Union[Column, bool] = Column(Boolean)
-    poll_open: Union[Column, bool] = Column(Boolean)
     can_delete: Union[Column, bool] = Column(Boolean)
-    keep: Union[Column, bool] = Column(Boolean)
+    fair: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
     async def create(
@@ -68,33 +35,43 @@ class Poll(Base):
         channel: int,
         owner: int,
         title: str,
-        options: list,
-        end: int,
+        options: list[tuple[str, str]],
+        end: Optional[datetime],
         anonymous: bool,
         can_delete: bool,
-        keep: bool,
         poll_type: str,
+        interaction: int,
+        fair: bool,
     ) -> Poll:
         row = Poll(
             message_id=message_id,
-            poll_channel=channel,
+            channel_id=channel,
             owner_id=owner,
             timestamp=utcnow(),
             title=title,
             poll_type=poll_type,
-            end=end,
+            end_time=end,
             anonymous=anonymous,
             can_delete=can_delete,
-            keep=keep,
+            interaction_message_id=interaction,
+            fair=fair,
         )
-        for poll_option in options:
-            await Option.create(poll=message_id, emote=poll_option.emoji, option_text=poll_option.option)
+        for position, poll_option in enumerate(options):
+            await Option.create(
+                poll=message_id, emote=poll_option[0], option_text=poll_option[1], field_position=position
+            )
 
         await db.add(row)
         return row
 
     async def remove(self):
         await db.delete(self)
+
+    async def get_options(self) -> list[Option]:
+        return list(await db.all(filter_by(Option, poll_id=self.message_id)))
+
+    async def get_voted_user(self):
+        return [await option.get_user() for option in await db.all(filter_by(Option, poll_id=self.message_id))]
 
 
 class Option(Base):
@@ -106,13 +83,17 @@ class Option(Base):
     poll: Poll = relationship("Poll", back_populates="options")
     emote: Union[Column, str] = Column(Text(30))
     option: Union[Column, str] = Column(Text(150))
+    field_position: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
-    async def create(poll: int, emote: str, option_text: str) -> Option:
-        options = Option(poll_id=poll, emote=emote, option=option_text)
+    async def create(poll: int, emote: str, option_text: str, field_position: int) -> Option:
+        options = Option(poll_id=poll, emote=emote, option=option_text, field_position=field_position)
         await db.add(options)
 
         return options
+
+    async def get_user(self) -> list[Voted]:
+        return list(await db.all(filter_by(Voted, option_id=self.id)))
 
 
 class Voted(Base):
@@ -123,11 +104,15 @@ class Voted(Base):
     option_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll_option.id"))
     option: Option = relationship("Option", back_populates="votes", cascade="all, delete")
     vote_weight: Union[Column, float] = Column(Float)
+    poll_id: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
-    async def create(user_id: int, option_id: int, vote_weight: float):
-        row = Voted(user_id=user_id, option_id=option_id, vote_weight=vote_weight)
+    async def create(user_id: int, option_id: int, vote_weight: float, poll_id: int):
+        row = Voted(user_id=user_id, option_id=option_id, vote_weight=vote_weight, poll_id=poll_id)
         await db.add(row)
+
+    async def remove(self):
+        await db.delete(self)
 
 
 class RoleWeight(Base):

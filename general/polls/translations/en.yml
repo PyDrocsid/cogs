@@ -86,13 +86,14 @@ yes_no:
   in_favor: "Yes"
   against: "No"
   abstention: "Abstention"
+  option_string: "{}\n:thumbsup: Yes\n:thumbsdown: No\n:zzz: Abstention"
   count:
     one: "{cnt} vote ({}%)"
     many: "{cnt} votes ({}%)"
 
 option:
   field:
-    name: "**Voted: {}, Percentage: {}%**"
+    name: "**Votes: {} ({}%)**"
 
 skip:
   message: skip
@@ -124,10 +125,8 @@ wizard:
       
       --> Creates an anonymous, 6 hours long poll with 4 select choices for every user
 
-poll_titles: "**`{}`**"
 poll: Poll
 team_poll: Team Poll
-team_yn_poll: Team Yes-No Poll
 team_yn_poll_forbidden: You are not allowed to use a team poll
 vote_explanation: Vote using the reactions below!
 too_many_options: You specified too many options. The maximum amount is {}.
