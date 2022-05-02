@@ -1,7 +1,7 @@
 import re
 from asyncio import sleep
 from datetime import datetime, timedelta
-from typing import List, Tuple, Type, TypeVar
+from typing import List, Tuple, Type, TypeVar, Any, Callable, Awaitable
 
 from dateutil.relativedelta import relativedelta
 from discord import (
@@ -122,6 +122,14 @@ async def get_mute_role(guild: Guild) -> Role:
     if mute_role is None:
         await send_alert(guild, t.mute_role_not_set)
     return mute_role
+
+
+def extract_evidence(message: Message) -> Tuple[Attachment | None, str | None]:
+    attachments = message.attachments
+    evidence = attachments[0] if attachments else None
+    evidence_url = evidence.url if attachments else None
+
+    return evidence, evidence_url
 
 
 def show_evidence(evidence: str | None) -> str:
@@ -564,6 +572,441 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.configured_send_delete_message[send])
 
+    async def handle_single(
+        self, ctx: Context, user: User | Member, reason: str, translation: Any, model: Type[TBase], color: int
+    ) -> bool:
+        user: Member | User
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        if user == self.bot.user:
+            raise UserCommandError(user, translation.cannot)
+
+        evidence, evidence_url = extract_evidence(ctx.message)
+
+        if not evidence:
+            if not await confirm_no_evidence(ctx):
+                return False
+
+        user_embed = Embed(
+            title=translation.action,
+            colour=Colors.ModTools,
+            description=translation.done(ctx.author.mention, ctx.guild.name, reason),
+        )
+
+        server_embed = Embed(title=translation.action, description=translation.response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
+            server_embed.colour = Colors.error
+        await model.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=color,
+            title=translation.log,
+            member=user,
+            reason=reason,
+            evidence=evidence,
+        )
+
+        return True
+
+    async def handle_edit_single(
+        self, ctx: Context, entry_id: int, reason: str, translation: Any, model: Type[TBase], color: int
+    ):
+        entry = await get_and_compare_entry(model, entry_id, ctx.author)
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        conf_embed = Embed(
+            title=t.confirmation, description=translation.confirm_edit(entry.reason, reason), color=Colors.ModTools
+        )
+
+        if not await confirm_action(ctx, conf_embed):
+            return
+
+        try:
+            user = await self.bot.fetch_user(entry.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
+
+        user_embed = Embed(
+            title=translation.action,
+            description=translation.edited(entry.reason, reason),
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(
+            title=translation.action,
+            description=translation.edited_response,
+            colour=Colors.ModTools,
+        )
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+
+        await model.edit(entry_id, ctx.author.id, await get_mod_level(ctx.author), reason)
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=color,
+            title=translation.log_edited,
+            member=user,
+            reason=reason,
+        )
+
+    async def handle_delete_single(self, ctx: Context, entry_id: int, translation, model: Type[TBase], color: int):
+        entry = await get_and_compare_entry(model, entry_id, ctx.author)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=translation.confirm_delete(entry.member_name, entry.id),
+            color=Colors.ModTools,
+        )
+
+        if not await confirm_action(ctx, conf_embed):
+            return
+
+        await model.delete(entry_id)
+
+        try:
+            user = await self.bot.fetch_user(entry.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
+
+        server_embed = Embed(title=translation.action, description=translation.deleted_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+
+        if await ModSettings.send_delete_user_message.get():
+            user_embed = Embed(
+                title=translation.action,
+                description=translation.deleted(entry.reason),
+                colour=Colors.ModTools,
+            )
+
+            try:
+                await user.send(embed=user_embed)
+            except (Forbidden, HTTPException):
+                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
+                server_embed.colour = Colors.error
+
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=color,
+            title=translation.log_deleted,
+            member=user,
+            reason=entry.reason,
+        )
+
+    async def handle_timed(
+        self,
+        ctx: Context,
+        user: Member | User,
+        time: int | None,
+        reason: str,
+        translation,
+        model: Type[TBase],
+        color: int,
+        embed_addition: str,
+    ) -> bool:
+        time: int | None
+        minutes = time
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        if await db.exists(filter_by(model, active=True, member=user.id)):
+            raise UserCommandError(user, translation.already_done)
+
+        evidence, evidence_url = extract_evidence(ctx.message)
+
+        if not evidence:
+            if not await confirm_no_evidence(ctx):
+                return False
+
+        user_embed = Embed(title=translation.action, colour=Colors.ModTools)
+        server_embed = Embed(title=translation.action, description=translation.response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+
+        await model.create(
+            user.id,
+            str(user),
+            ctx.author.id,
+            await get_mod_level(ctx.author),
+            minutes if minutes is not None else -1,
+            reason,
+            evidence_url,
+        )
+
+        await invalidate_entry_cache()
+
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=color,
+            title=translation.log,
+            member=user,
+            reason=reason,
+            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            evidence=evidence,
+        )
+
+        if minutes is not None:
+            user_embed.description = translation.done(
+                ctx.author.mention,
+                ctx.guild.name,
+                time_to_units(minutes),
+                reason,
+            )
+        else:
+            user_embed.description = translation.done_inf(ctx.author.mention, ctx.guild.name, reason)
+
+        server_embed.description = f"{server_embed.description}{embed_addition}"
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
+            server_embed.colour = Colors.error
+
+        await reply(ctx, embed=server_embed)
+
+        return True
+
+    async def handle_edit_timed_reason(
+        self, ctx: Context, entry_id: int, reason: str, translation: Any, model: Type[TBase], color: int
+    ):
+        entry = await get_and_compare_entry(model, entry_id, ctx.author)
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=translation.confirm_edit.reason(entry.reason, reason),
+            color=Colors.ModTools,
+        )
+
+        if not await confirm_action(ctx, conf_embed):
+            return
+
+        try:
+            user = await self.bot.fetch_user(entry.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
+
+        user_embed = Embed(
+            title=translation.action,
+            description=translation.edited.reason(entry.reason, reason),
+            colour=Colors.ModTools,
+        )
+        server_embed = Embed(title=translation.action, description=translation.edited_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+
+        await model.edit_reason(entry_id, ctx.author.id, await get_mod_level(ctx.author), reason)
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=color,
+            title=translation.log_edited,
+            member=user,
+            reason=reason,
+        )
+
+    async def handle_edit_timed_duration(
+        self,
+        ctx: Context,
+        user: User | Member,
+        time: int | None,
+        translation: Any,
+        model: Type[TBase],
+        color: int,
+    ):
+        user: Member | User
+        time: int | None
+        minutes = time
+
+        active_entries: List[TBase] = sorted(
+            await db.all(filter_by(model, active=True, member=user.id)), key=lambda active_entry: active_entry.timestamp
+        )
+
+        if not active_entries:
+            raise CommandError(translation.not_done)
+
+        entry = active_entries[0]
+
+        if not await compare_mod_level(ctx.author, entry.mod_level) or not ctx.author.id == entry.mod:
+            raise CommandError(tg.permission_denied)
+
+        if entry.minutes == minutes or (entry.minutes == -1 and minutes is None):
+            raise CommandError(translation.already_done)
+
+        conf_embed = Embed(title=t.confirmation, color=Colors.ModTools)
+
+        old_time = t.infinity if entry.minutes == -1 else time_to_units(entry.minutes)
+
+        if minutes is None:
+            conf_embed.description = translation.confirm_edit.duration(old_time, t.infinity)
+        else:
+            conf_embed.description = translation.confirm_edit.duration(old_time, time_to_units(minutes))
+
+        if not await confirm_action(ctx, conf_embed):
+            return
+
+        for active_entry in active_entries[1:]:
+            await model.delete(active_entry.id)
+
+        user_embed = Embed(title=translation.action, colour=Colors.ModTools)
+        server_embed = Embed(title=translation.action, description=translation.edited_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+
+        await model.edit_duration(entry.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
+
+        await invalidate_entry_cache()
+
+        user_embed.description = translation.edited.duration(
+            time_to_units(entry.minutes), t.infinity if minutes is None else time_to_units(minutes)
+        )
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=color,
+            title=translation.log_edited,
+            member=user,
+            reason=entry.reason,
+            duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
+        )
+
+        try:
+            await user.send(embed=user_embed)
+        except (Forbidden, HTTPException):
+            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
+            server_embed.colour = Colors.error
+        await reply(ctx, embed=server_embed)
+
+    async def handle_delete_timed(
+        self, ctx: Context, entry_id: int, translation: Any, model: Type[TBase], color: int
+    ) -> TBase | None:
+        entry = await get_and_compare_entry(model, entry_id, ctx.author)
+
+        conf_embed = Embed(
+            title=t.confirmation,
+            description=translation.confirm_delete(entry.member_name, entry.id),
+            color=Colors.ModTools,
+        )
+
+        if not await confirm_action(ctx, conf_embed):
+            return
+
+        try:
+            user = await self.bot.fetch_user(entry.member)
+        except (NotFound, HTTPException):
+            raise CommandError(t.user_not_found)
+
+        await model.delete(entry_id)
+
+        await invalidate_entry_cache()
+
+        server_embed = Embed(title=translation.action, description=translation.deleted_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+
+        if await ModSettings.send_delete_user_message.get():
+            user_embed = Embed(title=translation.action, colour=Colors.ModTools)
+
+            if entry.minutes == -1:
+                user_embed.description = translation.deleted.inf(entry.reason)
+            else:
+                user_embed.description = translation.deleted.not_inf(time_to_units(entry.minutes), entry.reason)
+
+            try:
+                await user.send(embed=user_embed)
+            except (Forbidden, HTTPException):
+                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
+                server_embed.colour = Colors.error
+
+        await reply(ctx, embed=server_embed)
+
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=color,
+            title=translation.log_deleted,
+            member=user,
+            reason=entry.reason,
+            duration=t.log_field_infinity if entry.minutes == -1 else time_to_units(entry.minutes),
+        )
+
+        return entry
+
+    async def handle_undo_timed(
+        self,
+        ctx: Context,
+        user: User | Member,
+        reason: str,
+        translation: Any,
+        model: Type[TBase],
+        color: int,
+        undo_function: Callable[[Context, Member | User], Awaitable[bool]],
+    ):
+        user: Member | User
+
+        if len(reason) > 900:
+            raise CommandError(t.reason_too_long)
+
+        was_done = await undo_function(ctx, user)
+
+        minutes = 0
+        async for entry in await db.stream(filter_by(model, active=True, member=user.id)):
+            if not await compare_mod_level(ctx.author, entry.mod_level) or not ctx.author.id == entry.mod:
+                raise CommandError(tg.permission_denied)
+
+            await model.deactivate(entry.id, ctx.author.id, reason)
+
+            was_done = True
+
+            if entry.minutes > minutes or entry.minutes == -1:
+                minutes = entry.minutes
+
+        if not was_done:
+            raise UserCommandError(user, t.not_muted)
+
+        await invalidate_entry_cache()
+
+        server_embed = Embed(title=translation.undo, description=translation.undo_response, colour=Colors.ModTools)
+        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
+        await reply(ctx, embed=server_embed)
+
+        await send_to_changelog_mod(
+            guild=ctx.guild,
+            message=ctx.message,
+            colour=color,
+            title=translation.log_undo,
+            member=user,
+            reason=reason,
+            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            mod=ctx.author,
+            original_reason=entry.reason,
+        )
+
     @commands.command()
     @docs(t.commands.report)
     async def report(self, ctx: Context, user: UserMemberConverter, *, reason: str):
@@ -616,130 +1059,23 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     @docs(t.commands.warn)
     async def warn(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        user: Member | User
+        user: User | Member
 
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
-        if user == self.bot.user:
-            raise UserCommandError(user, t.cannot_warn)
-
-        attachments = ctx.message.attachments
-        evidence = attachments[0] if attachments else None
-        evidence_url = evidence.url if attachments else None
-
-        if not evidence:
-            if not await confirm_no_evidence(ctx):
-                return
-
-        user_embed = Embed(
-            title=t.warn, colour=Colors.ModTools, description=t.warned(ctx.author.mention, ctx.guild.name, reason)
-        )
-
-        server_embed = Embed(title=t.warn, description=t.warned_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-        await Warn.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.warn,
-            title=t.log_warned,
-            member=user,
-            reason=reason,
-            evidence=evidence,
-        )
+        await self.handle_single(ctx, user, reason, t.warn, Warn, Colors.warn)
 
     @commands.command(aliases=["warn_edit"])
     @ModPermission.warn.check
     @guild_only()
     @docs(t.commands.edit_warn)
     async def edit_warn(self, ctx: Context, warn_id: int, *, reason: str):
-        warn = await get_and_compare_entry(Warn, warn_id, ctx.author)
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm_warn_edit(warn.reason, reason), color=Colors.ModTools
-        )
-
-        if not await confirm_action(ctx, conf_embed):
-            return
-
-        try:
-            user = await self.bot.fetch_user(warn.member)
-        except (NotFound, HTTPException):
-            raise CommandError(t.user_not_found)
-
-        user_embed = Embed(title=t.warn, description=t.warn_edited(warn.reason, reason), colour=Colors.ModTools)
-        server_embed = Embed(title=t.warn, description=t.warn_edited_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        await Warn.edit(warn_id, ctx.author.id, await get_mod_level(ctx.author), reason)
-
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.warn,
-            title=t.log_warn_edited,
-            member=user,
-            reason=reason,
-        )
+        await self.handle_edit_single(ctx, warn_id, reason, t.warn, Warn, Colors.warn)
 
     @commands.command(aliases=["warn_delete"])
     @ModPermission.warn.check
     @guild_only()
     @docs(t.commands.delete_warn)
     async def delete_warn(self, ctx: Context, warn_id: int):
-        warn = await get_and_compare_entry(Warn, warn_id, ctx.author)
-
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm_warn_delete(warn.member_name, warn.id), color=Colors.ModTools
-        )
-
-        if not await confirm_action(ctx, conf_embed):
-            return
-
-        await Warn.delete(warn_id)
-
-        try:
-            user = await self.bot.fetch_user(warn.member)
-        except (NotFound, HTTPException):
-            raise CommandError(t.user_not_found)
-
-        server_embed = Embed(title=t.warn, description=t.warn_deleted_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        if await ModSettings.send_delete_user_message.get():
-            user_embed = Embed(title=t.warn, description=t.warn_deleted(warn.reason), colour=Colors.ModTools)
-
-            try:
-                await user.send(embed=user_embed)
-            except (Forbidden, HTTPException):
-                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-                server_embed.colour = Colors.error
-
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.warn,
-            title=t.log_warn_deleted,
-            member=user,
-            reason=warn.reason,
-        )
+        await self.handle_delete_single(ctx, warn_id, t.warn, Warn, Colors.warn)
 
     @commands.command()
     @ModPermission.mute.check
@@ -747,72 +1083,19 @@ class ModCog(Cog, name="Mod Tools"):
     @docs(t.commands.mute)
     async def mute(self, ctx: Context, user: UserMemberConverter, time: DurationConverter, *, reason: str):
         user: Member | User
-
         time: int | None
-        minutes = time
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
-        mute_role: Role = await get_mute_role(ctx.guild)
 
         if user == self.bot.user or await is_teamler(user):
-            raise UserCommandError(user, t.cannot_mute)
+            raise UserCommandError(user, t.mute.cannot)
+
+        if not await self.handle_timed(ctx, user, time, reason, t.mute, Mute, Colors.mute, ""):
+            return
+
+        mute_role: Role = await get_mute_role(ctx.guild)
 
         if isinstance(user, Member):
             await user.add_roles(mute_role)
             await user.move_to(None)
-
-        if await db.exists(filter_by(Mute, active=True, member=user.id)):
-            raise UserCommandError(user, t.already_muted)
-
-        attachments = ctx.message.attachments
-        evidence = attachments[0] if attachments else None
-        evidence_url = evidence.url if attachments else None
-
-        if not evidence:
-            if not await confirm_no_evidence(ctx):
-                return
-
-        user_embed = Embed(title=t.mute, colour=Colors.ModTools)
-        server_embed = Embed(title=t.mute, description=t.muted_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        await Mute.create(
-            user.id,
-            str(user),
-            ctx.author.id,
-            await get_mod_level(ctx.author),
-            minutes if minutes is not None else -1,
-            reason,
-            evidence_url,
-        )
-
-        await invalidate_entry_cache()
-
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.mute,
-            title=t.log_muted,
-            member=user,
-            reason=reason,
-            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
-            evidence=evidence,
-        )
-
-        if minutes is not None:
-            user_embed.description = t.muted(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
-        else:
-            user_embed.description = t.muted_inf(ctx.author.mention, ctx.guild.name, reason)
-
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-
-        await reply(ctx, embed=server_embed)
 
     @commands.group(aliases=["mute_edit"])
     @ModPermission.mute.check
@@ -825,121 +1108,22 @@ class ModCog(Cog, name="Mod Tools"):
     @edit_mute.command(name="reason", aliases=["r"])
     @docs(t.commands.edit_mute_reason)
     async def edit_mute_reason(self, ctx: Context, mute_id: int, *, reason: str):
-        mute = await get_and_compare_entry(Mute, mute_id, ctx.author)
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm_mute_edit.reason(mute.reason, reason), color=Colors.ModTools
-        )
-
-        if not await confirm_action(ctx, conf_embed):
-            return
-
-        try:
-            user = await self.bot.fetch_user(mute.member)
-        except (NotFound, HTTPException):
-            raise CommandError(t.user_not_found)
-
-        user_embed = Embed(title=t.mute, description=t.mute_edited.reason(mute.reason, reason), colour=Colors.ModTools)
-        server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        await Mute.edit_reason(mute_id, ctx.author.id, await get_mod_level(ctx.author), reason)
-
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.mute,
-            title=t.log_mute_edited,
-            member=user,
-            reason=reason,
-        )
+        await self.handle_edit_timed_reason(ctx, mute_id, reason, t.mute, Mute, Colors.mute)
 
     @edit_mute.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_mute_duration)
     async def edit_mute_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
-        user: Member | User
+        user: User | Member
         time: int | None
-        minutes = time
 
-        active_mutes: List[Mute] = sorted(
-            await db.all(filter_by(Mute, active=True, member=user.id)), key=lambda active_mute: active_mute.timestamp
-        )
-
-        if not active_mutes:
-            raise CommandError(t.not_muted)
-
-        mute = active_mutes[0]
-
-        if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
-            raise CommandError(tg.permission_denied)
-
-        if mute.minutes == minutes or (mute.minutes == -1 and minutes is None):
-            raise CommandError(t.already_muted)
-
-        conf_embed = Embed(title=t.confirmation, color=Colors.ModTools)
-
-        old_time = t.infinity if mute.minutes == -1 else time_to_units(mute.minutes)
-
-        if minutes is None:
-            conf_embed.description = t.confirm_mute_edit.duration(old_time, t.infinity)
-        else:
-            conf_embed.description = t.confirm_mute_edit.duration(old_time, time_to_units(minutes))
-
-        if not await confirm_action(ctx, conf_embed):
-            return
-
-        for active_mute in active_mutes[1:]:
-            await Mute.delete(active_mute.id)
-
-        user_embed = Embed(title=t.mute, colour=Colors.ModTools)
-        server_embed = Embed(title=t.mute, description=t.mute_edited_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        await Mute.edit_duration(mute.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
-
-        await invalidate_entry_cache()
-
-        user_embed.description = t.mute_edited.duration(
-            time_to_units(mute.minutes), t.infinity if minutes is None else time_to_units(minutes)
-        )
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.mute,
-            title=t.log_mute_edited,
-            member=user,
-            reason=Mute.reason,
-            duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
-        )
-
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-        await reply(ctx, embed=server_embed)
+        await self.handle_edit_timed_duration(ctx, user, time, t.mute, Mute, Colors.mute)
 
     @commands.command(aliases=["mute_delete"])
     @ModPermission.mute.check
     @guild_only()
     @docs(t.commands.delete_mute)
     async def delete_mute(self, ctx: Context, mute_id: int):
-        mute = await get_and_compare_entry(Mute, mute_id, ctx.author)
-
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm_mute_delete(mute.member_name, mute.id), color=Colors.ModTools
-        )
-
-        if not await confirm_action(ctx, conf_embed):
+        if not (mute := await self.handle_delete_timed(ctx, mute_id, t.mute, Mute, Colors.mute)):
             return
 
         active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=mute.member))
@@ -950,101 +1134,30 @@ class ModCog(Cog, name="Mod Tools"):
                 if (mute_role := await get_mute_role(ctx.guild)) in user.roles:
                     await user.remove_roles(mute_role)
 
-        try:
-            user = await self.bot.fetch_user(mute.member)
-        except (NotFound, HTTPException):
-            raise CommandError(t.user_not_found)
-
-        await Mute.delete(mute_id)
-
-        await invalidate_entry_cache()
-
-        server_embed = Embed(title=t.mute, description=t.mute_deleted_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        if await ModSettings.send_delete_user_message.get():
-            user_embed = Embed(title=t.warn, colour=Colors.ModTools)
-
-            if mute.minutes == -1:
-                user_embed.description = t.mute_deleted.inf(mute.reason)
-            else:
-                user_embed.description = t.mute_deleted.not_inf(time_to_units(mute.minutes), mute.reason)
-
-            try:
-                await user.send(embed=user_embed)
-            except (Forbidden, HTTPException):
-                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-                server_embed.colour = Colors.error
-
-        await reply(ctx, embed=server_embed)
-
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.mute,
-            title=t.log_mute_deleted,
-            member=user,
-            reason=mute.reason,
-            duration=t.log_field_infinity if mute.minutes == -1 else time_to_units(mute.minutes),
-        )
-
     @commands.command()
     @ModPermission.mute.check
     @guild_only()
     @docs(t.commands.unmute)
     async def unmute(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        user: Member | User
+        user: User | Member
 
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
+        async def unmute_inner(context: Context, muted_user: Member | User) -> bool:
+            mute_role: Role = await get_mute_role(context.guild)
 
-        mute_role: Role = await get_mute_role(ctx.guild)
+            was_muted = False
+            if isinstance(muted_user, Member) and mute_role in muted_user.roles:
+                was_muted = True
+                await muted_user.remove_roles(mute_role)
 
-        was_muted = False
-        if isinstance(user, Member) and mute_role in user.roles:
-            was_muted = True
-            await user.remove_roles(mute_role)
+            return was_muted
 
-        minutes = 0
-        async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
-            if not await compare_mod_level(ctx.author, mute.mod_level) or not ctx.author.id == mute.mod:
-                raise CommandError(tg.permission_denied)
-
-            await Mute.deactivate(mute.id, ctx.author.id, reason)
-
-            was_muted = True
-
-            if mute.minutes > minutes or mute.minutes == -1:
-                minutes = mute.minutes
-
-        if not was_muted:
-            raise UserCommandError(user, t.not_muted)
-
-        await invalidate_entry_cache()
-
-        server_embed = Embed(title=t.unmute, description=t.unmuted_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.unmute,
-            title=t.log_unmuted,
-            member=user,
-            reason=reason,
-            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
-            mod=ctx.author,
-            original_reason=mute.reason,
-        )
+        await self.handle_undo_timed(ctx, user, reason, t.mute, Mute, Colors.unmute, unmute_inner)
 
     @commands.command()
     @ModPermission.kick.check
     @guild_only()
     @docs(t.commands.kick)
     async def kick(self, ctx: Context, member: Member, *, reason: str):
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
         if member == self.bot.user or await is_teamler(member):
             raise UserCommandError(member, t.cannot_kick)
 
@@ -1054,130 +1167,25 @@ class ModCog(Cog, name="Mod Tools"):
         if member.top_role >= ctx.guild.me.top_role or member.id == ctx.guild.owner_id:
             raise UserCommandError(member, t.cannot_kick)
 
-        attachments = ctx.message.attachments
-        evidence = attachments[0] if attachments else None
-        evidence_url = evidence.url if attachments else None
-
-        if not evidence:
-            if not await confirm_no_evidence(ctx):
-                return
-
-        await Kick.create(member.id, str(member), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.kick,
-            title=t.log_kicked,
-            member=member,
-            reason=reason,
-            evidence=evidence,
-        )
-
-        user_embed = Embed(
-            title=t.kick,
-            colour=Colors.ModTools,
-            description=t.kicked(ctx.author.mention, ctx.guild.name, reason),
-        )
-
-        server_embed = Embed(title=t.kick, description=t.kicked_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(member), icon_url=member.display_avatar.url)
-
-        try:
-            await member.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
+        if not self.handle_single(ctx, member, reason, t.kick, Kick, Colors.kick):
+            return
 
         await member.kick(reason=reason)
         await revoke_verification(member)
-
-        await reply(ctx, embed=server_embed)
 
     @commands.command(aliases=["kick_edit"])
     @ModPermission.kick.check
     @guild_only()
     @docs(t.commands.edit_kick)
     async def edit_kick(self, ctx: Context, kick_id: int, *, reason: str):
-        kick = await get_and_compare_entry(Kick, kick_id, ctx.author)
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm_kick_edit(kick.reason, reason), color=Colors.ModTools
-        )
-
-        if not await confirm_action(ctx, conf_embed):
-            return
-
-        try:
-            user = await self.bot.fetch_user(kick.member)
-        except (NotFound, HTTPException):
-            raise CommandError(t.user_not_found)
-
-        user_embed = Embed(title=t.kick, description=t.kick_edited(kick.reason, reason), colour=Colors.ModTools)
-        server_embed = Embed(title=t.kick, description=t.kick_edited_reponse, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        await Kick.edit(kick_id, ctx.author.id, await get_mod_level(ctx.author), reason)
-
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.kick,
-            title=t.log_kick_edited,
-            member=user,
-            reason=reason,
-        )
+        await self.handle_edit_single(ctx, kick_id, reason, t.kick, Kick, Colors.kick)
 
     @commands.command(aliases=["kick_delete"])
     @ModPermission.kick.check
     @guild_only()
     @docs(t.commands.delete_kick)
     async def delete_kick(self, ctx: Context, kick_id: int):
-        kick = await get_and_compare_entry(Kick, kick_id, ctx.author)
-
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm_kick_delete(kick.member_name, kick.id), color=Colors.ModTools
-        )
-
-        if not await confirm_action(ctx, conf_embed):
-            return
-
-        await Kick.delete(kick_id)
-
-        try:
-            user = await self.bot.fetch_user(kick.member)
-        except (NotFound, HTTPException):
-            raise CommandError(t.user_not_found)
-
-        server_embed = Embed(title=t.warn, description=t.kick_deleted_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        if await ModSettings.send_delete_user_message.get():
-            user_embed = Embed(title=t.kick, description=t.kick_deleted(kick.reason), colour=Colors.ModTools)
-
-            try:
-                await user.send(embed=user_embed)
-            except (Forbidden, HTTPException):
-                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-                server_embed.colour = Colors.error
-
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.kick,
-            title=t.log_kick_deleted,
-            member=user,
-            reason=kick.reason,
-        )
+        await self.handle_delete_single(ctx, kick_id, t.kick, Kick, Colors.kick)
 
     @commands.command()
     @ModPermission.ban.check
@@ -1186,86 +1194,30 @@ class ModCog(Cog, name="Mod Tools"):
     async def ban(
         self, ctx: Context, user: UserMemberConverter, time: DurationConverter, delete_days: int, *, reason: str
     ):
-        time: int | None
-        minutes = time
-
         user: Member | User
+        time: int | None
 
         if not ctx.guild.me.guild_permissions.ban_members:
             raise CommandError(t.cannot_ban_permissions)
 
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
         if not 0 <= delete_days <= 7:
             raise CommandError(tg.invalid_duration)
 
-        if user == self.bot.user or await is_teamler(user):
-            raise UserCommandError(user, t.cannot_ban)
         if isinstance(user, Member) and (user.top_role >= ctx.guild.me.top_role or user.id == ctx.guild.owner_id):
             raise UserCommandError(user, t.cannot_ban)
 
-        active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=user.id))
-        if active_bans:
-            raise UserCommandError(user, t.already_banned)
-
         active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
+
+        if not await self.handle_timed(
+            ctx, user, time, reason, t.ban, Ban, Colors.ban, f"\n\n{t.ban.previously_muted}" if active_mutes else ""
+        ):
+            return
+
         for mute in active_mutes:
             await Mute.deactivate(mute.id, ctx.author.id, t.cancelled_by_ban)
 
-        attachments = ctx.message.attachments
-        evidence = attachments[0] if attachments else None
-        evidence_url = evidence.url if attachments else None
-
-        if not evidence:
-            if not await confirm_no_evidence(ctx):
-                return
-
-        user_embed = Embed(title=t.ban, colour=Colors.ModTools)
-        server_embed = Embed(title=t.ban, description=t.banned_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        if active_mutes:
-            server_embed.description += f"\n\n{t.previously_muted}"
-
-        await Ban.create(
-            user.id,
-            str(user),
-            ctx.author.id,
-            await get_mod_level(ctx.author),
-            minutes if minutes is not None else -1,
-            reason,
-            evidence_url,
-        )
-
-        await invalidate_entry_cache()
-
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.ban,
-            title=t.log_banned,
-            member=user,
-            reason=reason,
-            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
-            evidence=evidence,
-        )
-
-        if minutes is not None:
-            user_embed.description = t.banned(ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason)
-
-        else:
-            user_embed.description = t.banned_inf(ctx.author.mention, ctx.guild.name, reason)
-
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-
         await ctx.guild.ban(user, reason=reason, delete_message_days=delete_days)
         await revoke_verification(user)
-
-        await reply(ctx, embed=server_embed)
 
     @commands.group(aliases=["ban_edit"])
     @ModPermission.mute.check
@@ -1278,116 +1230,22 @@ class ModCog(Cog, name="Mod Tools"):
     @edit_ban.command(name="reason", aliases=["r"])
     @docs(t.commands.edit_ban_reason)
     async def edit_ban_reason(self, ctx: Context, ban_id: int, *, reason: str):
-        ban = await get_and_compare_entry(Ban, ban_id, ctx.author)
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
-
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm_ban_edit.reason(ban.reason, reason), color=Colors.ModTools
-        )
-
-        if not await confirm_action(ctx, conf_embed):
-            return
-
-        try:
-            user = await self.bot.fetch_user(ban.member)
-        except (NotFound, HTTPException):
-            raise CommandError(t.user_not_found)
-
-        user_embed = Embed(title=t.ban, description=t.ban_edited.reason(ban.reason, reason), colour=Colors.ModTools)
-        server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        await Ban.edit_reason(ban_id, ctx.author.id, await get_mod_level(ctx.author), reason)
-
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild, message=ctx.message, colour=Colors.ban, title=t.log_ban_edited, member=user, reason=reason
-        )
+        await self.handle_edit_timed_reason(ctx, ban_id, reason, t.ban, Ban, Colors.ban)
 
     @edit_ban.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_ban_duration)
     async def edit_ban_duration(self, ctx: Context, user: UserMemberConverter, time: DurationConverter):
-        user: Member | User
+        user: User | Member
         time: int | None
-        minutes = time
 
-        active_bans: List[Ban] = sorted(
-            await db.all(filter_by(Ban, active=True, member=user.id)), key=lambda active_ban: active_ban.timestamp
-        )
-
-        if not active_bans:
-            raise CommandError(t.not_banned)
-
-        ban = active_bans[0]
-
-        if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
-            raise CommandError(tg.permission_denied)
-
-        if ban.minutes == minutes or (ban.minutes == -1 and minutes is None):
-            raise CommandError(t.already_banned)
-
-        conf_embed = Embed(title=t.confirmation, color=Colors.ModTools)
-
-        old_time = t.infinity if ban.minutes == -1 else time_to_units(ban.minutes)
-
-        if minutes is None:
-            conf_embed.description = t.confirm_ban_edit.duration(old_time, t.infinity)
-        else:
-            conf_embed.description = t.confirm_ban_edit.duration(old_time, time_to_units(minutes))
-
-        if not await confirm_action(ctx, conf_embed):
-            return
-
-        for ban in active_bans[1:]:
-            await Ban.delete(ban.id)
-
-        user_embed = Embed(title=t.ban, colour=Colors.ModTools)
-        server_embed = Embed(title=t.ban, description=t.ban_edited_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        await Ban.edit_duration(ban.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
-
-        await invalidate_entry_cache()
-
-        user_embed.description = t.ban_edited.duration(
-            time_to_units(ban.minutes), t.infinity if minutes is None else time_to_units(minutes)
-        )
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.ban,
-            title=t.log_ban_edited,
-            member=user,
-            reason=ban.reason,
-            duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
-        )
-
-        try:
-            await user.send(embed=user_embed)
-        except (Forbidden, HTTPException):
-            server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-            server_embed.colour = Colors.error
-        await reply(ctx, embed=server_embed)
+        await self.handle_edit_timed_duration(ctx, user, time, t.ban, Ban, Colors.ban)
 
     @commands.command(aliases=["ban_delete"])
     @ModPermission.ban.check
     @guild_only()
     @docs(t.commands.delete_ban)
     async def delete_ban(self, ctx: Context, ban_id: int):
-        ban = await get_and_compare_entry(Ban, ban_id, ctx.author)
-
-        conf_embed = Embed(
-            title=t.confirmation, description=t.confirm_ban_delete(ban.member_name, ban.id), color=Colors.ModTools
-        )
-
-        if not await confirm_action(ctx, conf_embed):
+        if not (ban := await self.handle_delete_timed(ctx, ban_id, t.ban, Ban, Colors.ban)):
             return
 
         active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=ban.member))
@@ -1400,92 +1258,23 @@ class ModCog(Cog, name="Mod Tools"):
                 except HTTPException:
                     pass
 
-        try:
-            user = await self.bot.fetch_user(ban.member)
-        except (NotFound, HTTPException):
-            raise CommandError(t.user_not_found)
-
-        await Ban.delete(ban_id)
-
-        await invalidate_entry_cache()
-
-        server_embed = Embed(title=t.mute, description=t.ban_deleted_response, colour=Colors.ModTools)
-
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        if await ModSettings.send_delete_user_message.get():
-            user_embed = Embed(title=t.ban, colour=Colors.ModTools)
-
-            if ban.minutes == -1:
-                user_embed.description = t.ban_deleted.inf(ban.reason)
-            else:
-                user_embed.description = t.ban_deleted.not_inf(time_to_units(ban.minutes), ban.reason)
-
-            try:
-                await user.send(embed=user_embed)
-            except (Forbidden, HTTPException):
-                server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
-                server_embed.colour = Colors.error
-
-        await reply(ctx, embed=server_embed)
-
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.ban,
-            title=t.log_ban_deleted,
-            member=user,
-            reason=ban.reason,
-            duration=t.log_field_infinity if ban.minutes == -1 else time_to_units(ban.minutes),
-        )
-
     @commands.command()
     @ModPermission.ban.check
     @guild_only()
     @docs(t.commands.unban)
     async def unban(self, ctx: Context, user: UserMemberConverter, *, reason: str):
-        user: Member | User
-
-        if len(reason) > 900:
-            raise CommandError(t.reason_too_long)
+        user: User | Member
 
         if not ctx.guild.me.guild_permissions.ban_members:
             raise CommandError(t.cannot_unban_permissions)
 
-        was_banned = True
-        try:
-            await ctx.guild.unban(user, reason=reason)
-        except HTTPException:
-            was_banned = False
-
-        minutes = 0
-        async for ban in await db.stream(filter_by(Ban, active=True, member=user.id)):
-            if not await compare_mod_level(ctx.author, ban.mod_level) or not ctx.author.id == ban.mod:
-                raise CommandError(tg.permission_denied)
-
-            await Ban.deactivate(ban.id, ctx.author.id, reason)
-
+        async def unban_inner(context: Context, banned_user: Member | User) -> bool:
             was_banned = True
+            try:
+                await ctx.guild.unban(banned_user, reason=reason)
+            except HTTPException:
+                was_banned = False
 
-            if ban.minutes > minutes or ban.minutes == -1:
-                minutes = ban.minutes
+            return was_banned
 
-        if not was_banned:
-            raise UserCommandError(user, t.not_banned)
-
-        await invalidate_entry_cache()
-
-        server_embed = Embed(title=t.unban, description=t.unbanned_response, colour=Colors.ModTools)
-        server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-        await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=Colors.unban,
-            title=t.log_unbanned,
-            member=user,
-            reason=reason,
-            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
-            mod=ctx.author,
-            original_reason=ban.reason,
-        )
+        await self.handle_undo_timed(ctx, user, reason, t.ban, Ban, Colors.unban, unban_inner)
