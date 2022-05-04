@@ -287,11 +287,41 @@ class PollsCog(Cog, name="Polls"):
             raise PermissionError
 
         await message.delete()
+        await poll.remove()
         interaction_message: Message = await ctx.channel.fetch_message(poll.interaction_message_id)
         if interaction_message:
             await interaction_message.delete()
 
         await add_reactions(ctx.message, "white_check_mark")
+
+    @poll.command(name="voted", aliases=["v"])
+    @docs(t.commands.poll.voted)
+    async def voted(self, ctx: Context, message: Message):
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        author = ctx.author
+        if not poll:
+            raise CommandError(t.error.not_poll)
+        if (
+            poll.anonymous
+            and not await PollsPermission.anonymous_bypass.check_permissions(author)
+            and not poll.owner_id == author.id
+        ):
+            raise PermissionError
+
+        users: dict[str, list[int]] = {}
+        for option in poll.options:
+            for vote in option.votes:
+                try:
+                    users[str(vote.user_id)].append(option.field_position + 1)
+                except KeyError:
+                    users[str(vote.user_id)] = [option.field_position + 1]
+
+        description = ""
+        for key, value in users.items():
+            description += t.voted.row(key, value)
+        embed = Embed(title=t.voted.title, description=description, color=Colors.Polls)
+
+        await send_long_embed(ctx, embed=embed, repeat_title=True, paginate=True)
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check

@@ -4,6 +4,7 @@ commands:
     quick: small poll with default options
     new: advanced poll with more options
     delete: delete polls
+    voted: show who voted on the poll (only works if not anonymous or if the poll-owner uses the command)
     settings:
       settings: poll settings
       roles_weights: manage weight for certain roles
@@ -66,6 +67,10 @@ votes:
     one: "Set default votes for a poll to {cnt} vote"
     many: "Set default votes for a poll to {cnt} votes"
   reset: "Set the default votes for polls to unlimited"
+
+voted:
+  title: Votes
+  row: "\n <@{}> -> Options: {}"
 
 anonymous:
   is_on: made default poll votes anonymous
