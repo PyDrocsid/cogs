@@ -13,7 +13,7 @@ from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import add_reactions, docs
-from PyDrocsid.database import db, db_wrapper, filter_by
+from PyDrocsid.database import db, db_wrapper
 from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
 from PyDrocsid.settings import RoleSettings
@@ -21,7 +21,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import Option, Poll, RoleWeight, Voted
+from .models import Option, Poll, PollVote, RoleWeight
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -64,17 +64,21 @@ class PollOption:
         return f"{self.emoji} {self.option}" if self.option else self.emoji
 
 
-def create_select_view(select: Select, timeout: float = None) -> View:
+def create_select_view(select_obj: Select, timeout: float = None) -> View:
     view = View(timeout=timeout)
-    view.add_item(select)
+    view.add_item(select_obj)
 
     return view
 
 
-def get_percentage(values: list[float]) -> list[tuple[float, float]]:
-    together = sum(values)
+def get_percentage(poll: Poll) -> list[tuple[float, float]]:
+    values: list[float] = []
+    options = poll.options
 
-    return [(value, round(((value / together) * 100), 2)) for value in values]
+    for option in options:
+        values.append(sum([vote.vote_weight for vote in option.votes]))
+
+    return [(value, round(((value / sum(values)) * 100), 2)) for value in values]
 
 
 def build_wizard(skip: bool = False) -> Embed:
@@ -158,7 +162,7 @@ async def send_poll(
         max_value = use
 
     msg = await ctx.send(embed=embed)
-    select = MySelect(
+    select_obj = MySelect(
         custom_id=str(msg.id),
         placeholder=place,
         max_values=max_value,
@@ -167,7 +171,7 @@ async def send_poll(
             for index, option in enumerate(options)
         ],
     )
-    view_msg = await ctx.send(view=create_select_view(select=select, timeout=deadline))
+    view_msg = await ctx.send(view=create_select_view(select_obj=select_obj, timeout=deadline))
     parsed_options: list[tuple[str, str]] = [
         (obj.emoji, t.select.label(index + 1)) for index, obj in enumerate(options)
     ]
@@ -176,10 +180,8 @@ async def send_poll(
 
 
 async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
-    calc = get_percentage([])  # TODO: option votes
-    print(calc)
+    calc = get_percentage(poll)
     for index, field in enumerate(embed.fields):
-        # TODO hier errechnen
         if field.name == tg.status:
             missing.sort(key=lambda m: str(m).lower())
             *teamlers, last = (x.mention for x in missing)
@@ -188,6 +190,10 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
                 index,
                 name=field.name,
                 value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
+            )
+        else:
+            embed.set_field_at(
+                index, name=t.option.field.name(calc[index][0], calc[index][1]), value=field.value, inline=False
             )
 
     return embed
@@ -206,40 +212,43 @@ async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
 
 class MySelect(Select):
     @db_wrapper
-    async def callback(self, interaction):
+    async def callback(self, interaction):  # TODO: Für den Fall, dass jemand das embed löscht muss noch was her
         user = interaction.user
         selected_options: list = self.values
         message: Message = await interaction.channel.fetch_message(interaction.custom_id)
         embed: Embed = message.embeds[0] if message.embeds else None
-        poll: Poll = await db.get(Poll, message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
         if not poll or not embed:
             return
 
-        options: list[Option] = await poll.get_options()
-        options: list[Option] = [option for option in options if option.option in selected_options]
-        missing: list[Member] = []
-        print(missing)
+        options: list[Option] = poll.options
+        new_options: list[Option] = [option for option in options if option.option in selected_options]
+        missing: list[Member] | None = None
 
-        old_selected: list[Voted] = await db.all(filter_by(Voted, user_id=user.id, poll_id=message.id))
-        if old_selected:
-            for old in old_selected:
-                await old.remove()
+        opt: Option
+        for opt in poll.options:
+            for vote in opt.votes:
+                if vote.user_id == user.id:
+                    await vote.remove()
+                    opt.votes.remove(vote)
 
         if poll.fair:
             user_weight: float = await PollsDefaultSettings.everyone_power.get()
         else:
             user_weight: float = 1.0  # TODO: Add function to get user vote weight
-        for option in options:
-            await Voted.create(option_id=option.id, user_id=user.id, poll_id=poll.id, vote_weight=user_weight)
-        print(await poll.get_voted_user())
+        for option in new_options:
+            option.votes.append(
+                await PollVote.create(option_id=option.id, user_id=user.id, poll_id=poll.id, vote_weight=user_weight)
+            )
         if poll.poll_type == "team":
             teamlers: set[Member] = await get_teamler(interaction.guild, ["team"])
-            missing: list[Member] = []
+            missing: list[Member] | None = []
             if user not in teamlers:
                 await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
                 return
 
-        # await edit_poll_embed(embed, poll, missing)
+        embed = await edit_poll_embed(embed, poll, missing)
+        await message.edit(embed=embed)
 
 
 class PollsCog(Cog, name="Polls"):
@@ -410,7 +419,6 @@ class PollsCog(Cog, name="Polls"):
         def check(m: Message):
             return m.author == ctx.author
 
-        print(options)
         wizard = await ctx.send(embed=build_wizard())
         mess: Message = await self.bot.wait_for("message", check=check, timeout=60.0)
         args = mess.content

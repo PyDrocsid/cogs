@@ -116,7 +116,7 @@ wizard:
     --anonymous ANONYMOUS, -A ANONYMOUS 
     people can see who voted or not [Default: server settings]
     --choices CHOICES, -C CHOICES 
-    the amount of votes someone can set
+    the amount of votes someone can set [Default: multiple choices]
     ```
   example:
     name: Example
