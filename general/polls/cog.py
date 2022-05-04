@@ -140,8 +140,8 @@ async def send_poll(
     embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
 
-    end_time = calc_end_time(deadline)
-    if end_time:
+    if deadline:
+        end_time = calc_end_time(deadline)
         embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M:%S")))
 
     if len(set(map(lambda x: x.emoji, options))) < len(options):
@@ -242,10 +242,17 @@ class MySelect(Select):
             )
         if poll.poll_type == "team":
             teamlers: set[Member] = await get_teamler(interaction.guild, ["team"])
-            missing: list[Member] | None = []
             if user not in teamlers:
                 await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
                 return
+
+            user_ids: set[int] = set()
+            for option in poll.options:
+                for vote in option.votes:
+                    user_ids.add(vote.user_id)
+
+            missing: list[Member] | None = [teamler for teamler in teamlers if teamler.id not in user_ids]
+            missing.sort(key=lambda m: str(m).lower())
 
         embed = await edit_poll_embed(embed, poll, missing)
         await message.edit(embed=embed)
@@ -257,7 +264,7 @@ class PollsCog(Cog, name="Polls"):
         Contributor.Defelo,
         Contributor.TNT2k,
         Contributor.wolflu,
-        Contributor.NekoFanatic,
+        Contributor.NekoFanatic,  # rewrote most of this code
     ]
 
     def __init__(self, team_roles: list[str]):
@@ -269,6 +276,22 @@ class PollsCog(Cog, name="Polls"):
     async def poll(self, ctx: Context):
         if not ctx.subcommand_passed:
             raise UserInputError
+
+    @poll.command(name="delete", aliases=["del", "a"])
+    @docs(t.commands.poll.delete)
+    async def delete(self, ctx: Context, message: Message):
+        poll: Poll = await db.get(Poll, message_id=message.id)
+        if not poll:
+            raise CommandError(t.error.not_poll)
+        if not await PollsPermission.delete.check_permissions(ctx.author) and not poll.owner_id == ctx.author.id:
+            raise PermissionError
+
+        await message.delete()
+        interaction_message: Message = await ctx.channel.fetch_message(poll.interaction_message_id)
+        if interaction_message:
+            await interaction_message.delete()
+
+        await add_reactions(ctx.message, "white_check_mark")
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check
@@ -442,7 +465,7 @@ class PollsCog(Cog, name="Polls"):
         if isinstance(deadline, int):
             deadline: int = deadline
         else:
-            deadline = await PollsDefaultSettings.duration.get()  # TODO implement parsing for datetimes
+            deadline = await PollsDefaultSettings.duration.get()
         anonymous: bool = parsed.anonymous
         choices: int = parsed.choices
 
@@ -511,6 +534,19 @@ class PollsCog(Cog, name="Polls"):
         teamlers: list[str]
         field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
 
-        embed_msg, interaction, parsed_options, question = await send_poll(
+        message, interaction, parsed_options, question = await send_poll(
             ctx=ctx, title=t.team_poll, max_choices=1, poll_args=options, field=field
+        )
+        await Poll.create(
+            message_id=message.id,
+            channel=message.channel.id,
+            owner=ctx.author.id,
+            title=question,
+            end=None,
+            anonymous=False,
+            can_delete=False,
+            options=parsed_options,
+            poll_type="team",
+            interaction=interaction.id,
+            fair=True,
         )

@@ -3,6 +3,7 @@ commands:
     poll: poll commands
     quick: small poll with default options
     new: advanced poll with more options
+    delete: delete polls
     settings:
       settings: poll settings
       roles_weights: manage weight for certain roles
@@ -23,6 +24,7 @@ permissions:
 error:
   weight_too_small: "Weight cant be lower than `0.1`"
   cant_set_weight: Can't set weight!
+  not_poll: Mesage doesn't contains a poll
 
 poll_config:
   title: Default poll configuration
