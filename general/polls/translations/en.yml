@@ -9,6 +9,7 @@ commands:
       settings: poll settings
       roles_weights: manage weight for certain roles
       duration: set the default hours a poll should be open
+      max_duration: set the maximum duration a poll can be opened
       votes: set the default amount of votes a user can have on polls
       anonymous: set if user can see who voted on a poll
       everyone: manage role weight for the default role
@@ -26,6 +27,9 @@ error:
   weight_too_small: "Weight cant be lower than `0.1`"
   cant_set_weight: Can't set weight!
   not_poll: Mesage doesn't contains a poll
+  cant_pin:
+    title: Error
+    description: Can't pin any more messages in {}
 
 poll_config:
   title: Default poll configuration
@@ -34,7 +38,12 @@ poll_config:
     time:
       one: "{cnt} hour"
       many: "{cnt} hours"
-    unlimited: unlimited
+    unlimited: max duration
+  max_duration:
+    name: "**Max Duration**"
+    time:
+      one: "{cnt} days"
+      many: "{cnt} days"
   choices:
     name: "**Choices per user**"
     amount:
@@ -61,6 +70,11 @@ duration:
     one: "Set default duration for poll to {cnt} hour"
     many: "Set default duration for poll to {cnt} hours"
   reset: "Set the default duration for polls to unlimited"
+
+max_duration:
+  set:
+    one: "Set maximum duration for a poll to {cnt} day"
+    many: "Set maximum duration for a poll to {cnt} days"
 
 votes:
   set:
@@ -148,6 +162,7 @@ teamlers_missing:
   one: "{last} hasn't voted yet."
   many: "{teamlers} and {last} haven't voted yet."
 footer: Ends at `{}`
+footer_closed: Closed
 can_not_use_wastebucket_as_option: "You can not use :wastebasket: as option"
 foreign_message: "You are not allowed to add yes/no reactions to foreign messages!"
 could_not_add_reactions: Could not add reactions because I don't have `add_reactions` permission in {}.

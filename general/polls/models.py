@@ -28,6 +28,7 @@ class Poll(Base):
     anonymous: Union[Column, bool] = Column(Boolean)
     can_delete: Union[Column, bool] = Column(Boolean)
     fair: Union[Column, bool] = Column(Boolean)
+    active: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
     async def create(
@@ -55,6 +56,7 @@ class Poll(Base):
             can_delete=can_delete,
             interaction_message_id=interaction,
             fair=fair,
+            active=True,
         )
         for position, poll_option in enumerate(options):
             row.options.append(

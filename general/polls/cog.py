@@ -5,15 +5,15 @@ from datetime import datetime
 from typing import Optional, Union
 
 from dateutil.relativedelta import relativedelta
-from discord import Embed, Forbidden, Guild, Member, Message, Role, SelectOption
-from discord.ext import commands
+from discord import Embed, Forbidden, Guild, HTTPException, Member, Message, Role, SelectOption
+from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 from discord.ui import Select, View
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import add_reactions, docs
-from PyDrocsid.database import db, db_wrapper
+from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
 from PyDrocsid.settings import RoleSettings
@@ -25,7 +25,7 @@ from .models import Option, Poll, PollVote, RoleWeight
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog
+from ...pubsub import send_alert, send_to_changelog
 
 
 tg = t.g
@@ -46,7 +46,7 @@ class PollOption:
 
         custom_emoji_match = re.fullmatch(r"<a?:[a-zA-Z0-9_]+:(\d+)>", emoji_candidate)
         if custom_emoji := ctx.bot.get_emoji(int(custom_emoji_match.group(1))) if custom_emoji_match else None:
-            self.emoji = custom_emoji
+            self.emoji = str(custom_emoji)
             self.option = text.strip()
         elif (unicode_emoji := emoji_candidate) in emoji_to_name:
             self.emoji = unicode_emoji
@@ -78,7 +78,7 @@ def get_percentage(poll: Poll) -> list[tuple[float, float]]:
     for option in options:
         values.append(sum([vote.vote_weight for vote in option.votes]))
 
-    return [(value, round(((value / sum(values)) * 100), 2)) for value in values]
+    return [(float(value), float(round(((value / sum(values)) * 100), 2))) for value in values]
 
 
 def build_wizard(skip: bool = False) -> Embed:
@@ -107,7 +107,7 @@ async def get_parser() -> ArgumentParser:
 
 def calc_end_time(duration: Optional[float]) -> Optional[datetime]:
     if duration != 0 and not None:
-        return datetime.today() + relativedelta(hours=int(duration))
+        return utcnow() + relativedelta(hours=int(duration))
     return
 
 
@@ -142,13 +142,13 @@ async def send_poll(
 
     if deadline:
         end_time = calc_end_time(deadline)
-        embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M:%S")))
+        embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M")))
 
     if len(set(map(lambda x: x.emoji, options))) < len(options):
         raise CommandError(t.option_duplicated)
 
     for option in options:
-        embed.add_field(name=t.option.field.name(0, 0.0), value=str(option), inline=False)
+        embed.add_field(name=t.option.field.name(0, 0), value=str(option), inline=False)
 
     if field:
         embed.add_field(name=field[0], value=field[1], inline=False)
@@ -171,11 +171,19 @@ async def send_poll(
             for index, option in enumerate(options)
         ],
     )
-    view_msg = await ctx.send(view=create_select_view(select_obj=select_obj, timeout=deadline))
+    view_msg = await ctx.send(view=create_select_view(select_obj=select_obj))
     parsed_options: list[tuple[str, str]] = [
         (obj.emoji, t.select.label(index + 1)) for index, obj in enumerate(options)
     ]
-
+    try:
+        await msg.pin()
+    except HTTPException:
+        embed = Embed(
+            title=t.error.cant_pin.title,
+            description=t.error.cant_pin.description(ctx.channel.mention),
+            color=Colors.error,
+        )
+        await send_alert(ctx.guild, embed)
     return msg, view_msg, parsed_options, question
 
 
@@ -192,9 +200,9 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
                 value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
             )
         else:
-            embed.set_field_at(
-                index, name=t.option.field.name(calc[index][0], calc[index][1]), value=field.value, inline=False
-            )
+            weight: float | int = calc[index][0] if not calc[index][0].is_integer() else int(calc[index][0])
+            percentage: float | int = calc[index][1] if not calc[index][1].is_integer() else int(calc[index][1])
+            embed.set_field_at(index, name=t.option.field.name(weight, percentage), value=field.value, inline=False)
 
     return embed
 
@@ -212,10 +220,12 @@ async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
 
 class MySelect(Select):
     @db_wrapper
-    async def callback(self, interaction):  # TODO: Für den Fall, dass jemand das embed löscht muss noch was her
+    async def callback(self, interaction):
         user = interaction.user
         selected_options: list = self.values
-        message: Message = await interaction.channel.fetch_message(interaction.custom_id)
+        message: Message = await interaction.channel.fetch_message(
+            interaction.custom_id
+        )  # TODO: Für den Fall, dass jemand das embed löscht muss noch was her
         embed: Embed = message.embeds[0] if message.embeds else None
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
         if not poll or not embed:
@@ -269,6 +279,32 @@ class PollsCog(Cog, name="Polls"):
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
+
+    async def on_ready(self):
+        try:
+            self.poll_loop.start()
+        except RuntimeError:
+            self.poll_loop.restart()
+
+    @tasks.loop(minutes=1)
+    @db_wrapper
+    async def poll_loop(self):
+        polls: list[Poll] = await db.all(filter_by(Poll, active=True))
+
+        for poll in polls:
+            if poll.end_time < utcnow():
+                channel = await self.bot.fetch_channel(poll.channel_id)
+                embed_message = await channel.fetch_message(poll.message_id)
+                interaction_message = await channel.fetch_message(poll.interaction_message_id)
+
+                await interaction_message.delete()
+                embed = embed_message.embeds[0]
+                embed.set_footer(text=t.footer_closed)
+
+                await embed_message.edit(embed=embed)
+                await embed_message.unpin()
+
+                poll.active = False
 
     @commands.group(name="poll", aliases=["vote"])
     @guild_only()
@@ -339,6 +375,11 @@ class PollsCog(Cog, name="Polls"):
             value=t.poll_config.duration.time(cnt=time) if not time <= 0 else t.poll_config.duration.unlimited,
             inline=False,
         )
+        embed.add_field(
+            name=t.poll_config.max_duration.name,
+            value=t.poll_config.max_duration.time(cnt=time) if not time <= 0 else t.poll_config.max_duration.unlimited,
+            inline=False,
+        )
         choice: int = await PollsDefaultSettings.max_choices.get()
         embed.add_field(
             name=t.poll_config.choices.name,
@@ -395,6 +436,18 @@ class PollsCog(Cog, name="Polls"):
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
+    @settings.command(name="max_duration", aliases=["md"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.max_duration)
+    async def max_duration(self, ctx: Context, days: int = None):
+        if not days:
+            days = 7
+        msg: str = t.max_duration.set(cnt=days)
+
+        await PollsDefaultSettings.max_duration.set(days)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
+
     @settings.command(name="votes", aliases=["v", "choices", "c"])
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.votes)
@@ -446,6 +499,8 @@ class PollsCog(Cog, name="Polls"):
     @docs(t.commands.poll.quick)
     async def quick(self, ctx: Context, *, args: str):
         deadline = await PollsDefaultSettings.duration.get()
+        if deadline == 0:
+            deadline = await PollsDefaultSettings.max_duration.get()
         max_choices = await PollsDefaultSettings.max_choices.get()
         anonymous = await PollsDefaultSettings.anonymous.get()
         message, interaction, parsed_options, question = await send_poll(
@@ -493,9 +548,16 @@ class PollsCog(Cog, name="Polls"):
             title: str = t.poll
         deadline: Union[list[str, str], int] = parsed.deadline
         if isinstance(deadline, int):
-            deadline: int = deadline
+            deadline = (
+                deadline
+                if deadline <= await PollsDefaultSettings.max_duration.get()
+                else PollsDefaultSettings.max_duration.get()
+            )
         else:
-            deadline = await PollsDefaultSettings.duration.get()
+            if await PollsDefaultSettings.duration.get() == 0:
+                deadline = await PollsDefaultSettings.max_duration.get()
+            else:
+                deadline = await PollsDefaultSettings.duration.get()
         anonymous: bool = parsed.anonymous
         choices: int = parsed.choices
 
@@ -565,14 +627,19 @@ class PollsCog(Cog, name="Polls"):
         field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
 
         message, interaction, parsed_options, question = await send_poll(
-            ctx=ctx, title=t.team_poll, max_choices=1, poll_args=options, field=field
+            ctx=ctx,
+            title=t.team_poll,
+            max_choices=1,
+            poll_args=options,
+            field=field,
+            deadline=await PollsDefaultSettings.max_duration.get() * 24,
         )
         await Poll.create(
             message_id=message.id,
             channel=message.channel.id,
             owner=ctx.author.id,
             title=question,
-            end=None,
+            end=calc_end_time(await PollsDefaultSettings.max_duration.get() * 24),
             anonymous=False,
             can_delete=False,
             options=parsed_options,
