@@ -8,3 +8,4 @@ class PollsDefaultSettings(Settings):
     type = "standard"
     everyone_power = 1.0
     anonymous = False
+    fair = False

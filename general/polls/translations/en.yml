@@ -5,6 +5,7 @@ commands:
     new: advanced poll with more options
     delete: delete polls
     voted: show who voted on the poll (only works if not anonymous or if the poll-owner uses the command)
+    list: show the active polls
     settings:
       settings: poll settings
       roles_weights: manage weight for certain roles
@@ -12,7 +13,7 @@ commands:
       max_duration: set the maximum duration a poll can be opened
       votes: set the default amount of votes a user can have on polls
       anonymous: set if user can see who voted on a poll
-      everyone: manage role weight for the default role
+      fair: manage if role weights impact on default polls
   yes_no: add thumbs-up/down emotes on a message
   team_yes_no: starts a yes/no poll and shows, which teamler has not voted yet.
 
@@ -57,6 +58,11 @@ poll_config:
     ev_row: "{} -> `{}x`"
     row: "\n<@&{}> -> `{}x`"
 
+polls:
+  title: Active polls
+  row: "\n[`{}`]({}) by <@{}> until `{} UTC`"
+  team_row: "\n:star: [`{}`]({}) by <@{}> until `{} UTC`"
+
 role_weight:
   set: "Set vote weight for <@&{}> to `{}`"
   reset: "Vote weight has been reset for <@&{}>"
@@ -89,6 +95,10 @@ voted:
 anonymous:
   is_on: made default poll votes anonymous
   is_off: made default poll votes visible
+
+fair:
+  is_on: made default poll votes fair
+  is_off: made default poll votes based on roles
 
 select:
   place: Select Options
@@ -132,12 +142,18 @@ wizard:
     ```
     --type {standard,team}, -T {standard,team} 
     standard or team embed [Default: 'standard']
+
     --deadline DEADLINE, -D DEADLINE
     time when the poll should be closed [Default: server settings]
-    --anonymous ANONYMOUS, -A ANONYMOUS 
+    
+    --anonymous {True,False}, -A {True,False} 
     people can see who voted or not [Default: server settings]
+
     --choices CHOICES, -C CHOICES 
     the amount of votes someone can set [Default: multiple choices]
+
+    --fair {True,False}, -F {True,False} 
+    all roles have the same vote weight [Default: server settings]
     ```
   example:
     name: Example

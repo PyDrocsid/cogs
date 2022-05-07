@@ -18,6 +18,7 @@ class Poll(Base):
     options: list[Option] = relationship("Option", back_populates="poll", cascade="all, delete")
 
     message_id: Union[Column, int] = Column(BigInteger, unique=True)
+    message_url: Union[Column, str] = Column(Text(256))
     guild_id: Union[Column, int] = Column(BigInteger)
     interaction_message_id: Union[Column, int] = Column(BigInteger, unique=True)
     channel_id: Union[Column, int] = Column(BigInteger)
@@ -34,6 +35,7 @@ class Poll(Base):
     @staticmethod
     async def create(
         message_id: int,
+        message_url: str,
         guild_id: int,
         channel: int,
         owner: int,
@@ -48,6 +50,7 @@ class Poll(Base):
     ) -> Poll:
         row = Poll(
             message_id=message_id,
+            message_url=message_url,
             guild_id=guild_id,
             channel_id=channel,
             owner_id=owner,

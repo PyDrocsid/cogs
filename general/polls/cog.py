@@ -5,7 +5,18 @@ from datetime import datetime
 from typing import Optional, Union
 
 from dateutil.relativedelta import relativedelta
-from discord import Embed, Forbidden, Guild, HTTPException, Member, Message, NotFound, Role, SelectOption
+from discord import (
+    Embed,
+    Forbidden,
+    Guild,
+    HTTPException,
+    Member,
+    Message,
+    NotFound,
+    RawMessageDeleteEvent,
+    Role,
+    SelectOption,
+)
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 from discord.ui import Select, View
@@ -101,6 +112,7 @@ async def get_parser() -> ArgumentParser:
         "--anonymous", "-A", default=await PollsDefaultSettings.anonymous.get(), type=bool, choices=[True, False]
     )
     parser.add_argument("--choices", "-C", default=await PollsDefaultSettings.max_choices.get(), type=int)
+    parser.add_argument("--fair", "-F", default=await PollsDefaultSettings.fair.get(), type=bool, choices=[True, False])
 
     return parser
 
@@ -266,6 +278,28 @@ class MySelect(Select):
         await message.edit(embed=embed)
 
 
+async def handle_deleted_messages(bot, message_id: int):
+    deleted_embed: Poll | None = await db.get(Poll, message_id=message_id)
+    deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message_id)
+
+    if not deleted_embed and not deleted_interaction:
+        return
+
+    poll = deleted_embed or deleted_interaction
+    channel = await bot.fetch_channel(poll.channel_id)
+    try:
+        if deleted_interaction:
+            msg: Message | None = await channel.fetch_message(poll.message_id)
+        else:
+            msg: Message | None = await channel.fetch_message(poll.interaction_message_id)
+    except NotFound:
+        msg = None
+
+    if msg:
+        await poll.remove()
+        await msg.delete()
+
+
 class PollsCog(Cog, name="Polls"):
     CONTRIBUTORS = [
         Contributor.MaxiHuHe04,
@@ -285,28 +319,10 @@ class PollsCog(Cog, name="Polls"):
             self.poll_loop.restart()
 
     async def on_message_delete(self, message: Message):
-        deleted_embed: Poll | None = await db.get(Poll, message_id=message.id)
-        deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message.id)
+        await handle_deleted_messages(self.bot, message.id)
 
-        if not deleted_embed and not deleted_interaction:
-            return
-
-        poll = deleted_embed or deleted_interaction
-        channel = await self.bot.fetch_channel(poll.channel_id)
-        try:
-            if deleted_interaction:
-                msg: Message | None = await channel.fetch_message(poll.message_id)
-            else:
-                msg: Message | None = await channel.fetch_message(poll.interaction_message_id)
-        except NotFound:
-            msg = None
-
-        await poll.remove()
-        if msg:
-            try:
-                await msg.delete()
-            except NotFound:
-                pass
+    async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
+        await handle_deleted_messages(self.bot, event.message_id)
 
     @tasks.loop(minutes=1)
     @db_wrapper
@@ -314,6 +330,9 @@ class PollsCog(Cog, name="Polls"):
         polls: list[Poll] = await db.all(filter_by(Poll, active=True))
 
         for poll in polls:
+            if not poll.end_time:
+                await poll.remove()
+                continue
             if poll.end_time < utcnow():
                 channel = await self.bot.fetch_channel(poll.channel_id)
                 embed_message = await channel.fetch_message(poll.message_id)
@@ -335,9 +354,30 @@ class PollsCog(Cog, name="Polls"):
         if not ctx.subcommand_passed:
             raise UserInputError
 
-        # TODO: list of all active polls
+    @poll.command(name="list", aliases=["l"])
+    @guild_only()
+    @docs(t.commands.poll.list)
+    async def list(self, ctx: Context):
+        polls: list[Poll] = await db.all(filter_by(Poll, active=True, guild_id=ctx.guild.id))
+        if polls:
+            description = ""
+            for poll in polls:
+                if poll.poll_type == "team" and not await PollsPermission.team_poll.check_permissions(ctx.author):
+                    continue
+                if poll.poll_type == "team":
+                    description += t.polls.team_row(
+                        poll.title, poll.message_url, poll.owner_id, poll.end_time.strftime("%Y-%m-%d %H:%M")
+                    )
+                else:
+                    description += t.polls.row(
+                        poll.title, poll.message_url, poll.owner_id, poll.end_time.strftime("%Y-%m-%d %H:%M")
+                    )
 
-    @poll.command(name="delete", aliases=["del", "a"])
+            embed: Embed = Embed(title=t.polls.title, description=description, color=Colors.Polls)
+
+            await send_long_embed(ctx, embed=embed, paginate=True)
+
+    @poll.command(name="delete", aliases=["del"])
     @docs(t.commands.poll.delete)
     async def delete(self, ctx: Context, message: Message):
         poll: Poll = await db.get(Poll, message_id=message.id)
@@ -394,15 +434,14 @@ class PollsCog(Cog, name="Polls"):
 
         embed = Embed(title=t.poll_config.title, color=Colors.Polls)
         time: int = await PollsDefaultSettings.duration.get()
+        max_time: int = await PollsDefaultSettings.max_duration.get()
         embed.add_field(
             name=t.poll_config.duration.name,
-            value=t.poll_config.duration.time(cnt=time) if not time <= 0 else t.poll_config.duration.unlimited,
+            value=t.poll_config.duration.time(cnt=time) if not time <= 0 else t.poll_config.duration.time(cnt=max_time),
             inline=False,
         )
         embed.add_field(
-            name=t.poll_config.max_duration.name,
-            value=t.poll_config.max_duration.time(cnt=time) if not time <= 0 else t.poll_config.max_duration.unlimited,
-            inline=False,
+            name=t.poll_config.max_duration.name, value=t.poll_config.max_duration.time(cnt=max_time), inline=False
         )
         choice: int = await PollsDefaultSettings.max_choices.get()
         embed.add_field(
@@ -502,20 +541,16 @@ class PollsCog(Cog, name="Polls"):
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
-    @settings.command(name="everyone", aliases=["e"])
+    @settings.command(name="fair", aliases=["f"])
     @PollsPermission.write.check
-    @docs(t.commands.poll.settings.everyone)
-    async def everyone(self, ctx: Context, weight: float = None):
-        if weight and weight < 0.1:
-            raise CommandError(t.error.weight_too_small)
-
-        if not weight:
-            await PollsDefaultSettings.everyone_power.set(1.0)
-            msg: str = t.weight_everyone.reset
+    @docs(t.commands.poll.settings.fair)
+    async def fair(self, ctx: Context, status: bool):
+        if status:
+            msg: str = t.fair.is_on
         else:
-            await PollsDefaultSettings.everyone_power.set(weight)
-            msg: str = t.weight_everyone.set(cnt=weight)
+            msg: str = t.fair.is_off
 
+        await PollsDefaultSettings.fair.set(status)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
@@ -533,6 +568,7 @@ class PollsCog(Cog, name="Polls"):
 
         await Poll.create(
             message_id=message.id,
+            message_url=message.jump_url,
             guild_id=ctx.guild.id,
             channel=message.channel.id,
             owner=ctx.author.id,
@@ -541,10 +577,12 @@ class PollsCog(Cog, name="Polls"):
             anonymous=anonymous,
             can_delete=True,
             options=parsed_options,
-            poll_type="standard",
+            poll_type=await PollsDefaultSettings.type.get(),
             interaction=interaction.id,
-            fair=False,
+            fair=await PollsDefaultSettings.fair.get(),
         )
+
+        await ctx.message.delete()
 
     @poll.command(name="new", usage=t.usage.poll)
     @docs(t.commands.poll.new)
@@ -575,8 +613,8 @@ class PollsCog(Cog, name="Polls"):
         if isinstance(deadline, int):
             deadline = (
                 deadline
-                if deadline <= await PollsDefaultSettings.max_duration.get()
-                else PollsDefaultSettings.max_duration.get()
+                if deadline >= await PollsDefaultSettings.max_duration.get()
+                else await PollsDefaultSettings.max_duration.get()
             )
         else:
             if await PollsDefaultSettings.duration.get() == 0:
@@ -594,7 +632,7 @@ class PollsCog(Cog, name="Polls"):
             teamlers: list[str]
             field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
         else:
-            can_delete, fair = True, False
+            can_delete, fair = True, parsed.fair
             field = None
 
         message, interaction, parsed_options, question = await send_poll(
@@ -604,6 +642,7 @@ class PollsCog(Cog, name="Polls"):
 
         await Poll.create(
             message_id=message.id,
+            message_url=message.jump_url,
             guild_id=ctx.guild.id,
             channel=message.channel.id,
             owner=ctx.author.id,
@@ -662,6 +701,7 @@ class PollsCog(Cog, name="Polls"):
         )
         await Poll.create(
             message_id=message.id,
+            message_url=message.jump_url,
             guild_id=ctx.guild.id,
             channel=message.channel.id,
             owner=ctx.author.id,
