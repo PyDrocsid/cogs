@@ -7,7 +7,7 @@ from discord.utils import utcnow
 from sqlalchemy import BigInteger, Boolean, Column, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import Base, UTCDateTime, db, select
+from PyDrocsid.database import Base, UTCDateTime, db, filter_by
 
 
 class Poll(Base):
@@ -18,6 +18,7 @@ class Poll(Base):
     options: list[Option] = relationship("Option", back_populates="poll", cascade="all, delete")
 
     message_id: Union[Column, int] = Column(BigInteger, unique=True)
+    guild_id: Union[Column, int] = Column(BigInteger)
     interaction_message_id: Union[Column, int] = Column(BigInteger, unique=True)
     channel_id: Union[Column, int] = Column(BigInteger)
     owner_id: Union[Column, int] = Column(BigInteger)
@@ -33,6 +34,7 @@ class Poll(Base):
     @staticmethod
     async def create(
         message_id: int,
+        guild_id: int,
         channel: int,
         owner: int,
         title: str,
@@ -46,6 +48,7 @@ class Poll(Base):
     ) -> Poll:
         row = Poll(
             message_id=message_id,
+            guild_id=guild_id,
             channel_id=channel,
             owner_id=owner,
             timestamp=utcnow(),
@@ -114,13 +117,14 @@ class RoleWeight(Base):
     __tablename__ = "role_weight"
 
     id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
+    guild_id: Union[Column, int] = Column(BigInteger)
     role_id: Union[Column, int] = Column(BigInteger, unique=True)
     weight: Union[Column, float] = Column(Float)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
-    async def create(role: int, weight: float) -> RoleWeight:
-        role_weight = RoleWeight(role_id=role, weight=weight, timestamp=utcnow())
+    async def create(guild_id: int, role: int, weight: float) -> RoleWeight:
+        role_weight = RoleWeight(guild_id=guild_id, role_id=role, weight=weight, timestamp=utcnow())
         await db.add(role_weight)
         return role_weight
 
@@ -128,5 +132,5 @@ class RoleWeight(Base):
         await db.delete(self)
 
     @staticmethod
-    async def get() -> list[RoleWeight]:
-        return await db.all(select(RoleWeight))
+    async def get(guild: int) -> list[RoleWeight]:
+        return await db.all(filter_by(RoleWeight, guild_id=guild))

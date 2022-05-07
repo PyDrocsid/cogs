@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, Union
 
 from dateutil.relativedelta import relativedelta
-from discord import Embed, Forbidden, Guild, HTTPException, Member, Message, Role, SelectOption
+from discord import Embed, Forbidden, Guild, HTTPException, Member, Message, NotFound, Role, SelectOption
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 from discord.ui import Select, View
@@ -223,9 +223,7 @@ class MySelect(Select):
     async def callback(self, interaction):
         user = interaction.user
         selected_options: list = self.values
-        message: Message = await interaction.channel.fetch_message(
-            interaction.custom_id
-        )  # TODO: Für den Fall, dass jemand das embed löscht muss noch was her
+        message: Message = await interaction.channel.fetch_message(interaction.custom_id)
         embed: Embed = message.embeds[0] if message.embeds else None
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
         if not poll or not embed:
@@ -286,6 +284,30 @@ class PollsCog(Cog, name="Polls"):
         except RuntimeError:
             self.poll_loop.restart()
 
+    async def on_message_delete(self, message: Message):
+        deleted_embed: Poll | None = await db.get(Poll, message_id=message.id)
+        deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message.id)
+
+        if not deleted_embed and not deleted_interaction:
+            return
+
+        poll = deleted_embed or deleted_interaction
+        channel = await self.bot.fetch_channel(poll.channel_id)
+        try:
+            if deleted_interaction:
+                msg: Message | None = await channel.fetch_message(poll.message_id)
+            else:
+                msg: Message | None = await channel.fetch_message(poll.interaction_message_id)
+        except NotFound:
+            msg = None
+
+        await poll.remove()
+        if msg:
+            try:
+                await msg.delete()
+            except NotFound:
+                pass
+
     @tasks.loop(minutes=1)
     @db_wrapper
     async def poll_loop(self):
@@ -312,6 +334,8 @@ class PollsCog(Cog, name="Polls"):
     async def poll(self, ctx: Context):
         if not ctx.subcommand_passed:
             raise UserInputError
+
+        # TODO: list of all active polls
 
     @poll.command(name="delete", aliases=["del", "a"])
     @docs(t.commands.poll.delete)
@@ -388,7 +412,7 @@ class PollsCog(Cog, name="Polls"):
         )
         anonymous: bool = await PollsDefaultSettings.anonymous.get()
         embed.add_field(name=t.poll_config.anonymous.name, value=str(anonymous), inline=False)
-        roles = await RoleWeight.get()
+        roles = await RoleWeight.get(ctx.guild.id)
         everyone: int = await PollsDefaultSettings.everyone_power.get()
         base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
         if roles:
@@ -413,7 +437,7 @@ class PollsCog(Cog, name="Polls"):
             element.weight = weight
             msg: str = t.role_weight.set(role.id, weight)
         elif weight and not element:
-            await RoleWeight.create(role.id, weight)
+            await RoleWeight.create(ctx.guild.id, role.id, weight)
             msg: str = t.role_weight.set(role.id, weight)
         else:
             await element.remove()
@@ -509,6 +533,7 @@ class PollsCog(Cog, name="Polls"):
 
         await Poll.create(
             message_id=message.id,
+            guild_id=ctx.guild.id,
             channel=message.channel.id,
             owner=ctx.author.id,
             title=question,
@@ -579,6 +604,7 @@ class PollsCog(Cog, name="Polls"):
 
         await Poll.create(
             message_id=message.id,
+            guild_id=ctx.guild.id,
             channel=message.channel.id,
             owner=ctx.author.id,
             title=question,
@@ -636,6 +662,7 @@ class PollsCog(Cog, name="Polls"):
         )
         await Poll.create(
             message_id=message.id,
+            guild_id=ctx.guild.id,
             channel=message.channel.id,
             owner=ctx.author.id,
             title=question,
