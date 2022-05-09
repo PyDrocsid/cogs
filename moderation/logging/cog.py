@@ -69,9 +69,10 @@ async def is_logging_channel(channel: TextChannel) -> bool:
 
 
 async def _send_file(channel: TextChannel, embeds: list[Embed], file_name: str):
+    files = []
     for embed in embeds:
-        f = StringIO(json.dumps(embed.to_dict(), indent=4))
-        await channel.send(file=File(filename=file_name, fp=f))
+        files.append(File(filename=file_name, fp=StringIO(json.dumps(embed.to_dict(), indent=4))))
+    await channel.send(files=files)
 
 
 channels: list[str] = []
@@ -113,7 +114,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
 
 
 class LoggingCog(Cog, name="Logging"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0, Contributor.NekoFanatic]
 
     async def get_logging_channel(self, setting: LoggingSettings) -> Optional[TextChannel]:
         return self.bot.get_channel(await setting.get())
@@ -267,7 +268,7 @@ class LoggingCog(Cog, name="Logging"):
             embed.add_field(name=t.attachments, value="\n".join(out), inline=False)
         await delete_channel.send(embed=embed)
         if message.embeds:
-            await _send_file(delete_channel, message.embeds, t.embed_deleted)
+            await _send_file(delete_channel, message.embeds, t.after_deleted_embeds)
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:

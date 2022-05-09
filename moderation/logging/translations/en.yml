@@ -108,4 +108,4 @@ excluded_channels: Logging - Excluded Channels
 no_channels_excluded: No Channels have been excluded from logging.
 
 after_edited_embeds: "new_embed.json"
-embed_deleted: "deleted_embed.json"
+after_deleted_embeds: "deleted_embed.json"
