@@ -230,6 +230,58 @@ async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
     return teamlers
 
 
+async def handle_deleted_messages(bot, message_id: int):
+    deleted_embed: Poll | None = await db.get(Poll, message_id=message_id)
+    deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message_id)
+
+    if not deleted_embed and not deleted_interaction:
+        return
+
+    poll = deleted_embed or deleted_interaction
+    channel = await bot.fetch_channel(poll.channel_id)
+    try:
+        if deleted_interaction:
+            msg: Message | None = await channel.fetch_message(poll.message_id)
+        else:
+            msg: Message | None = await channel.fetch_message(poll.interaction_message_id)
+    except NotFound:
+        msg = None
+
+    if msg:
+        await poll.remove()
+        await msg.delete()
+
+
+async def check_poll_time(poll: Poll) -> bool:
+    if not poll.end_time:
+        await poll.remove()
+        return False
+
+    elif poll.end_time < utcnow():
+        return False
+
+    return True
+
+
+async def close_poll(bot, poll: Poll):
+    try:
+        channel = await bot.fetch_channel(poll.channel_id)
+        embed_message = await channel.fetch_message(poll.message_id)
+        interaction_message = await channel.fetch_message(poll.interaction_message_id)
+    except NotFound:
+        poll.active = False
+        return
+
+    await interaction_message.delete()
+    embed = embed_message.embeds[0]
+    embed.set_footer(text=t.footer_closed)
+
+    await embed_message.edit(embed=embed)
+    await embed_message.unpin()
+
+    poll.active = False
+
+
 class MySelect(Select):
     @db_wrapper
     async def callback(self, interaction):
@@ -278,28 +330,6 @@ class MySelect(Select):
         await message.edit(embed=embed)
 
 
-async def handle_deleted_messages(bot, message_id: int):
-    deleted_embed: Poll | None = await db.get(Poll, message_id=message_id)
-    deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message_id)
-
-    if not deleted_embed and not deleted_interaction:
-        return
-
-    poll = deleted_embed or deleted_interaction
-    channel = await bot.fetch_channel(poll.channel_id)
-    try:
-        if deleted_interaction:
-            msg: Message | None = await channel.fetch_message(poll.message_id)
-        else:
-            msg: Message | None = await channel.fetch_message(poll.interaction_message_id)
-    except NotFound:
-        msg = None
-
-    if msg:
-        await poll.remove()
-        await msg.delete()
-
-
 class PollsCog(Cog, name="Polls"):
     CONTRIBUTORS = [
         Contributor.MaxiHuHe04,
@@ -313,6 +343,25 @@ class PollsCog(Cog, name="Polls"):
         self.team_roles: list[str] = team_roles
 
     async def on_ready(self):
+        polls: list[Poll] = await db.all(filter_by(Poll, (Poll.options, Option.votes), active=True))
+        for poll in polls:
+            if await check_poll_time(poll):
+                select_obj = MySelect(
+                    custom_id=str(poll.message_id),
+                    placeholder=t.select.placeholder(cnt=poll.max_choices),
+                    max_values=poll.max_choices,
+                    options=[
+                        SelectOption(
+                            label=t.select.label(option.field_position + 1),
+                            emoji=option.emote,
+                            description=option.option,
+                        )
+                        for option in poll.options
+                    ],
+                )
+
+                self.bot.add_view(view=create_select_view(select_obj), message_id=poll.interaction_message_id)
+
         try:
             self.poll_loop.start()
         except RuntimeError:
@@ -330,22 +379,8 @@ class PollsCog(Cog, name="Polls"):
         polls: list[Poll] = await db.all(filter_by(Poll, active=True))
 
         for poll in polls:
-            if not poll.end_time:
-                await poll.remove()
-                continue
-            if poll.end_time < utcnow():
-                channel = await self.bot.fetch_channel(poll.channel_id)
-                embed_message = await channel.fetch_message(poll.message_id)
-                interaction_message = await channel.fetch_message(poll.interaction_message_id)
-
-                await interaction_message.delete()
-                embed = embed_message.embeds[0]
-                embed.set_footer(text=t.footer_closed)
-
-                await embed_message.edit(embed=embed)
-                await embed_message.unpin()
-
-                poll.active = False
+            if not await check_poll_time(poll):
+                await close_poll(self.bot, poll)
 
     @commands.group(name="poll", aliases=["vote"])
     @guild_only()
@@ -580,6 +615,7 @@ class PollsCog(Cog, name="Polls"):
             poll_type=await PollsDefaultSettings.type.get(),
             interaction=interaction.id,
             fair=await PollsDefaultSettings.fair.get(),
+            max_choices=max_choices,
         )
 
         await ctx.message.delete()
@@ -654,6 +690,7 @@ class PollsCog(Cog, name="Polls"):
             poll_type=poll_type.lower(),
             interaction=interaction.id,
             fair=fair,
+            max_choices=choices,
         )
 
     @commands.command(aliases=["yn"])
@@ -713,4 +750,5 @@ class PollsCog(Cog, name="Polls"):
             poll_type="team",
             interaction=interaction.id,
             fair=True,
+            max_choices=1,
         )

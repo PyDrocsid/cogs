@@ -31,6 +31,7 @@ class Poll(Base):
     can_delete: Union[Column, bool] = Column(Boolean)
     fair: Union[Column, bool] = Column(Boolean)
     active: Union[Column, bool] = Column(Boolean)
+    max_choices: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
     async def create(
@@ -47,6 +48,7 @@ class Poll(Base):
         poll_type: str,
         interaction: int,
         fair: bool,
+        max_choices: int,
     ) -> Poll:
         row = Poll(
             message_id=message_id,
@@ -63,6 +65,7 @@ class Poll(Base):
             interaction_message_id=interaction,
             fair=fair,
             active=True,
+            max_choices=max_choices,
         )
         for position, poll_option in enumerate(options):
             row.options.append(
@@ -86,7 +89,7 @@ class Option(Base):
     votes: list[PollVote] = relationship("PollVote", back_populates="option", cascade="all, delete")
     poll: Poll = relationship("Poll", back_populates="options")
     emote: Union[Column, str] = Column(Text(30))
-    option: Union[Column, str] = Column(Text(150))
+    option: Union[Column, str] = Column(Text(250))
     field_position: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
