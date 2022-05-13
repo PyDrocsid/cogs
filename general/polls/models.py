@@ -18,7 +18,7 @@ async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:
 
     async with redis.pipeline() as pipe:
         if role_id:
-            await pipe.delete(key := f"poll_role_weights={role_id}")
+            await pipe.delete(f"poll_role_weights={role_id}")
         weights: RoleWeight
         async for weights in await db.stream(select(RoleWeight)):
             await pipe.delete(key := f"poll_role_weights={role_id or weights.role_id}")
