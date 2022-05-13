@@ -3,11 +3,33 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional, Union
 
+from discord import Role
 from discord.utils import utcnow
 from sqlalchemy import BigInteger, Boolean, Column, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import Base, UTCDateTime, db, filter_by
+from PyDrocsid.database import Base, UTCDateTime, db, filter_by, select
+from PyDrocsid.environment import CACHE_TTL
+from PyDrocsid.redis import redis
+
+
+async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:
+    out = []
+
+    async with redis.pipeline() as pipe:
+        if role_id:
+            await pipe.delete(key := f"poll_role_weights={role_id}")
+        weights: RoleWeight
+        async for weights in await db.stream(select(RoleWeight)):
+            await pipe.delete(key := f"poll_role_weights={role_id or weights.role_id}")
+            save = {"role": int(weights.role_id), "weight": float(weights.weight)}
+            out.append(save)
+            await pipe.set(key, str(weights.weight))
+            await pipe.expire(key, CACHE_TTL)
+
+        await pipe.execute()
+
+    return out
 
 
 class Poll(Base):
@@ -132,11 +154,23 @@ class RoleWeight(Base):
     async def create(guild_id: int, role: int, weight: float) -> RoleWeight:
         role_weight = RoleWeight(guild_id=guild_id, role_id=role, weight=weight, timestamp=utcnow())
         await db.add(role_weight)
+        await sync_redis()
         return role_weight
 
     async def remove(self) -> None:
         await db.delete(self)
+        await sync_redis(self.role_id)
 
     @staticmethod
     async def get(guild: int) -> list[RoleWeight]:
         return await db.all(filter_by(RoleWeight, guild_id=guild))
+
+    @staticmethod
+    async def get_highest(user_roles: list[Role]) -> float:
+        weights: list[str] = []
+        for role in user_roles:
+            weight = await redis.get(f"poll_role_weights={role.id}")
+            if weight:
+                weights.append(weight)
+        if weights:
+            return float(sorted(weights, key=float, reverse=True)[0])

@@ -20,10 +20,10 @@ from discord import (
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 from discord.ui import Select, View
-from discord.utils import utcnow
+from discord.utils import format_dt, utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import add_reactions, docs
+from PyDrocsid.command import Confirmation, add_reactions, docs
 from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
@@ -304,10 +304,12 @@ class MySelect(Select):
                     await vote.remove()
                     opt.votes.remove(vote)
 
+        ev_pover = await PollsDefaultSettings.everyone_power.get()
         if poll.fair:
-            user_weight: float = await PollsDefaultSettings.everyone_power.get()
+            user_weight: float = ev_pover
         else:
-            user_weight: float = 1.0  # TODO: Add function to get user vote weight
+            highest_role = await RoleWeight.get_highest(user.roles)
+            user_weight: float = ev_pover if highest_role < ev_pover else highest_role
         for option in new_options:
             option.votes.append(
                 await PollVote.create(option_id=option.id, user_id=user.id, poll_id=poll.id, vote_weight=user_weight)
@@ -336,7 +338,7 @@ class PollsCog(Cog, name="Polls"):
         Contributor.Defelo,
         Contributor.TNT2k,
         Contributor.wolflu,
-        Contributor.NekoFanatic,  # rewrote most of this code
+        Contributor.NekoFanatic,  # rewrote most of this code (Please blame @Defelo for the code)
     ]
 
     def __init__(self, team_roles: list[str]):
@@ -394,23 +396,25 @@ class PollsCog(Cog, name="Polls"):
     @docs(t.commands.poll.list)
     async def list(self, ctx: Context):
         polls: list[Poll] = await db.all(filter_by(Poll, active=True, guild_id=ctx.guild.id))
+        description = ""
         if polls:
-            description = ""
             for poll in polls:
                 if poll.poll_type == "team" and not await PollsPermission.team_poll.check_permissions(ctx.author):
                     continue
                 if poll.poll_type == "team":
                     description += t.polls.team_row(
-                        poll.title, poll.message_url, poll.owner_id, poll.end_time.strftime("%Y-%m-%d %H:%M")
+                        poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
                     )
                 else:
                     description += t.polls.row(
-                        poll.title, poll.message_url, poll.owner_id, poll.end_time.strftime("%Y-%m-%d %H:%M")
+                        poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
                     )
+            if description:
+                embed: Embed = Embed(title=t.polls.title, description=description, color=Colors.Polls)
+                await send_long_embed(ctx, embed=embed, paginate=True)
 
-            embed: Embed = Embed(title=t.polls.title, description=description, color=Colors.Polls)
-
-            await send_long_embed(ctx, embed=embed, paginate=True)
+        if not polls or not description:
+            await send_long_embed(ctx, embed=Embed(title=t.no_polls, color=Colors.error))
 
     @poll.command(name="delete", aliases=["del"])
     @docs(t.commands.poll.delete)
@@ -418,14 +422,25 @@ class PollsCog(Cog, name="Polls"):
         poll: Poll = await db.get(Poll, message_id=message.id)
         if not poll:
             raise CommandError(t.error.not_poll)
-        if not await PollsPermission.delete.check_permissions(ctx.author) and not poll.owner_id == ctx.author.id:
+        if (
+            poll.can_delete
+            and not await PollsPermission.delete.check_permissions(ctx.author)
+            and not poll.owner_id == ctx.author.id
+        ):
             raise PermissionError
+        elif not poll.can_delete and not poll.owner_id == ctx.author.id:
+            raise PermissionError  # if delete is False, only the owner can delete it
+
+        if not await Confirmation().run(ctx, t.delete.confirm_text):
+            return
 
         await message.delete()
         await poll.remove()
-        interaction_message: Message = await ctx.channel.fetch_message(poll.interaction_message_id)
-        if interaction_message:
+        try:
+            interaction_message: Message = await ctx.channel.fetch_message(poll.interaction_message_id)
             await interaction_message.delete()
+        except NotFound:
+            pass
 
         await add_reactions(ctx.message, "white_check_mark")
 
@@ -472,7 +487,9 @@ class PollsCog(Cog, name="Polls"):
         max_time: int = await PollsDefaultSettings.max_duration.get()
         embed.add_field(
             name=t.poll_config.duration.name,
-            value=t.poll_config.duration.time(cnt=time) if not time <= 0 else t.poll_config.duration.time(cnt=max_time),
+            value=t.poll_config.duration.time(cnt=time)
+            if not time <= 0
+            else t.poll_config.duration.time(cnt=max_time * 24),
             inline=False,
         )
         embed.add_field(
@@ -594,7 +611,7 @@ class PollsCog(Cog, name="Polls"):
     async def quick(self, ctx: Context, *, args: str):
         deadline = await PollsDefaultSettings.duration.get()
         if deadline == 0:
-            deadline = await PollsDefaultSettings.max_duration.get()
+            deadline = await PollsDefaultSettings.max_duration.get() * 24
         max_choices = await PollsDefaultSettings.max_choices.get()
         anonymous = await PollsDefaultSettings.anonymous.get()
         message, interaction, parsed_options, question = await send_poll(
@@ -645,16 +662,13 @@ class PollsCog(Cog, name="Polls"):
             poll_type = "standard"
         if poll_type == "standard":
             title: str = t.poll
+        max_deadline = await PollsDefaultSettings.max_duration.get() * 24
         deadline: Union[list[str, str], int] = parsed.deadline
         if isinstance(deadline, int):
-            deadline = (
-                deadline
-                if deadline >= await PollsDefaultSettings.max_duration.get()
-                else await PollsDefaultSettings.max_duration.get()
-            )
+            deadline = deadline if deadline <= max_deadline else await max_deadline
         else:
             if await PollsDefaultSettings.duration.get() == 0:
-                deadline = await PollsDefaultSettings.max_duration.get()
+                deadline = max_deadline
             else:
                 deadline = await PollsDefaultSettings.duration.get()
         anonymous: bool = parsed.anonymous
