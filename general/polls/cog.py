@@ -32,7 +32,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import Option, Poll, PollVote, RoleWeight
+from .models import Option, Poll, PollVote, RoleWeight, sync_redis
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -44,7 +44,7 @@ t = t.polls
 
 MAX_OPTIONS = 25  # Discord select menu limit
 
-default_emojis = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
+DEFAULT_EMOJIS = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
 
 
 class PollOption:
@@ -52,7 +52,7 @@ class PollOption:
         if not line:
             raise CommandError(t.empty_option)
 
-        emoji_candidate, *text = line.lstrip().split(" ")
+        emoji_candidate, *text = line.lstrip().split()
         text = " ".join(text)
 
         custom_emoji_match = re.fullmatch(r"<a?:[a-zA-Z0-9_]+:(\d+)>", emoji_candidate)
@@ -68,7 +68,7 @@ class PollOption:
             self.emoji = unicode_emoji
             self.option = text.strip()
         else:
-            self.emoji = default_emojis[number]
+            self.emoji = DEFAULT_EMOJIS[number]
             self.option = line
 
     def __str__(self):
@@ -83,11 +83,7 @@ def create_select_view(select_obj: Select, timeout: float = None) -> View:
 
 
 def get_percentage(poll: Poll) -> list[tuple[float, float]]:
-    values: list[float] = []
-    options = poll.options
-
-    for option in options:
-        values.append(sum([vote.vote_weight for vote in option.votes]))
+    values: list[float] = [sum([vote.vote_weight for vote in option.votes]) for option in poll.options]
 
     return [(float(value), float(round(((value / sum(values)) * 100), 2))) for value in values]
 
@@ -132,7 +128,7 @@ async def send_poll(
     deadline: Optional[float] = None,
 ) -> tuple[Message, Message, list[tuple[str, str]], str]:
 
-    if not max_choices or max_choices == 0:
+    if not max_choices:
         max_choices = t.poll_config.choices.unlimited
 
     question, *options = [line.replace("\x00", "\n") for line in poll_args.replace("\\\n", "\x00").split("\n") if line]
@@ -169,9 +165,9 @@ async def send_poll(
         place = t.select.place
         max_value = len(options)
     else:
-        use = len(options) if max_choices >= len(options) else max_choices
-        place: str = t.select.placeholder(cnt=use)
-        max_value = use
+        options_amount = len(options) if max_choices >= len(options) else max_choices
+        place: str = t.select.placeholder(cnt=options_amount)
+        max_value = options_amount
 
     msg = await ctx.send(embed=embed)
     select_obj = MySelect(
@@ -308,7 +304,7 @@ class MySelect(Select):
         if poll.fair:
             user_weight: float = ev_pover
         else:
-            highest_role = await RoleWeight.get_highest(user.roles)
+            highest_role = await RoleWeight.get_highest(user.roles) or 0
             user_weight: float = ev_pover if highest_role < ev_pover else highest_role
         for option in new_options:
             option.votes.append(
@@ -345,6 +341,7 @@ class PollsCog(Cog, name="Polls"):
         self.team_roles: list[str] = team_roles
 
     async def on_ready(self):
+        await sync_redis()
         polls: list[Poll] = await db.all(filter_by(Poll, (Poll.options, Option.votes), active=True))
         for poll in polls:
             if await check_poll_time(poll):
@@ -397,18 +394,17 @@ class PollsCog(Cog, name="Polls"):
     async def list(self, ctx: Context):
         polls: list[Poll] = await db.all(filter_by(Poll, active=True, guild_id=ctx.guild.id))
         description = ""
-        if polls:
-            for poll in polls:
-                if poll.poll_type == "team" and not await PollsPermission.team_poll.check_permissions(ctx.author):
-                    continue
-                if poll.poll_type == "team":
-                    description += t.polls.team_row(
-                        poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
-                    )
-                else:
-                    description += t.polls.row(
-                        poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
-                    )
+        for poll in polls:
+            if poll.poll_type == "team" and not await PollsPermission.team_poll.check_permissions(ctx.author):
+                continue
+            if poll.poll_type == "team":
+                description += t.polls.team_row(
+                    poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
+                )
+            else:
+                description += t.polls.row(
+                    poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
+                )
             if description:
                 embed: Embed = Embed(title=t.polls.title, description=description, color=Colors.Polls)
                 await send_long_embed(ctx, embed=embed, paginate=True)
@@ -458,13 +454,10 @@ class PollsCog(Cog, name="Polls"):
         ):
             raise PermissionError
 
-        users: dict[str, list[int]] = {}
+        users = {}
         for option in poll.options:
             for vote in option.votes:
-                try:
-                    users[str(vote.user_id)].append(option.field_position + 1)
-                except KeyError:
-                    users[str(vote.user_id)] = [option.field_position + 1]
+                users[str(vote.user_id)] = users.get(str(vote.user_id), default=[]).append(option.field_position + 1)
 
         description = ""
         for key, value in users.items():
@@ -507,7 +500,7 @@ class PollsCog(Cog, name="Polls"):
         everyone: int = await PollsDefaultSettings.everyone_power.get()
         base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
         if roles:
-            base += "".join([t.poll_config.roles.row(role.role_id, role.weight) for role in roles])
+            base += "".join(t.poll_config.roles.row(role.role_id, role.weight) for role in roles)
         embed.add_field(name=t.poll_config.roles.name, value=base, inline=False)
 
         await send_long_embed(ctx, embed, paginate=False)
@@ -555,8 +548,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.max_duration)
     async def max_duration(self, ctx: Context, days: int = None):
-        if not days:
-            days = 7
+        days = days or 7
         msg: str = t.max_duration.set(cnt=days)
 
         await PollsDefaultSettings.max_duration.set(days)
@@ -609,9 +601,7 @@ class PollsCog(Cog, name="Polls"):
     @poll.command(name="quick", usage=t.usage.poll, aliases=["q"])
     @docs(t.commands.poll.quick)
     async def quick(self, ctx: Context, *, args: str):
-        deadline = await PollsDefaultSettings.duration.get()
-        if deadline == 0:
-            deadline = await PollsDefaultSettings.max_duration.get() * 24
+        deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
         max_choices = await PollsDefaultSettings.max_choices.get()
         anonymous = await PollsDefaultSettings.anonymous.get()
         message, interaction, parsed_options, question = await send_poll(
@@ -640,11 +630,8 @@ class PollsCog(Cog, name="Polls"):
     @poll.command(name="new", usage=t.usage.poll)
     @docs(t.commands.poll.new)
     async def new(self, ctx: Context, *, options: str):
-        def check(m: Message):
-            return m.author == ctx.author
-
         wizard = await ctx.send(embed=build_wizard())
-        mess: Message = await self.bot.wait_for("message", check=check, timeout=60.0)
+        mess: Message = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author, timeout=60.0)
         args = mess.content
 
         if args.lower() == t.skip.message:
@@ -654,23 +641,20 @@ class PollsCog(Cog, name="Polls"):
         await mess.delete()
 
         parser = await get_parser()
-        parsed: Namespace = parser.parse_known_args(args.split(" "))[0]
+        parsed: Namespace = parser.parse_known_args(args.split())[0]
 
-        title: str = t.team_poll
+        title: str = t.poll
         poll_type: str = parsed.type
-        if poll_type.lower() == "team" and not await PollsPermission.team_poll.check_permissions(ctx.author):
+        if poll_type.lower() == "team" and await PollsPermission.team_poll.check_permissions(ctx.author):
+            title: str = t.team_poll
+        else:
             poll_type = "standard"
-        if poll_type == "standard":
-            title: str = t.poll
         max_deadline = await PollsDefaultSettings.max_duration.get() * 24
         deadline: Union[list[str, str], int] = parsed.deadline
         if isinstance(deadline, int):
-            deadline = deadline if deadline <= max_deadline else await max_deadline
+            deadline = deadline or max_deadline if deadline <= max_deadline else await max_deadline
         else:
-            if await PollsDefaultSettings.duration.get() == 0:
-                deadline = max_deadline
-            else:
-                deadline = await PollsDefaultSettings.duration.get()
+            deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
         anonymous: bool = parsed.anonymous
         choices: int = parsed.choices
 
