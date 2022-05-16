@@ -40,7 +40,6 @@ async def split_parents(topics: list[str], assignable: bool) -> list[tuple[str, 
 
         parents: list[BTPTopic | None | CommandError] = [
             await db.first(filter_by(BTPTopic, name=topic))
-
             if await db.exists(filter_by(BTPTopic, name=topic))
             else CommandError(t.parent_not_exists(topic))
             for topic in topic_tree[:-1]
@@ -158,9 +157,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                     [
                         f"`{topic.name}"
                         + (  # noqa: W503
-                            f" ({c})`"
-                            if (c := await db.count(filter_by(BTPTopic, parent_id=topic.id))) > 0
-                            else "`"
+                            f" ({c})`" if (c := await db.count(filter_by(BTPTopic, parent_id=topic.id))) > 0 else "`"
                         )
                         for topic in topics
                     ]
@@ -309,21 +306,19 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         topics: list[str] = split_topics(topics)
 
-        # TODO: confirm message to delete (multiple) topic(s)
-
         for topic in topics:
             if not await db.exists(filter_by(BTPTopic, name=topic)):
                 raise CommandError(t.topic_not_registered(topic))
 
-        #if not await Confirm(ctx.author, True, )
+        if not await Confirmation(danger=True).run(ctx, t.confirm_delete_topics(topics=", ".join(topics))):
+            return
         for topic in topics:
             await db.exec(delete(BTPTopic).where(BTPTopic.name == topic))
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
         embed.description = t.topics_unregistered(cnt=len(topics))
         await send_to_changelog(
-            ctx.guild,
-            t.log_topics_unregistered(cnt=len(topics), topics=", ".join(f"`{t}`" for t in topics)),
+            ctx.guild, t.log_topics_unregistered(cnt=len(topics), topics=", ".join(f"`{t}`" for t in topics))
         )
         await send_long_embed(ctx, embed)
 
