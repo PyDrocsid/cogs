@@ -128,7 +128,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             None
             if parent_topic is None
             else await db.first(filter_by(BTPTopic, name=parent_topic))
-                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
@@ -180,7 +180,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(filter_by(BTPTopic, id=topic.id)))
-               and not (await db.exists(filter_by(BTPUser, user_id=member.id, topic_id=topic.id)))  # noqa: W503
+            and not (await db.exists(filter_by(BTPUser, user_id=member.id, topic_id=topic.id)))  # noqa: W503
         ]
 
         roles: list[Role] = []
