@@ -1,27 +1,29 @@
 import os
 import re
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
 
 import requests
-from discord import Embed, Member, User, Role, Guild
+from discord import Embed, Guild, Member, Role, User
 from discord.ext import commands, tasks
-from discord.ext.commands import Context, UserInputError, CommandError, guild_only
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
-from PyDrocsid.database import db, select, db_wrapper
+from PyDrocsid.database import db, db_wrapper, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
+
 from .colors import Colors
 from .models import AOCLink
 from .permissions import AdventOfCodePermission
 from .settings import AdventOfCodeSettings
 from ...contributor import Contributor
 from ...pubsub import send_to_changelog
+
 
 tg = t.g
 t = t.adventofcode
@@ -143,18 +145,6 @@ def make_member_stats(member: dict) -> tuple[int, list[str]]:
             d, h, m, s = delta.days, delta.seconds // 3600, delta.seconds // 60 % 60, delta.seconds % 60
             line += f"  {d:2}d {h:2}h {m:2}m {s:2}s"
         stars.append(line)
-
-    #    if completed:
-    #        stars.append("-" * 37)
-    #        line = "Avg"
-    #        for part in part_avg:
-    #            if not part:
-    #                break
-    #
-    #            delta = timedelta(seconds=sum(part) / len(part))
-    #            d, h, m, s = delta.days, delta.seconds // 3600, delta.seconds // 60 % 60, delta.seconds % 60
-    #            line += f"  {d:2}d {h:2}h {m:2}m {s:2}s"
-    #        stars.append(line)
 
     return completed, stars
 

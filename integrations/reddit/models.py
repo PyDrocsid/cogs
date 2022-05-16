@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from typing import Union
 
 from discord.utils import utcnow
-from sqlalchemy import Column, String, BigInteger
+from sqlalchemy import BigInteger, Column, String
 
-from PyDrocsid.database import db, delete, filter_by, UTCDateTime, Base
+from PyDrocsid.database import Base, UTCDateTime, db, delete, filter_by
 
 
 class RedditChannel(Base):

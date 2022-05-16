@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Union, Optional
+from typing import Optional, Union
 from uuid import uuid4
 
 from discord.utils import utcnow
-from sqlalchemy import Column, BigInteger, Boolean, ForeignKey, String
+from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, String
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import db, UTCDateTime, Base
+from PyDrocsid.database import Base, UTCDateTime, db
 
 
 class DynGroup(Base):

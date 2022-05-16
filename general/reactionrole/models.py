@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Union, Optional
+from typing import Optional, Union
 
-from PyDrocsid.database import db, select, Base
-from sqlalchemy import Column, BigInteger, String, Boolean
+from sqlalchemy import BigInteger, Boolean, Column, String
+
+from PyDrocsid.database import Base, db, select
 
 
 class ReactionRole(Base):

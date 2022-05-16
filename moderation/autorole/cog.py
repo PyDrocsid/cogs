@@ -1,8 +1,8 @@
 from typing import Optional
 
-from discord import Member, Embed, Role
+from discord import Embed, Member, Role
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, UserInputError, CommandError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.config import Contributor
@@ -10,10 +10,12 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_role_assignable
+
 from .colors import Colors
 from .models import AutoRole
 from .permissions import AutoRolePermission
 from ...pubsub import send_to_changelog
+
 
 tg = t.g
 t = t.autorole

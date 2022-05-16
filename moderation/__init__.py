@@ -12,3 +12,21 @@ from .spam_detection import SpamDetectionCog
 from .threads import ThreadsCog
 from .user_notes import UserNoteCog
 from .verification import VerificationCog
+
+
+__all__ = [
+    "AutoClearCog",
+    "AutoModCog",
+    "AutoRoleCog",
+    "ContentFilterCog",
+    "InvitesCog",
+    "LoggingCog",
+    "MediaOnlyCog",
+    "MessageCog",
+    "ModCog",
+    "RoleNotificationsCog",
+    "SpamDetectionCog",
+    "ThreadsCog",
+    "UserNoteCog",
+    "VerificationCog",
+]
