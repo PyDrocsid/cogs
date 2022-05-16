@@ -70,7 +70,7 @@ async def is_logging_channel(channel: TextChannel) -> bool:
 
 def _get_files(embeds: list[Embed], file_name: str) -> list[File]:
     return [
-        File(filename=file_name, fp=StringIO(json.dumps(embed.to_dict(), indent=4))) 
+        File(filename=file_name, fp=StringIO(json.dumps(embed.to_dict(), indent=4)))
         for embed in embeds
     ]
 
