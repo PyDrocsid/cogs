@@ -1,25 +1,27 @@
 import string
 
-from discord import Member, Embed, Role, Message
+from discord import Embed, Member, Message, Role
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, UserInputError, guild_only
 
 import PyDrocsid
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, Confirmation
-from PyDrocsid.database import db, select, db_wrapper, filter_by, delete
+from PyDrocsid.command import Confirmation, reply
+from PyDrocsid.database import db, db_wrapper, delete, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.logger import get_logger
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance
+
 from .colors import Colors
-from .models import BTPUser, BTPTopic
+from .models import BTPTopic, BTPUser
 from .permissions import BeTheProfessionalPermission
 from .settings import BeTheProfessionalSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert
+from ...pubsub import send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.betheprofessional
@@ -126,7 +128,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             None
             if parent_topic is None
             else await db.first(filter_by(BTPTopic, name=parent_topic))
-            or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
+                 or CommandError(t.topic_not_found(parent_topic))  # noqa: W503
         )
         if isinstance(parent, CommandError):
             raise parent
@@ -178,7 +180,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             topic
             for topic in await parse_topics(topics)
             if (await db.exists(filter_by(BTPTopic, id=topic.id)))
-            and not (await db.exists(filter_by(BTPUser, user_id=member.id, topic_id=topic.id)))  # noqa: W503
+               and not (await db.exists(filter_by(BTPUser, user_id=member.id, topic_id=topic.id)))  # noqa: W503
         ]
 
         roles: list[Role] = []

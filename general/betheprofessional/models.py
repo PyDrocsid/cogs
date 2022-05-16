@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy.orm import backref, relationship
 
-from PyDrocsid.database import db, Base
-from sqlalchemy import Column, BigInteger, Boolean, Integer, String, ForeignKey
+from PyDrocsid.database import Base, db
 
 
 class BTPTopic(Base):
