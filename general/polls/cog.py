@@ -186,9 +186,9 @@ async def send_poll(
         ],
     )
     view_msg = await ctx.send(view=create_select_view(select_obj=select_obj))
-    parsed_options: list[tuple[str, str]] = [
-        (obj.emoji, t.select.label(index + 1)) for index, obj in enumerate(options)
-    ]
+
+    parsed_options: list[tuple[str, str]] = [(obj.emoji, t.select.label(ix)) for ix, obj in enumerate(options, start=1)]
+
     try:
         await msg.pin()
     except HTTPException:
@@ -222,7 +222,7 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
     return embed
 
 
-async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
+async def get_staff(guild: Guild, team_roles: list[str]) -> set[Member]:
     """gets a list of all team members"""
     teamlers: set[Member] = set()
     for role_name in team_roles:
@@ -299,11 +299,11 @@ class MySelect(Select):
         message: Message = await interaction.channel.fetch_message(interaction.custom_id)
         embed: Embed = message.embeds[0] if message.embeds else None
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+
         if not poll or not embed:
             return
 
-        options: list[Option] = poll.options
-        new_options: list[Option] = [option for option in options if option.option in selected_options]
+        new_options: list[Option] = [option for option in poll.options if option.option in selected_options]
         missing: list[Member] | None = None
 
         opt: Option
@@ -319,12 +319,14 @@ class MySelect(Select):
         else:
             highest_role = await RoleWeight.get_highest(user.roles) or 0
             user_weight: float = ev_pover if highest_role < ev_pover else highest_role
+
         for option in new_options:
             option.votes.append(
                 await PollVote.create(option_id=option.id, user_id=user.id, poll_id=poll.id, vote_weight=user_weight)
             )
+
         if poll.poll_type == "team":
-            teamlers: set[Member] = await get_teamler(interaction.guild, ["team"])
+            teamlers: set[Member] = await get_staff(interaction.guild, ["team"])
             if user not in teamlers:
                 await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
                 return
@@ -404,7 +406,7 @@ class PollsCog(Cog, name="Polls"):
     @poll.command(name="list", aliases=["l"])
     @guild_only()
     @docs(t.commands.poll.list)
-    async def list(self, ctx: Context):
+    async def poll_list(self, ctx: Context):
         polls: list[Poll] = await db.all(filter_by(Poll, active=True, guild_id=ctx.guild.id))
         description = ""
         for poll in polls:
@@ -589,10 +591,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.anonymous)
     async def anonymous(self, ctx: Context, status: bool):
-        if status:
-            msg: str = t.anonymous.is_on
-        else:
-            msg: str = t.anonymous.is_off
+        msg: str = t.anonymous.is_on if status else t.anonymous.is_off
 
         await PollsDefaultSettings.anonymous.set(status)
         await add_reactions(ctx.message, "white_check_mark")
@@ -602,10 +601,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.fair)
     async def fair(self, ctx: Context, status: bool):
-        if status:
-            msg: str = t.fair.is_on
-        else:
-            msg: str = t.fair.is_off
+        msg: str = t.fair.is_on if status else t.fair.is_off
 
         await PollsDefaultSettings.fair.set(status)
         await add_reactions(ctx.message, "white_check_mark")
@@ -665,7 +661,7 @@ class PollsCog(Cog, name="Polls"):
         max_deadline = await PollsDefaultSettings.max_duration.get() * 24
         deadline: Union[list[str, str], int] = parsed.deadline
         if isinstance(deadline, int):
-            deadline = deadline or max_deadline if deadline <= max_deadline else await max_deadline
+            deadline = deadline or max_deadline if deadline <= max_deadline else max_deadline
         else:
             deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
         anonymous: bool = parsed.anonymous
@@ -673,7 +669,7 @@ class PollsCog(Cog, name="Polls"):
 
         if poll_type.lower() == "team":
             can_delete, fair = False, True
-            missing = list(await get_teamler(self.bot.guilds[0], ["team"]))
+            missing = list(await get_staff(self.bot.guilds[0], ["team"]))
             missing.sort(key=lambda m: str(m).lower())
             *teamlers, last = (x.mention for x in missing)
             teamlers: list[str]
@@ -733,7 +729,7 @@ class PollsCog(Cog, name="Polls"):
     async def team_yesno(self, ctx: Context, *, text: str):
         options = t.yes_no.option_string(text)
 
-        missing = list(await get_teamler(self.bot.guilds[0], ["team"]))
+        missing = list(await get_staff(self.bot.guilds[0], ["team"]))
         missing.sort(key=lambda m: str(m).lower())
         *teamlers, last = (x.mention for x in missing)
         teamlers: list[str]

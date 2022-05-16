@@ -18,10 +18,10 @@ async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:
 
     async with redis.pipeline() as pipe:
         if role_id:
-            await pipe.delete(f"poll_role_weights={role_id}")
+            await pipe.delete(f"poll_role_weight={role_id}")
         weights: RoleWeight
         async for weights in await db.stream(select(RoleWeight)):
-            await pipe.delete(key := f"poll_role_weights={role_id or weights.role_id}")
+            await pipe.delete(key := f"poll_role_weight={role_id or weights.role_id}")
             save = {"role": int(weights.role_id), "weight": float(weights.weight)}
             out.append(save)
             await pipe.set(key, str(weights.weight))
@@ -167,10 +167,11 @@ class RoleWeight(Base):
 
     @staticmethod
     async def get_highest(user_roles: list[Role]) -> float:
-        weights: list[str] = []
+        weight: float = 0.0
         for role in user_roles:
-            weight = await redis.get(f"poll_role_weights={role.id}")
-            if weight:
-                weights.append(weight)
-        if weights:
-            return float(sorted(weights, key=float, reverse=True)[0])
+            _weight = await redis.get(f"poll_role_weight={role.id}")
+
+            if _weight and weight < (_weight := float(_weight)):
+                weight = _weight
+
+        return weight
