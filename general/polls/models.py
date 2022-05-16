@@ -1,16 +1,22 @@
 from __future__ import annotations
 
+import enum
 from datetime import datetime
 from typing import Optional, Union
 
 from discord import Role
 from discord.utils import utcnow
-from sqlalchemy import BigInteger, Boolean, Column, Float, ForeignKey, Text
+from sqlalchemy import BigInteger, Boolean, Column, Enum, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
 from PyDrocsid.database import Base, UTCDateTime, db, filter_by, select
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
+
+
+class PollType(enum.Enum):
+    TEAM = "team"
+    STANDARD = "standard"
 
 
 async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:
@@ -47,7 +53,7 @@ class Poll(Base):
     owner_id: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
     title: Union[Column, str] = Column(Text(256))
-    poll_type: Union[Column, str] = Column(Text(50))
+    poll_type: Union[Column, PollType] = Column(Enum(PollType))
     end_time: Union[Column, datetime] = Column(UTCDateTime)
     anonymous: Union[Column, bool] = Column(Boolean)
     can_delete: Union[Column, bool] = Column(Boolean)
@@ -67,7 +73,7 @@ class Poll(Base):
         end: Optional[datetime],
         anonymous: bool,
         can_delete: bool,
-        poll_type: str,
+        poll_type: enum.Enum,
         interaction: int,
         fair: bool,
         max_choices: int,

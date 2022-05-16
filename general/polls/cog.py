@@ -2,6 +2,7 @@ import re
 import string
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
+from enum import Enum
 from typing import Optional, Union
 
 from dateutil.relativedelta import relativedelta
@@ -32,7 +33,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import Option, Poll, PollVote, RoleWeight, sync_redis
+from .models import Option, Poll, PollType, PollVote, RoleWeight, sync_redis
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -106,7 +107,13 @@ def build_wizard(skip: bool = False) -> Embed:
 async def get_parser() -> ArgumentParser:
     """creates a parser object with options for advanced polls"""
     parser = ArgumentParser()
-    parser.add_argument("--type", "-T", default="standard", choices=["standard", "team"], type=str)
+    parser.add_argument(
+        "--type",
+        "-T",
+        default=PollType.STANDARD.value,
+        choices=[PollType.STANDARD.value, PollType.TEAM.value],
+        type=str,
+    )
     parser.add_argument("--deadline", "-D", default=await PollsDefaultSettings.duration.get(), type=int)
     parser.add_argument(
         "--anonymous", "-A", default=await PollsDefaultSettings.anonymous.get(), type=bool, choices=[True, False]
@@ -325,7 +332,7 @@ class MySelect(Select):
                 await PollVote.create(option_id=option.id, user_id=user.id, poll_id=poll.id, vote_weight=user_weight)
             )
 
-        if poll.poll_type == "team":
+        if poll.poll_type == PollType.TEAM:
             teamlers: set[Member] = await get_staff(interaction.guild, ["team"])
             if user not in teamlers:
                 await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
@@ -410,9 +417,9 @@ class PollsCog(Cog, name="Polls"):
         polls: list[Poll] = await db.all(filter_by(Poll, active=True, guild_id=ctx.guild.id))
         description = ""
         for poll in polls:
-            if poll.poll_type == "team" and not await PollsPermission.team_poll.check_permissions(ctx.author):
+            if poll.poll_type == PollType.TEAM and not await PollsPermission.team_poll.check_permissions(ctx.author):
                 continue
-            if poll.poll_type == "team":
+            if poll.poll_type == PollType.TEAM:
                 description += t.polls.team_row(
                     poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
                 )
@@ -628,7 +635,7 @@ class PollsCog(Cog, name="Polls"):
             anonymous=anonymous,
             can_delete=True,
             options=parsed_options,
-            poll_type=await PollsDefaultSettings.type.get(),
+            poll_type=PollType.STANDARD,
             interaction=interaction.id,
             fair=await PollsDefaultSettings.fair.get(),
             max_choices=max_choices,
@@ -653,11 +660,12 @@ class PollsCog(Cog, name="Polls"):
         parsed: Namespace = parser.parse_known_args(args.split())[0]
 
         title: str = t.poll
-        poll_type: str = parsed.type
-        if poll_type.lower() == "team" and await PollsPermission.team_poll.check_permissions(ctx.author):
+        poll_type: Enum | str = parsed.type.lower()
+        if poll_type == PollType.TEAM.value and await PollsPermission.team_poll.check_permissions(ctx.author):
+            poll_type = PollType.TEAM
             title: str = t.team_poll
         else:
-            poll_type = "standard"
+            poll_type = PollType.STANDARD
         max_deadline = await PollsDefaultSettings.max_duration.get() * 24
         deadline: Union[list[str, str], int] = parsed.deadline
         if isinstance(deadline, int):
@@ -667,7 +675,7 @@ class PollsCog(Cog, name="Polls"):
         anonymous: bool = parsed.anonymous
         choices: int = parsed.choices
 
-        if poll_type.lower() == "team":
+        if poll_type == PollType.TEAM:
             can_delete, fair = False, True
             missing = list(await get_staff(self.bot.guilds[0], ["team"]))
             missing.sort(key=lambda m: str(m).lower())
@@ -694,7 +702,7 @@ class PollsCog(Cog, name="Polls"):
             anonymous=anonymous,
             can_delete=can_delete,
             options=parsed_options,
-            poll_type=poll_type.lower(),
+            poll_type=poll_type,
             interaction=interaction.id,
             fair=fair,
             max_choices=choices,
@@ -754,7 +762,7 @@ class PollsCog(Cog, name="Polls"):
             anonymous=False,
             can_delete=False,
             options=parsed_options,
-            poll_type="team",
+            poll_type=PollType.TEAM,
             interaction=interaction.id,
             fair=True,
             max_choices=1,
