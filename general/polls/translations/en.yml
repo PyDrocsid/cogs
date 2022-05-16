@@ -52,7 +52,9 @@ poll_config:
       many: "{cnt} choices per user"
     unlimited: unlimited
   anonymous:
-    name: "Anonymous"
+    name: "**Anonymous**"
+  fair:
+    name: "**Fair polls**"
   roles:
     name: "**Role Weights**"
     ev_row: "{} -> `{}x`"

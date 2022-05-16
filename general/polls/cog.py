@@ -518,6 +518,8 @@ class PollsCog(Cog, name="Polls"):
         )
         anonymous: bool = await PollsDefaultSettings.anonymous.get()
         embed.add_field(name=t.poll_config.anonymous.name, value=str(anonymous), inline=False)
+        fair: bool = await PollsDefaultSettings.fair.get()
+        embed.add_field(name=t.poll_config.fair.name, value=str(fair), inline=False)
         roles = await RoleWeight.get(ctx.guild.id)
         everyone: int = await PollsDefaultSettings.everyone_power.get()
         base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
