@@ -68,11 +68,8 @@ async def is_logging_channel(channel: TextChannel) -> bool:
     return False
 
 
-async def _send_file(channel: TextChannel, embeds: list[Embed], file_name: str):
-    files = []
-    for embed in embeds:
-        files.append(File(filename=file_name, fp=StringIO(json.dumps(embed.to_dict(), indent=4))))
-    await channel.send(files=files)
+def _get_files(embeds: list[Embed], file_name: str) -> list[File]:
+    return [File(filename=file_name, fp=StringIO(json.dumps(embed.to_dict(), indent=4))) for embed in embeds]
 
 
 channels: list[str] = []
@@ -228,9 +225,10 @@ class LoggingCog(Cog, name="Logging"):
             )
             embed.add_field(name=t.url, value=message.jump_url, inline=False)
             add_field(embed, t.new_content, message.content)
-        await edit_channel.send(embed=embed)
+        files = None
         if message.embeds:
-            await _send_file(edit_channel, message.embeds, t.after_edited_embeds)
+            files = _get_files(message.embeds, t.after_edited_embeds)
+        await edit_channel.send(embed=embed, files=files)
 
     async def on_message_delete(self, message: Message):
         if message.guild is None:
@@ -266,9 +264,10 @@ class LoggingCog(Cog, name="Logging"):
                     size /= 1000
                 out.append(f"[{attachment.filename}]({attachment.url}) ({size:.1f} {_unit})")
             embed.add_field(name=t.attachments, value="\n".join(out), inline=False)
-        await delete_channel.send(embed=embed)
+        files = None
         if message.embeds:
-            await _send_file(delete_channel, message.embeds, t.after_deleted_embeds)
+            files = _get_files(message.embeds, t.after_deleted_embeds)
+        await delete_channel.send(embed=embed, files=files)
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
