@@ -76,6 +76,7 @@ class PollOption:
 
 
 def create_select_view(select_obj: Select, timeout: float = None) -> View:
+    """returns a view object"""
     view = View(timeout=timeout)
     view.add_item(select_obj)
 
@@ -83,12 +84,14 @@ def create_select_view(select_obj: Select, timeout: float = None) -> View:
 
 
 def get_percentage(poll: Poll) -> list[tuple[float, float]]:
+    """returns the amount of votes and the percentage of an option"""
     values: list[float] = [sum([vote.vote_weight for vote in option.votes]) for option in poll.options]
 
     return [(float(value), float(round(((value / sum(values)) * 100), 2))) for value in values]
 
 
 def build_wizard(skip: bool = False) -> Embed:
+    """creates a help embed for setting up advanced polls"""
     if skip:
         return Embed(title=t.skip.title, description=t.skip.description, color=Colors.Polls)
 
@@ -101,6 +104,7 @@ def build_wizard(skip: bool = False) -> Embed:
 
 
 async def get_parser() -> ArgumentParser:
+    """creates a parser object with options for advanced polls"""
     parser = ArgumentParser()
     parser.add_argument("--type", "-T", default="standard", choices=["standard", "team"], type=str)
     parser.add_argument("--deadline", "-D", default=await PollsDefaultSettings.duration.get(), type=int)
@@ -114,6 +118,7 @@ async def get_parser() -> ArgumentParser:
 
 
 def calc_end_time(duration: Optional[float]) -> Optional[datetime]:
+    """returns the time when a poll should it from hours"""
     if duration != 0 and not None:
         return utcnow() + relativedelta(hours=int(duration))
     return
@@ -127,6 +132,7 @@ async def send_poll(
     field: Optional[tuple[str, str]] = None,
     deadline: Optional[float] = None,
 ) -> tuple[Message, Message, list[tuple[str, str]], str]:
+    """sends a poll embed + view message containing the select field"""
 
     if not max_choices:
         max_choices = t.poll_config.choices.unlimited
@@ -196,6 +202,7 @@ async def send_poll(
 
 
 async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
+    """edits the poll embed, updating the votes and percentages"""
     calc = get_percentage(poll)
     for index, field in enumerate(embed.fields):
         if field.name == tg.status:
@@ -216,6 +223,7 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
 
 
 async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
+    """gets a list of all team members"""
     teamlers: set[Member] = set()
     for role_name in team_roles:
         if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
@@ -227,6 +235,7 @@ async def get_teamler(guild: Guild, team_roles: list[str]) -> set[Member]:
 
 
 async def handle_deleted_messages(bot, message_id: int):
+    """if a message containing a poll gets deleted, this function deletes the interaction message (both direction)"""
     deleted_embed: Poll | None = await db.get(Poll, message_id=message_id)
     deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message_id)
 
@@ -249,6 +258,7 @@ async def handle_deleted_messages(bot, message_id: int):
 
 
 async def check_poll_time(poll: Poll) -> bool:
+    """checks if a poll has ended"""
     if not poll.end_time:
         await poll.remove()
         return False
@@ -260,6 +270,7 @@ async def check_poll_time(poll: Poll) -> bool:
 
 
 async def close_poll(bot, poll: Poll):
+    """deletes the interaction message and edits the footer of the poll embed"""
     try:
         channel = await bot.fetch_channel(poll.channel_id)
         embed_message = await channel.fetch_message(poll.message_id)
@@ -279,6 +290,8 @@ async def close_poll(bot, poll: Poll):
 
 
 class MySelect(Select):
+    """adds a method for handling interactions with the select menu"""
+
     @db_wrapper
     async def callback(self, interaction):
         user = interaction.user
