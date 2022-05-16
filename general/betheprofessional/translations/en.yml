@@ -35,11 +35,11 @@ log_topics_registered:
   many: "{cnt} **topics** have been **registered**: {topics}"
 
 topics_unregistered:
-  one: "Topic has been deleted successfully. :white_check_mark:"
-  many: "{cnt} topics have been deleted successfully. :white_check_mark:"
+  one: "Topic has been deleted successfully. :white_check_mark:\nAll child Topics have been removed as well."
+  many: "{cnt} topics have been deleted successfully. :white_check_mark:\nAll child Topics have been removed as well."
 log_topics_unregistered:
-  one: "The **topic** {topics} has been **removed**."
-  many: "{cnt} **topics** have been **removed**: {topics}"
+  one: "The **topic** {topics} has been **removed**.\nAll child Topics have been removed as well."
+  many: "{cnt} **topics** have been **removed**: {topics}\nAll child Topics have been removed as well."
 
 single_un_assign_help: "Hey, did you know, that you can assign multiple topics by using `.+ TOPIC1,TOPIC2,TOPIC3` and remove multiple topics the same way using `.-`?\nTo remove all your Topics you can use `.- *`"
 
