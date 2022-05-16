@@ -1,9 +1,10 @@
 import string
 
-from discord import Member, Embed, Role
-from discord.ext import commands
+from discord import Member, Embed, Role, Message
+from discord.ext import commands, tasks
 from discord.ext.commands import guild_only, Context, CommandError, UserInputError
 
+import PyDrocsid
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply, Confirmation
 from PyDrocsid.database import db, select, db_wrapper, filter_by, delete
