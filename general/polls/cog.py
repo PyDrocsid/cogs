@@ -54,20 +54,18 @@ class PollOption:
             raise CommandError(t.empty_option)
 
         emoji_candidate, *text = line.lstrip().split()
-        text = " ".join(text)
+        self.option = " ".join(text)
 
         custom_emoji_match = re.fullmatch(r"<a?:[a-zA-Z0-9_]+:(\d+)>", emoji_candidate)
+
         if custom_emoji := ctx.bot.get_emoji(int(custom_emoji_match.group(1))) if custom_emoji_match else None:
             self.emoji = str(custom_emoji)
-            self.option = text.strip()
         elif (unicode_emoji := emoji_candidate) in emoji_to_name:
             self.emoji = unicode_emoji
-            self.option = text.strip()
         elif (match := re.match(r"^:([^: ]+):$", emoji_candidate)) and (
             unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
         ):
             self.emoji = unicode_emoji
-            self.option = text.strip()
         else:
             self.emoji = DEFAULT_EMOJIS[number]
             self.option = line
