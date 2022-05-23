@@ -1,4 +1,3 @@
-import re
 import string
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
@@ -19,7 +18,7 @@ from discord import (
     SelectOption,
 )
 from discord.ext import commands, tasks
-from discord.ext.commands import CommandError, Context, UserInputError, guild_only
+from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, UserInputError, guild_only
 from discord.ui import Select, View
 from discord.utils import format_dt, utcnow
 
@@ -49,26 +48,26 @@ DEFAULT_EMOJIS = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii
 
 
 class PollOption:
-    def __init__(self, ctx: Context, line: str, number: int):
+    emoji: str = None
+    option: str = None
+
+    async def init(self, ctx: Context, line: str, number: int):
         if not line:
             raise CommandError(t.empty_option)
 
-        emoji_candidate, *text = line.lstrip().split()
-        self.option = " ".join(text)
+        emoji_candidate, *option = line.split()
+        option = " ".join(option)
+        try:
+            self.emoji = str(await EmojiConverter().convert(ctx, emoji_candidate))
+        except EmojiNotFound:
+            if (unicode_emoji := emoji_candidate) in emoji_to_name:
+                self.emoji = unicode_emoji
+            else:
+                self.emoji = DEFAULT_EMOJIS[number]
+                option = f"{emoji_candidate} {option}"
+        self.option = option
 
-        custom_emoji_match = re.fullmatch(r"<a?:[a-zA-Z0-9_]+:(\d+)>", emoji_candidate)
-
-        if custom_emoji := ctx.bot.get_emoji(int(custom_emoji_match.group(1))) if custom_emoji_match else None:
-            self.emoji = str(custom_emoji)
-        elif (unicode_emoji := emoji_candidate) in emoji_to_name:
-            self.emoji = unicode_emoji
-        elif (match := re.match(r"^:([^: ]+):$", emoji_candidate)) and (
-            unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
-        ):
-            self.emoji = unicode_emoji
-        else:
-            self.emoji = DEFAULT_EMOJIS[number]
-            self.option = line
+        return self
 
     def __str__(self):
         return f"{self.emoji} {self.option}" if self.option else self.emoji
@@ -151,7 +150,7 @@ async def send_poll(
     if field and len(options) >= MAX_OPTIONS:
         raise CommandError(t.too_many_options(MAX_OPTIONS - 1))
 
-    options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
+    options = [await PollOption().init(ctx, line, i) for i, line in enumerate(options)]
 
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
