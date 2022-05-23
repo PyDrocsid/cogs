@@ -150,19 +150,28 @@ class ModCog(Cog, name="Mod Tools"):
             if mute.days != -1 and utcnow() >= mute.timestamp + timedelta(days=mute.days):
                 if member:
                     await member.remove_roles(mute_role)
-                    await member.remove_timeout()
+                    try:
+                        await member.remove_timeout()
+                    except Forbidden:
+                        await send_alert(guild, t.cannot_remove_timeout(member.mention, member.id))
                 else:
                     member = mute.member, mute.member_name
 
                 await send_to_changelog_mod(guild, None, Colors.unmute, t.log_unmuted, member, t.log_unmuted_expired)
                 await Mute.deactivate(mute.id)
             elif member and mute.days == -1:
-                await member.timeout_for(MAX_TIMEOUT)
+                try:
+                    await member.timeout_for(MAX_TIMEOUT)
+                except Forbidden:
+                    await send_alert(guild, t.cannot_update_timeout(member.mention, member.id))
             elif member and (
                 not timeout or timeout + timedelta(seconds=2) < mute.timestamp + timedelta(days=mute.days)
             ):
                 delta = min(mute.timestamp + timedelta(days=mute.days) - utcnow(), MAX_TIMEOUT)
-                await member.timeout_for(delta)
+                try:
+                    await member.timeout_for(delta)
+                except Forbidden:
+                    await send_alert(guild, t.cannot_update_timeout(member.mention, member.id))
 
     @log_auto_kick.subscribe
     async def handle_log_auto_kick(self, member: Member):
