@@ -1,7 +1,7 @@
 import re
 from asyncio import sleep
 from datetime import datetime, timedelta
-from typing import List, Tuple, Type, TypeVar, Any, Callable, Awaitable
+from typing import Tuple, Type, TypeVar, Any, Callable, Awaitable
 
 from dateutil.relativedelta import relativedelta
 from discord import (
@@ -85,7 +85,7 @@ async def load_entries():
 
                 expiration_timestamp = entry.timestamp + timedelta(minutes=entry.minutes)
 
-                await pipe.hmset(entry_key, {str(entry.id): str(expiration_timestamp)})
+                await pipe.hset(entry_key, str(entry.id), str(expiration_timestamp))
 
             await pipe.expire(entry_key, CACHE_TTL)
             await pipe.execute()
@@ -120,7 +120,7 @@ def time_to_units(minutes: int | float) -> str:
 async def get_mute_role(guild: Guild) -> Role:
     mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
     if mute_role is None:
-        await send_alert(guild, t.mute_role_not_set)
+        await send_alert(guild, t.mute.role_not_set)
     return mute_role
 
 
@@ -217,7 +217,7 @@ async def send_to_changelog_mod(
         embed.add_field(name=t.log_field.mod, value=f"<@{mod.id}>", inline=True)
 
     if original_reason:
-        embed.add_field(name=t.log_field_original_reason, value=original_reason, inline=True)
+        embed.add_field(name=t.log_field.original_reason, value=original_reason, inline=True)
 
     embed.add_field(name=t.log_field.reason, value=reason, inline=False)
 
@@ -269,9 +269,9 @@ class ModCog(Cog, name="Mod Tools"):
                     guild=guild,
                     message=None,
                     colour=Colors.unban,
-                    title=t.log_unbanned,
+                    title=t.ban.log_undo,
                     member=user,
-                    reason=t.log_unbanned_expired,
+                    reason=t.ban.log_undo_expired,
                 )
 
         mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
@@ -299,9 +299,9 @@ class ModCog(Cog, name="Mod Tools"):
                     guild=guild,
                     message=None,
                     colour=Colors.unmute,
-                    title=t.log_unmuted,
+                    title=t.mute.log_undo,
                     member=member,
-                    reason=t.log_unmuted_expired,
+                    reason=t.mute.log_undo_expired,
                 )
 
                 await Mute.deactivate(mute.id)
@@ -845,7 +845,7 @@ class ModCog(Cog, name="Mod Tools"):
         time: int | None
         minutes = time
 
-        active_entries: List[TBase] = sorted(
+        active_entries: list[TBase] = sorted(
             await db.all(filter_by(model, active=True, member=user.id)), key=lambda active_entry: active_entry.timestamp
         )
 
@@ -987,7 +987,7 @@ class ModCog(Cog, name="Mod Tools"):
                 minutes = entry.minutes
 
         if not was_done:
-            raise UserCommandError(user, t.not_muted)
+            raise UserCommandError(user, translation.not_done)
 
         await invalidate_entry_cache()
 
@@ -1027,9 +1027,7 @@ class ModCog(Cog, name="Mod Tools"):
         if not await confirm_action(ctx, conf_embed, t.report_confirmed, t.report_canceled):
             return
 
-        attachments = ctx.message.attachments
-        evidence = attachments[0] if attachments else None
-        evidence_url = evidence.url if attachments else None
+        evidence, evidence_url = extract_evidence(ctx.message)
 
         await Report.create(user.id, str(user), ctx.author.id, reason, evidence_url)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
@@ -1088,10 +1086,13 @@ class ModCog(Cog, name="Mod Tools"):
         if user == self.bot.user or await is_teamler(user):
             raise UserCommandError(user, t.mute.cannot)
 
+        mute_role: Role | None = await get_mute_role(ctx.guild)
+
+        if mute_role is None:
+            raise CommandError(t.mute.role_not_set)
+
         if not await self.handle_timed(ctx, user, time, reason, t.mute, Mute, Colors.mute, ""):
             return
-
-        mute_role: Role = await get_mute_role(ctx.guild)
 
         if isinstance(user, Member):
             await user.add_roles(mute_role)
@@ -1126,7 +1127,7 @@ class ModCog(Cog, name="Mod Tools"):
         if not (mute := await self.handle_delete_timed(ctx, mute_id, t.mute, Mute, Colors.mute)):
             return
 
-        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=mute.member))
+        active_mutes: list[Mute] = await db.all(filter_by(Mute, active=True, member=mute.member))
 
         if len(active_mutes) == 1 and mute in active_mutes:
             user = ctx.guild.get_member(mute.member)
@@ -1142,12 +1143,13 @@ class ModCog(Cog, name="Mod Tools"):
         user: User | Member
 
         async def unmute_inner(context: Context, muted_user: Member | User) -> bool:
-            mute_role: Role = await get_mute_role(context.guild)
+            mute_role: Role | None = await get_mute_role(context.guild)
 
             was_muted = False
             if isinstance(muted_user, Member) and mute_role in muted_user.roles:
                 was_muted = True
-                await muted_user.remove_roles(mute_role)
+                if mute_role is not None:
+                    await muted_user.remove_roles(mute_role)
 
             return was_muted
 
@@ -1206,7 +1208,7 @@ class ModCog(Cog, name="Mod Tools"):
         if isinstance(user, Member) and (user.top_role >= ctx.guild.me.top_role or user.id == ctx.guild.owner_id):
             raise UserCommandError(user, t.cannot_ban)
 
-        active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
+        active_mutes: list[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
 
         if not await self.handle_timed(
             ctx, user, time, reason, t.ban, Ban, Colors.ban, f"\n\n{t.ban.previously_muted}" if active_mutes else ""
@@ -1248,7 +1250,7 @@ class ModCog(Cog, name="Mod Tools"):
         if not (ban := await self.handle_delete_timed(ctx, ban_id, t.ban, Ban, Colors.ban)):
             return
 
-        active_bans: List[Ban] = await db.all(filter_by(Ban, active=True, member=ban.member))
+        active_bans: list[Ban] = await db.all(filter_by(Ban, active=True, member=ban.member))
 
         if len(active_bans) == 1 and ban in active_bans:
             user = ctx.guild.get_member(ban.member)
