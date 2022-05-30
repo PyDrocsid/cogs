@@ -1,8 +1,8 @@
 from typing import Union
 
-from sqlalchemy import Column, BigInteger
+from sqlalchemy import BigInteger, Column
 
-from PyDrocsid.database import db, filter_by, select, delete, Base
+from PyDrocsid.database import Base, db, delete, filter_by, select
 
 
 class LogExclude(Base):

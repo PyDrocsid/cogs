@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Optional, Union
 
 from discord.utils import utcnow
-from sqlalchemy import Column, String, BigInteger, Boolean, Integer, Text
+from sqlalchemy import BigInteger, Boolean, Column, Integer, String, Text
 
-from PyDrocsid.database import db, UTCDateTime, Base
+from PyDrocsid.database import Base, UTCDateTime, db
 
 
 class AllowedInvite(Base):

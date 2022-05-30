@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Union
 
-from sqlalchemy import Column, BigInteger, Boolean
+from sqlalchemy import BigInteger, Boolean, Column
 
-from PyDrocsid.database import db, select, Base
+from PyDrocsid.database import Base, db, select
 
 
 class RoleAuth(Base):

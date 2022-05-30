@@ -2,13 +2,13 @@ import json
 from datetime import timedelta
 from typing import Optional, Union
 
-from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member, Forbidden
+from discord import Embed, Forbidden, Guild, Member, Message, RawMessageDeleteEvent, TextChannel
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Group, Command
-from discord.utils import utcnow
+from discord.ext.commands import Command, CommandError, Context, Group, UserInputError, guild_only
+from discord.utils import format_dt, snowflake_time, utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.database import db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.environment import CACHE_TTL
@@ -16,12 +16,14 @@ from PyDrocsid.logger import get_logger
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, check_message_send_permissions
+
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission
 from .settings import LoggingSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction, ignore_message_edit
+from ...pubsub import can_respond_on_reaction, ignore_message_delete, ignore_message_edit, send_alert, send_to_changelog
+
 
 logger = get_logger(__name__)
 
@@ -135,6 +137,10 @@ class LoggingCog(Cog, name="Logging"):
     async def handle_ignore_message_edit(self, message: Message):
         await redis.setex(f"ignore_message_edit:{message.channel.id}:{message.id}", CACHE_TTL, 1)
 
+    @ignore_message_delete.subscribe
+    async def handle_ignore_message_delete(self, message: Message):
+        await redis.setex(f"ignore_message_delete:{message.channel.id}:{message.id}", CACHE_TTL, 1)
+
     async def on_ready(self):
         try:
             self.cleanup_loop.start()
@@ -176,12 +182,16 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(after.channel.id):
             return
         await redis.delete(key)
-        embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=utcnow())
+        embed = Embed(title=t.message_edited, color=Colors.edit)
         embed.set_author(name=str(before.author), icon_url=before.author.display_avatar.url)
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
         embed.add_field(name=t.author_id, value=before.author.id)
         embed.add_field(name=t.message_id, value=before.id)
+        embed.add_field(
+            name=t.created_at,
+            value=f"{format_dt(before.created_at, style='D')} {format_dt(before.created_at, style='T')}",
+        )
         embed.add_field(name=t.url, value=before.jump_url, inline=False)
         add_field(embed, t.old_content, old_message)
         add_field(embed, t.new_content, after.content)
@@ -197,19 +207,25 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(message.channel.id):
             return
 
-        embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=utcnow())
+        embed = Embed(title=t.message_edited, color=Colors.edit)
         embed.add_field(name=t.channel, value=channel.mention)
         if message is not None:
             embed.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
             embed.add_field(name=t.author, value=message.author.mention)
             embed.add_field(name=t.author_id, value=message.author.id)
             embed.add_field(name=t.message_id, value=message.id)
+            embed.add_field(
+                name=t.created_at,
+                value=f"{format_dt(message.created_at, style='D')} {format_dt(message.created_at, style='T')}",
+            )
             embed.add_field(name=t.url, value=message.jump_url, inline=False)
             add_field(embed, t.new_content, message.content)
         await edit_channel.send(embed=embed)
 
     async def on_message_delete(self, message: Message):
         if message.guild is None:
+            return
+        if await redis.delete(f"ignore_message_delete:{message.channel.id}:{message.id}"):
             return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
@@ -219,12 +235,16 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(message.channel.id):
             return
 
-        embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=utcnow())
+        embed = Embed(title=t.message_deleted, color=Colors.delete)
         embed.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
         embed.add_field(name=t.channel, value=message.channel.mention)
         embed.add_field(name=t.author, value=message.author.mention)
         embed.add_field(name=t.author_id, value=message.author.id)
         embed.add_field(name=t.message_id, value=message.id)
+        embed.add_field(
+            name=t.created_at,
+            value=f"{format_dt(message.created_at, style='D')} {format_dt(message.created_at, style='T')}",
+        )
         add_field(embed, t.old_content, message.content)
         if message.attachments:
             out = []
@@ -241,13 +261,15 @@ class LoggingCog(Cog, name="Logging"):
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
             return
+        if await redis.delete(f"ignore_message_delete:{event.channel_id}:{event.message_id}"):
+            return
         if (delete_channel := await self.get_logging_channel(LoggingSettings.delete_channel)) is None:
             return
         await redis.delete(f"little_diff_message_edit:{event.message_id}")
         if await LogExclude.exists(event.channel_id):
             return
 
-        embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=utcnow())
+        embed = Embed(title=t.message_deleted, color=Colors.delete)
         channel: Optional[TextChannel] = self.bot.get_channel(event.channel_id)
         if channel is not None:
             if await is_logging_channel(channel):
@@ -255,6 +277,10 @@ class LoggingCog(Cog, name="Logging"):
 
             embed.add_field(name=t.channel, value=channel.mention)
             embed.add_field(name=t.message_id, value=event.message_id, inline=False)
+            created_at = snowflake_time(event.message_id)
+            embed.add_field(
+                name=t.created_at, value=f"{format_dt(created_at, style='D')} {format_dt(created_at, style='T')}"
+            )
         await delete_channel.send(embed=embed)
 
     async def on_member_join(self, member: Member):

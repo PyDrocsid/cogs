@@ -1,35 +1,39 @@
 import re
 from datetime import datetime, timedelta
-from typing import Optional, Union, List, Tuple
+from typing import List, Optional, Tuple, Union
 
-from discord import Role, Guild, Member, Forbidden, HTTPException, User, Embed, NotFound, Message
+from discord import Embed, Forbidden, Guild, HTTPException, Member, Message, NotFound, Role, User
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, Converter
+from discord.ext.commands import CommandError, Context, Converter, guild_only
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, UserCommandError
+from PyDrocsid.command import UserCommandError, reply
 from PyDrocsid.converter import UserMemberConverter
-from PyDrocsid.database import db, filter_by, db_wrapper
+from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import is_teamler, check_role_assignable
+from PyDrocsid.util import check_role_assignable, is_teamler
+
 from .colors import Colors
-from .models import Mute, Ban, Report, Warn, Kick
+from .models import Ban, Kick, Mute, Report, Warn
 from .permissions import ModPermission
 from ...contributor import Contributor
 from ...pubsub import (
-    send_to_changelog,
-    log_auto_kick,
-    get_userlog_entries,
     get_user_info_entries,
     get_user_status_entries,
+    get_userlog_entries,
+    log_auto_kick,
     revoke_verification,
     send_alert,
+    send_to_changelog,
 )
+
 
 tg = t.g
 t = t.mod
+
+MAX_TIMEOUT = timedelta(days=28)
 
 
 class DurationConverter(Converter):
@@ -138,15 +142,36 @@ class ModCog(Cog, name="Mod Tools"):
             await send_alert(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
             return
 
+        mute: Mute
         async for mute in await db.stream(filter_by(Mute, active=True)):
+            member = guild.get_member(mute.member)
+            timeout: datetime | None = member.communication_disabled_until
+
             if mute.days != -1 and utcnow() >= mute.timestamp + timedelta(days=mute.days):
-                if member := guild.get_member(mute.member):
+                if member:
                     await member.remove_roles(mute_role)
+                    try:
+                        await member.remove_timeout()
+                    except Forbidden:
+                        await send_alert(guild, t.cannot_remove_timeout(member.mention, member.id))
                 else:
                     member = mute.member, mute.member_name
 
                 await send_to_changelog_mod(guild, None, Colors.unmute, t.log_unmuted, member, t.log_unmuted_expired)
                 await Mute.deactivate(mute.id)
+            elif member and mute.days == -1:
+                try:
+                    await member.timeout_for(MAX_TIMEOUT)
+                except Forbidden:
+                    await send_alert(guild, t.cannot_update_timeout(member.mention, member.id))
+            elif member and (
+                not timeout or timeout + timedelta(seconds=2) < mute.timestamp + timedelta(days=mute.days)
+            ):
+                delta = min(mute.timestamp + timedelta(days=mute.days) - utcnow(), MAX_TIMEOUT)
+                try:
+                    await member.timeout_for(delta)
+                except Forbidden:
+                    await send_alert(guild, t.cannot_update_timeout(member.mention, member.id))
 
     @log_auto_kick.subscribe
     async def handle_log_auto_kick(self, member: Member):
@@ -335,8 +360,11 @@ class ModCog(Cog, name="Mod Tools"):
 
         if isinstance(user, Member):
             check_role_assignable(mute_role)
+            try:
+                await user.timeout_for(min(timedelta(days=days), MAX_TIMEOUT) if days else MAX_TIMEOUT)
+            except Forbidden:
+                raise CommandError(t.cannot_mute)
             await user.add_roles(mute_role)
-            await user.move_to(None)
 
         active_mutes: List[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
         for mute in active_mutes:
@@ -394,6 +422,10 @@ class ModCog(Cog, name="Mod Tools"):
         if isinstance(user, Member) and mute_role in user.roles:
             was_muted = True
             check_role_assignable(mute_role)
+            try:
+                await user.remove_timeout()
+            except Forbidden:
+                raise CommandError(t.cannot_unmute)
             await user.remove_roles(mute_role)
 
         async for mute in await db.stream(filter_by(Mute, active=True, member=user.id)):
