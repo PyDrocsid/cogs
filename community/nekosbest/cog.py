@@ -1,4 +1,4 @@
-from aiohttp import ClientSession
+import aiohttp
 
 from discord import Embed
 from discord.ext import commands
@@ -18,7 +18,7 @@ t = t.nekosbest
 
 
 async def get_endpoints() -> list:
-    async with ClientSession() as session:
+    async with aiohttp.ClientSession() as session:
         resp = await session.get("https://nekos.best/api/v2/endpoints")
         endpoints: dict = await resp.json()
 
@@ -26,7 +26,7 @@ async def get_endpoints() -> list:
 
 
 async def get_request(endpoint: str) -> dict | None:
-    async with ClientSession() as session:
+    async with aiohttp.ClientSession() as session:
         resp = await session.get(f"https://nekos.best/api/v2/{endpoint}")
         result: dict = await resp.json()
         try:
