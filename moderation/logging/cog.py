@@ -68,8 +68,8 @@ async def is_logging_channel(channel: TextChannel) -> bool:
     return False
 
 
-def _dump_embeds(embeds: list[Embed], file_name: str) -> list[File]:
-    return [File(filename=file_name, fp=StringIO(json.dumps(embed.to_dict(), indent=4))) for embed in embeds]
+def _dump_embeds(embeds: list[Embed], file_name: str) -> File:
+    return File(filename=file_name, fp=StringIO(json.dumps([embed.to_dict() for embed in embeds], indent=4)))
 
 
 channels: list[str] = []
@@ -202,9 +202,9 @@ class LoggingCog(Cog, name="Logging"):
         add_field(embed, t.new_content, after.content)
         files = []
         if before.embeds:
-            files.append(*_dump_embeds(before.embeds, t.before_edited_embeds))
+            files.append(_dump_embeds(before.embeds, t.before_edited_embeds))
         if after.embeds:
-            files.append(*_dump_embeds(after.embeds, t.after_edited_embeds))
+            files.append(_dump_embeds(after.embeds, t.after_edited_embeds))
 
         await edit_channel.send(embed=embed, files=files)
 
@@ -231,10 +231,10 @@ class LoggingCog(Cog, name="Logging"):
             )
             embed.add_field(name=t.url, value=message.jump_url, inline=False)
             add_field(embed, t.new_content, message.content)
-        files = None
+        file = None
         if message.embeds:
-            files = _dump_embeds(message.embeds, t.after_edited_embeds)
-        await edit_channel.send(embed=embed, files=files)
+            file = _dump_embeds(message.embeds, t.after_edited_embeds)
+        await edit_channel.send(embed=embed, file=file)
 
     async def on_message_delete(self, message: Message):
         if message.guild is None:
@@ -273,7 +273,7 @@ class LoggingCog(Cog, name="Logging"):
         files = None
         if message.embeds:
             files = _dump_embeds(message.embeds, t.after_deleted_embeds)
-        await delete_channel.send(embed=embed, files=files)
+        await delete_channel.send(embed=embed, file=files)
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
