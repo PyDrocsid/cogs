@@ -36,6 +36,7 @@ mute: ":mute: Mute"
 unmute: ":loud_sound: Mute"
 mute_role_not_set: User could not be muted because no mute role is configured.
 cannot_mute: This member cannot be muted.
+cannot_unmute: This member cannot be unmuted.
 already_muted: User is already muted for the given period of time.
 muted:
   one: "{} just muted you on {} for {cnt} day:```\n{}\n```"
@@ -48,6 +49,8 @@ unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
 cannot_assign_mute_role: Cannot manage mute role `@{}` ({})
+cannot_update_timeout: Could not update timeout on {} ({})
+cannot_remove_timeout: Could not remove timeout from {} ({})
 
 kick: ":x: Kick"
 kicked: "{} just kicked you from {}:```\n{}\n```"
