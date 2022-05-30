@@ -8,8 +8,10 @@ from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.nekosbest
