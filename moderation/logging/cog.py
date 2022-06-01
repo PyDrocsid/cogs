@@ -1,14 +1,15 @@
 import json
 from datetime import timedelta
+from io import StringIO
 from typing import Optional, Union
 
-from discord import TextChannel, Message, Embed, RawMessageDeleteEvent, Guild, Member, Forbidden
+from discord import Embed, File, Forbidden, Guild, Member, Message, RawMessageDeleteEvent, TextChannel
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, UserInputError, Group, Command
-from discord.utils import utcnow
+from discord.ext.commands import Command, CommandError, Context, Group, UserInputError, guild_only
+from discord.utils import format_dt, snowflake_time, utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.database import db_wrapper
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.environment import CACHE_TTL
@@ -16,12 +17,14 @@ from PyDrocsid.logger import get_logger
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import calculate_edit_distance, check_message_send_permissions
+
 from .colors import Colors
 from .models import LogExclude
 from .permissions import LoggingPermission
 from .settings import LoggingSettings
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert, can_respond_on_reaction, ignore_message_edit, ignore_message_delete
+from ...pubsub import can_respond_on_reaction, ignore_message_delete, ignore_message_edit, send_alert, send_to_changelog
+
 
 logger = get_logger(__name__)
 
@@ -65,6 +68,10 @@ async def is_logging_channel(channel: TextChannel) -> bool:
     return False
 
 
+def _dump_embeds(embeds: list[Embed], file_name: str) -> File:
+    return File(filename=file_name, fp=StringIO(json.dumps([embed.to_dict() for embed in embeds], indent=4)))
+
+
 channels: list[str] = []
 
 
@@ -104,7 +111,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
 
 
 class LoggingCog(Cog, name="Logging"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0, Contributor.NekoFanatic]
 
     async def get_logging_channel(self, setting: LoggingSettings) -> Optional[TextChannel]:
         return self.bot.get_channel(await setting.get())
@@ -171,7 +178,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         mindiff: int = await LoggingSettings.edit_mindiff.get()
         old_message = await redis.get(key := f"little_diff_message_edit:{before.id}") or before.content
-        if calculate_edit_distance(old_message, after.content) < mindiff:
+        if calculate_edit_distance(old_message, after.content) < mindiff and before.embeds == after.embeds:
             if not await redis.exists(key):
                 await redis.setex(key, 60 * 60 * 24, before.content)
             return
@@ -180,16 +187,26 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(after.channel.id):
             return
         await redis.delete(key)
-        embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=utcnow())
+        embed = Embed(title=t.message_edited, color=Colors.edit)
         embed.set_author(name=str(before.author), icon_url=before.author.display_avatar.url)
         embed.add_field(name=t.channel, value=before.channel.mention)
         embed.add_field(name=t.author, value=before.author.mention)
         embed.add_field(name=t.author_id, value=before.author.id)
         embed.add_field(name=t.message_id, value=before.id)
+        embed.add_field(
+            name=t.created_at,
+            value=f"{format_dt(before.created_at, style='D')} {format_dt(before.created_at, style='T')}",
+        )
         embed.add_field(name=t.url, value=before.jump_url, inline=False)
         add_field(embed, t.old_content, old_message)
         add_field(embed, t.new_content, after.content)
-        await edit_channel.send(embed=embed)
+        files = []
+        if before.embeds:
+            files.append(_dump_embeds(before.embeds, t.before_edited_embeds))
+        if after.embeds:
+            files.append(_dump_embeds(after.embeds, t.after_edited_embeds))
+
+        await edit_channel.send(embed=embed, files=files)
 
     async def on_raw_message_edit(self, channel: TextChannel, message: Message):
         if message.guild is None:
@@ -201,16 +218,23 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(message.channel.id):
             return
 
-        embed = Embed(title=t.message_edited, color=Colors.edit, timestamp=utcnow())
+        embed = Embed(title=t.message_edited, color=Colors.edit)
         embed.add_field(name=t.channel, value=channel.mention)
         if message is not None:
             embed.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
             embed.add_field(name=t.author, value=message.author.mention)
             embed.add_field(name=t.author_id, value=message.author.id)
             embed.add_field(name=t.message_id, value=message.id)
+            embed.add_field(
+                name=t.created_at,
+                value=f"{format_dt(message.created_at, style='D')} {format_dt(message.created_at, style='T')}",
+            )
             embed.add_field(name=t.url, value=message.jump_url, inline=False)
             add_field(embed, t.new_content, message.content)
-        await edit_channel.send(embed=embed)
+        file = None
+        if message.embeds:
+            file = _dump_embeds(message.embeds, t.after_edited_embeds)
+        await edit_channel.send(embed=embed, file=file)
 
     async def on_message_delete(self, message: Message):
         if message.guild is None:
@@ -225,12 +249,16 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(message.channel.id):
             return
 
-        embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=utcnow())
+        embed = Embed(title=t.message_deleted, color=Colors.delete)
         embed.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
         embed.add_field(name=t.channel, value=message.channel.mention)
         embed.add_field(name=t.author, value=message.author.mention)
         embed.add_field(name=t.author_id, value=message.author.id)
         embed.add_field(name=t.message_id, value=message.id)
+        embed.add_field(
+            name=t.created_at,
+            value=f"{format_dt(message.created_at, style='D')} {format_dt(message.created_at, style='T')}",
+        )
         add_field(embed, t.old_content, message.content)
         if message.attachments:
             out = []
@@ -242,7 +270,10 @@ class LoggingCog(Cog, name="Logging"):
                     size /= 1000
                 out.append(f"[{attachment.filename}]({attachment.url}) ({size:.1f} {_unit})")
             embed.add_field(name=t.attachments, value="\n".join(out), inline=False)
-        await delete_channel.send(embed=embed)
+        files = None
+        if message.embeds:
+            files = _dump_embeds(message.embeds, t.after_deleted_embeds)
+        await delete_channel.send(embed=embed, file=files)
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:
@@ -255,7 +286,7 @@ class LoggingCog(Cog, name="Logging"):
         if await LogExclude.exists(event.channel_id):
             return
 
-        embed = Embed(title=t.message_deleted, color=Colors.delete, timestamp=utcnow())
+        embed = Embed(title=t.message_deleted, color=Colors.delete)
         channel: Optional[TextChannel] = self.bot.get_channel(event.channel_id)
         if channel is not None:
             if await is_logging_channel(channel):
@@ -263,6 +294,10 @@ class LoggingCog(Cog, name="Logging"):
 
             embed.add_field(name=t.channel, value=channel.mention)
             embed.add_field(name=t.message_id, value=event.message_id, inline=False)
+            created_at = snowflake_time(event.message_id)
+            embed.add_field(
+                name=t.created_at, value=f"{format_dt(created_at, style='D')} {format_dt(created_at, style='T')}"
+            )
         await delete_channel.send(embed=embed)
 
     async def on_member_join(self, member: Member):

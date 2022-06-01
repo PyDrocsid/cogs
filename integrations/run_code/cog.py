@@ -3,7 +3,7 @@ import re
 from aiohttp import ClientError
 from discord import Embed
 from discord.ext import commands
-from discord.ext.commands import CommandError, UserInputError, Context
+from discord.ext.commands import CommandError, Context, UserInputError
 from sentry_sdk import capture_exception
 
 from PyDrocsid.cog import Cog
@@ -12,8 +12,10 @@ from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.logger import get_logger
 from PyDrocsid.material_colors import MaterialColors
 from PyDrocsid.translations import t
+
 from .api import PistonAPI, PistonException
 from ...contributor import Contributor
+
 
 logger = get_logger(__name__)
 

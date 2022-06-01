@@ -7,7 +7,7 @@ import requests
 
 
 def md5(data):
-    return hashlib.md5(data[7:33]).hexdigest().encode()  # noqa: S303
+    return hashlib.md5(data[7:33]).hexdigest().encode()  # noqa: S324
 
 
 class CleverBot:
@@ -121,9 +121,7 @@ class CleverBot:
         return out
 
     def set_cookie(self, name, value):
-        # noinspection PyProtectedMember,PyUnresolvedReferences
-        # skipcq: PYL-W0212
-        self.session.cookies._cookies["www.cleverbot.com"]["/"][name] = http.cookiejar.Cookie(
+        self.session.cookies._cookies["www.cleverbot.com"]["/"][name] = http.cookiejar.Cookie(  # noqa
             version=0,
             name=name,
             value=value,

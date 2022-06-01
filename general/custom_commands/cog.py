@@ -7,16 +7,16 @@ from typing import Optional
 
 import requests
 from aiohttp import ClientSession
-from discord import Embed, TextChannel, NotFound, Forbidden, HTTPException, AllowedMentions, User
+from discord import AllowedMentions, Embed, Forbidden, HTTPException, NotFound, TextChannel, User
 from discord.ext import commands
-from discord.ext.commands import Context, guild_only, UserInputError, Converter, CommandError, Command
+from discord.ext.commands import Command, CommandError, Context, Converter, UserInputError, guild_only
 from urllib3.exceptions import LocationParseError
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs, confirm, no_documentation, add_reactions
+from PyDrocsid.command import Confirmation, add_reactions, docs, no_documentation, reply
 from PyDrocsid.command_edit import link_response
-from PyDrocsid.config import Contributor, Config
+from PyDrocsid.config import Config, Contributor
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.logger import get_logger
@@ -24,11 +24,13 @@ from PyDrocsid.permission import BasePermissionLevel
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
 from PyDrocsid.util import check_message_send_permissions
+
 from .colors import Colors
-from .models import CustomCommand, Alias
+from .models import Alias, CustomCommand
 from .permissions import CustomCommandsPermission
-from ...administration.permissions.cog import PermissionsCog, PermissionLevelConverter
-from ...pubsub import send_to_changelog, send_alert
+from ...administration.permissions.cog import PermissionLevelConverter, PermissionsCog
+from ...pubsub import send_alert, send_to_changelog
+
 
 logger = get_logger(__name__)
 
@@ -77,12 +79,8 @@ async def send_custom_command_message(
     check_message_send_permissions(channel, check_embed=any(msg.get("embeds") for msg in messages))
 
     if custom_command.requires_confirmation and not test:
-        conf_embed = Embed(title=t.confirmation, description=t.confirm(custom_command.name, channel.mention))
-        async with confirm(ctx, conf_embed) as (result, msg):
-            if not result:
-                return
-            if msg:
-                await msg.delete(delay=5)
+        if not await Confirmation().run(ctx, t.confirm(custom_command.name, channel.mention)):
+            return
 
     if custom_command.delete_command and not test:
         try:
@@ -190,7 +188,7 @@ async def load_discohook(url: str) -> str:
         raise CommandError(t.invalid_url_instructions(DISCOHOOK_EMPTY_MESSAGE))
 
     try:
-        url = await run_in_thread(lambda: requests.head(url, allow_redirects=True).url)
+        url = (await run_in_thread(requests.head)(url, allow_redirects=True)).url
     except (KeyError, AttributeError, requests.RequestException, UnicodeError, ConnectionError, LocationParseError):
         raise CommandError(t.invalid_url)
 
@@ -246,14 +244,8 @@ def test_name(name: str):
 
 
 async def ask_cc_test(ctx: Context, command: CustomCommand):
-    embed = Embed(
-        title=t.test_custom_command.title,
-        description=t.test_custom_command.description(ctx.prefix),
-        color=Colors.CustomCommands,
-    )
-    async with confirm(ctx, embed) as (result, _):
-        if not result:
-            return
+    if not await Confirmation().run(ctx, t.test_custom_command.description(ctx.prefix)):
+        return
 
     await send_custom_command_message(ctx, command, ctx.channel, test=True)
 

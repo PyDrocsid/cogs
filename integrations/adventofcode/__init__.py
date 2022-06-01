@@ -1,1 +1,4 @@
-from .cog import AdventOfCodeCog, AOCConfig
+from .cog import AdventOfCodeCog
+
+
+__all__ = ["AdventOfCodeCog"]

@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Union
 
 from discord.utils import utcnow
-from sqlalchemy import Column, BigInteger, Boolean, Integer, Text
+from sqlalchemy import BigInteger, Boolean, Column, Integer, Text
 
-from PyDrocsid.database import Base, db, select, UTCDateTime
+from PyDrocsid.database import Base, UTCDateTime, db, select
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 
