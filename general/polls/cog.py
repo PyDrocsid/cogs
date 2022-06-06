@@ -162,7 +162,7 @@ async def send_poll(
         end_time = calc_end_time(deadline)
         embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M")))
 
-    if len(set(map(lambda x: x.emoji, options))) < len(options):
+    if len({option.emoji for option in options}) < len(options):
         raise CommandError(t.option_duplicated)
 
     for option in options:
@@ -586,7 +586,7 @@ class PollsCog(Cog, name="Polls"):
         else:
             msg: str = t.votes.set(cnt=votes)
 
-        if not 0 < votes < 25:
+        if not 0 < votes < MAX_OPTIONS:
             votes = 0
 
         await PollsDefaultSettings.max_choices.set(votes)
