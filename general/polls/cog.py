@@ -136,7 +136,7 @@ async def send_poll(
     poll_args: str,
     max_choices: int = None,
     field: Optional[tuple[str, str]] = None,
-    deadline: Optional[float] = None,
+    deadline: Optional[int] = None,
 ) -> tuple[Message, Message, list[tuple[str, str]], str]:
     """sends a poll embed + view message containing the select field"""
 
