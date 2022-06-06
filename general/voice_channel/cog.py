@@ -215,6 +215,7 @@ class ControlMessage(View):
             await self.cog.lock_channel(interaction.user, self.channel, voice_channel, hide=False)
         else:
             await self.cog.unlock_channel(interaction.user, self.channel, voice_channel)
+        await interaction.response.defer()
 
     @ui.button()
     @db_wrapper
@@ -231,6 +232,7 @@ class ControlMessage(View):
             await self.cog.lock_channel(interaction.user, self.channel, voice_channel, hide=True)
         else:
             await self.cog.unhide_channel(interaction.user, self.channel, voice_channel)
+        await interaction.response.defer()
 
 
 class VoiceChannelCog(Cog, name="Voice Channels"):
