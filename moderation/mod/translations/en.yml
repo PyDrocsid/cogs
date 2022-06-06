@@ -49,6 +49,8 @@ unmuted_response: "User unmuted successfully :white_check_mark:"
 log_unmuted: ":loud_sound: Member unmuted"
 not_muted: User is not muted.
 cannot_assign_mute_role: Cannot manage mute role `@{}` ({})
+cannot_update_timeout: Could not update timeout on {} ({})
+cannot_remove_timeout: Could not remove timeout from {} ({})
 
 kick: ":x: Kick"
 kicked: "{} just kicked you from {}:```\n{}\n```"
