@@ -356,7 +356,7 @@ class PollsCog(Cog, name="Polls"):
         Contributor.Defelo,
         Contributor.TNT2k,
         Contributor.wolflu,
-        Contributor.NekoFanatic,  # rewrote most of this code (Please blame @Defelo for the code)
+        Contributor.NekoFanatic,
     ]
 
     def __init__(self, team_roles: list[str]):
