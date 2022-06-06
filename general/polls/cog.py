@@ -571,7 +571,7 @@ class PollsCog(Cog, name="Polls"):
     @settings.command(name="max_duration", aliases=["md"])
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.max_duration)
-    async def max_duration(self, ctx: Context, days: int = None):
+    async def max_duration(self, ctx: Context, days: int | None = None):
         days = days or 7
         msg: str = t.max_duration.set(cnt=days)
 
@@ -582,7 +582,7 @@ class PollsCog(Cog, name="Polls"):
     @settings.command(name="votes", aliases=["v", "choices", "c"])
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.votes)
-    async def votes(self, ctx: Context, votes: int = None):
+    async def votes(self, ctx: Context, votes: int | None = None):
         if not votes:
             votes = 0
             msg: str = t.votes.reset
