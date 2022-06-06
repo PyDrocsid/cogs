@@ -115,7 +115,9 @@ async def get_parser() -> ArgumentParser:
     parser.add_argument(
         "--anonymous", "-A", default=await PollsDefaultSettings.anonymous.get(), type=bool, choices=[True, False]
     )
-    parser.add_argument("--choices", "-C", default=await PollsDefaultSettings.max_choices.get(), type=int)
+    parser.add_argument(
+        "--choices", "-C", default=await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS, type=int
+    )
     parser.add_argument("--fair", "-F", default=await PollsDefaultSettings.fair.get(), type=bool, choices=[True, False])
 
     return parser
@@ -345,6 +347,7 @@ class MySelect(Select):
 
         embed = await edit_poll_embed(embed, poll, missing)
         await message.edit(embed=embed)
+        await interaction.response.send_message(content=t.poll_voted, ephemeral=True)
 
 
 class PollsCog(Cog, name="Polls"):
@@ -507,7 +510,7 @@ class PollsCog(Cog, name="Polls"):
         embed.add_field(
             name=t.poll_config.max_duration.name, value=t.poll_config.max_duration.time(cnt=max_time), inline=False
         )
-        choice: int = await PollsDefaultSettings.max_choices.get()
+        choice: int = await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS
         embed.add_field(
             name=t.poll_config.choices.name,
             value=t.poll_config.choices.amount(cnt=choice) if not choice <= 0 else t.poll_config.choices.unlimited,
@@ -617,7 +620,7 @@ class PollsCog(Cog, name="Polls"):
     @docs(t.commands.poll.quick)
     async def quick(self, ctx: Context, *, args: str):
         deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
-        max_choices = await PollsDefaultSettings.max_choices.get()
+        max_choices = await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS
         anonymous = await PollsDefaultSettings.anonymous.get()
         message, interaction, parsed_options, question = await send_poll(
             ctx=ctx, title=t.poll, poll_args=args, max_choices=max_choices, deadline=deadline

@@ -169,6 +169,7 @@ wizard:
 
 poll: Poll
 team_poll: Team Poll
+poll_voted: "Vote was added to the poll"
 team_yn_poll_forbidden: You are not allowed to use a team poll!
 vote_explanation: Vote using the reactions below!
 too_many_options: You specified too many options. The maximum amount is {}.
