@@ -28,12 +28,10 @@ As soon as the message author or a Team-Member removes his reaction `:pushpin:` 
 ---
 
 
-## `reactionpin`  
+## `reactionpin`
 
 
 This is the main command for the command group, to show all the subcommands if you have permission for it.
-
-
 
 
 Aliases:
@@ -57,7 +55,6 @@ Required Permissions:
 
 
 This command whitelists a channel.
-
 
 
 ```css  
@@ -93,9 +90,9 @@ This command removes a channel from the whitelist.
 .rp [del|r|d|-] <channel>
 ```
 
-|Arguments|Required|Description|
-|:------:|:-----|:-----|
-|`channel`|✔️|Removes the channel from the whitelist|  
+| Arguments | Required | Description                            |
+|:---------:|:---------|:---------------------------------------|
+| `channel` | ✔️       | Removes the channel from the whitelist |  
 
 
 Aliases
@@ -127,22 +124,20 @@ This command enables or disables the "pinned messages notification".
 [![image](https://www.linkpicture.com/q/Screenshot-2021-10-17-072804_1.png)](https://www.linkpicture.com/view.php?img=LPic616bc85447a64587571420)
 
 
-
 ```css  
 .rp [pin_message|pm] <enabled>
 ```
 
 Arguments:
 
-|Argument|Required|Description|
-|:------:|:----|:------:|
-|enabled|✔️|Message is displayed if true|  
+| Argument | Required |         Description          |
+|:--------:|:---------|:----------------------------:|
+| enabled  | ✔️       | Message is displayed if true |  
 
 
 Aliases:
 
 - `pm`
-
 
 
 Required Permissions:
