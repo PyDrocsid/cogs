@@ -16,11 +16,11 @@ b)
 
 1. `:pushpin:` (📌) is added as a reaction to a message AND
 
-2. the reaction is added by the author of the message AND
+1. the reaction is added by the author of the message AND
 
-3. the message was written in a channel whitelisted for ReactionPin AND
+1. the message was written in a channel whitelisted for ReactionPin AND
 
-4. the user does not have the `mute` role
+1. the user does not have the `mute` role
 
 
 As soon as the message author or a Team-Member removes his reaction `:pushpin:` 📌, the message will be removed from the pinned messages.
