@@ -2,14 +2,16 @@ import colorsys
 import re
 from typing import Any
 
-from discord import Embed, Colour
+from discord import Colour, Embed
 from discord.ext import commands
-from discord.ext.commands import Context, CommandError
+from discord.ext.commands import CommandError, Context
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import docs, reply
 from PyDrocsid.translations import t
+
 from ...contributor import Contributor
+
 
 t = t.color_picker
 
@@ -44,7 +46,7 @@ def _to_rgb(colors: tuple[Any, Any, Any]) -> tuple[int, ...]:
 
 
 def _hex_to_color(hex_color: str) -> tuple[int, ...]:
-    return tuple(int(hex_color[i: i + 2], 16) for i in (0, 2, 4))
+    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))  # noqa: E203
 
 
 class ColorPickerCog(Cog, name="Color Picker"):
@@ -66,27 +68,19 @@ class ColorPickerCog(Cog, name="Color Picker"):
             rgb = _to_rgb((color_re.group(1), color_re.group(2), color_re.group(3)))
 
         elif color_re := self.RE_HLS.match(color):
-            values = _convert_to_floats([
-                (color_re.group(1), 359),
-                (color_re.group(2), 100),
-                (color_re.group(3), 100)
-            ])
+            values = _convert_to_floats([(color_re.group(1), 359), (color_re.group(2), 100), (color_re.group(3), 100)])
             rgb = colorsys.hls_to_rgb(values[0], values[1], values[2])
             rgb = tuple(int(color * 255) for color in rgb)
 
         elif color_re := self.RE_HSV.match(color):
-            values = _convert_to_floats([
-                (color_re.group(1), 359),
-                (color_re.group(2), 100),
-                (color_re.group(3), 100)
-            ])
+            values = _convert_to_floats([(color_re.group(1), 359), (color_re.group(2), 100), (color_re.group(3), 100)])
             rgb = colorsys.hsv_to_rgb(values[0], values[1], values[2])
             rgb = tuple(int(color * 255) for color in rgb)
 
         else:
             raise CommandError(t.error_parse_color_example(color))
 
-        color_hex = "{:02x}{:02x}{:02x}".format(*rgb)
+        color_hex = f"{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
         hsv = colorsys.rgb_to_hsv(*rgb)
         h, s, v = hsv
         hsv = (int(h * 360), int(s * 100), int(v))
