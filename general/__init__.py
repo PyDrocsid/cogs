@@ -1,4 +1,5 @@
 from .betheprofessional import BeTheProfessionalCog
+from .color_picker import ColorPickerCog
 from .custom_commands import CustomCommandsCog
 from .discord_bot_token_deleter import DiscordBotTokenDeleterCog
 from .news import NewsCog
@@ -8,4 +9,18 @@ from .reactionrole import ReactionRoleCog
 from .remind_me import RemindMeCog
 from .utils import UtilsCog
 from .voice_channel import VoiceChannelCog
-from .color_picker import ColorPickerCog
+
+
+__all__ = [
+    "BeTheProfessionalCog",
+    "ColorPickerCog",
+    "CustomCommandsCog",
+    "DiscordBotTokenDeleterCog",
+    "NewsCog",
+    "PollsCog",
+    "ReactionPinCog",
+    "ReactionRoleCog",
+    "RemindMeCog",
+    "UtilsCog",
+    "VoiceChannelCog",
+]
