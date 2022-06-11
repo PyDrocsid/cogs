@@ -1,8 +1,9 @@
 import json
 from datetime import timedelta
+from io import StringIO
 from typing import Optional, Union
 
-from discord import Embed, Forbidden, Guild, Member, Message, RawMessageDeleteEvent, TextChannel
+from discord import Embed, File, Forbidden, Guild, Member, Message, RawMessageDeleteEvent, TextChannel
 from discord.ext import commands, tasks
 from discord.ext.commands import Command, CommandError, Context, Group, UserInputError, guild_only
 from discord.utils import format_dt, snowflake_time, utcnow
@@ -67,6 +68,10 @@ async def is_logging_channel(channel: TextChannel) -> bool:
     return False
 
 
+def _dump_embeds(embeds: list[Embed], file_name: str) -> File:
+    return File(filename=file_name, fp=StringIO(json.dumps([embed.to_dict() for embed in embeds], indent=4)))
+
+
 channels: list[str] = []
 
 
@@ -106,7 +111,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
 
 
 class LoggingCog(Cog, name="Logging"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0, Contributor.NekoFanatic]
 
     async def get_logging_channel(self, setting: LoggingSettings) -> Optional[TextChannel]:
         return self.bot.get_channel(await setting.get())
@@ -173,7 +178,7 @@ class LoggingCog(Cog, name="Logging"):
             return
         mindiff: int = await LoggingSettings.edit_mindiff.get()
         old_message = await redis.get(key := f"little_diff_message_edit:{before.id}") or before.content
-        if calculate_edit_distance(old_message, after.content) < mindiff:
+        if calculate_edit_distance(old_message, after.content) < mindiff and before.embeds == after.embeds:
             if not await redis.exists(key):
                 await redis.setex(key, 60 * 60 * 24, before.content)
             return
@@ -195,7 +200,13 @@ class LoggingCog(Cog, name="Logging"):
         embed.add_field(name=t.url, value=before.jump_url, inline=False)
         add_field(embed, t.old_content, old_message)
         add_field(embed, t.new_content, after.content)
-        await edit_channel.send(embed=embed)
+        files = []
+        if before.embeds:
+            files.append(_dump_embeds(before.embeds, t.before_edited_embeds))
+        if after.embeds:
+            files.append(_dump_embeds(after.embeds, t.after_edited_embeds))
+
+        await edit_channel.send(embed=embed, files=files)
 
     async def on_raw_message_edit(self, channel: TextChannel, message: Message):
         if message.guild is None:
@@ -220,7 +231,10 @@ class LoggingCog(Cog, name="Logging"):
             )
             embed.add_field(name=t.url, value=message.jump_url, inline=False)
             add_field(embed, t.new_content, message.content)
-        await edit_channel.send(embed=embed)
+        file = None
+        if message.embeds:
+            file = _dump_embeds(message.embeds, t.after_edited_embeds)
+        await edit_channel.send(embed=embed, file=file)
 
     async def on_message_delete(self, message: Message):
         if message.guild is None:
@@ -256,7 +270,10 @@ class LoggingCog(Cog, name="Logging"):
                     size /= 1000
                 out.append(f"[{attachment.filename}]({attachment.url}) ({size:.1f} {_unit})")
             embed.add_field(name=t.attachments, value="\n".join(out), inline=False)
-        await delete_channel.send(embed=embed)
+        files = None
+        if message.embeds:
+            files = _dump_embeds(message.embeds, t.after_deleted_embeds)
+        await delete_channel.send(embed=embed, file=files)
 
     async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
         if event.guild_id is None:

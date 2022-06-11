@@ -145,7 +145,7 @@ class ModCog(Cog, name="Mod Tools"):
         mute: Mute
         async for mute in await db.stream(filter_by(Mute, active=True)):
             member = guild.get_member(mute.member)
-            timeout: datetime | None = member.communication_disabled_until
+            timeout: datetime | None = member.communication_disabled_until if member else None
 
             if mute.days != -1 and utcnow() >= mute.timestamp + timedelta(days=mute.days):
                 if member:
@@ -277,12 +277,27 @@ class ModCog(Cog, name="Mod Tools"):
         return out
 
     async def on_member_join(self, member: Member):
-        mute_role: Optional[Role] = member.guild.get_role(await RoleSettings.get("mute"))
-        if mute_role is None:
+        mute: Mute | None = await db.get(Mute, active=True, member=member.id)
+        if not mute:
+            if member.timed_out:
+                try:
+                    await member.remove_timeout()
+                except Forbidden:
+                    await send_alert(member.guild, t.cannot_remove_timeout(member.mention, member.id))
             return
 
-        if await db.exists(filter_by(Mute, active=True, member=member.id)):
+        if mute_role := member.guild.get_role(await RoleSettings.get("mute")):
             await member.add_roles(mute_role)
+
+        if mute.days == -1:
+            delta = MAX_TIMEOUT
+        else:
+            delta = min(mute.timestamp + timedelta(days=mute.days) - utcnow(), MAX_TIMEOUT)
+
+        try:
+            await member.timeout_for(delta)
+        except Forbidden:
+            await send_alert(member.guild, t.cannot_update_timeout(member.mention, member.id))
 
     @commands.command()
     @guild_only()
@@ -419,7 +434,7 @@ class ModCog(Cog, name="Mod Tools"):
         mute_role: Role = await get_mute_role(ctx.guild)
 
         was_muted = False
-        if isinstance(user, Member) and mute_role in user.roles:
+        if isinstance(user, Member) and (mute_role in user.roles or user.timed_out):
             was_muted = True
             check_role_assignable(mute_role)
             try:
