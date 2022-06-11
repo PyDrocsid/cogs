@@ -13,6 +13,7 @@ from .voice_channel import VoiceChannelCog
 
 __all__ = [
     "BeTheProfessionalCog",
+    "ColorPickerCog",
     "CustomCommandsCog",
     "DiscordBotTokenDeleterCog",
     "NewsCog",

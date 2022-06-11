@@ -1,3 +1,6 @@
+commands:
+  color_picker: transform a colorcode in `rgb`, `hex`, `hsv` or `hsl`
+
 error_parse_color_example: >
   **Error cant parse HEX/RGB/HSV/HSL Color Code(`{}`)**
 
