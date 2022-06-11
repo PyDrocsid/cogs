@@ -1,16 +1,17 @@
 import colorsys
-import io
 import re
 from typing import Any
 
-from discord import Embed, Colour, File
+from discord import Colour, Embed
 from discord.ext import commands
-from discord.ext.commands import Context, CommandError
+from discord.ext.commands import CommandError, Context
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import reply
 from PyDrocsid.translations import t
+
 from ...contributor import Contributor
+
 
 t = t.color_picker
 
