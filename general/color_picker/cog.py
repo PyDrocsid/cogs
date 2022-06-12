@@ -16,7 +16,7 @@ from ...contributor import Contributor
 t = t.color_picker
 
 
-def _convert_to_floats(given: list[tuple[int, ...]]) -> tuple[float, ...]:
+def _to_floats(given: list[tuple[int, ...]]) -> tuple[float, ...]:
     """3 tuples (number from user, max-value)"""
     out: list[float] = []
 
@@ -55,7 +55,6 @@ class ColorPickerCog(Cog, name="Color Picker"):
     RE_HEX = re.compile(r"^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
     RE_RGB = re.compile(r"^rgb\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
     RE_HSV = re.compile(r"^hsv\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
-    RE_HLS = re.compile(r"^hls\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
 
     @commands.command(name="color_picker", aliases=["cp", "color"])
     @docs(t.commands.color_picker)
@@ -67,13 +66,8 @@ class ColorPickerCog(Cog, name="Color Picker"):
         elif color_re := self.RE_RGB.match(color):
             rgb = _to_rgb((color_re.group(1), color_re.group(2), color_re.group(3)))
 
-        elif color_re := self.RE_HLS.match(color):
-            values = _convert_to_floats([(color_re.group(1), 359), (color_re.group(2), 100), (color_re.group(3), 100)])
-            rgb = colorsys.hls_to_rgb(values[0], values[1], values[2])
-            rgb = tuple(int(color * 255) for color in rgb)
-
         elif color_re := self.RE_HSV.match(color):
-            values = _convert_to_floats([(color_re.group(1), 359), (color_re.group(2), 100), (color_re.group(3), 100)])
+            values = _to_floats([(color_re.group(1), 359), (color_re.group(2), 100), (color_re.group(3), 100)])
             rgb = colorsys.hsv_to_rgb(values[0], values[1], values[2])
             rgb = tuple(int(color * 255) for color in rgb)
 
@@ -85,15 +79,10 @@ class ColorPickerCog(Cog, name="Color Picker"):
         h, s, v = hsv
         hsv = (int(h * 360), int(s * 100), int(v))
 
-        hls = colorsys.rgb_to_hls(*rgb)
-        h, l, s = hls
-        hls = (int(h * 360), int(s * 100), int(v))
-
         embed: Embed = Embed(title="Color Picker", color=Colour(int(color_hex, 16)))
         embed.set_image(url=f"https://singlecolorimage.com/get/{color_hex}/300x50")
         embed.add_field(name="HEX", value=f"`#{color_hex}`")
         embed.add_field(name="RGB", value=f"`rgb{rgb}`")
         embed.add_field(name="HSV", value=f"`hsv{hsv}`")
-        embed.add_field(name="HLS", value=f"`hsl{hls}`")
 
         await reply(ctx, embed=embed)
