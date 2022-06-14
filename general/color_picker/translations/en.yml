@@ -1,10 +1,15 @@
 commands:
-  color_picker: Convert RGB, HEX or HSV into each other
+  color_picker: Convert RGB, HEX, HSL or HSV into each other
+
+
+embed:
+  title: Color Picker
 
 error_parse_color_example: >
-  **Error cant parse HEX/RGB/HSV Color Code(`{}`)**
+  **Error cant parse HEX/RGB/HSL/HSV Color Code(`{}`)**
 
   **Examples:**
-    -  `#fdf12f`
-    -  `rgb(255, 255, 100)`
-    -  `hsv(0, 0, 255)`
+    -  `#fdf12f`             # #000000 - #FFFFFF
+    -  `rgb(255, 255, 100)`  # (0-255, 0-255, 0-255)
+    -  `hsv(343, 50, 100)`   # (0-360, 0-100, 0-100)
+    -  `hsl(298, 0, 99)`     # (0-360, 0-100, 0-100)
