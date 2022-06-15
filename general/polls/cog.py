@@ -237,6 +237,9 @@ async def get_staff(guild: Guild, team_roles: list[str]) -> set[Member]:
 
         teamlers.update(member for member in team_role.members if not member.bot)
 
+    if not teamlers:
+        raise CommandError(t.error.no_teamlers)
+
     return teamlers
 
 
@@ -332,7 +335,11 @@ class MySelect(Select):
             )
 
         if poll.poll_type == PollType.TEAM:
-            teamlers: set[Member] = await get_staff(interaction.guild, ["team"])
+            try:
+                teamlers: set[Member] = await get_staff(interaction.guild, ["team"])
+            except CommandError:
+                await interaction.response.send_message(content=t.error.no_teamlers, ephemeral=True)
+                return
             if user not in teamlers:
                 await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
                 return

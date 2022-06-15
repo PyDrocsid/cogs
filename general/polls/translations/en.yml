@@ -28,6 +28,7 @@ error:
   weight_too_small: "Weight cant be lower than `0.1`"
   cant_set_weight: Can't set weight!
   not_poll: Mesage doesn't contains a poll
+  no_teamlers: No user with team-role found!
   cant_pin:
     title: Error
     description: Can't pin any more messages in {}
