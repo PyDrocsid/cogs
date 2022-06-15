@@ -1,7 +1,7 @@
 import time
 from datetime import timedelta
 
-from discord import Embed, Forbidden, Member, VoiceState
+from discord import Embed, Forbidden, HTTPException, Member, VoiceState
 from discord.ext import commands
 from discord.ext.commands import Context, UserInputError, guild_only
 
@@ -71,7 +71,10 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         if hops >= warning > 0 and not await redis.exists(key := f"channel_hops_warning_sent:user={member.id}"):
             await redis.setex(key, 10, 1)
             embed = Embed(title=t.channel_hopping_warning_sent, color=Colors.SpamDetection)
-            await member.send(embed=embed)
+            try:
+                await member.send(embed=embed)
+            except (HTTPException, Forbidden):
+                pass
 
         if hops >= mute > 0 and not await redis.exists(key := f"channel_hops_mute:user={member.id}"):
             try:
