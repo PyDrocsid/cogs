@@ -29,16 +29,16 @@ def _to_floats(given: list[tuple[int, ...]]) -> tuple[float, ...]:
     return out[0], out[1], out[2]
 
 
-def _to_rgb(colors: tuple[Any, Any, Any]) -> tuple[int, ...]:
+def _to_rgb(colors: tuple[int, ...]) -> tuple[int, ...]:
     out: list[int] = []
 
     for color in colors:
-        if int(color) < 0:
+        if color < 0:
             out.append(0)
-        if int(color) > 255:
+        if color > 255:
             out.append(255)
         else:
-            out.append(int(color))
+            out.append(color)
 
     return out[0], out[1], out[2]
 
