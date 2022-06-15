@@ -79,8 +79,8 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         if hops >= mute > 0 and not await redis.exists(key := f"channel_hops_mute:user={member.id}"):
             try:
                 await member.timeout_for(duration=timedelta(seconds=duration), reason=t.reason)
-            except Forbidden as exception:
-                await send_alert(member.guild, Embed(title=t.cant_mute(member.id, exception.text), color=Colors.error))
+            except Forbidden:
+                await send_alert(member.guild, t.cant_mute(member.mention, member.id))
             await redis.setex(key, 10, 1)
 
     @commands.group(aliases=["spam", "sd"])
@@ -126,14 +126,14 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
     async def alert(self, ctx: Context, amount: int):
 
         await SpamDetectionSettings.max_hops_alert.set(max(amount, 0))
-        await _send_changes(ctx, amount, "alerts", t.hop_amount_set)
+        await _send_changes(ctx, amount, t.change_types.alerts, t.hop_amount_set)
 
     @channel_hopping.command(name="warning", aliases=["warn"])
     @docs(t.commands.warning)
     async def warning(self, ctx: Context, amount: int):
 
         await SpamDetectionSettings.max_hops_warning.set(max(amount, 0))
-        await _send_changes(ctx, amount, "warnings", t.hop_amount_set)
+        await _send_changes(ctx, amount, t.change_types.warnings, t.hop_amount_set)
 
     @channel_hopping.group(name="mute", aliases=["m"])
     @docs(t.commands.temp_mute)
@@ -147,14 +147,13 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
     async def hops(self, ctx: Context, amount: int):
 
         await SpamDetectionSettings.max_hops_temp_mute.set(max(amount, 0))
-        await _send_changes(ctx, amount, "mutes", t.hop_amount_set)
+        await _send_changes(ctx, amount, t.change_types.mutes, t.hop_amount_set)
 
     @mute.command(name="duration", aliases=["d"])
     @docs(t.commands.temp_mute_duration)
     async def duration(self, ctx: Context, seconds: int):
-
-        if seconds <= 0:
-            raise CommandError(t.error.seconds_smaler_than_1)
+        if seconds not in range(1, 28 * 24 * 60 * 60):
+            raise CommandError(tg.invalid_duration)
 
         await SpamDetectionSettings.temp_mute_duration.set(seconds)
-        await _send_changes(ctx, seconds, "mutes", t.mute_time_set)
+        await _send_changes(ctx, seconds, t.change_types.mutes, t.mute_time_set)

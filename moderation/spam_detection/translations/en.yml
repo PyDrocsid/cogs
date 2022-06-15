@@ -24,22 +24,24 @@ seconds_muted:
 member_id: Member ID
 
 channel_hopping: Channel hopping
+channel_hopping_warning: Warning via DM
 channel_hopping_alert: Alert message
-channel_hopping_warning: Direct message
 channel_hopping_mute: Temporare mute
 mute_duration: Mute duration
 reason: was timouted because of channelhopping
 
-cant_mute: "Cant mute {} because of {}"
-error:
-  seconds_smaler_than_1: Amount of seconds for mute cant be smaller than 1
+cant_mute: "Cannot mute {} ({}) for channel hopping because of missing permissions"
 
 current_channel: Current Channel
 
 new_amount: New amount
 hop_amount_set: "The **maximum amount** of **channel hops per minute** has been **set to {}** for **{}**."
-mute_time_set: "The **muted time** for channel hooping has been **set to {}** seconds."
-hop_detection_disabled: "**Channel Hopping Detection** has been **disabled** for {}."
+mute_time_set: "The **muted time** for channel hooping has been **set to {} seconds**."
+hop_detection_disabled: "**Channel Hopping Detection** has been **disabled** for **{}**."
+change_types:
+  warnings: warnings
+  alerts: alerts
+  mutes: mutes
 
 hops_in_last_minute:
   one: "{cnt} hop in the last minute"
