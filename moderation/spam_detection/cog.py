@@ -96,18 +96,21 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
 
         embed = Embed(title=t.spam_detection, color=Colors.SpamDetection)
 
-        if (alert := await SpamDetectionSettings.max_hops_alert.get()) <= 0:
-            embed.add_field(name=t.channel_hopping_alert, value=tg.disabled, inline=False)
-        else:
-            embed.add_field(name=t.channel_hopping_alert, value=t.max_x_hops(cnt=alert), inline=False)
         if (dm_warning := await SpamDetectionSettings.max_hops_warning.get()) <= 0:
             embed.add_field(name=t.channel_hopping_warning, value=tg.disabled, inline=False)
         else:
             embed.add_field(name=t.channel_hopping_warning, value=t.max_x_hops(cnt=dm_warning), inline=False)
+
+        if (alert := await SpamDetectionSettings.max_hops_alert.get()) <= 0:
+            embed.add_field(name=t.channel_hopping_alert, value=tg.disabled, inline=False)
+        else:
+            embed.add_field(name=t.channel_hopping_alert, value=t.max_x_hops(cnt=alert), inline=False)
+
         if (mute_hops := await SpamDetectionSettings.max_hops_temp_mute.get()) <= 0:
             embed.add_field(name=t.channel_hopping_mute, value=tg.disabled, inline=False)
         else:
             embed.add_field(name=t.channel_hopping_mute, value=t.max_x_hops(cnt=mute_hops), inline=False)
+
         mute_duration = await SpamDetectionSettings.temp_mute_duration.get()
         embed.add_field(name=t.mute_duration, value=t.seconds_muted(cnt=mute_duration), inline=False)
 
