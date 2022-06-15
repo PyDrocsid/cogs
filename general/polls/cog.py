@@ -427,11 +427,12 @@ class PollsCog(Cog, name="Polls"):
                 description += t.polls.row(
                     poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
                 )
-            if description:
-                embed: Embed = Embed(title=t.polls.title, description=description, color=Colors.Polls)
-                await send_long_embed(ctx, embed=embed, paginate=True)
 
-        if not polls or not description:
+        if polls and description:
+            embed: Embed = Embed(title=t.polls.title, description=description, color=Colors.Polls)
+            await send_long_embed(ctx, embed=embed, paginate=True)
+
+        else:
             await send_long_embed(ctx, embed=Embed(title=t.no_polls, color=Colors.error))
 
     @poll.command(name="delete", aliases=["del"])
