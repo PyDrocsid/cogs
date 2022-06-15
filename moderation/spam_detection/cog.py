@@ -116,7 +116,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
 
         await reply(ctx, embed=embed)
 
-    @spam_detection.group(name="channel_hopping", aliases=["ch"])
+    @spam_detection.group(name="channel_hopping", aliases=["ch", "h"])
     @SpamDetectionPermission.write.check
     @docs(t.commands.channel_hopping)
     async def channel_hopping(self, ctx: Context):
@@ -131,7 +131,7 @@ class SpamDetectionCog(Cog, name="Spam Detection"):
         await SpamDetectionSettings.max_hops_alert.set(max(amount, 0))
         await _send_changes(ctx, amount, t.change_types.alerts, t.hop_amount_set)
 
-    @channel_hopping.command(name="warning", aliases=["warn"])
+    @channel_hopping.command(name="warning", aliases=["warn", "w", "dm"])
     @docs(t.commands.warning)
     async def warning(self, ctx: Context, amount: int):
 
