@@ -1,7 +1,6 @@
 # Color Picker
 
-Contains a command to transform different color forms into each other
-
+Contains a command that can be used to convert different types of colors into each other
 
 ## `color_picker`
 

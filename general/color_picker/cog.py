@@ -21,12 +21,10 @@ def _to_floats(given: list[tuple[int, ...]]) -> tuple[float, ...]:
     out: list[float] = []
 
     for arg in given:
-        if int(arg[0]) < 0:
-            out.append(0.0)
-        elif int(arg[0]) > arg[1]:
-            out.append(1.0)
-        else:
-            out.append(float(int(arg[0]) / arg[1]))
+        if 0 < int(arg[0]) > arg[1]:
+            raise CommandError(t.error.invalid_input(arg[0], arg[1]))
+
+        out.append(float(int(arg[0]) / arg[1]))
 
     return out[0], out[1], out[2]
 
@@ -78,7 +76,7 @@ class ColorPickerCog(Cog, name="Color Picker"):
             rgb = colorsys.hls_to_rgb(values[0], values[2], values[1])
 
         else:
-            raise CommandError(t.error_parse_color_example(color))
+            raise CommandError(t.error.parse_color_example(color))
 
         h, s, v = colorsys.rgb_to_hsv(*rgb)
         hsv = (int(round(h * 360, 0)), int(round(s * 100, 0)), int(round(v * 100, 0)))
