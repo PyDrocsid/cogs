@@ -1,6 +1,5 @@
 import colorsys
 import re
-from typing import Any
 
 from discord import Colour, Embed
 from discord.ext import commands
@@ -29,20 +28,6 @@ def _to_floats(given: list[tuple[int, ...]]) -> tuple[float, ...]:
     return out[0], out[1], out[2]
 
 
-def _to_rgb(colors: tuple[int, ...]) -> tuple[int, ...]:
-    out: list[int] = []
-
-    for color in colors:
-        if color < 0:
-            out.append(0)
-        if color > 255:
-            out.append(255)
-        else:
-            out.append(color)
-
-    return out[0], out[1], out[2]
-
-
 def _hex_to_color(hex_color: str) -> tuple[int, ...]:
     return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))  # noqa: E203
 
@@ -64,8 +49,7 @@ class ColorPickerCog(Cog, name="Color Picker"):
             rgb = _to_floats([(rgb[0], 255), (rgb[1], 255), (rgb[2], 255)])
 
         elif color_re := self.RE_RGB.match(color):
-            rgb = _to_rgb((color_re.group(1), color_re.group(2), color_re.group(3)))
-            rgb = _to_floats([(rgb[0], 255), (rgb[1], 255), (rgb[2], 255)])
+            rgb = _to_floats([(color_re.group(1), 255), (color_re.group(2), 255), (color_re.group(3), 255)])
 
         elif color_re := self.RE_HSV.match(color):
             values = _to_floats([(color_re.group(1), 360), (color_re.group(2), 100), (color_re.group(3), 100)])
