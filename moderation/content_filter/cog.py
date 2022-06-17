@@ -123,7 +123,7 @@ async def check_message(message: Message) -> None:
 
 
 class ContentFilterCog(Cog, name="Content Filter"):
-    CONTRIBUTORS = [Contributor.NekoFanatic, Contributor.Defelo]
+    CONTRIBUTORS = [Contributor.Infinity, Contributor.Defelo]
 
     @get_userlog_entries.subscribe
     async def handle_get_ulog_entries(self, user_id: int, _):
