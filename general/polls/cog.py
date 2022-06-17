@@ -125,9 +125,7 @@ async def get_parser() -> ArgumentParser:
 
 def calc_end_time(duration: Optional[float]) -> Optional[datetime]:
     """returns the time when a poll should be closed"""
-    if duration:
-        return utcnow() + relativedelta(hours=int(duration))
-    return
+    return utcnow() + relativedelta(hours=int(duration)) if duration else None
 
 
 async def send_poll(
