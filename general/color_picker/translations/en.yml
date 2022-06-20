@@ -6,7 +6,7 @@ embed:
   title: Color Picker
 
 error:
-  invalid_input: "`{}` has to be bigger than `0` and smaller than `{}`"
+  invalid_input: "`{}` has to be at least `0` or smaller than `{}`"
   parse_color_example: >
     **Error cant parse HEX/RGB/HSL/HSV Color Code(`{}`)**
   
