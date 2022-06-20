@@ -91,7 +91,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
         Contributor.wolflu,
         Contributor.TNT2k,
         Contributor.Florian,
-        Contributor.NekoFanatic,
+        Contributor.Infinity,
     ]
 
     @get_userlog_entries.subscribe

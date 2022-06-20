@@ -27,6 +27,9 @@ t = t.threads
 class ThreadsCog(Cog, name="Thread Utils"):
     CONTRIBUTORS = [Contributor.Defelo]
 
+    async def on_thread_create(self, thread: Thread):
+        await self.on_thread_join(thread)
+
     async def on_thread_join(self, thread: Thread):
         if await redis.exists(key := f"thread_created:{thread.id}"):
             return
