@@ -361,7 +361,7 @@ class PollsCog(Cog, name="Polls"):
         Contributor.Defelo,
         Contributor.TNT2k,
         Contributor.wolflu,
-        Contributor.NekoFanatic,
+        Contributor.Infinity,
     ]
 
     def __init__(self, team_roles: list[str]):
@@ -485,7 +485,10 @@ class PollsCog(Cog, name="Polls"):
         users = {}
         for option in poll.options:
             for vote in option.votes:
-                users[str(vote.user_id)] = users.get(str(vote.user_id), default=[]).append(option.field_position + 1)
+                if not users.get(str(vote.user_id)):
+                    users[str(vote.user_id)] = [option.field_position + 1]
+                else:
+                    users[str(vote.user_id)].append(option.field_position + 1)
 
         description = ""
         for key, value in users.items():
