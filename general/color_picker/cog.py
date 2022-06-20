@@ -1,5 +1,6 @@
 import colorsys
 import re
+from collections import namedtuple
 
 from discord import Colour, Embed
 from discord.ext import commands
@@ -15,15 +16,14 @@ from ...contributor import Contributor
 t = t.color_picker
 
 
-def _to_floats(given: list[tuple[int, ...]]) -> tuple[float, ...]:
-    """3 tuples (number from user, max-value)"""
+def _to_floats(given: list[namedtuple]) -> tuple[float, float, float]:
     out: list[float] = []
 
     for arg in given:
-        if 0 < int(arg[0]) > arg[1]:
-            raise CommandError(t.error.invalid_input(arg[0], arg[1]))
+        if 0 < int(arg.value) > arg.max_value:
+            raise CommandError(t.error.invalid_input(arg.value, arg.max_value))
 
-        out.append(float(int(arg[0]) / arg[1]))
+        out.append(float(int(arg.value) / arg.max_value))
 
     return out[0], out[1], out[2]
 
@@ -33,7 +33,7 @@ def _hex_to_color(hex_color: str) -> tuple[int, ...]:
 
 
 class ColorPickerCog(Cog, name="Color Picker"):
-    CONTRIBUTORS = [Contributor.Tert0, Contributor.NekoFanatic]
+    CONTRIBUTORS = [Contributor.Tert0, Contributor.Infinity]
 
     RE_HEX = re.compile(r"^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
     RE_RGB = re.compile(r"^rgb\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
@@ -43,20 +43,39 @@ class ColorPickerCog(Cog, name="Color Picker"):
     @commands.command(name="color_picker", aliases=["cp", "color"])
     @docs(t.commands.color_picker)
     async def color_picker(self, ctx: Context, *, color: str):
+        color_args = namedtuple("ColorParameter", ["value", "max_value"])
 
         if color_re := self.RE_HEX.match(color):
             rgb = _hex_to_color(color_re.group(1))
-            rgb = _to_floats([(rgb[0], 255), (rgb[1], 255), (rgb[2], 255)])
+            rgb = _to_floats([color_args(rgb[0], 255), color_args(rgb[1], 255), color_args(rgb[2], 255)])
 
         elif color_re := self.RE_RGB.match(color):
-            rgb = _to_floats([(color_re.group(1), 255), (color_re.group(2), 255), (color_re.group(3), 255)])
+            rgb = _to_floats(
+                [
+                    color_args(color_re.group(1), 255),
+                    color_args(color_re.group(2), 255),
+                    color_args(color_re.group(3), 255),
+                ]
+            )
 
         elif color_re := self.RE_HSV.match(color):
-            values = _to_floats([(color_re.group(1), 360), (color_re.group(2), 100), (color_re.group(3), 100)])
+            values = _to_floats(
+                [
+                    color_args(color_re.group(1), 360),
+                    color_args(color_re.group(2), 100),
+                    color_args(color_re.group(3), 100),
+                ]
+            )
             rgb = colorsys.hsv_to_rgb(values[0], values[1], values[2])
 
         elif color_re := self.RE_HSL.match(color):
-            values = _to_floats([(color_re.group(1), 360), (color_re.group(2), 100), (color_re.group(3), 100)])
+            values = _to_floats(
+                [
+                    color_args(color_re.group(1), 360),
+                    color_args(color_re.group(2), 100),
+                    color_args(color_re.group(3), 100),
+                ]
+            )
             rgb = colorsys.hls_to_rgb(values[0], values[2], values[1])
 
         else:
