@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from datetime import datetime
-
-from sqlalchemy import Column, Integer, BigInteger, Text, Boolean
-
-from PyDrocsid.database import db, UTCDateTime, Base
+from typing import TYPE_CHECKING
 
 from discord.utils import utcnow
+from sqlalchemy import BigInteger, Boolean, Column, Integer, Text
+
+from PyDrocsid.database import Base, UTCDateTime, db
 
 
 class ModBase(Base if TYPE_CHECKING else object):

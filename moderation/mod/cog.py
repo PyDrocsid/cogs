@@ -1,53 +1,56 @@
 import re
 from asyncio import sleep
 from datetime import datetime, timedelta
-from typing import Tuple, Type, TypeVar, Any, Callable, Awaitable
+from typing import Any, Awaitable, Callable, Tuple, Type, TypeVar
 
 from dateutil.relativedelta import relativedelta
 from discord import (
-    Role,
-    Guild,
-    Member,
-    Forbidden,
-    HTTPException,
-    User,
-    Embed,
-    NotFound,
-    Message,
     Attachment,
     AuditLogAction,
     AuditLogEntry,
+    Embed,
+    Forbidden,
+    Guild,
+    HTTPException,
+    Member,
+    Message,
+    NotFound,
+    Role,
     TextChannel,
     Thread,
+    User,
 )
 from discord.ext import commands, tasks
-from discord.ext.commands import guild_only, Context, CommandError, Converter, BadArgument, UserInputError
+from discord.ext.commands import BadArgument, CommandError, Context, Converter, UserInputError, guild_only
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, UserCommandError, confirm, docs
+from PyDrocsid.command import Confirmation, UserCommandError, docs, reply
 from PyDrocsid.config import Config
 from PyDrocsid.converter import UserMemberConverter
-from PyDrocsid.database import db, filter_by, db_wrapper, Base as DBBase
+from PyDrocsid.database import Base as DBBase
+from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.redis import redis
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import is_teamler, check_role_assignable
+from PyDrocsid.util import check_role_assignable, is_teamler
+
 from .colors import Colors
-from .models import Mute, Ban, Report, Warn, Kick
+from .models import Ban, Kick, Mute, Report, Warn
 from .permissions import ModPermission
 from .settings import ModSettings
 from ...contributor import Contributor
 from ...pubsub import (
-    send_to_changelog,
-    send_alert,
-    log_auto_kick,
-    get_userlog_entries,
     get_user_info_entries,
     get_user_status_entries,
+    get_userlog_entries,
+    log_auto_kick,
     revoke_verification,
+    send_alert,
+    send_to_changelog,
 )
+
 
 tg = t.g
 t = t.mod
@@ -158,15 +161,12 @@ async def get_and_compare_entry(entry_format: Type[TBase], entry_id: int, mod: M
 async def confirm_action(
     ctx: Context, embed: Embed, message_confirmed: str = t.edit_confirmed, message_canceled: str = t.edit_canceled
 ) -> bool:
-    async with confirm(ctx, embed) as (result, msg):
-        if not result:
-            embed.description += f"\n\n{message_canceled}"
-            return result
+    if not await Confirmation.run(ctx, embed=embed):
+        embed.description += f"\n\n{message_canceled}"
+        return False
 
-        embed.description += f"\n\n{message_confirmed}"
-        if msg:
-            await msg.delete(delay=5)
-        return result
+    embed.description += f"\n\n{message_confirmed}"
+    return True
 
 
 async def confirm_no_evidence(ctx: Context):
@@ -362,12 +362,7 @@ class ModCog(Cog, name="Mod Tools"):
         self, user_id: int, show_ids: bool, author: Member
     ) -> list[tuple[datetime, str]]:
         def wrap_time_entry(
-            translation,
-            mod: int,
-            reason: str,
-            evidence: str,
-            minutes: int | None = None,
-            entry_id: int | None = None,
+            translation, mod: int, reason: str, evidence: str, minutes: int | None = None, entry_id: int | None = None
         ) -> str:
             args = [f"<@{mod}>"]
 
@@ -637,15 +632,9 @@ class ModCog(Cog, name="Mod Tools"):
             raise CommandError(t.user_not_found)
 
         user_embed = Embed(
-            title=translation.action,
-            description=translation.edited(entry.reason, reason),
-            colour=Colors.ModTools,
+            title=translation.action, description=translation.edited(entry.reason, reason), colour=Colors.ModTools
         )
-        server_embed = Embed(
-            title=translation.action,
-            description=translation.edited_response,
-            colour=Colors.ModTools,
-        )
+        server_embed = Embed(title=translation.action, description=translation.edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         await model.edit(entry_id, ctx.author.id, await get_mod_level(ctx.author), reason)
@@ -657,12 +646,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=color,
-            title=translation.log_edited,
-            member=user,
-            reason=reason,
+            guild=ctx.guild, message=ctx.message, colour=color, title=translation.log_edited, member=user, reason=reason
         )
 
     async def handle_delete_single(self, ctx: Context, entry_id: int, translation, model: Type[TBase], color: int):
@@ -689,9 +673,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         if await ModSettings.send_delete_user_message.get():
             user_embed = Embed(
-                title=translation.action,
-                description=translation.deleted(entry.reason),
-                colour=Colors.ModTools,
+                title=translation.action, description=translation.deleted(entry.reason), colour=Colors.ModTools
             )
 
             try:
@@ -765,10 +747,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         if minutes is not None:
             user_embed.description = translation.done(
-                ctx.author.mention,
-                ctx.guild.name,
-                time_to_units(minutes),
-                reason,
+                ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason
             )
         else:
             user_embed.description = translation.done_inf(ctx.author.mention, ctx.guild.name, reason)
@@ -824,22 +803,11 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(
-            guild=ctx.guild,
-            message=ctx.message,
-            colour=color,
-            title=translation.log_edited,
-            member=user,
-            reason=reason,
+            guild=ctx.guild, message=ctx.message, colour=color, title=translation.log_edited, member=user, reason=reason
         )
 
     async def handle_edit_timed_duration(
-        self,
-        ctx: Context,
-        user: User | Member,
-        time: int | None,
-        translation: Any,
-        model: Type[TBase],
-        color: int,
+        self, ctx: Context, user: User | Member, time: int | None, translation: Any, model: Type[TBase], color: int
     ):
         user: Member | User
         time: int | None
