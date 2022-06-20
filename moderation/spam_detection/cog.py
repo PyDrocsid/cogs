@@ -30,7 +30,7 @@ async def _send_changes(ctx: Context, amount: int, change_type: str, description
 
 
 class SpamDetectionCog(Cog, name="Spam Detection"):
-    CONTRIBUTORS = [Contributor.ce_phox, Contributor.Defelo, Contributor.NekoFanatic]
+    CONTRIBUTORS = [Contributor.ce_phox, Contributor.Defelo, Contributor.Infinity]
 
     async def on_voice_state_update(self, member: Member, before: VoiceState, after: VoiceState):
         """
