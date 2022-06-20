@@ -36,9 +36,10 @@ class ColorPickerCog(Cog, name="Color Picker"):
     CONTRIBUTORS = [Contributor.Tert0, Contributor.Infinity]
 
     RE_HEX = re.compile(r"^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
-    RE_RGB = re.compile(r"^rgb *(\()?([0-9]{1,3}),? *([0-9]{1,3}),? *([0-9]{1,3})(?(1)\)|)$")
-    RE_HSV = re.compile(r"^hsv *(\()?([0-9]{1,3}),? *([0-9]{1,3}),? *([0-9]{1,3})(?(1)\)|)$")
-    RE_HSL = re.compile(r"^hsl *(\()?([0-9]{1,3}),? *([0-9]{1,3}),? *([0-9]{1,3})(?(1)\)|)$")
+    REG = r" *(\()?([0-9]{1,3}),? *([0-9]{1,3}),? *([0-9]{1,3})(?(1)\)|)$"
+    RE_RGB = re.compile(r"^rgb" + REG)
+    RE_HSV = re.compile(r"^hsv" + REG)
+    RE_HSL = re.compile(r"^hsl" + REG)
 
     @commands.command(name="color_picker", aliases=["cp", "color"])
     @docs(t.commands.color_picker)
@@ -59,7 +60,6 @@ class ColorPickerCog(Cog, name="Color Picker"):
             )
 
         elif color_re := self.RE_HSV.match(color):
-            print(color_re.groups())
             values = _to_floats(
                 [
                     color_args(color_re.group(2), 360),
