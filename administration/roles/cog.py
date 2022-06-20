@@ -84,7 +84,7 @@ def add_role_command(roles_config: Group, name: str, title: str, check_assignabl
 
 
 class RolesCog(Cog, name="Roles"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.NekoFanatic]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.Infinity]
 
     def __init__(self):
         super().__init__()
