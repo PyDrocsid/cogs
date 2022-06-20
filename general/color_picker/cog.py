@@ -36,9 +36,9 @@ class ColorPickerCog(Cog, name="Color Picker"):
     CONTRIBUTORS = [Contributor.Tert0, Contributor.Infinity]
 
     RE_HEX = re.compile(r"^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
-    RE_RGB = re.compile(r"^rgb\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
-    RE_HSV = re.compile(r"^hsv\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
-    RE_HSL = re.compile(r"^hsl\(([0-9]{1,3}), *([0-9]{1,3}), *([0-9]{1,3})\)$")
+    RE_RGB = re.compile(r"^rgb *(\()?([0-9]{1,3}),? *([0-9]{1,3}),? *([0-9]{1,3})(?(1)\)|)$")
+    RE_HSV = re.compile(r"^hsv *(\()?([0-9]{1,3}),? *([0-9]{1,3}),? *([0-9]{1,3})(?(1)\)|)$")
+    RE_HSL = re.compile(r"^hsl *(\()?([0-9]{1,3}),? *([0-9]{1,3}),? *([0-9]{1,3})(?(1)\)|)$")
 
     @commands.command(name="color_picker", aliases=["cp", "color"])
     @docs(t.commands.color_picker)
@@ -52,18 +52,19 @@ class ColorPickerCog(Cog, name="Color Picker"):
         elif color_re := self.RE_RGB.match(color):
             rgb = _to_floats(
                 [
-                    color_args(color_re.group(1), 255),
                     color_args(color_re.group(2), 255),
                     color_args(color_re.group(3), 255),
+                    color_args(color_re.group(4), 255),
                 ]
             )
 
         elif color_re := self.RE_HSV.match(color):
+            print(color_re.groups())
             values = _to_floats(
                 [
-                    color_args(color_re.group(1), 360),
-                    color_args(color_re.group(2), 100),
+                    color_args(color_re.group(2), 360),
                     color_args(color_re.group(3), 100),
+                    color_args(color_re.group(4), 100),
                 ]
             )
             rgb = colorsys.hsv_to_rgb(values[0], values[1], values[2])
@@ -71,9 +72,9 @@ class ColorPickerCog(Cog, name="Color Picker"):
         elif color_re := self.RE_HSL.match(color):
             values = _to_floats(
                 [
-                    color_args(color_re.group(1), 360),
-                    color_args(color_re.group(2), 100),
+                    color_args(color_re.group(2), 360),
                     color_args(color_re.group(3), 100),
+                    color_args(color_re.group(4), 100),
                 ]
             )
             rgb = colorsys.hls_to_rgb(values[0], values[2], values[1])
