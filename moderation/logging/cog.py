@@ -111,7 +111,7 @@ def add_channel(group: Group, name: str, *aliases: str) -> tuple[Group, Command,
 
 
 class LoggingCog(Cog, name="Logging"):
-    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0, Contributor.NekoFanatic]
+    CONTRIBUTORS = [Contributor.Defelo, Contributor.wolflu, Contributor.Tert0, Contributor.Infinity]
 
     async def get_logging_channel(self, setting: LoggingSettings) -> Optional[TextChannel]:
         return self.bot.get_channel(await setting.get())
