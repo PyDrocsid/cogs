@@ -57,12 +57,23 @@ t = t.mod
 TBase = TypeVar("TBase", bound=DBBase)
 
 
-class DurationConverter(Converter):
+# TODO
+#  Docstring for all methods, functions and classes
+#  make all functions private, if the are not ment to be used by other
+#  use timeout function for mutes (see actual mod tools)
+#  do not require mute role, update whole code accordingly
+#  assign mute role to all muted members, when mute role gets set
+#  remove mute role from all muted members if mute role gets cleared
+#  to be continued......
+
+
+class DurationConverter(Converter):  # TODO: Move to library
     async def convert(self, ctx, argument: str) -> int | None:
         if argument.lower() in ("inf", "perm", "permanent", "-1", "∞"):
             return None
-        if (match := re.match(r"^(\d+w)?(\d+d)?(\d+h)?(\d+m)?$", argument)) is None:
-            raise BadArgument(tg.invalid_duration)
+        # TODO add new parameters to rest of code
+        if (match := re.match(r"^(\d+y)?(\d+m)?(\d+w)?(\d+d)?(\d+H)?(\d+M)?$", argument)) is None:
+            raise BadArgument(tg.invalid_duration)  # TODO explain suffixes
 
         weeks, days, hours, minutes = [0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 5)]
 
@@ -122,7 +133,7 @@ def time_to_units(minutes: int | float) -> str:
 
 async def get_mute_role(guild: Guild) -> Role:
     mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
-    if mute_role is None:
+    if not mute_role:
         await send_alert(guild, t.mute.role_not_set)
     return mute_role
 
@@ -144,24 +155,28 @@ async def get_mod_level(mod: Member) -> int:
 
 
 async def compare_mod_level(mod: Member, mod_level: int) -> bool:
-    return await get_mod_level(mod) > mod_level or mod == mod.guild.owner
+    return (
+        await get_mod_level(mod) > mod_level or mod == mod.guild.owner
+    )  # TODO remove, all members have the permission to edit / unban etc if they have the permission set via .p set
 
 
-async def get_and_compare_entry(entry_format: Type[TBase], entry_id: int, mod: Member) -> TBase:
+async def get_and_compare_entry(
+    entry_format: Type[TBase], entry_id: int, mod: Member
+) -> TBase:  # TODO DESCRIPTIVE NAME!?
     entry = await db.get(entry_format, id=entry_id)
     if entry is None:
         raise CommandError(getattr(t.not_found, entry_format.__tablename__))
 
-    if mod.id != entry.mod and not await compare_mod_level(mod, entry.mod_level):
+    if mod.id != entry.mod and not await compare_mod_level(mod, entry.mod_level):  # TODO no longer needed, see above
         raise CommandError(tg.permission_denied)
 
     return entry
 
 
-async def confirm_action(
+async def confirm_action(  # TODO can be removed, "if not await Confirmation().run(ctx, TEXT)" is enough (see constructor for more settings)
     ctx: Context, embed: Embed, message_confirmed: str = t.edit_confirmed, message_canceled: str = t.edit_canceled
 ) -> bool:
-    if not await Confirmation.run(ctx, embed=embed):
+    if not await Confirmation().run(ctx, embed=embed):
         embed.description += f"\n\n{message_canceled}"
         return False
 
@@ -172,7 +187,7 @@ async def confirm_action(
 async def confirm_no_evidence(ctx: Context):
     conf_embed = Embed(title=t.confirmation, description=t.no_evidence, color=Colors.ModTools)
 
-    return await confirm_action(ctx, conf_embed, t.action_confirmed, t.action_cancelled)
+    return await confirm_action(ctx, conf_embed, t.action_confirmed, t.action_cancelled)  # TODO use Confirm().run()
 
 
 async def send_to_changelog_mod(
@@ -241,6 +256,57 @@ class ModCog(Cog, name="Mod Tools"):
         except RuntimeError:
             self.mod_loop.restart()
 
+    async def on_member_join(self, member: Member):
+        mute_role: Role | None = member.guild.get_role(await RoleSettings.get("mute"))
+        if mute_role is None:
+            return
+
+        if await db.exists(filter_by(Mute, active=True, member=member.id)):
+            await member.add_roles(mute_role)
+
+    async def on_member_ban(self, guild: Guild, member: Member):
+        search_limit = 100
+        for i in range(10, 1, -1):
+            try:
+                entry: AuditLogEntry
+                async for entry in guild.audit_logs(limit=search_limit, action=AuditLogAction.ban):
+                    if entry.user == self.bot.user:
+                        continue
+
+                    if member.id != entry.target.id:
+                        continue
+
+                    if entry.reason:
+                        await Ban.create(
+                            entry.target.id,
+                            str(entry.target),
+                            entry.user.id,
+                            await get_mod_level(entry.user),
+                            -1,
+                            entry.reason,
+                            None,
+                        )
+
+                        await send_to_changelog_mod(
+                            guild=guild,
+                            message=None,
+                            colour=Colors.ban,
+                            title=t.log_banned,
+                            member=entry.target,
+                            reason=entry.reason,
+                            duration=t.log_field.infinity,
+                        )
+
+                    else:
+                        await send_alert(guild, t.alert_member_banned(str(entry.target), str(entry.user)))
+                    return
+
+            except Forbidden:
+                await send_alert(guild, t.cannot_fetch_audit_logs)
+
+            await sleep(i * 10)  # TODO why waiting 100 + 90 + 80 ... seconds?
+            search_limit -= i * 10  # TODO tested!?!? if i <= 8 -> search_limit < 0
+
     @tasks.loop(minutes=1)
     @db_wrapper
     async def mod_loop(self):
@@ -259,7 +325,7 @@ class ModCog(Cog, name="Mod Tools"):
                     user = ban.member, ban.member_name
                 except Forbidden:
                     await send_alert(guild, t.cannot_unban_permissions)
-                    continue
+                    continue  # TODO stop "for loop"!?
 
                 await Ban.deactivate(ban.id)
 
@@ -279,7 +345,7 @@ class ModCog(Cog, name="Mod Tools"):
             return
 
         try:
-            check_role_assignable(mute_role)
+            check_role_assignable(mute_role)  # TODO move into get_mute_role
         except CommandError:
             await send_alert(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
             return
@@ -496,59 +562,6 @@ class ModCog(Cog, name="Mod Tools"):
                     )
 
         return out
-
-    async def on_member_join(self, member: Member):
-        mute_role: Role | None = member.guild.get_role(await RoleSettings.get("mute"))
-        if mute_role is None:
-            return
-
-        if await db.exists(filter_by(Mute, active=True, member=member.id)):
-            await member.add_roles(mute_role)
-
-    async def on_member_ban(self, guild: Guild, member: Member):
-        search_limit = 100
-        for i in range(10, 1, -1):
-
-            try:
-                entry: AuditLogEntry
-                async for entry in guild.audit_logs(limit=search_limit, action=AuditLogAction.ban):
-                    if entry.user == self.bot.user:
-                        continue
-
-                    if member.id != entry.target.id:
-                        continue
-
-                    if entry.reason:
-                        await Ban.create(
-                            entry.target.id,
-                            str(entry.target),
-                            entry.user.id,
-                            await get_mod_level(entry.user),
-                            -1,
-                            entry.reason,
-                            None,
-                        )
-
-                        await send_to_changelog_mod(
-                            guild=guild,
-                            message=None,
-                            colour=Colors.ban,
-                            title=t.log_banned,
-                            member=entry.target,
-                            reason=entry.reason,
-                            duration=t.log_field.infinity,
-                        )
-
-                    else:
-                        await send_alert(guild, t.alert_member_banned(str(entry.target), str(entry.user)))
-
-                    return
-
-            except Forbidden:
-                await send_alert(guild, t.cannot_fetch_audit_logs)
-
-            await sleep(delay=i * 10)
-            search_limit -= i * 10
 
     @commands.command()
     @guild_only()
