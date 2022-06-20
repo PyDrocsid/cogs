@@ -30,8 +30,7 @@ async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:
             await pipe.delete(key := f"poll_role_weight={role_id or weights.role_id}")
             save = {"role": int(weights.role_id), "weight": float(weights.weight)}
             out.append(save)
-            await pipe.set(key, str(weights.weight))
-            await pipe.expire(key, CACHE_TTL)
+            await pipe.setex(key, CACHE_TTL, str(weights.weight))
 
         await pipe.execute()
 

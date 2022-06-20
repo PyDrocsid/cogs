@@ -541,7 +541,7 @@ class PollsCog(Cog, name="Polls"):
     @settings.command(name="roles_weights", aliases=["rw"])
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.roles_weights)
-    async def roles_weights(self, ctx: Context, role: Role, weight: float = None):
+    async def roles_weights(self, ctx: Context, role: Role, weight: float | None = None):
         element = await db.get(RoleWeight, role_id=role.id)
 
         if not weight and not element:
@@ -566,7 +566,7 @@ class PollsCog(Cog, name="Polls"):
     @settings.command(name="duration", aliases=["d"])
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.duration)
-    async def duration(self, ctx: Context, hours: int = None):
+    async def duration(self, ctx: Context, hours: int | None = None):
         if not hours:
             hours = 0
             msg: str = t.duration.reset()
