@@ -11,19 +11,19 @@ commands:
   warn: warn a user
   edit_warn: "edit a warn\nget the warn id from the users user log"
   delete_warn: "delete a warn\nget the warn id from the users user log"
-  mute: "mute a user\ntime format: `wdhm`\nset time to `inf` for a permanent mute"
+  mute: "mute a user\ntime format: `ymwdHM`\nset time to `inf` for a permanent mute"
   edit_mute: edit a mute
   edit_mute_reason: "edit a mute reason\nget the mute id from the users user log"
-  edit_mute_duration: "edit a mute duration\ntime format: `wdhm`\nset time to `inf` for a permanent mute"
+  edit_mute_duration: "edit a mute duration\ntime format: `ymwdHM`\nset time to `inf` for a permanent mute"
   delete_mute: "delete a mute\nget the mute id from the users user log"
   unmute: unmute a user
   kick: kick a member
   edit_kick: "edit a kick\nget the kick id from the users user log"
   delete_kick: "delete a kick\nget the kick id from the users user log"
-  ban: "ban a user\ntime format: `wdhm`\nset time to `inf` for a permanent ban"
+  ban: "ban a user\ntime format: `ymwdHM`\nset time to `inf` for a permanent ban"
   edit_ban: edit a ban
   edit_ban_reason: "edit a ban reason\nget the ban id from the users user log"
-  edit_ban_duration: "edit a ban duration\ntime format: `wdhm`\nset time to `inf` for a permanent ban"
+  edit_ban_duration: "edit a ban duration\ntime format: `ymwdHM`\nset time to `inf` for a permanent ban"
   delete_ban: "delete a ban\nget the ban id from the users user log"
   unban: unban a user
 
@@ -62,6 +62,7 @@ not_found:
   ban: No ban with this ID could be found
 
 modtools: Mod tools
+duration_suffixes: "Invalid duration. Please specify a duration using the suffixes y (years), m (months), w (weeks), d (days), H (hours) and M (Minutes).\nYou need to use this exact order, for example: 5y3w2H (5 years, 3 weeks, 2 hours)."
 configured_send_delete_message:
   off: "Sending a message to a user after a warn/mute/kick/ban concerning him has been set to `off`"
   on: "Sending a message to a user after a warn/mute/kick/ban concerning him has been set to `on`"

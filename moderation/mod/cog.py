@@ -68,15 +68,22 @@ TBase = TypeVar("TBase", bound=DBBase)
 
 
 class DurationConverter(Converter):  # TODO: Move to library
+    """
+    Converter for retrieving simple time spans from a string containing different time units
+    """
+
     async def convert(self, ctx, argument: str) -> int | None:
         if argument.lower() in ("inf", "perm", "permanent", "-1", "∞"):
             return None
-        # TODO add new parameters to rest of code
         if (match := re.match(r"^(\d+y)?(\d+m)?(\d+w)?(\d+d)?(\d+H)?(\d+M)?$", argument)) is None:
-            raise BadArgument(tg.invalid_duration)  # TODO explain suffixes
+            raise BadArgument(t.duration_suffixes)
 
-        weeks, days, hours, minutes = [0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 5)]
+        years, months, weeks, days, hours, minutes = [
+            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 5)
+        ]
 
+        years += days * 365
+        days += months * 30
         days += weeks * 7
         td = timedelta(days=days, hours=hours, minutes=minutes)
         duration = int(td.total_seconds() / 60)
@@ -173,8 +180,12 @@ async def get_and_compare_entry(
     return entry
 
 
-async def confirm_action(  # TODO can be removed, "if not await Confirmation().run(ctx, TEXT)" is enough (see constructor for more settings)
-    ctx: Context, embed: Embed, message_confirmed: str = t.edit_confirmed, message_canceled: str = t.edit_canceled
+async def confirm_action(
+    # TODO can be removed, "if not await Confirmation().run(ctx, TEXT)" is enough (see constructor for more settings)
+    ctx: Context,
+    embed: Embed,
+    message_confirmed: str = t.edit_confirmed,
+    message_canceled: str = t.edit_canceled,
 ) -> bool:
     if not await Confirmation().run(ctx, embed=embed):
         embed.description += f"\n\n{message_canceled}"
