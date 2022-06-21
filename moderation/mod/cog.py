@@ -180,25 +180,10 @@ async def get_and_compare_entry(
     return entry
 
 
-async def confirm_action(
-    # TODO can be removed, "if not await Confirmation().run(ctx, TEXT)" is enough (see constructor for more settings)
-    ctx: Context,
-    embed: Embed,
-    message_confirmed: str = t.edit_confirmed,
-    message_canceled: str = t.edit_canceled,
-) -> bool:
-    if not await Confirmation().run(ctx, embed=embed):
-        embed.description += f"\n\n{message_canceled}"
-        return False
-
-    embed.description += f"\n\n{message_confirmed}"
-    return True
-
-
 async def confirm_no_evidence(ctx: Context):
     conf_embed = Embed(title=t.confirmation, description=t.no_evidence, color=Colors.ModTools)
 
-    return await confirm_action(ctx, conf_embed, t.action_confirmed, t.action_cancelled)  # TODO use Confirm().run()
+    return await Confirmation().run(ctx, embed=conf_embed)
 
 
 async def send_to_changelog_mod(
@@ -647,7 +632,7 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.confirmation, description=translation.confirm_edit(entry.reason, reason), color=Colors.ModTools
         )
 
-        if not await confirm_action(ctx, conf_embed):
+        if not await Confirmation().run(ctx, embed=conf_embed):
             return
 
         try:
@@ -682,7 +667,7 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        if not await confirm_action(ctx, conf_embed):
+        if not await Confirmation().run(ctx, embed=conf_embed):
             return
 
         await model.delete(entry_id)
@@ -802,7 +787,7 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        if not await confirm_action(ctx, conf_embed):
+        if not await Confirmation().run(ctx, embed=conf_embed):
             return
 
         try:
@@ -861,7 +846,7 @@ class ModCog(Cog, name="Mod Tools"):
         else:
             conf_embed.description = translation.confirm_edit.duration(old_time, time_to_units(minutes))
 
-        if not await confirm_action(ctx, conf_embed):
+        if not await Confirmation().run(ctx, embed=conf_embed):
             return
 
         for active_entry in active_entries[1:]:
@@ -906,7 +891,7 @@ class ModCog(Cog, name="Mod Tools"):
             color=Colors.ModTools,
         )
 
-        if not await confirm_action(ctx, conf_embed):
+        if not await Confirmation().run(ctx, embed=conf_embed):
             return
 
         try:
@@ -1016,7 +1001,7 @@ class ModCog(Cog, name="Mod Tools"):
             title=t.confirmation, description=t.confirm_report(user.mention, reason), color=Colors.ModTools
         )
 
-        if not await confirm_action(ctx, conf_embed, t.report_confirmed, t.report_canceled):
+        if not await Confirmation().run(ctx, embed=conf_embed):
             return
 
         evidence, evidence_url = extract_evidence(ctx.message)
