@@ -24,31 +24,16 @@ class Punishment(ModBase):
 
     @classmethod
     async def create(
-        cls,
-        member: int,
-        member_name: str,
-        mod: int | None,
-        mod_level: int | None,
-        reason: str | None,
-        evidence: str | None,
+        cls, member: int, member_name: str, mod: int | None, reason: str | None, evidence: str | None
     ) -> Punishment:
-        row = cls(
-            member=member,
-            member_name=member_name,
-            mod=mod,
-            mod_level=mod_level,
-            timestamp=utcnow(),
-            reason=reason,
-            evidence=evidence,
-        )
+        row = cls(member=member, member_name=member_name, mod=mod, timestamp=utcnow(), reason=reason, evidence=evidence)
         await db.add(row)
         return row
 
     @classmethod
-    async def edit(cls, entry_id: int, mod: int, mod_level: int, new_reason: str):
+    async def edit(cls, entry_id: int, mod: int, new_reason: str):
         row = await db.get(cls, id=entry_id)
         row.mod = mod
-        row.mod_level = mod_level
         row.reason = new_reason
 
     @classmethod

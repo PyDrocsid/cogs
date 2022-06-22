@@ -26,7 +26,6 @@ from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
 from PyDrocsid.command import Confirmation, UserCommandError, docs, reply
-from PyDrocsid.config import Config
 from PyDrocsid.converter import UserMemberConverter
 from PyDrocsid.database import Base as DBBase
 from PyDrocsid.database import db, db_wrapper, filter_by
@@ -160,25 +159,10 @@ def show_evidence(evidence: str | None) -> str:
     return t.ulog.evidence(evidence) if evidence else ""
 
 
-async def get_mod_level(mod: Member) -> int:
-    return (await Config.PERMISSION_LEVELS.get_permission_level(mod)).level
-
-
-async def compare_mod_level(mod: Member, mod_level: int) -> bool:
-    return (
-        await get_mod_level(mod) > mod_level or mod == mod.guild.owner
-    )  # TODO remove, all members have the permission to edit / unban etc if they have the permission set via .p set
-
-
-async def get_and_compare_entry(
-    entry_format: Type[TBase], entry_id: int, mod: Member
-) -> TBase:  # TODO DESCRIPTIVE NAME!?
+async def get_database_entry(entry_format: Type[TBase], entry_id: int) -> TBase:
     entry = await db.get(entry_format, id=entry_id)
     if entry is None:
         raise CommandError(getattr(t.not_found, entry_format.__tablename__))
-
-    if mod.id != entry.mod and not await compare_mod_level(mod, entry.mod_level):  # TODO no longer needed, see above
-        raise CommandError(tg.permission_denied)
 
     return entry
 
@@ -276,15 +260,7 @@ class ModCog(Cog, name="Mod Tools"):
                         continue
 
                     if entry.reason:
-                        await Ban.create(
-                            entry.target.id,
-                            str(entry.target),
-                            entry.user.id,
-                            await get_mod_level(entry.user),
-                            -1,
-                            entry.reason,
-                            None,
-                        )
+                        await Ban.create(entry.target.id, str(entry.target), entry.user.id, -1, entry.reason, None)
 
                         await send_to_changelog_mod(
                             guild=guild,
@@ -609,7 +585,7 @@ class ModCog(Cog, name="Mod Tools"):
         except (Forbidden, HTTPException):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
-        await model.create(user.id, str(user), ctx.author.id, await get_mod_level(ctx.author), reason, evidence_url)
+        await model.create(user.id, str(user), ctx.author.id, reason, evidence_url)
         await reply(ctx, embed=server_embed)
         await send_to_changelog_mod(
             guild=ctx.guild,
@@ -626,7 +602,7 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_edit_single(
         self, ctx: Context, entry_id: int, reason: str, translation: Any, model: Type[TBase], color: int
     ):
-        entry = await get_and_compare_entry(model, entry_id, ctx.author)
+        entry = await get_database_entry(model, entry_id)
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -649,7 +625,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=translation.action, description=translation.edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await model.edit(entry_id, ctx.author.id, await get_mod_level(ctx.author), reason)
+        await model.edit(entry_id, ctx.author.id, reason)
 
         try:
             await user.send(embed=user_embed)
@@ -662,7 +638,7 @@ class ModCog(Cog, name="Mod Tools"):
         )
 
     async def handle_delete_single(self, ctx: Context, entry_id: int, translation, model: Type[TBase], color: int):
-        entry = await get_and_compare_entry(model, entry_id, ctx.author)
+        entry = await get_database_entry(model, entry_id)
 
         conf_embed = Embed(
             title=t.confirmation,
@@ -735,13 +711,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
         await model.create(
-            user.id,
-            str(user),
-            ctx.author.id,
-            await get_mod_level(ctx.author),
-            minutes if minutes is not None else -1,
-            reason,
-            evidence_url,
+            user.id, str(user), ctx.author.id, minutes if minutes is not None else -1, reason, evidence_url
         )
 
         await invalidate_entry_cache()
@@ -779,7 +749,7 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_edit_timed_reason(
         self, ctx: Context, entry_id: int, reason: str, translation: Any, model: Type[TBase], color: int
     ):
-        entry = await get_and_compare_entry(model, entry_id, ctx.author)
+        entry = await get_database_entry(model, entry_id)
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -806,7 +776,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=translation.action, description=translation.edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await model.edit_reason(entry_id, ctx.author.id, await get_mod_level(ctx.author), reason)
+        await model.edit_reason(entry_id, ctx.author.id, reason)
 
         try:
             await user.send(embed=user_embed)
@@ -834,9 +804,6 @@ class ModCog(Cog, name="Mod Tools"):
 
         entry = active_entries[0]
 
-        if not await compare_mod_level(ctx.author, entry.mod_level) or not ctx.author.id == entry.mod:
-            raise CommandError(tg.permission_denied)
-
         if entry.minutes == minutes or (entry.minutes == -1 and minutes is None):
             raise CommandError(translation.already_done)
 
@@ -859,7 +826,7 @@ class ModCog(Cog, name="Mod Tools"):
         server_embed = Embed(title=translation.action, description=translation.edited_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
 
-        await model.edit_duration(entry.id, ctx.author.id, await get_mod_level(ctx.author), minutes)
+        await model.edit_duration(entry.id, ctx.author.id, minutes)
 
         await invalidate_entry_cache()
 
@@ -886,7 +853,7 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_delete_timed(
         self, ctx: Context, entry_id: int, translation: Any, model: Type[TBase], color: int
     ) -> TBase | None:
-        entry = await get_and_compare_entry(model, entry_id, ctx.author)
+        entry = await get_database_entry(model, entry_id)
 
         conf_embed = Embed(
             title=t.confirmation,
@@ -956,9 +923,6 @@ class ModCog(Cog, name="Mod Tools"):
 
         minutes = 0
         async for entry in await db.stream(filter_by(model, active=True, member=user.id)):
-            if not await compare_mod_level(ctx.author, entry.mod_level) or not ctx.author.id == entry.mod:
-                raise CommandError(tg.permission_denied)
-
             await model.deactivate(entry.id, ctx.author.id, reason)
 
             was_done = True
