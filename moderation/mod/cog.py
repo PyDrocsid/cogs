@@ -125,6 +125,9 @@ async def invalidate_entry_cache():
 
 
 def time_to_units(minutes: int | float) -> str:
+    """
+    Util function to split minutes back into different time units
+    """
     _keys = ("years", "months", "days", "hours", "minutes")
 
     rd = relativedelta(
@@ -300,8 +303,8 @@ class ModCog(Cog, name="Mod Tools"):
             except Forbidden:
                 await send_alert(guild, t.cannot_fetch_audit_logs)
 
-            await sleep(i * 10)  # TODO why waiting 100 + 90 + 80 ... seconds?
-            search_limit -= i * 10  # TODO tested!?!? if i <= 8 -> search_limit < 0
+            await sleep((i * 10) / 100)
+            search_limit = int(search_limit / 2)
 
     @tasks.loop(minutes=1)
     @db_wrapper
@@ -321,7 +324,7 @@ class ModCog(Cog, name="Mod Tools"):
                     user = ban.member, ban.member_name
                 except Forbidden:
                     await send_alert(guild, t.cannot_unban_permissions)
-                    continue  # TODO stop "for loop"!?
+                    break
 
                 await Ban.deactivate(ban.id)
 
