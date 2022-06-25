@@ -137,6 +137,7 @@ mute:
   log_deleted: ":loud_sound: Mute deleted"
   role_not_set: User could not be muted because no mute role is configured.
   cannot_assign_role: Cannot manage mute role `@{}` ({})
+  cannot_undo: This member cannot be unmuted.
 
 kick:
   action: ":x: Kick"

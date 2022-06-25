@@ -54,6 +54,7 @@ from ...pubsub import (
 tg = t.g
 t = t.mod
 TBase = TypeVar("TBase", bound=DBBase)
+MAX_TIMEOUT = timedelta(days=28)
 
 
 # TODO
@@ -95,12 +96,19 @@ class DurationConverter(Converter):  # TODO: Move to library
 
 
 async def load_entries():
+    """
+    Loads active mute and ban entries from the database and caches them in Redis.
+    Bans and timed mutes are stored in hashes, while infinite mutes are stored in a list
+    """
+
     async def fill(db_model: Type[TBase]):
         async with redis.pipeline() as pipe:
             await pipe.delete(entry_key := f"mod_entries:{db_model.__tablename__}")
 
             async for entry in await db.stream(filter_by(db_model, active=True)):
                 if entry.minutes == -1:
+                    new_key = f"{entry_key}_inf"
+                    await pipe.rpush(new_key, str(entry.id))
                     continue
 
                 expiration_timestamp = entry.timestamp + timedelta(minutes=entry.minutes)
@@ -148,6 +156,9 @@ async def get_mute_role(guild: Guild) -> Role:
 
 
 def extract_evidence(message: Message) -> Tuple[Attachment | None, str | None]:
+    """
+    Extracts possible evidence attachments from a message
+    """
     attachments = message.attachments
     evidence = attachments[0] if attachments else None
     evidence_url = evidence.url if attachments else None
@@ -156,10 +167,16 @@ def extract_evidence(message: Message) -> Tuple[Attachment | None, str | None]:
 
 
 def show_evidence(evidence: str | None) -> str:
+    """
+    Util function to display evidences correctly
+    """
     return t.ulog.evidence(evidence) if evidence else ""
 
 
 async def get_database_entry(entry_format: Type[TBase], entry_id: int) -> TBase:
+    """
+    Loads an entry with a given id from the database
+    """
     entry = await db.get(entry_format, id=entry_id)
     if entry is None:
         raise CommandError(getattr(t.not_found, entry_format.__tablename__))
@@ -168,6 +185,9 @@ async def get_database_entry(entry_format: Type[TBase], entry_id: int) -> TBase:
 
 
 async def confirm_no_evidence(ctx: Context):
+    """
+    Function that lets the user confirm that he does not want to attach an evidence
+    """
     conf_embed = Embed(title=t.confirmation, description=t.no_evidence, color=Colors.ModTools)
 
     return await Confirmation().run(ctx, embed=conf_embed)
@@ -186,6 +206,9 @@ async def send_to_changelog_mod(
     mod: Member | User | None = None,
     original_reason: str | None = None,
 ):
+    """
+    Function that sends logging messages to the moderation log channel
+    """
     embed = Embed(title=title, colour=colour, timestamp=utcnow())
 
     if isinstance(member, tuple):
@@ -331,8 +354,12 @@ class ModCog(Cog, name="Mod Tools"):
             if utcnow() >= datetime.fromisoformat(await redis.hget(mute_entries_key, key)):
                 mute = await db.get(Mute, id=int(key))
 
-                if member := guild.get_member(mute.member):
+                member = guild.get_member(mute.member)
+                timeout: datetime | None = member.communication_disabled_until
+
+                if member:
                     await member.remove_roles(mute_role)
+                    await member.remove_timeout()
                 else:
                     member = mute.member, mute.member_name
 
@@ -348,6 +375,23 @@ class ModCog(Cog, name="Mod Tools"):
                 await Mute.deactivate(mute.id)
 
                 await redis.hdel(mute_entries_key, key)
+
+        for infinite_mute in await redis.lrange(
+            inf_mute_key := f"mod_entries:{Mute.__tablename__}_inf", 0, await redis.llen(inf_mute_key) - 1
+        ):
+            mute = await db.get(Mute, id=int(infinite_mute))
+
+            member = guild.get_member(mute.member)
+            timeout: datetime | None = member.communication_disabled_until
+
+            if member and infinite_mute.days == -1:
+                await member.timeout_for(MAX_TIMEOUT)
+            elif member and (
+                not timeout
+                or timeout + timedelta(seconds=2) < infinite_mute.timestamp + timedelta(days=infinite_mute.days)
+            ):
+                delta = min(infinite_mute.timestamp + timedelta(days=infinite_mute.days) - utcnow(), MAX_TIMEOUT)
+                await member.timeout_for(delta)
 
     @log_auto_kick.subscribe
     async def handle_log_auto_kick(self, member: Member):
@@ -1040,7 +1084,11 @@ class ModCog(Cog, name="Mod Tools"):
 
         if isinstance(user, Member):
             await user.add_roles(mute_role)
-            await user.move_to(None)
+
+            try:
+                await user.timeout_for(min(timedelta(minutes=time), MAX_TIMEOUT) if time else MAX_TIMEOUT)
+            except Forbidden:
+                raise CommandError(t.mute.cannot)
 
     @commands.group(aliases=["mute_edit"])
     @ModPermission.mute.check
@@ -1094,6 +1142,11 @@ class ModCog(Cog, name="Mod Tools"):
                 was_muted = True
                 if mute_role is not None:
                     await muted_user.remove_roles(mute_role)
+
+                try:
+                    await user.remove_timeout()
+                except Forbidden:
+                    raise CommandError(t.mute.cannot_undo)
 
             return was_muted
 
