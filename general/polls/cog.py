@@ -575,3 +575,14 @@ class PollsCog(Cog, name="Polls"):
         await PollsDefaultSettings.max_duration.set(days)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
+
+    @settings.command(name="max_duration", aliases=["md"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.max_duration)
+    async def max_duration(self, ctx: Context, days: int | None = None):
+        days = days or 7
+        msg: str = t.max_duration.set(cnt=days)
+
+        await PollsDefaultSettings.max_duration.set(days)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
