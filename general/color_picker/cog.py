@@ -21,6 +21,10 @@ COLOR = namedtuple("RGB_Tuple", ["R", "G", "B"])
 
 
 def _to_floats(given: list[COLOR_ARGS]) -> tuple[float, float, float]:
+    """
+    takes a list with tuples containing a value and a max_values
+    at the end it should return a number between 0 and 1 for each tuple
+    """
     out: list[float] = []
 
     for arg in given:
@@ -57,12 +61,14 @@ class ColorPickerCog(Cog, name="Color Picker"):
             rgb = _to_floats([COLOR_ARGS(color_re.group(i), 255) for i in range(2, 5)])
 
         elif color_re := self.RE_HSV.match(color):
-            values = _to_floats([COLOR_ARGS(color_re.group(i[0]), i[1]) for i in ((2, 360), (3, 100), (4, 100))])
-            rgb = colorsys.hsv_to_rgb(values[0], values[1], values[2])
+            rgb = colorsys.hsv_to_rgb(
+                *_to_floats([COLOR_ARGS(color_re.group(i), value) for i, value in ((2, 360), (3, 100), (4, 100))])
+            )
 
         elif color_re := self.RE_HSL.match(color):
-            values = _to_floats([COLOR_ARGS(color_re.group(i[0]), i[1]) for i in ((2, 360), (3, 100), (4, 100))])
-            rgb = colorsys.hls_to_rgb(values[0], values[2], values[1])
+            rgb = colorsys.hls_to_rgb(
+                *_to_floats([COLOR_ARGS(color_re.group(i), value) for i, value in ((2, 360), (3, 100), (4, 100))])
+            )
 
         else:
             raise CommandError(t.error.parse_color_example(color))
