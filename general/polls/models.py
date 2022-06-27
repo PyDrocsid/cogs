@@ -4,16 +4,37 @@ import enum
 from datetime import datetime
 from typing import Optional, Union
 
+from discord import Role
 from discord.utils import utcnow
 from sqlalchemy import BigInteger, Boolean, Column, Enum, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import Base, UTCDateTime, db
+from PyDrocsid.database import Base, UTCDateTime, db, filter_by, select
+from PyDrocsid.environment import CACHE_TTL
+from PyDrocsid.redis import redis
 
 
 class PollType(enum.Enum):
     TEAM = "team"
     STANDARD = "standard"
+
+
+async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:
+    out = []
+
+    async with redis.pipeline() as pipe:
+        if role_id:
+            await pipe.delete(f"poll_role_weight={role_id}")
+        weights: RoleWeight
+        async for weights in await db.stream(select(RoleWeight)):
+            await pipe.delete(key := f"poll_role_weight={role_id or weights.role_id}")
+            save = {"role": int(weights.role_id), "weight": float(weights.weight)}
+            out.append(save)
+            await pipe.setex(key, CACHE_TTL, str(weights.weight))
+
+        await pipe.execute()
+
+    return out
 
 
 class Poll(Base):
@@ -123,3 +144,39 @@ class PollVote(Base):
 
     async def remove(self):
         await db.delete(self)
+
+
+class RoleWeight(Base):
+    __tablename__ = "role_weight"
+
+    id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
+    guild_id: Union[Column, int] = Column(BigInteger)
+    role_id: Union[Column, int] = Column(BigInteger, unique=True)
+    weight: Union[Column, float] = Column(Float)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
+
+    @staticmethod
+    async def create(guild_id: int, role: int, weight: float) -> RoleWeight:
+        role_weight = RoleWeight(guild_id=guild_id, role_id=role, weight=weight, timestamp=utcnow())
+        await db.add(role_weight)
+        await sync_redis()
+        return role_weight
+
+    async def remove(self) -> None:
+        await db.delete(self)
+        await sync_redis(self.role_id)
+
+    @staticmethod
+    async def get(guild: int) -> list[RoleWeight]:
+        return await db.all(filter_by(RoleWeight, guild_id=guild))
+
+    @staticmethod
+    async def get_highest(user_roles: list[Role]) -> float:
+        weight: float = 0.0
+        for role in user_roles:
+            _weight = await redis.get(f"poll_role_weight={role.id}")
+
+            if _weight and weight < (_weight := float(_weight)):
+                weight = _weight
+
+        return weight
