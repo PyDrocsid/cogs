@@ -455,3 +455,32 @@ class PollsCog(Cog, name="Polls"):
             pass
 
         await add_reactions(ctx.message, "white_check_mark")
+
+    @poll.command(name="voted", aliases=["v"])
+    @docs(t.commands.poll.voted)
+    async def voted(self, ctx: Context, message: Message):
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        author = ctx.author
+        if not poll:
+            raise CommandError(t.error.not_poll)
+        if (
+                poll.anonymous
+                and not await PollsPermission.anonymous_bypass.check_permissions(author)
+                and not poll.owner_id == author.id
+        ):
+            raise PermissionError
+
+        users = {}
+        for option in poll.options:
+            for vote in option.votes:
+                if not users.get(str(vote.user_id)):
+                    users[str(vote.user_id)] = [option.field_position + 1]
+                else:
+                    users[str(vote.user_id)].append(option.field_position + 1)
+
+        description = ""
+        for key, value in users.items():
+            description += t.voted.row(key, value)
+        embed = Embed(title=t.voted.title, description=description, color=Colors.Polls)
+
+        await send_long_embed(ctx, embed=embed, repeat_title=True, paginate=True)
