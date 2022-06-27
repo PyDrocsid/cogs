@@ -1,4 +1,3 @@
-import re
 import string
 from typing import Optional, Tuple
 
@@ -17,6 +16,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import check_wastebasket, is_teamler
 
 from .colors import Colors
+from .models import Poll
 from .permissions import PollsPermission
 from ...contributor import Contributor
 
@@ -61,6 +61,13 @@ def create_select_view(select_obj: Select, timeout: float = None) -> View:
     view.add_item(select_obj)
 
     return view
+
+
+def get_percentage(poll: Poll) -> list[tuple[float, float]]:
+    """returns the amount of votes and the percentage of an option"""
+    values: list[float] = [sum([vote.vote_weight for vote in option.votes]) for option in poll.options]
+
+    return [(float(value), float(round(((value / sum(values)) * 100), 2))) for value in values]
 
 
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
