@@ -185,6 +185,27 @@ async def get_staff(guild: Guild, team_roles: list[str]) -> set[Member]:
     return teamlers
 
 
+async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
+    """edits the poll embed, updating the votes and percentages"""
+    calc = get_percentage(poll)
+    for index, field in enumerate(embed.fields):
+        if field.name == tg.status:
+            missing.sort(key=lambda m: str(m).lower())
+            *teamlers, last = (x.mention for x in missing)
+            teamlers: list[str]
+            embed.set_field_at(
+                index,
+                name=field.name,
+                value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
+            )
+        else:
+            weight: float | int = calc[index][0] if not calc[index][0].is_integer() else int(calc[index][0])
+            percentage: float | int = calc[index][1] if not calc[index][1].is_integer() else int(calc[index][1])
+            embed.set_field_at(index, name=t.option.field.name(weight, percentage), value=field.value, inline=False)
+
+    return embed
+
+
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
     for embed in message.embeds:
         for i, field in enumerate(embed.fields):
