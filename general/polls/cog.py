@@ -603,3 +603,13 @@ class PollsCog(Cog, name="Polls"):
         await PollsDefaultSettings.anonymous.set(status)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
+
+    @settings.command(name="fair", aliases=["f"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.fair)
+    async def fair(self, ctx: Context, status: bool):
+        msg: str = t.fair.is_on if status else t.fair.is_off
+
+        await PollsDefaultSettings.fair.set(status)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
