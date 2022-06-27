@@ -138,6 +138,18 @@ async def handle_deleted_messages(bot, message_id: int):
         await msg.delete()
 
 
+async def check_poll_time(poll: Poll) -> bool:
+    """checks if a poll has ended"""
+    if not poll.end_time:
+        await poll.remove()
+        return False
+
+    elif poll.end_time < utcnow():
+        return False
+
+    return True
+
+
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
     for embed in message.embeds:
         for i, field in enumerate(embed.fields):
