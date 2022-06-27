@@ -550,3 +550,17 @@ class PollsCog(Cog, name="Polls"):
 
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
+
+    @settings.command(name="duration", aliases=["d"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.duration)
+    async def duration(self, ctx: Context, hours: int | None = None):
+        if not hours:
+            hours = 0
+            msg: str = t.duration.reset()
+        else:
+            msg: str = t.duration.set(cnt=hours)
+
+        await PollsDefaultSettings.duration.set(hours)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
