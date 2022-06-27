@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
 from discord.ext import commands
-from discord.ext.commands import CommandError, Context, guild_only
+from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
@@ -26,6 +26,32 @@ t = t.polls
 MAX_OPTIONS = 25  # Discord select menu limit
 
 DEFAULT_EMOJIS = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
+
+
+class PollOption:
+    emoji: str = None
+    option: str = None
+
+    async def init(self, ctx: Context, line: str, number: int):
+        if not line:
+            raise CommandError(t.empty_option)
+
+        emoji_candidate, *option = line.split()
+        option = " ".join(option)
+        try:
+            self.emoji = str(await EmojiConverter().convert(ctx, emoji_candidate))
+        except EmojiNotFound:
+            if (unicode_emoji := emoji_candidate) in emoji_to_name:
+                self.emoji = unicode_emoji
+            else:
+                self.emoji = DEFAULT_EMOJIS[number]
+                option = f"{emoji_candidate} {option}"
+        self.option = option
+
+        return self
+
+    def __str__(self):
+        return f"{self.emoji} {self.option}" if self.option else self.emoji
 
 
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
@@ -221,34 +247,3 @@ class PollsCog(Cog, name="Polls"):
             await message.add_reaction(name_to_emoji["-1"])
         except Forbidden:
             raise CommandError(t.could_not_add_reactions(message.channel.mention))
-
-
-class PollOption:
-    def __init__(self, ctx: Context, line: str, number: int):
-        if not line:
-            raise CommandError(t.empty_option)
-
-        emoji_candidate, *text = line.lstrip().split(" ")
-        text = " ".join(text)
-
-        custom_emoji_match = re.fullmatch(r"<a?:[a-zA-Z0-9_]+:(\d+)>", emoji_candidate)
-        if custom_emoji := ctx.bot.get_emoji(int(custom_emoji_match.group(1))) if custom_emoji_match else None:
-            self.emoji = custom_emoji
-            self.option = text.strip()
-        elif (unicode_emoji := emoji_candidate) in emoji_to_name:
-            self.emoji = unicode_emoji
-            self.option = text.strip()
-        elif (match := re.match(r"^:([^: ]+):$", emoji_candidate)) and (
-            unicode_emoji := name_to_emoji.get(match.group(1).replace(":", ""))
-        ):
-            self.emoji = unicode_emoji
-            self.option = text.strip()
-        else:
-            self.emoji = DEFAULT_EMOJIS[number]
-            self.option = line
-
-        if name_to_emoji["wastebasket"] == self.emoji:
-            raise CommandError(t.can_not_use_wastebucket_as_option)
-
-    def __str__(self):
-        return f"{self.emoji} {self.option}" if self.option else self.emoji
