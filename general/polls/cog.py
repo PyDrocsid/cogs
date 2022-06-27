@@ -730,3 +730,41 @@ class PollsCog(Cog, name="Polls"):
                 await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
             except Forbidden:
                 pass
+
+    @commands.command(aliases=["tyn"])
+    @PollsPermission.team_poll.check
+    @guild_only()
+    @docs(t.commands.team_yes_no)
+    async def team_yesno(self, ctx: Context, *, text: str):
+        options = t.yes_no.option_string(text)
+
+        missing = list(await get_staff(self.bot.guilds[0], ["team"]))
+        missing.sort(key=lambda m: str(m).lower())
+        *teamlers, last = (x.mention for x in missing)
+        teamlers: list[str]
+        field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
+
+        message, interaction, parsed_options, question = await send_poll(
+            ctx=ctx,
+            title=t.team_poll,
+            max_choices=1,
+            poll_args=options,
+            field=field,
+            deadline=await PollsDefaultSettings.max_duration.get() * 24,
+        )
+        await Poll.create(
+            message_id=message.id,
+            message_url=message.jump_url,
+            guild_id=ctx.guild.id,
+            channel=message.channel.id,
+            owner=ctx.author.id,
+            title=question,
+            end=calc_end_time(await PollsDefaultSettings.max_duration.get() * 24),
+            anonymous=False,
+            can_delete=False,
+            options=parsed_options,
+            poll_type=PollType.TEAM,
+            interaction=interaction.id,
+            fair=True,
+            max_choices=1,
+        )
