@@ -642,3 +642,68 @@ class PollsCog(Cog, name="Polls"):
         )
 
         await ctx.message.delete()
+
+    @poll.command(name="new", usage=t.usage.poll)
+    @docs(t.commands.poll.new)
+    async def new(self, ctx: Context, *, options: str):
+        wizard = await ctx.send(embed=build_wizard())
+        mess: Message = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author, timeout=60.0)
+        args = mess.content
+
+        if args.lower() == t.skip.message:
+            await wizard.edit(embed=build_wizard(True), delete_after=5.0)
+        else:
+            await wizard.delete(delay=5.0)
+        await mess.delete()
+
+        parser = await get_parser()
+        parsed: Namespace = parser.parse_known_args(args.split())[0]
+
+        title: str = t.poll
+        poll_type: Enum | str = parsed.type.lower()
+        if poll_type == PollType.TEAM.value and await PollsPermission.team_poll.check_permissions(ctx.author):
+            poll_type = PollType.TEAM
+            title: str = t.team_poll
+        else:
+            poll_type = PollType.STANDARD
+        max_deadline = await PollsDefaultSettings.max_duration.get() * 24
+        deadline: Union[list[str, str], int] = parsed.deadline
+        if isinstance(deadline, int):
+            deadline = deadline or max_deadline if deadline <= max_deadline else max_deadline
+        else:
+            deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
+        anonymous: bool = parsed.anonymous
+        choices: int = parsed.choices
+
+        if poll_type == PollType.TEAM:
+            can_delete, fair = False, True
+            missing = list(await get_staff(self.bot.guilds[0], ["team"]))
+            missing.sort(key=lambda m: str(m).lower())
+            *teamlers, last = (x.mention for x in missing)
+            teamlers: list[str]
+            field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
+        else:
+            can_delete, fair = True, parsed.fair
+            field = None
+
+        message, interaction, parsed_options, question = await send_poll(
+            ctx=ctx, title=title, poll_args=options, max_choices=choices, field=field, deadline=deadline
+        )
+        await ctx.message.delete()
+
+        await Poll.create(
+            message_id=message.id,
+            message_url=message.jump_url,
+            guild_id=ctx.guild.id,
+            channel=message.channel.id,
+            owner=ctx.author.id,
+            title=question,
+            end=calc_end_time(deadline),
+            anonymous=anonymous,
+            can_delete=can_delete,
+            options=parsed_options,
+            poll_type=poll_type,
+            interaction=interaction.id,
+            fair=fair,
+            max_choices=choices,
+        )
