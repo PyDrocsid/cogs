@@ -1,4 +1,5 @@
 import string
+from argparse import ArgumentParser
 from typing import Optional, Tuple
 
 from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
@@ -16,8 +17,9 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import check_wastebasket, is_teamler
 
 from .colors import Colors
-from .models import Poll
+from .models import Poll, PollType
 from .permissions import PollsPermission
+from .settings import PollsDefaultSettings
 from ...contributor import Contributor
 
 
@@ -81,6 +83,28 @@ def build_wizard(skip: bool = False) -> Embed:
     embed.add_field(name=t.wizard.skip.name, value=t.wizard.skip.value, inline=False)
 
     return embed
+
+
+async def get_parser() -> ArgumentParser:
+    """creates a parser object with options for advanced polls"""
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--type",
+        "-T",
+        default=PollType.STANDARD.value,
+        choices=[PollType.STANDARD.value, PollType.TEAM.value],
+        type=str,
+    )
+    parser.add_argument("--deadline", "-D", default=await PollsDefaultSettings.duration.get(), type=int)
+    parser.add_argument(
+        "--anonymous", "-A", default=await PollsDefaultSettings.anonymous.get(), type=bool, choices=[True, False]
+    )
+    parser.add_argument(
+        "--choices", "-C", default=await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS, type=int
+    )
+    parser.add_argument("--fair", "-F", default=await PollsDefaultSettings.fair.get(), type=bool, choices=[True, False])
+
+    return parser
 
 
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
