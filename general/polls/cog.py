@@ -1,7 +1,9 @@
 import string
 from argparse import ArgumentParser
+from datetime import datetime
 from typing import Optional, Tuple
 
+from dateutil.relativedelta import relativedelta
 from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only
@@ -105,6 +107,11 @@ async def get_parser() -> ArgumentParser:
     parser.add_argument("--fair", "-F", default=await PollsDefaultSettings.fair.get(), type=bool, choices=[True, False])
 
     return parser
+
+
+def calc_end_time(duration: Optional[float]) -> Optional[datetime]:
+    """returns the time when a poll should be closed"""
+    return utcnow() + relativedelta(hours=int(duration)) if duration else None
 
 
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
