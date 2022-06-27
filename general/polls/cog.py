@@ -343,7 +343,13 @@ class MySelect(Select):
 
 
 class PollsCog(Cog, name="Polls"):
-    CONTRIBUTORS = [Contributor.MaxiHuHe04, Contributor.Defelo, Contributor.TNT2k, Contributor.wolflu]
+    CONTRIBUTORS = [
+        Contributor.MaxiHuHe04,
+        Contributor.Defelo,
+        Contributor.TNT2k,
+        Contributor.wolflu,
+        Contributor.Infinity,
+    ]
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
