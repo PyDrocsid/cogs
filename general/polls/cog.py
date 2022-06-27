@@ -170,6 +170,21 @@ async def close_poll(bot, poll: Poll):
     poll.active = False
 
 
+async def get_staff(guild: Guild, team_roles: list[str]) -> set[Member]:
+    """gets a list of all team members"""
+    teamlers: set[Member] = set()
+    for role_name in team_roles:
+        if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
+            continue
+
+        teamlers.update(member for member in team_role.members if not member.bot)
+
+    if not teamlers:
+        raise CommandError(t.error.no_teamlers)
+
+    return teamlers
+
+
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
     for embed in message.embeds:
         for i, field in enumerate(embed.fields):
