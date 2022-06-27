@@ -3,10 +3,11 @@ from argparse import ArgumentParser
 from datetime import datetime
 from typing import Optional, Tuple
 
+from PyDrocsid.command import docs
 from dateutil.relativedelta import relativedelta
 from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException, RawMessageDeleteEvent
 from discord.ext import commands, tasks
-from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only
+from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only, UserInputError
 from discord.ui import Select, View
 from discord.utils import utcnow
 
@@ -380,17 +381,24 @@ class PollsCog(Cog, name="Polls"):
         except RuntimeError:
             self.poll_loop.restart()
 
-        async def on_message_delete(self, message: Message):
-            await handle_deleted_messages(self.bot, message.id)
+    async def on_message_delete(self, message: Message):
+        await handle_deleted_messages(self.bot, message.id)
 
-        async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
-            await handle_deleted_messages(self.bot, event.message_id)
+    async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
+        await handle_deleted_messages(self.bot, event.message_id)
 
-        @tasks.loop(minutes=1)
-        @db_wrapper
-        async def poll_loop(self):
-            polls: list[Poll] = await db.all(filter_by(Poll, active=True))
+    @tasks.loop(minutes=1)
+    @db_wrapper
+    async def poll_loop(self):
+        polls: list[Poll] = await db.all(filter_by(Poll, active=True))
 
-            for poll in polls:
-                if not await check_poll_time(poll):
-                    await close_poll(self.bot, poll)
+        for poll in polls:
+            if not await check_poll_time(poll):
+                await close_poll(self.bot, poll)
+
+    @commands.group(name="poll", aliases=["vote"])
+    @guild_only()
+    @docs(t.commands.poll.poll)
+    async def poll(self, ctx: Context):
+        if not ctx.subcommand_passed:
+            raise UserInputError
