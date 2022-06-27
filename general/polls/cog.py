@@ -206,14 +206,6 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
     return embed
 
 
-async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
-    for embed in message.embeds:
-        for i, field in enumerate(embed.fields):
-            if tg.status == field.name:
-                return embed, i
-    return None, None
-
-
 async def send_poll(
     ctx: Context,
     title: str,
