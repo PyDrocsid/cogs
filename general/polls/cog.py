@@ -70,6 +70,19 @@ def get_percentage(poll: Poll) -> list[tuple[float, float]]:
     return [(float(value), float(round(((value / sum(values)) * 100), 2))) for value in values]
 
 
+def build_wizard(skip: bool = False) -> Embed:
+    """creates a help embed for setting up advanced polls"""
+    if skip:
+        return Embed(title=t.skip.title, description=t.skip.description, color=Colors.Polls)
+
+    embed = Embed(title=t.wizard.title, description=t.wizard.description, color=Colors.Polls)
+    embed.add_field(name=t.wizard.arg, value=t.wizard.args, inline=False)
+    embed.add_field(name=t.wizard.example.name, value=t.wizard.example.value, inline=False)
+    embed.add_field(name=t.wizard.skip.name, value=t.wizard.skip.value, inline=False)
+
+    return embed
+
+
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
     for embed in message.embeds:
         for i, field in enumerate(embed.fields):
