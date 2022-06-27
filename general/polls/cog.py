@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 from dateutil.relativedelta import relativedelta
-from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound
+from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only
 from discord.ui import Select, View
@@ -24,7 +24,7 @@ from .models import Poll, PollType, RoleWeight, PollVote, Option
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
-
+from ...pubsub import send_alert
 
 tg = t.g
 t = t.polls
@@ -215,43 +215,80 @@ async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optiona
 
 
 async def send_poll(
-    ctx: Context, title: str, args: str, field: Optional[Tuple[str, str]] = None, allow_delete: bool = True
-):
-    question, *options = [line.replace("\x00", "\n") for line in args.replace("\\\n", "\x00").split("\n") if line]
+    ctx: Context,
+    title: str,
+    poll_args: str,
+    max_choices: int = None,
+    field: Optional[tuple[str, str]] = None,
+    deadline: Optional[int] = None,
+) -> tuple[Message, Message, list[tuple[str, str]], str]:
+    """sends a poll embed + view message containing the select field"""
+
+    if not max_choices:
+        max_choices = t.poll_config.choices.unlimited
+
+    question, *options = [line.replace("\x00", "\n") for line in poll_args.replace("\\\n", "\x00").split("\n") if line]
 
     if not options:
         raise CommandError(t.missing_options)
-    if len(options) > MAX_OPTIONS - allow_delete:
-        raise CommandError(t.too_many_options(MAX_OPTIONS - allow_delete))
+    if len(options) > MAX_OPTIONS:
+        raise CommandError(t.too_many_options(MAX_OPTIONS))
+    if field and len(options) >= MAX_OPTIONS:
+        raise CommandError(t.too_many_options(MAX_OPTIONS - 1))
 
-    options = [PollOption(ctx, line, i) for i, line in enumerate(options)]
+    options = [await PollOption().init(ctx, line, i) for i, line in enumerate(options)]
 
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
 
     embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
-    if allow_delete:
-        embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
 
-    if len({x.emoji for x in options}) < len(options):
+    if deadline:
+        end_time = calc_end_time(deadline)
+        embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M")))
+
+    if len({option.emoji for option in options}) < len(options):
         raise CommandError(t.option_duplicated)
 
     for option in options:
-        embed.add_field(name="** **", value=str(option), inline=False)
+        embed.add_field(name=t.option.field.name(0, 0), value=str(option), inline=False)
 
     if field:
         embed.add_field(name=field[0], value=field[1], inline=False)
 
-    poll: Message = await ctx.send(embed=embed)
+    if not max_choices or isinstance(max_choices, str):
+        place = t.select.place
+        max_value = len(options)
+    else:
+        options_amount = len(options) if max_choices >= len(options) else max_choices
+        place: str = t.select.placeholder(cnt=options_amount)
+        max_value = options_amount
+
+    msg = await ctx.send(embed=embed)
+    select_obj = MySelect(
+        custom_id=str(msg.id),
+        placeholder=place,
+        max_values=max_value,
+        options=[
+            SelectOption(label=t.select.label(index + 1), emoji=option.emoji, description=option.option)
+            for index, option in enumerate(options)
+        ],
+    )
+    view_msg = await ctx.send(view=create_select_view(select_obj=select_obj))
+
+    parsed_options: list[tuple[str, str]] = [(obj.emoji, t.select.label(ix)) for ix, obj in enumerate(options, start=1)]
 
     try:
-        for option in options:
-            await poll.add_reaction(option.emoji)
-        if allow_delete:
-            await poll.add_reaction(name_to_emoji["wastebasket"])
-    except Forbidden:
-        raise CommandError(t.could_not_add_reactions(ctx.channel.mention))
+        await msg.pin()
+    except HTTPException:
+        embed = Embed(
+            title=t.error.cant_pin.title,
+            description=t.error.cant_pin.description(ctx.channel.mention),
+            color=Colors.error,
+        )
+        await send_alert(ctx.guild, embed)
+    return msg, view_msg, parsed_options, question
 
 
 class MySelect(Select):
@@ -311,7 +348,6 @@ class MySelect(Select):
         embed = await edit_poll_embed(embed, poll, missing)
         await message.edit(embed=embed)
         await interaction.response.send_message(content=t.poll_voted, ephemeral=True)
-
 
 
 class PollsCog(Cog, name="Polls"):
