@@ -5,7 +5,8 @@ from typing import Optional, Tuple
 
 from PyDrocsid.command import docs, add_reactions, Confirmation
 from dateutil.relativedelta import relativedelta
-from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException, RawMessageDeleteEvent
+from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException, RawMessageDeleteEvent, \
+    Role
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only, UserInputError
 from discord.ui import Select, View
@@ -576,13 +577,19 @@ class PollsCog(Cog, name="Polls"):
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
-    @settings.command(name="max_duration", aliases=["md"])
+    @settings.command(name="votes", aliases=["v", "choices", "c"])
     @PollsPermission.write.check
-    @docs(t.commands.poll.settings.max_duration)
-    async def max_duration(self, ctx: Context, days: int | None = None):
-        days = days or 7
-        msg: str = t.max_duration.set(cnt=days)
+    @docs(t.commands.poll.settings.votes)
+    async def votes(self, ctx: Context, votes: int | None = None):
+        if not votes:
+            votes = 0
+            msg: str = t.votes.reset
+        else:
+            msg: str = t.votes.set(cnt=votes)
 
-        await PollsDefaultSettings.max_duration.set(days)
+        if not 0 < votes < MAX_OPTIONS:
+            votes = 0
+
+        await PollsDefaultSettings.max_choices.set(votes)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
