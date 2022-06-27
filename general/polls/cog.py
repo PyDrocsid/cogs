@@ -1,7 +1,8 @@
 import string
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from datetime import datetime
-from typing import Optional, Tuple
+from enum import Enum
+from typing import Optional, Tuple, Union
 
 from PyDrocsid.command import docs, add_reactions, Confirmation
 from dateutil.relativedelta import relativedelta
@@ -707,3 +708,25 @@ class PollsCog(Cog, name="Polls"):
             fair=fair,
             max_choices=choices,
         )
+
+    @commands.command(aliases=["yn"])
+    @guild_only()
+    @docs(t.commands.yes_no)
+    async def yesno(self, ctx: Context, message: Optional[Message] = None, text: Optional[str] = None):
+        if message is None or message.guild is None or text:
+            message = ctx.message
+
+        if message.author != ctx.author and not await is_teamler(ctx.author):
+            raise CommandError(t.foreign_message)
+
+        try:
+            await message.add_reaction(name_to_emoji["thumbsup"])
+            await message.add_reaction(name_to_emoji["thumbsdown"])
+        except Forbidden:
+            raise CommandError(t.could_not_add_reactions(message.channel.mention))
+
+        if message != ctx.message:
+            try:
+                await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
+            except Forbidden:
+                pass
