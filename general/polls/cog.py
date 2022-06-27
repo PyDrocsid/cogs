@@ -593,3 +593,13 @@ class PollsCog(Cog, name="Polls"):
         await PollsDefaultSettings.max_choices.set(votes)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
+
+    @settings.command(name="anonymous", aliases=["a"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.anonymous)
+    async def anonymous(self, ctx: Context, status: bool):
+        msg: str = t.anonymous.is_on if status else t.anonymous.is_off
+
+        await PollsDefaultSettings.anonymous.set(status)
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
