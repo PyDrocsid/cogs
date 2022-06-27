@@ -613,3 +613,32 @@ class PollsCog(Cog, name="Polls"):
         await PollsDefaultSettings.fair.set(status)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
+
+    @poll.command(name="quick", usage=t.usage.poll, aliases=["q"])
+    @docs(t.commands.poll.quick)
+    async def quick(self, ctx: Context, *, args: str):
+        deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
+        max_choices = await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS
+        anonymous = await PollsDefaultSettings.anonymous.get()
+        message, interaction, parsed_options, question = await send_poll(
+            ctx=ctx, title=t.poll, poll_args=args, max_choices=max_choices, deadline=deadline
+        )
+
+        await Poll.create(
+            message_id=message.id,
+            message_url=message.jump_url,
+            guild_id=ctx.guild.id,
+            channel=message.channel.id,
+            owner=ctx.author.id,
+            title=question,
+            end=calc_end_time(deadline),
+            anonymous=anonymous,
+            can_delete=True,
+            options=parsed_options,
+            poll_type=PollType.STANDARD,
+            interaction=interaction.id,
+            fair=await PollsDefaultSettings.fair.get(),
+            max_choices=max_choices,
+        )
+
+        await ctx.message.delete()
