@@ -16,7 +16,11 @@ from ...contributor import Contributor
 t = t.color_picker
 
 
-def _to_floats(given: list[namedtuple]) -> tuple[float, float, float]:
+COLOR_ARGS = namedtuple("ColorParameter", ["value", "max_value"])
+COLOR = namedtuple("RGB_Tuple", ["R", "G", "B"])
+
+
+def _to_floats(given: list[COLOR_ARGS]) -> tuple[float, float, float]:
     out: list[float] = []
 
     for arg in given:
@@ -28,8 +32,8 @@ def _to_floats(given: list[namedtuple]) -> tuple[float, float, float]:
     return out[0], out[1], out[2]
 
 
-def _hex_to_color(hex_color: str) -> tuple[int, ...]:
-    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))  # noqa: E203
+def _hex_to_color(hex_color: str) -> COLOR:
+    return COLOR(*tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4)))  # noqa: E203
 
 
 class ColorPickerCog(Cog, name="Color Picker"):
@@ -44,39 +48,20 @@ class ColorPickerCog(Cog, name="Color Picker"):
     @commands.command(name="color_picker", aliases=["cp", "color"])
     @docs(t.commands.color_picker)
     async def color_picker(self, ctx: Context, *, color: str):
-        color_args = namedtuple("ColorParameter", ["value", "max_value"])
 
         if color_re := self.RE_HEX.match(color):
             rgb = _hex_to_color(color_re.group(1))
-            rgb = _to_floats([color_args(rgb[0], 255), color_args(rgb[1], 255), color_args(rgb[2], 255)])
+            rgb = _to_floats([COLOR_ARGS(rgb[i], 255) for i in range(3)])
 
         elif color_re := self.RE_RGB.match(color):
-            rgb = _to_floats(
-                [
-                    color_args(color_re.group(2), 255),
-                    color_args(color_re.group(3), 255),
-                    color_args(color_re.group(4), 255),
-                ]
-            )
+            rgb = _to_floats([COLOR_ARGS(color_re.group(i), 255) for i in range(2, 5)])
 
         elif color_re := self.RE_HSV.match(color):
-            values = _to_floats(
-                [
-                    color_args(color_re.group(2), 360),
-                    color_args(color_re.group(3), 100),
-                    color_args(color_re.group(4), 100),
-                ]
-            )
+            values = _to_floats([COLOR_ARGS(color_re.group(i[0]), i[1]) for i in ((2, 360), (3, 100), (4, 100))])
             rgb = colorsys.hsv_to_rgb(values[0], values[1], values[2])
 
         elif color_re := self.RE_HSL.match(color):
-            values = _to_floats(
-                [
-                    color_args(color_re.group(2), 360),
-                    color_args(color_re.group(3), 100),
-                    color_args(color_re.group(4), 100),
-                ]
-            )
+            values = _to_floats([COLOR_ARGS(color_re.group(i[0]), i[1]) for i in ((2, 360), (3, 100), (4, 100))])
             rgb = colorsys.hls_to_rgb(values[0], values[2], values[1])
 
         else:
