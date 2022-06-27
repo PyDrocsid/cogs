@@ -9,11 +9,11 @@ from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotF
 from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only, UserInputError
 from discord.ui import Select, View
-from discord.utils import utcnow
+from discord.utils import utcnow, format_dt
 
 from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.cog import Cog
-from PyDrocsid.embeds import EmbedLimits
+from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
@@ -402,3 +402,28 @@ class PollsCog(Cog, name="Polls"):
     async def poll(self, ctx: Context):
         if not ctx.subcommand_passed:
             raise UserInputError
+
+    @poll.command(name="list", aliases=["l"])
+    @guild_only()
+    @docs(t.commands.poll.list)
+    async def poll_list(self, ctx: Context):
+        polls: list[Poll] = await db.all(filter_by(Poll, active=True, guild_id=ctx.guild.id))
+        description = ""
+        for poll in polls:
+            if poll.poll_type == PollType.TEAM and not await PollsPermission.team_poll.check_permissions(ctx.author):
+                continue
+            if poll.poll_type == PollType.TEAM:
+                description += t.polls.team_row(
+                    poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
+                )
+            else:
+                description += t.polls.row(
+                    poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
+                )
+
+        if polls and description:
+            embed: Embed = Embed(title=t.polls.title, description=description, color=Colors.Polls)
+            await send_long_embed(ctx, embed=embed, paginate=True)
+
+        else:
+            await send_long_embed(ctx, embed=Embed(title=t.no_polls, color=Colors.error))
