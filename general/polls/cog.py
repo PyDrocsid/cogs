@@ -484,3 +484,44 @@ class PollsCog(Cog, name="Polls"):
         embed = Embed(title=t.voted.title, description=description, color=Colors.Polls)
 
         await send_long_embed(ctx, embed=embed, repeat_title=True, paginate=True)
+
+    @poll.group(name="settings", aliases=["s"])
+    @PollsPermission.read.check
+    @docs(t.commands.poll.settings.settings)
+    async def settings(self, ctx: Context):
+        if ctx.subcommand_passed is not None:
+            if ctx.invoked_subcommand is None:
+                raise UserInputError
+            return
+
+        embed = Embed(title=t.poll_config.title, color=Colors.Polls)
+        time: int = await PollsDefaultSettings.duration.get()
+        max_time: int = await PollsDefaultSettings.max_duration.get()
+        embed.add_field(
+            name=t.poll_config.duration.name,
+            value=t.poll_config.duration.time(cnt=time)
+            if not time <= 0
+            else t.poll_config.duration.time(cnt=max_time * 24),
+            inline=False,
+        )
+        embed.add_field(
+            name=t.poll_config.max_duration.name, value=t.poll_config.max_duration.time(cnt=max_time), inline=False
+        )
+        choice: int = await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS
+        embed.add_field(
+            name=t.poll_config.choices.name,
+            value=t.poll_config.choices.amount(cnt=choice) if not choice <= 0 else t.poll_config.choices.unlimited,
+            inline=False,
+        )
+        anonymous: bool = await PollsDefaultSettings.anonymous.get()
+        embed.add_field(name=t.poll_config.anonymous.name, value=str(anonymous), inline=False)
+        fair: bool = await PollsDefaultSettings.fair.get()
+        embed.add_field(name=t.poll_config.fair.name, value=str(fair), inline=False)
+        roles = await RoleWeight.get(ctx.guild.id)
+        everyone: int = await PollsDefaultSettings.everyone_power.get()
+        base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
+        if roles:
+            base += "".join(t.poll_config.roles.row(role.role_id, role.weight) for role in roles)
+        embed.add_field(name=t.poll_config.roles.name, value=base, inline=False)
+
+        await send_long_embed(ctx, embed, paginate=False)
