@@ -23,9 +23,9 @@ from ...contributor import Contributor
 tg = t.g
 t = t.polls
 
-MAX_OPTIONS = 20  # Discord reactions limit
+MAX_OPTIONS = 25  # Discord select menu limit
 
-default_emojis = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
+DEFAULT_EMOJIS = [name_to_emoji[f"regional_indicator_{x}"] for x in string.ascii_lowercase]
 
 
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
@@ -244,7 +244,7 @@ class PollOption:
             self.emoji = unicode_emoji
             self.option = text.strip()
         else:
-            self.emoji = default_emojis[number]
+            self.emoji = DEFAULT_EMOJIS[number]
             self.option = line
 
         if name_to_emoji["wastebasket"] == self.emoji:
