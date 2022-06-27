@@ -10,7 +10,7 @@ from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNot
 from discord.ui import Select, View
 from discord.utils import utcnow
 
-from PyDrocsid.database import db, db_wrapper
+from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.cog import Cog
 from PyDrocsid.embeds import EmbedLimits
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
@@ -20,7 +20,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import check_wastebasket, is_teamler
 
 from .colors import Colors
-from .models import Poll, PollType, RoleWeight, PollVote, Option
+from .models import Poll, PollType, RoleWeight, PollVote, Option, sync_redis
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -353,3 +353,29 @@ class PollsCog(Cog, name="Polls"):
 
     def __init__(self, team_roles: list[str]):
         self.team_roles: list[str] = team_roles
+
+    async def on_ready(self):
+        await sync_redis()
+        polls: list[Poll] = await db.all(filter_by(Poll, (Poll.options, Option.votes), active=True))
+        for poll in polls:
+            if await check_poll_time(poll):
+                select_obj = MySelect(
+                    custom_id=str(poll.message_id),
+                    placeholder=t.select.placeholder(cnt=poll.max_choices),
+                    max_values=poll.max_choices,
+                    options=[
+                        SelectOption(
+                            label=t.select.label(option.field_position + 1),
+                            emoji=option.emote,
+                            description=option.option,
+                        )
+                        for option in poll.options
+                    ],
+                )
+
+                self.bot.add_view(view=create_select_view(select_obj), message_id=poll.interaction_message_id)
+
+        try:
+            self.poll_loop.start()
+        except RuntimeError:
+            self.poll_loop.restart()
