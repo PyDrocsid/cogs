@@ -150,6 +150,26 @@ async def check_poll_time(poll: Poll) -> bool:
     return True
 
 
+async def close_poll(bot, poll: Poll):
+    """deletes the interaction message and edits the footer of the poll embed"""
+    try:
+        channel = await bot.fetch_channel(poll.channel_id)
+        embed_message = await channel.fetch_message(poll.message_id)
+        interaction_message = await channel.fetch_message(poll.interaction_message_id)
+    except NotFound:
+        poll.active = False
+        return
+
+    await interaction_message.delete()
+    embed = embed_message.embeds[0]
+    embed.set_footer(text=t.footer_closed)
+
+    await embed_message.edit(embed=embed)
+    await embed_message.unpin()
+
+    poll.active = False
+
+
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
     for embed in message.embeds:
         for i, field in enumerate(embed.fields):
