@@ -4,12 +4,13 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 from dateutil.relativedelta import relativedelta
-from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
+from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only
 from discord.ui import Select, View
 from discord.utils import utcnow
 
+from PyDrocsid.database import db
 from PyDrocsid.cog import Cog
 from PyDrocsid.embeds import EmbedLimits
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
@@ -112,6 +113,29 @@ async def get_parser() -> ArgumentParser:
 def calc_end_time(duration: Optional[float]) -> Optional[datetime]:
     """returns the time when a poll should be closed"""
     return utcnow() + relativedelta(hours=int(duration)) if duration else None
+
+
+async def handle_deleted_messages(bot, message_id: int):
+    """if a message containing a poll gets deleted, this function deletes the interaction message (both direction)"""
+    deleted_embed: Poll | None = await db.get(Poll, message_id=message_id)
+    deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message_id)
+
+    if not deleted_embed and not deleted_interaction:
+        return
+
+    poll = deleted_embed or deleted_interaction
+    channel = await bot.fetch_channel(poll.channel_id)
+    try:
+        if deleted_interaction:
+            msg: Message | None = await channel.fetch_message(poll.message_id)
+        else:
+            msg: Message | None = await channel.fetch_message(poll.interaction_message_id)
+    except NotFound:
+        msg = None
+
+    if msg:
+        await poll.remove()
+        await msg.delete()
 
 
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
