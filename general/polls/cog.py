@@ -25,7 +25,7 @@ from .models import Poll, PollType, RoleWeight, PollVote, Option, sync_redis
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
-from ...pubsub import send_alert
+from ...pubsub import send_alert, send_to_changelog
 
 tg = t.g
 t = t.polls
@@ -525,3 +525,28 @@ class PollsCog(Cog, name="Polls"):
         embed.add_field(name=t.poll_config.roles.name, value=base, inline=False)
 
         await send_long_embed(ctx, embed, paginate=False)
+
+    @settings.command(name="roles_weights", aliases=["rw"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.settings.roles_weights)
+    async def roles_weights(self, ctx: Context, role: Role, weight: float | None = None):
+        element = await db.get(RoleWeight, role_id=role.id)
+
+        if not weight and not element:
+            raise CommandError(t.error.cant_set_weight)
+
+        if weight and weight < 0.1:
+            raise CommandError(t.error.weight_too_small)
+
+        if element and weight:
+            element.weight = weight
+            msg: str = t.role_weight.set(role.id, weight)
+        elif weight and not element:
+            await RoleWeight.create(ctx.guild.id, role.id, weight)
+            msg: str = t.role_weight.set(role.id, weight)
+        else:
+            await element.remove()
+            msg: str = t.role_weight.reset(role.id)
+
+        await add_reactions(ctx.message, "white_check_mark")
+        await send_to_changelog(ctx.guild, msg)
