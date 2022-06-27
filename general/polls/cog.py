@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 from dateutil.relativedelta import relativedelta
-from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException
+from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException, RawMessageDeleteEvent
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only
 from discord.ui import Select, View
@@ -379,3 +379,9 @@ class PollsCog(Cog, name="Polls"):
             self.poll_loop.start()
         except RuntimeError:
             self.poll_loop.restart()
+
+        async def on_message_delete(self, message: Message):
+            await handle_deleted_messages(self.bot, message.id)
+
+        async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
+            await handle_deleted_messages(self.bot, event.message_id)
