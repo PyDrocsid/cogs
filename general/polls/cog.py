@@ -10,7 +10,7 @@ from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNot
 from discord.ui import Select, View
 from discord.utils import utcnow
 
-from PyDrocsid.database import db
+from PyDrocsid.database import db, db_wrapper
 from PyDrocsid.cog import Cog
 from PyDrocsid.embeds import EmbedLimits
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
@@ -20,7 +20,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import check_wastebasket, is_teamler
 
 from .colors import Colors
-from .models import Poll, PollType
+from .models import Poll, PollType, RoleWeight, PollVote, Option
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -252,6 +252,66 @@ async def send_poll(
             await poll.add_reaction(name_to_emoji["wastebasket"])
     except Forbidden:
         raise CommandError(t.could_not_add_reactions(ctx.channel.mention))
+
+
+class MySelect(Select):
+    """adds a method for handling interactions with the select menu"""
+
+    @db_wrapper
+    async def callback(self, interaction):
+        user = interaction.user
+        selected_options: list = self.values
+        message: Message = await interaction.channel.fetch_message(interaction.custom_id)
+        embed: Embed = message.embeds[0] if message.embeds else None
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+
+        if not poll or not embed:
+            return
+
+        new_options: list[Option] = [option for option in poll.options if option.option in selected_options]
+        missing: list[Member] | None = None
+
+        opt: Option
+        for opt in poll.options:
+            for vote in opt.votes:
+                if vote.user_id == user.id:
+                    await vote.remove()
+                    opt.votes.remove(vote)
+
+        ev_pover = await PollsDefaultSettings.everyone_power.get()
+        if poll.fair:
+            user_weight: float = ev_pover
+        else:
+            highest_role = await RoleWeight.get_highest(user.roles) or 0
+            user_weight: float = ev_pover if highest_role < ev_pover else highest_role
+
+        for option in new_options:
+            option.votes.append(
+                await PollVote.create(option_id=option.id, user_id=user.id, poll_id=poll.id, vote_weight=user_weight)
+            )
+
+        if poll.poll_type == PollType.TEAM:
+            try:
+                teamlers: set[Member] = await get_staff(interaction.guild, ["team"])
+            except CommandError:
+                await interaction.response.send_message(content=t.error.no_teamlers, ephemeral=True)
+                return
+            if user not in teamlers:
+                await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
+                return
+
+            user_ids: set[int] = set()
+            for option in poll.options:
+                for vote in option.votes:
+                    user_ids.add(vote.user_id)
+
+            missing: list[Member] | None = [teamler for teamler in teamlers if teamler.id not in user_ids]
+            missing.sort(key=lambda m: str(m).lower())
+
+        embed = await edit_poll_embed(embed, poll, missing)
+        await message.edit(embed=embed)
+        await interaction.response.send_message(content=t.poll_voted, ephemeral=True)
+
 
 
 class PollsCog(Cog, name="Polls"):
