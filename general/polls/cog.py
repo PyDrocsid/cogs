@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 
 from dateutil.relativedelta import relativedelta
 from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException, RawMessageDeleteEvent
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only
 from discord.ui import Select, View
 from discord.utils import utcnow
@@ -385,3 +385,12 @@ class PollsCog(Cog, name="Polls"):
 
         async def on_raw_message_delete(self, event: RawMessageDeleteEvent):
             await handle_deleted_messages(self.bot, event.message_id)
+
+        @tasks.loop(minutes=1)
+        @db_wrapper
+        async def poll_loop(self):
+            polls: list[Poll] = await db.all(filter_by(Poll, active=True))
+
+            for poll in polls:
+                if not await check_poll_time(poll):
+                    await close_poll(self.bot, poll)
