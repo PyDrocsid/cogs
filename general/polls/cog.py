@@ -5,6 +5,7 @@ from typing import Optional, Tuple
 from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only
+from discord.ui import Select, View
 from discord.utils import utcnow
 
 from PyDrocsid.cog import Cog
@@ -52,6 +53,14 @@ class PollOption:
 
     def __str__(self):
         return f"{self.emoji} {self.option}" if self.option else self.emoji
+
+
+def create_select_view(select_obj: Select, timeout: float = None) -> View:
+    """returns a view object"""
+    view = View(timeout=timeout)
+    view.add_item(select_obj)
+
+    return view
 
 
 async def get_teampoll_embed(message: Message) -> Tuple[Optional[Embed], Optional[int]]:
