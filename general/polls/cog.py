@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from datetime import datetime
 from typing import Optional, Tuple
 
-from PyDrocsid.command import docs
+from PyDrocsid.command import docs, add_reactions, Confirmation
 from dateutil.relativedelta import relativedelta
 from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException, RawMessageDeleteEvent
 from discord.ext import commands, tasks
@@ -427,3 +427,31 @@ class PollsCog(Cog, name="Polls"):
 
         else:
             await send_long_embed(ctx, embed=Embed(title=t.no_polls, color=Colors.error))
+
+    @poll.command(name="delete", aliases=["del"])
+    @docs(t.commands.poll.delete)
+    async def delete(self, ctx: Context, message: Message):
+        poll: Poll = await db.get(Poll, message_id=message.id)
+        if not poll:
+            raise CommandError(t.error.not_poll)
+        if (
+                poll.can_delete
+                and not await PollsPermission.delete.check_permissions(ctx.author)
+                and not poll.owner_id == ctx.author.id
+        ):
+            raise PermissionError
+        elif not poll.can_delete and not poll.owner_id == ctx.author.id:
+            raise PermissionError  # if delete is False, only the owner can delete it
+
+        if not await Confirmation().run(ctx, t.delete.confirm_text):
+            return
+
+        await message.delete()
+        await poll.remove()
+        try:
+            interaction_message: Message = await ctx.channel.fetch_message(poll.interaction_message_id)
+            await interaction_message.delete()
+        except NotFound:
+            pass
+
+        await add_reactions(ctx.message, "white_check_mark")
