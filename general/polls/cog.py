@@ -2,32 +2,42 @@ import string
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
-from PyDrocsid.command import docs, add_reactions, Confirmation
 from dateutil.relativedelta import relativedelta
-from discord import Embed, Forbidden, Guild, Member, Message, PartialEmoji, NotFound, SelectOption, HTTPException, RawMessageDeleteEvent, \
-    Role
+from discord import (
+    Embed,
+    Forbidden,
+    Guild,
+    HTTPException,
+    Member,
+    Message,
+    NotFound,
+    RawMessageDeleteEvent,
+    Role,
+    SelectOption,
+)
 from discord.ext import commands, tasks
-from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, guild_only, UserInputError
+from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, UserInputError, guild_only
 from discord.ui import Select, View
-from discord.utils import utcnow, format_dt
+from discord.utils import format_dt, utcnow
 
-from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.cog import Cog
+from PyDrocsid.command import Confirmation, add_reactions, docs
+from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
-from PyDrocsid.events import StopEventHandling
 from PyDrocsid.settings import RoleSettings
 from PyDrocsid.translations import t
-from PyDrocsid.util import check_wastebasket, is_teamler
+from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import Poll, PollType, RoleWeight, PollVote, Option, sync_redis
+from .models import Option, Poll, PollType, PollVote, RoleWeight, sync_redis
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
 from ...pubsub import send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.polls
@@ -118,97 +128,6 @@ def calc_end_time(duration: Optional[float]) -> Optional[datetime]:
     return utcnow() + relativedelta(hours=int(duration)) if duration else None
 
 
-async def handle_deleted_messages(bot, message_id: int):
-    """if a message containing a poll gets deleted, this function deletes the interaction message (both direction)"""
-    deleted_embed: Poll | None = await db.get(Poll, message_id=message_id)
-    deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message_id)
-
-    if not deleted_embed and not deleted_interaction:
-        return
-
-    poll = deleted_embed or deleted_interaction
-    channel = await bot.fetch_channel(poll.channel_id)
-    try:
-        if deleted_interaction:
-            msg: Message | None = await channel.fetch_message(poll.message_id)
-        else:
-            msg: Message | None = await channel.fetch_message(poll.interaction_message_id)
-    except NotFound:
-        msg = None
-
-    if msg:
-        await poll.remove()
-        await msg.delete()
-
-
-async def check_poll_time(poll: Poll) -> bool:
-    """checks if a poll has ended"""
-    if not poll.end_time:
-        await poll.remove()
-        return False
-
-    elif poll.end_time < utcnow():
-        return False
-
-    return True
-
-
-async def close_poll(bot, poll: Poll):
-    """deletes the interaction message and edits the footer of the poll embed"""
-    try:
-        channel = await bot.fetch_channel(poll.channel_id)
-        embed_message = await channel.fetch_message(poll.message_id)
-        interaction_message = await channel.fetch_message(poll.interaction_message_id)
-    except NotFound:
-        poll.active = False
-        return
-
-    await interaction_message.delete()
-    embed = embed_message.embeds[0]
-    embed.set_footer(text=t.footer_closed)
-
-    await embed_message.edit(embed=embed)
-    await embed_message.unpin()
-
-    poll.active = False
-
-
-async def get_staff(guild: Guild, team_roles: list[str]) -> set[Member]:
-    """gets a list of all team members"""
-    teamlers: set[Member] = set()
-    for role_name in team_roles:
-        if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
-            continue
-
-        teamlers.update(member for member in team_role.members if not member.bot)
-
-    if not teamlers:
-        raise CommandError(t.error.no_teamlers)
-
-    return teamlers
-
-
-async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
-    """edits the poll embed, updating the votes and percentages"""
-    calc = get_percentage(poll)
-    for index, field in enumerate(embed.fields):
-        if field.name == tg.status:
-            missing.sort(key=lambda m: str(m).lower())
-            *teamlers, last = (x.mention for x in missing)
-            teamlers: list[str]
-            embed.set_field_at(
-                index,
-                name=field.name,
-                value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
-            )
-        else:
-            weight: float | int = calc[index][0] if not calc[index][0].is_integer() else int(calc[index][0])
-            percentage: float | int = calc[index][1] if not calc[index][1].is_integer() else int(calc[index][1])
-            embed.set_field_at(index, name=t.option.field.name(weight, percentage), value=field.value, inline=False)
-
-    return embed
-
-
 async def send_poll(
     ctx: Context,
     title: str,
@@ -284,6 +203,97 @@ async def send_poll(
         )
         await send_alert(ctx.guild, embed)
     return msg, view_msg, parsed_options, question
+
+
+async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
+    """edits the poll embed, updating the votes and percentages"""
+    calc = get_percentage(poll)
+    for index, field in enumerate(embed.fields):
+        if field.name == tg.status:
+            missing.sort(key=lambda m: str(m).lower())
+            *teamlers, last = (x.mention for x in missing)
+            teamlers: list[str]
+            embed.set_field_at(
+                index,
+                name=field.name,
+                value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
+            )
+        else:
+            weight: float | int = calc[index][0] if not calc[index][0].is_integer() else int(calc[index][0])
+            percentage: float | int = calc[index][1] if not calc[index][1].is_integer() else int(calc[index][1])
+            embed.set_field_at(index, name=t.option.field.name(weight, percentage), value=field.value, inline=False)
+
+    return embed
+
+
+async def get_staff(guild: Guild, team_roles: list[str]) -> set[Member]:
+    """gets a list of all team members"""
+    teamlers: set[Member] = set()
+    for role_name in team_roles:
+        if not (team_role := guild.get_role(await RoleSettings.get(role_name))):
+            continue
+
+        teamlers.update(member for member in team_role.members if not member.bot)
+
+    if not teamlers:
+        raise CommandError(t.error.no_teamlers)
+
+    return teamlers
+
+
+async def handle_deleted_messages(bot, message_id: int):
+    """if a message containing a poll gets deleted, this function deletes the interaction message (both direction)"""
+    deleted_embed: Poll | None = await db.get(Poll, message_id=message_id)
+    deleted_interaction: Poll | None = await db.get(Poll, interaction_message_id=message_id)
+
+    if not deleted_embed and not deleted_interaction:
+        return
+
+    poll = deleted_embed or deleted_interaction
+    channel = await bot.fetch_channel(poll.channel_id)
+    try:
+        if deleted_interaction:
+            msg: Message | None = await channel.fetch_message(poll.message_id)
+        else:
+            msg: Message | None = await channel.fetch_message(poll.interaction_message_id)
+    except NotFound:
+        msg = None
+
+    if msg:
+        await poll.remove()
+        await msg.delete()
+
+
+async def check_poll_time(poll: Poll) -> bool:
+    """checks if a poll has ended"""
+    if not poll.end_time:
+        await poll.remove()
+        return False
+
+    elif poll.end_time < utcnow():
+        return False
+
+    return True
+
+
+async def close_poll(bot, poll: Poll):
+    """deletes the interaction message and edits the footer of the poll embed"""
+    try:
+        channel = await bot.fetch_channel(poll.channel_id)
+        embed_message = await channel.fetch_message(poll.message_id)
+        interaction_message = await channel.fetch_message(poll.interaction_message_id)
+    except NotFound:
+        poll.active = False
+        return
+
+    await interaction_message.delete()
+    embed = embed_message.embeds[0]
+    embed.set_footer(text=t.footer_closed)
+
+    await embed_message.edit(embed=embed)
+    await embed_message.unpin()
+
+    poll.active = False
 
 
 class MySelect(Select):
@@ -437,9 +447,9 @@ class PollsCog(Cog, name="Polls"):
         if not poll:
             raise CommandError(t.error.not_poll)
         if (
-                poll.can_delete
-                and not await PollsPermission.delete.check_permissions(ctx.author)
-                and not poll.owner_id == ctx.author.id
+            poll.can_delete
+            and not await PollsPermission.delete.check_permissions(ctx.author)
+            and not poll.owner_id == ctx.author.id
         ):
             raise PermissionError
         elif not poll.can_delete and not poll.owner_id == ctx.author.id:
@@ -466,9 +476,9 @@ class PollsCog(Cog, name="Polls"):
         if not poll:
             raise CommandError(t.error.not_poll)
         if (
-                poll.anonymous
-                and not await PollsPermission.anonymous_bypass.check_permissions(author)
-                and not poll.owner_id == author.id
+            poll.anonymous
+            and not await PollsPermission.anonymous_bypass.check_permissions(author)
+            and not poll.owner_id == author.id
         ):
             raise PermissionError
 
