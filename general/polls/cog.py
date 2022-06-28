@@ -32,7 +32,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import Option, Poll, PollType, PollVote, RoleWeight, sync_redis
+from .models import Option, Poll, PollStatus, PollType, PollVote, RoleWeight, sync_redis
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings
 from ...contributor import Contributor
@@ -159,8 +159,7 @@ async def send_poll(
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
 
     if deadline:
-        end_time = calc_end_time(deadline)
-        embed.set_footer(text=t.footer(end_time.strftime("%Y-%m-%d %H:%M")))
+        embed.set_footer(text=t.footer(calc_end_time(deadline).strftime("%Y-%m-%d %H:%M")))
 
     if len({option.emoji for option in options}) < len(options):
         raise CommandError(t.option_duplicated)
@@ -266,11 +265,11 @@ async def handle_deleted_messages(bot, message_id: int):
 
 async def check_poll_time(poll: Poll) -> bool:
     """checks if a poll has ended"""
-    if not poll.end_time:
+    if not poll.end_time and not poll.poll_type == PollType.TEAM:
         await poll.remove()
         return False
 
-    elif poll.end_time < utcnow():
+    elif poll.timestamp + relativedelta(seconds=poll.end_time) < utcnow() and poll.status != PollStatus.ACTIVE:
         return False
 
     return True
@@ -283,7 +282,7 @@ async def close_poll(bot, poll: Poll):
         embed_message = await channel.fetch_message(poll.message_id)
         interaction_message = await channel.fetch_message(poll.interaction_message_id)
     except NotFound:
-        poll.active = False
+        poll.status = PollStatus.CLOSED
         return
 
     await interaction_message.delete()
@@ -642,7 +641,7 @@ class PollsCog(Cog, name="Polls"):
             channel=message.channel.id,
             owner=ctx.author.id,
             title=question,
-            end=calc_end_time(deadline),
+            end=deadline,
             anonymous=anonymous,
             can_delete=True,
             options=parsed_options,
@@ -709,7 +708,7 @@ class PollsCog(Cog, name="Polls"):
             channel=message.channel.id,
             owner=ctx.author.id,
             title=question,
-            end=calc_end_time(deadline),
+            end=deadline,
             anonymous=anonymous,
             can_delete=can_delete,
             options=parsed_options,
@@ -769,7 +768,7 @@ class PollsCog(Cog, name="Polls"):
             channel=message.channel.id,
             owner=ctx.author.id,
             title=question,
-            end=calc_end_time(await PollsDefaultSettings.max_duration.get() * 24),
+            end=await PollsDefaultSettings.max_duration.get() * 24,
             anonymous=False,
             can_delete=False,
             options=parsed_options,

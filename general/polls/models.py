@@ -19,6 +19,12 @@ class PollType(enum.Enum):
     STANDARD = "standard"
 
 
+class PollStatus(enum.Enum):
+    ACTIVE = 0
+    PAUSED = 1
+    CLOSED = 2
+
+
 async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:
     out = []
 
@@ -53,11 +59,11 @@ class Poll(Base):
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
     title: Union[Column, str] = Column(Text(256))
     poll_type: Union[Column, PollType] = Column(Enum(PollType))
-    end_time: Union[Column, datetime] = Column(UTCDateTime)
+    end_time: Union[Column, int] = Column(BigInteger)
     anonymous: Union[Column, bool] = Column(Boolean)
     can_delete: Union[Column, bool] = Column(Boolean)
     fair: Union[Column, bool] = Column(Boolean)
-    active: Union[Column, bool] = Column(Boolean)
+    status: Union[Column, PollStatus] = Column(Enum(PollStatus))
     max_choices: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
@@ -69,7 +75,7 @@ class Poll(Base):
         owner: int,
         title: str,
         options: list[tuple[str, str]],
-        end: Optional[datetime],
+        end: Optional[int],
         anonymous: bool,
         can_delete: bool,
         poll_type: enum.Enum,
@@ -91,7 +97,7 @@ class Poll(Base):
             can_delete=can_delete,
             interaction_message_id=interaction,
             fair=fair,
-            active=True,
+            status=0,
             max_choices=max_choices,
         )
         for position, poll_option in enumerate(options):
