@@ -14,6 +14,10 @@ commands:
       votes: set the default amount of votes a user can have on polls
       anonymous: set if user can see who voted on a poll
       fair: manage if role weights impact on default polls
+    team:
+      team: create and manage team-polls
+      settings:
+        settings: manage team-poll settings
   yes_no: add thumbs-up/down emotes on a message
   team_yes_no: starts a yes/no poll and shows, which teamler has not voted yet.
 

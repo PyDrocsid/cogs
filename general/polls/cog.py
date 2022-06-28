@@ -625,6 +625,19 @@ class PollsCog(Cog, name="Polls"):
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
+    @poll.group(name="team", aliases=["t"])
+    @PollsPermission.team_poll.check
+    @docs(t.commands.poll.team.team)
+    async def team(self, ctx: Context):
+        if not ctx.subcommand_passed:
+            raise UserInputError
+
+    @team.group(name="tp_settings", aliases=["s"])
+    @PollsPermission.read.check
+    @docs(t.commands.poll.team.settings.settings)
+    async def tp_settings(self, ctx: Context):
+        pass
+
     @poll.command(name="quick", usage=t.usage.poll, aliases=["q"])
     @docs(t.commands.poll.quick)
     async def quick(self, ctx: Context, *, args: str):

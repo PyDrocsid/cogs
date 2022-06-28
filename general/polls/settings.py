@@ -8,3 +8,7 @@ class PollsDefaultSettings(Settings):
     everyone_power = 1.0
     anonymous = False
     fair = False
+
+
+class PollsTeamsSettings(Settings):
+    duration = 0
