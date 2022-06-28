@@ -104,13 +104,6 @@ def build_wizard(skip: bool = False) -> Embed:
 async def get_parser() -> ArgumentParser:
     """creates a parser object with options for advanced polls"""
     parser = ArgumentParser()
-    parser.add_argument(
-        "--type",
-        "-T",
-        default=PollType.STANDARD.value,
-        choices=[PollType.STANDARD.value, PollType.TEAM.value],
-        type=str,
-    )
     parser.add_argument("--deadline", "-D", default=await PollsDefaultSettings.duration.get(), type=int)
     parser.add_argument(
         "--anonymous", "-A", default=await PollsDefaultSettings.anonymous.get(), type=bool, choices=[True, False]
@@ -684,7 +677,7 @@ class PollsCog(Cog, name="Polls"):
         parsed: Namespace = parser.parse_known_args(args.split())[0]
 
         title: str = t.poll
-        poll_type: Enum | str = parsed.type.lower()
+        poll_type: Enum | str = parsed.type.lower()  # TODO Remove team-poll option
         if poll_type == PollType.TEAM.value and await PollsPermission.team_poll.check_permissions(ctx.author):
             poll_type = PollType.TEAM
             title: str = t.team_poll

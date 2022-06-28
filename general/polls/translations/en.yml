@@ -150,9 +150,6 @@ wizard:
   arg: Arguments
   args: |
     ```
-    --type {standard,team}, -T {standard,team} 
-    standard or team embed [Default: 'standard']
-
     --deadline DEADLINE, -D DEADLINE
     time when the poll should be closed [Default: server settings]
     
