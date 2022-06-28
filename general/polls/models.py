@@ -97,7 +97,7 @@ class Poll(Base):
             can_delete=can_delete,
             interaction_message_id=interaction,
             fair=fair,
-            status=0,
+            status=PollStatus.ACTIVE,
             max_choices=max_choices,
         )
         for position, poll_option in enumerate(options):
