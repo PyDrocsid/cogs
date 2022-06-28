@@ -189,6 +189,7 @@ async def send_poll(
         ],
     )
     view_msg = await ctx.send(view=create_select_view(select_obj=select_obj))
+    await msg.create_thread(name=question)
 
     parsed_options: list[tuple[str, str]] = [(obj.emoji, t.select.label(ix)) for ix, obj in enumerate(options, start=1)]
 
@@ -292,7 +293,7 @@ async def close_poll(bot, poll: Poll):
     await embed_message.edit(embed=embed)
     await embed_message.unpin()
 
-    poll.active = False
+    poll.status = PollStatus.PAUSED
 
 
 class MySelect(Select):
@@ -368,7 +369,7 @@ class PollsCog(Cog, name="Polls"):
 
     async def on_ready(self):
         await sync_redis()
-        polls: list[Poll] = await db.all(filter_by(Poll, (Poll.options, Option.votes), active=True))
+        polls: list[Poll] = await db.all(filter_by(Poll, (Poll.options, Option.votes), status=PollStatus.ACTIVE))
         for poll in polls:
             if await check_poll_time(poll):
                 select_obj = MySelect(
@@ -401,7 +402,7 @@ class PollsCog(Cog, name="Polls"):
     @tasks.loop(minutes=1)
     @db_wrapper
     async def poll_loop(self):
-        polls: list[Poll] = await db.all(filter_by(Poll, active=True))
+        polls: list[Poll] = await db.all(filter_by(Poll, status=PollStatus.ACTIVE))
 
         for poll in polls:
             if not await check_poll_time(poll):
@@ -414,11 +415,11 @@ class PollsCog(Cog, name="Polls"):
         if not ctx.subcommand_passed:
             raise UserInputError
 
-    @poll.command(name="list", aliases=["l"])
+    @poll.command(name="list", aliases=["l"])  # TODO: Filter by ACTIVE and PAUSED
     @guild_only()
     @docs(t.commands.poll.list)
     async def poll_list(self, ctx: Context):
-        polls: list[Poll] = await db.all(filter_by(Poll, active=True, guild_id=ctx.guild.id))
+        polls: list[Poll] = await db.all(filter_by(Poll, status=PollStatus.ACTIVE, guild_id=ctx.guild.id))
         description = ""
         for poll in polls:
             if poll.poll_type == PollType.TEAM and not await PollsPermission.team_poll.check_permissions(ctx.author):
