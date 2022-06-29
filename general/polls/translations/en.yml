@@ -38,6 +38,7 @@ error:
   not_poll: Mesage doesn't contains a poll
   no_teamlers: No user with team-role found!
   no_polls: No current {} {}-polls.
+  poll_cant_be_used: Poll can't be used because it's {}
   cant_pin:
     title: Error
     description: Can't pin any more messages in {}
@@ -194,5 +195,6 @@ teamlers_missing:
   many: "{teamlers} and {last} haven't voted yet."
 footer: Ends at {} UTC
 footer_closed: Closed
+footer_paused: Paused
 foreign_message: "You are not allowed to add yes/no reactions to foreign messages!"
 could_not_add_reactions: Could not add reactions because I don't have `add_reactions` permission in {}.

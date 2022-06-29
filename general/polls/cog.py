@@ -308,7 +308,7 @@ async def close_poll(bot, poll: Poll):
     await embed_message.edit(embed=embed)
     await embed_message.unpin()
 
-    poll.status = PollStatus.PAUSED
+    poll.status = PollStatus.CLOSED
 
 
 async def get_poll_list_embed(ctx: Context, poll_type: PollType, state: PollStatus) -> Embed:
@@ -330,6 +330,32 @@ async def get_poll_list_embed(ctx: Context, poll_type: PollType, state: PollStat
     return embed
 
 
+async def status_change(bot: Bot, poll: Poll):
+    try:
+        channel = await bot.fetch_channel(poll.channel_id)
+        embed_message = await channel.fetch_message(poll.message_id)
+    except NotFound:
+        if poll.status == PollStatus.ACTIVE:
+            poll.status = PollStatus.PAUSED
+        else:
+            poll.status = PollStatus.ACTIVE
+        return
+
+    embed = embed_message.embeds[0]
+    if poll.status == PollStatus.ACTIVE:
+        poll.status = PollStatus.PAUSED
+        embed.set_footer(text=t.footer_paused)
+        embed.colour = Colors.grey
+        await embed_message.unpin()
+    else:
+        poll.status = PollStatus.ACTIVE
+        embed.set_footer(text=t.footer(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
+        embed.colour = Colors.Polls
+        await embed_message.pin()
+
+    await embed_message.edit(embed=embed)
+
+
 class MySelect(Select):
     """adds a method for handling interactions with the select menu"""
 
@@ -341,7 +367,13 @@ class MySelect(Select):
         embed: Embed = message.embeds[0] if message.embeds else None
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
 
-        if not poll or not embed or not poll.status == PollStatus.ACTIVE:
+        if not poll or not embed:
+            return
+
+        if not poll.status == PollStatus.ACTIVE:
+            await interaction.response.send_message(
+                content=t.error.poll_cant_be_used(poll.status.value), ephemeral=True
+            )
             return
 
         new_options: list[Option] = [option for option in poll.options if option.option in selected_options]
@@ -528,9 +560,9 @@ class PollsCog(Cog, name="Polls"):
 
         if poll.status == PollStatus.ACTIVE:
             raise CommandError(t.poll_status_not_changed("activated"))
-        else:
-            poll.status = PollStatus.ACTIVE
-            await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed("activated")))
+
+        await status_change(self.bot, poll)
+        await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed("activated")))
 
     @poll.command(name="pause", aliases=["p", "deactivate", "disable"])
     @docs(t.commands.poll.paused)
@@ -543,9 +575,9 @@ class PollsCog(Cog, name="Polls"):
 
         if poll.status == PollStatus.PAUSED:
             raise CommandError(t.poll_status_not_changed("paused"))
-        else:
-            poll.status = PollStatus.PAUSED
-            await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed("paused")))
+
+        await status_change(self.bot, poll)
+        await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed("paused")))
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check
