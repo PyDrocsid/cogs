@@ -742,7 +742,6 @@ class PollsCog(Cog, name="Polls"):
     async def quick(self, ctx: Context, *, args: str):
         deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
         max_choices = await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS
-        anonymous = await PollsDefaultSettings.anonymous.get()
         message, interaction, parsed_options, question, thread_id = await send_poll(
             ctx=ctx, title=t.poll, poll_args=args, max_choices=max_choices, deadline=deadline
         )
@@ -755,7 +754,7 @@ class PollsCog(Cog, name="Polls"):
             owner=ctx.author.id,
             title=question,
             end=deadline,
-            anonymous=anonymous,
+            anonymous=await PollsDefaultSettings.anonymous.get(),
             can_delete=True,
             options=parsed_options,
             poll_type=PollType.STANDARD,
