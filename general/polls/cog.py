@@ -127,7 +127,7 @@ async def send_poll(
     max_choices: int = None,
     field: Optional[tuple[str, str]] = None,
     deadline: Optional[int] = None,
-) -> tuple[Message, Message, list[tuple[str, str]], str]:
+) -> tuple[Message, Message, list[tuple[str, str]], str, int]:
     """sends a poll embed + view message containing the select field"""
 
     if not max_choices:
@@ -181,7 +181,7 @@ async def send_poll(
         ],
     )
     view_msg = await ctx.send(view=create_select_view(select_obj=select_obj))
-    await msg.create_thread(name=question)
+    thread = await msg.create_thread(name=question)
 
     parsed_options: list[tuple[str, str]] = [(obj.emoji, t.select.label(ix)) for ix, obj in enumerate(options, start=1)]
 
@@ -194,7 +194,7 @@ async def send_poll(
             color=Colors.error,
         )
         await send_alert(ctx.guild, embed)
-    return msg, view_msg, parsed_options, question
+    return msg, view_msg, parsed_options, question, thread.id
 
 
 async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
@@ -653,7 +653,7 @@ class PollsCog(Cog, name="Polls"):
         deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
         max_choices = await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS
         anonymous = await PollsDefaultSettings.anonymous.get()
-        message, interaction, parsed_options, question = await send_poll(
+        message, interaction, parsed_options, question, thread_id = await send_poll(
             ctx=ctx, title=t.poll, poll_args=args, max_choices=max_choices, deadline=deadline
         )
 
@@ -672,6 +672,7 @@ class PollsCog(Cog, name="Polls"):
             interaction=interaction.id,
             fair=await PollsDefaultSettings.fair.get(),
             max_choices=max_choices,
+            thread=thread_id,
         )
 
         await ctx.message.delete()
@@ -711,7 +712,7 @@ class PollsCog(Cog, name="Polls"):
             field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
         """
 
-        message, interaction, parsed_options, question = await send_poll(
+        message, interaction, parsed_options, question, thread_id = await send_poll(
             ctx=ctx, title=t.poll, poll_args=options, max_choices=choices, deadline=deadline
         )
         await ctx.message.delete()
@@ -731,6 +732,7 @@ class PollsCog(Cog, name="Polls"):
             interaction=interaction.id,
             fair=fair,
             max_choices=choices,
+            thread=thread_id,
         )
 
     @commands.command(aliases=["yn"])
@@ -768,7 +770,7 @@ class PollsCog(Cog, name="Polls"):
         teamlers: list[str]
         field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
 
-        message, interaction, parsed_options, question = await send_poll(
+        message, interaction, parsed_options, question, thread_id = await send_poll(
             ctx=ctx,
             title=t.team_poll,
             max_choices=1,
@@ -791,4 +793,5 @@ class PollsCog(Cog, name="Polls"):
             interaction=interaction.id,
             fair=True,
             max_choices=1,
+            thread=thread_id,
         )

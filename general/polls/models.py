@@ -54,6 +54,7 @@ class Poll(Base):
     message_url: Union[Column, str] = Column(Text(256))
     guild_id: Union[Column, int] = Column(BigInteger)
     interaction_message_id: Union[Column, int] = Column(BigInteger, unique=True)
+    thread_id: Union[Column, int] = Column(BigInteger, unique=True)
     channel_id: Union[Column, int] = Column(BigInteger)
     owner_id: Union[Column, int] = Column(BigInteger)
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
@@ -80,6 +81,7 @@ class Poll(Base):
         can_delete: bool,
         poll_type: enum.Enum,
         interaction: int,
+        thread: int,
         fair: bool,
         max_choices: int,
     ) -> Poll:
@@ -96,6 +98,7 @@ class Poll(Base):
             anonymous=anonymous,
             can_delete=can_delete,
             interaction_message_id=interaction,
+            thread_id=thread,
             fair=fair,
             status=PollStatus.ACTIVE,
             max_choices=max_choices,
