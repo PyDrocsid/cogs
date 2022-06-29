@@ -321,9 +321,11 @@ async def get_poll_list_embed(ctx: Context, poll_type: PollType, state: PollStat
         )
 
     if polls and description:
-        embed: Embed = Embed(title=t.polls.title(poll_type.value), description=description, color=Colors.Polls)
+        embed: Embed = Embed(
+            title=t.polls.title(state.value, poll_type.value), description=description, color=Colors.Polls
+        )
     else:
-        embed: Embed = Embed(title=t.no_polls(poll_type.value), color=Colors.error)
+        embed: Embed = Embed(title=t.error.no_polls(state.value, poll_type.value), color=Colors.error)
 
     return embed
 
@@ -339,7 +341,7 @@ class MySelect(Select):
         embed: Embed = message.embeds[0] if message.embeds else None
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
 
-        if not poll or not embed:
+        if not poll or not embed or not poll.status == PollStatus.ACTIVE:
             return
 
         new_options: list[Option] = [option for option in poll.options if option.option in selected_options]
@@ -466,7 +468,7 @@ class PollsCog(Cog, name="Polls"):
             raise CommandError(t.error.not_poll)
         if (
             poll.can_delete
-            and not await PollsPermission.delete.check_permissions(ctx.author)
+            and not await PollsPermission.manage.check_permissions(ctx.author)
             and not poll.owner_id == ctx.author.id
         ):
             raise PermissionError
@@ -495,7 +497,7 @@ class PollsCog(Cog, name="Polls"):
             raise CommandError(t.error.not_poll)
         if (
             poll.anonymous
-            and not await PollsPermission.anonymous_bypass.check_permissions(author)
+            and not await PollsPermission.manage.check_permissions(author)
             and not poll.owner_id == author.id
         ):
             raise PermissionError
@@ -514,6 +516,36 @@ class PollsCog(Cog, name="Polls"):
         embed = Embed(title=t.voted.title, description=description, color=Colors.Polls)
 
         await send_long_embed(ctx, embed=embed, repeat_title=True, paginate=True)
+
+    @poll.command(name="activate", aliases=["a"])
+    @docs(t.commands.poll.activate)
+    async def activate(self, ctx: Context, message: Message):
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        if not poll:
+            raise CommandError(t.error.not_poll)
+        if not ctx.author.id == poll.owner_id and not await PollsPermission.manage.check_permissions(ctx.author):
+            raise PermissionError
+
+        if poll.status == PollStatus.ACTIVE:
+            raise CommandError(t.poll_status_not_changed("activated"))
+        else:
+            poll.status = PollStatus.ACTIVE
+            await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed("activated")))
+
+    @poll.command(name="pause", aliases=["p", "deactivate", "disable"])
+    @docs(t.commands.poll.paused)
+    async def pause(self, ctx: Context, message: Message):
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        if not poll:
+            raise CommandError(t.error.not_poll)
+        if not ctx.author.id == poll.owner_id and not await PollsPermission.manage.check_permissions(ctx.author):
+            raise PermissionError
+
+        if poll.status == PollStatus.PAUSED:
+            raise CommandError(t.poll_status_not_changed("paused"))
+        else:
+            poll.status = PollStatus.PAUSED
+            await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed("paused")))
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check

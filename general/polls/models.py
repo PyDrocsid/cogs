@@ -20,9 +20,9 @@ class PollType(enum.Enum):
 
 
 class PollStatus(enum.Enum):
-    ACTIVE = 0
-    PAUSED = 1
-    CLOSED = 2
+    ACTIVE = "active"
+    PAUSED = "paused"
+    CLOSED = "closed"
 
 
 async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:

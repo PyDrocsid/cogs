@@ -12,5 +12,4 @@ class PollsPermission(BasePermission):
     team_poll = auto()
     read = auto()
     write = auto()
-    delete = auto()
-    anonymous_bypass = auto()
+    manage = auto()

@@ -4,6 +4,8 @@ commands:
     quick: small poll with default options
     new: advanced poll with more options
     delete: delete polls
+    activate: activate a paused poll
+    paused: pause an active poll
     voted: show who voted on the poll (only works if not anonymous or if the poll-owner uses the command)
     list: show the active polls
     settings:
@@ -28,14 +30,14 @@ permissions:
   team_poll: start a team poll
   read: read poll configuration
   write: edit poll configuration
-  delete: delete polls
-  anonymous_bypass: can see user, even if poll is anonymous
+  manage: can manage polls (not settings)
 
 error:
   weight_too_small: "Weight cant be lower than `0.1`"
   cant_set_weight: Can't set weight!
   not_poll: Mesage doesn't contains a poll
   no_teamlers: No user with team-role found!
+  no_polls: No current {} {}-polls.
   cant_pin:
     title: Error
     description: Can't pin any more messages in {}
@@ -69,7 +71,7 @@ poll_config:
     row: "\n<@&{}> -> `{}x`"
 
 polls:
-  title: Active {} polls
+  title: "List of {} {} polls"
   row: "\n[`{}`]({}) by <@{}> until {}"
 
 role_weight:
@@ -174,6 +176,8 @@ wizard:
 poll: Poll
 team_poll: Team Poll
 poll_voted: "Vote was added to the poll"
+poll_status_not_changed: Poll is already {}!
+poll_status_changed: Poll is now {}!
 team_poll_missing: "{} please vote on the poll!"
 team_yn_poll_forbidden: You are not allowed to use a team poll!
 vote_explanation: Vote using the reactions below!
@@ -190,7 +194,5 @@ teamlers_missing:
   many: "{teamlers} and {last} haven't voted yet."
 footer: Ends at {} UTC
 footer_closed: Closed
-can_not_use_wastebucket_as_option: "You can not use :wastebasket: as option"
 foreign_message: "You are not allowed to add yes/no reactions to foreign messages!"
 could_not_add_reactions: Could not add reactions because I don't have `add_reactions` permission in {}.
-no_polls: No current active {}-polls.
