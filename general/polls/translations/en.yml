@@ -16,6 +16,9 @@ commands:
       fair: manage if role weights impact on default polls
     team:
       team: create and manage team-polls
+      unpin: unpin a team-poll
+      new: create a new team-poll
+      list: show all open team-polls
       settings:
         settings: manage team-poll settings
   yes_no: add thumbs-up/down emotes on a message

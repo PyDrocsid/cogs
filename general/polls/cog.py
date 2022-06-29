@@ -625,10 +625,25 @@ class PollsCog(Cog, name="Polls"):
         if not ctx.subcommand_passed:
             raise UserInputError
 
-    @team.group(name="tp_settings", aliases=["s"])
+    @team.group(name="settings", aliases=["s"])
     @PollsPermission.read.check
     @docs(t.commands.poll.team.settings.settings)
     async def tp_settings(self, ctx: Context):
+        pass
+
+    @team.command(name="unpin", aliases=["u"])
+    @docs(t.commands.poll.team.unpin)
+    async def unpin(self, ctx: Context, message: Message):
+        pass
+
+    @team.command(name="new", aliases=["n"])
+    @docs(t.commands.poll.team.new)
+    async def team_new(self, ctx: Context, *, args: str):
+        pass
+
+    @team.command(name="list", aliases=["l"])
+    @docs(t.commands.poll.list)
+    async def list(self, ctx: Context):
         pass
 
     @poll.command(name="quick", usage=t.usage.poll, aliases=["q"])
@@ -747,7 +762,7 @@ class PollsCog(Cog, name="Polls"):
             except Forbidden:
                 pass
 
-    @commands.command(aliases=["tyn"])
+    @team.command(name="yes_no", aliases=["yn"])
     @PollsPermission.team_poll.check
     @guild_only()
     @docs(t.commands.team_yes_no)
