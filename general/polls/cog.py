@@ -1,7 +1,6 @@
 import string
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
-from enum import Enum
 from typing import Optional, Union
 
 from dateutil.relativedelta import relativedelta
@@ -693,13 +692,6 @@ class PollsCog(Cog, name="Polls"):
         parser = await get_parser()
         parsed: Namespace = parser.parse_known_args(args.split())[0]
 
-        title: str = t.poll
-        poll_type: Enum | str = parsed.type.lower()  # TODO Remove team-poll option
-        if poll_type == PollType.TEAM.value and await PollsPermission.team_poll.check_permissions(ctx.author):
-            poll_type = PollType.TEAM
-            title: str = t.team_poll
-        else:
-            poll_type = PollType.STANDARD
         max_deadline = await PollsDefaultSettings.max_duration.get() * 24
         deadline: Union[list[str, str], int] = parsed.deadline
         if isinstance(deadline, int):
@@ -708,7 +700,8 @@ class PollsCog(Cog, name="Polls"):
             deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
         anonymous: bool = parsed.anonymous
         choices: int = parsed.choices
-
+        can_delete, fair = True, parsed.fair
+        """ # Excluded code, need to be put into team-polls (new function)
         if poll_type == PollType.TEAM:
             can_delete, fair = False, True
             missing = list(await get_staff(self.bot.guilds[0], ["team"]))
@@ -716,12 +709,10 @@ class PollsCog(Cog, name="Polls"):
             *teamlers, last = (x.mention for x in missing)
             teamlers: list[str]
             field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
-        else:
-            can_delete, fair = True, parsed.fair
-            field = None
+        """
 
         message, interaction, parsed_options, question = await send_poll(
-            ctx=ctx, title=title, poll_args=options, max_choices=choices, field=field, deadline=deadline
+            ctx=ctx, title=t.poll, poll_args=options, max_choices=choices, deadline=deadline
         )
         await ctx.message.delete()
 
@@ -736,7 +727,7 @@ class PollsCog(Cog, name="Polls"):
             anonymous=anonymous,
             can_delete=can_delete,
             options=parsed_options,
-            poll_type=poll_type,
+            poll_type=PollType.STANDARD,
             interaction=interaction.id,
             fair=fair,
             max_choices=choices,
