@@ -522,7 +522,7 @@ class PollsCog(Cog, name="Polls"):
         embed.add_field(name=t.poll_config.anonymous.name, value=str(anonymous), inline=False)
         fair: bool = await PollsDefaultSettings.fair.get()
         embed.add_field(name=t.poll_config.fair.name, value=str(fair), inline=False)
-        roles = await RoleWeight.get(ctx.guild.id)
+        roles = await RoleWeight.get(ctx.guild.id, PollType.STANDARD)
         everyone: int = await PollsDefaultSettings.everyone_power.get()
         base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
         if roles:
@@ -547,7 +547,7 @@ class PollsCog(Cog, name="Polls"):
             element.weight = weight
             msg: str = t.role_weight.set(role.id, weight)
         elif weight and not element:
-            await RoleWeight.create(ctx.guild.id, role.id, weight)
+            await RoleWeight.create(ctx.guild.id, role.id, weight, PollType.STANDARD)
             msg: str = t.role_weight.set(role.id, weight)
         else:
             await element.remove()

@@ -159,11 +159,14 @@ class RoleWeight(Base):
     guild_id: Union[Column, int] = Column(BigInteger)
     role_id: Union[Column, int] = Column(BigInteger, unique=True)
     weight: Union[Column, float] = Column(Float)
+    poll_type: Union[Column, PollType] = Column(Enum(PollType))
     timestamp: Union[Column, datetime] = Column(UTCDateTime)
 
     @staticmethod
-    async def create(guild_id: int, role: int, weight: float) -> RoleWeight:
-        role_weight = RoleWeight(guild_id=guild_id, role_id=role, weight=weight, timestamp=utcnow())
+    async def create(guild_id: int, role: int, weight: float, poll_type: PollType) -> RoleWeight:
+        role_weight = RoleWeight(
+            guild_id=guild_id, role_id=role, weight=weight, timestamp=utcnow(), poll_type=poll_type
+        )
         await db.add(role_weight)
         await sync_redis()
         return role_weight
@@ -173,8 +176,8 @@ class RoleWeight(Base):
         await sync_redis(self.role_id)
 
     @staticmethod
-    async def get(guild: int) -> list[RoleWeight]:
-        return await db.all(filter_by(RoleWeight, guild_id=guild))
+    async def get(guild: int, poll_type: PollType) -> list[RoleWeight]:
+        return await db.all(filter_by(RoleWeight, guild_id=guild, poll_type=poll_type))
 
     @staticmethod
     async def get_highest(user_roles: list[Role]) -> float:
