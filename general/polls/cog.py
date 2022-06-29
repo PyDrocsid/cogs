@@ -289,6 +289,23 @@ async def close_poll(bot, poll: Poll):
     poll.status = PollStatus.PAUSED
 
 
+async def get_poll_list_embed(ctx: Context, poll_type: PollType, state: PollStatus) -> Embed:
+    description = ""
+    polls: list[Poll] = await db.all(filter_by(Poll, status=state, guild_id=ctx.guild.id, poll_type=poll_type))
+
+    for poll in polls:
+        description += t.polls.row(
+            poll.title, poll.message_url, poll.owner_id, format_dt(calc_end_time(poll.end_time), style="R")
+        )
+
+    if polls and description:
+        embed: Embed = Embed(title=t.polls.title(poll_type.value), description=description, color=Colors.Polls)
+    else:
+        embed: Embed = Embed(title=t.no_polls(poll_type.value), color=Colors.error)
+
+    return embed
+
+
 class MySelect(Select):
     """adds a method for handling interactions with the select menu"""
 
@@ -408,30 +425,13 @@ class PollsCog(Cog, name="Polls"):
         if not ctx.subcommand_passed:
             raise UserInputError
 
-    @poll.command(name="list", aliases=["l"])  # TODO: Filter by ACTIVE and PAUSED
+    @poll.command(name="list", aliases=["l"])
     @guild_only()
     @docs(t.commands.poll.list)
-    async def poll_list(self, ctx: Context):
-        polls: list[Poll] = await db.all(filter_by(Poll, status=PollStatus.ACTIVE, guild_id=ctx.guild.id))
-        description = ""
-        for poll in polls:
-            if poll.poll_type == PollType.TEAM and not await PollsPermission.team_poll.check_permissions(ctx.author):
-                continue
-            if poll.poll_type == PollType.TEAM:
-                description += t.polls.team_row(
-                    poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
-                )
-            else:
-                description += t.polls.row(
-                    poll.title, poll.message_url, poll.owner_id, format_dt(poll.end_time, style="R")
-                )
+    async def poll_list(self, ctx: Context, active: bool = True):
+        embed = await get_poll_list_embed(ctx, PollType.STANDARD, PollStatus.ACTIVE if active else PollStatus.PAUSED)
 
-        if polls and description:
-            embed: Embed = Embed(title=t.polls.title, description=description, color=Colors.Polls)
-            await send_long_embed(ctx, embed=embed, paginate=True)
-
-        else:
-            await send_long_embed(ctx, embed=Embed(title=t.no_polls, color=Colors.error))
+        await send_long_embed(ctx, embed=embed, paginate=True)
 
     @poll.command(name="delete", aliases=["del"])
     @docs(t.commands.poll.delete)
@@ -644,7 +644,9 @@ class PollsCog(Cog, name="Polls"):
     @team.command(name="list", aliases=["l"])
     @docs(t.commands.poll.list)
     async def list(self, ctx: Context):
-        pass
+        embed = await get_poll_list_embed(ctx, PollType.TEAM, PollStatus.ACTIVE)
+
+        await send_long_embed(ctx, embed=embed, paginate=True)
 
     @poll.command(name="quick", usage=t.usage.poll, aliases=["q"])
     @docs(t.commands.poll.quick)
