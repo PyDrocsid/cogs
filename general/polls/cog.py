@@ -214,6 +214,7 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
             weight: float | int = calc[index][0] if not calc[index][0].is_integer() else int(calc[index][0])
             percentage: float | int = calc[index][1] if not calc[index][1].is_integer() else int(calc[index][1])
             embed.set_field_at(index, name=t.option.field.name(weight, percentage), value=field.value, inline=False)
+            embed.set_footer(text=t.footer(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
 
     return embed
 
