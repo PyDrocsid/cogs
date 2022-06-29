@@ -3,6 +3,8 @@ from argparse import ArgumentParser, Namespace
 from datetime import datetime
 from typing import Optional, Union
 
+import matplotlib.pyplot as plt
+import numpy as np
 from dateutil.relativedelta import relativedelta
 from discord import (
     Embed,
@@ -356,6 +358,21 @@ async def status_change(bot: Bot, poll: Poll):
     await embed_message.edit(embed=embed)
 
 
+def show_results(poll: Poll):
+    data: list[float] = [sum([vote.vote_weight for vote in option.votes]) for option in poll.options]
+    if not any(data):
+        raise CommandError(t.error.no_votes)
+    data_tuple: list[tuple[int, float]] = [(i + 1, num) for i, num in enumerate(data) if num]
+    data_tuple.sort(key=lambda x: x[1])
+    data_tuple = data_tuple[:10]
+    data_np = np.array([value for _, value in data_tuple])
+
+    plt.pie(data_np, autopct="%1.1f%%", startangle=0)
+
+    plt.legend(bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data])
+    plt.show()
+
+
 class MySelect(Select):
     """adds a method for handling interactions with the select menu"""
 
@@ -548,6 +565,15 @@ class PollsCog(Cog, name="Polls"):
         embed = Embed(title=t.voted.title, description=description, color=Colors.Polls)
 
         await send_long_embed(ctx, embed=embed, repeat_title=True, paginate=True)
+
+    @poll.command(name="results", aliases=["res"])
+    @docs(t.commands.poll.result)
+    async def result(self, ctx: Context, message: Message):
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        if not poll:
+            raise CommandError(t.error.not_poll)
+
+        show_results(poll)
 
     @poll.command(name="activate", aliases=["a"])
     @docs(t.commands.poll.activate)

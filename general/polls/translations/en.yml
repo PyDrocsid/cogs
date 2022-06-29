@@ -7,6 +7,7 @@ commands:
     activate: activate a paused poll
     paused: pause an active poll
     voted: show who voted on the poll (only works if not anonymous or if the poll-owner uses the command)
+    result: see pie chart with results from a poll
     list: show the active polls
     settings:
       settings: poll settings
@@ -38,6 +39,7 @@ error:
   not_poll: Mesage doesn't contains a poll
   no_teamlers: No user with team-role found!
   no_polls: No current {} {}-polls.
+  no_votes: No votes on this poll
   poll_cant_be_used: Poll can't be used because it's {}
   cant_pin:
     title: Error
