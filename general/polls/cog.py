@@ -17,7 +17,7 @@ from discord import (
     SelectOption,
 )
 from discord.ext import commands, tasks
-from discord.ext.commands import CommandError, Context, EmojiConverter, EmojiNotFound, UserInputError, guild_only
+from discord.ext.commands import Bot, CommandError, Context, EmojiConverter, EmojiNotFound, UserInputError, guild_only
 from discord.ui import Select, View
 from discord.utils import format_dt, utcnow
 
@@ -233,6 +233,28 @@ async def get_staff(guild: Guild, team_roles: list[str]) -> set[Member]:
     return teamlers
 
 
+async def notify_missing_staff(bot: Bot, poll: Poll):
+    thread = bot.get_channel(poll.thread_id)
+    if not thread:
+        return
+    try:
+        teamlers: set[Member] = await get_staff(bot.get_guild(poll.guild_id), ["team"])
+    except CommandError:
+        await thread.send(embed=Embed(title=t.error.no_teamlers, color=Colors.error))
+        return
+
+    user_ids: set[int] = set()
+    for option in poll.options:
+        for vote in option.votes:
+            user_ids.add(vote.user_id)
+
+    missing: list[Member] | None = [teamler for teamler in teamlers if teamler.id not in user_ids]
+    missing.sort(key=lambda m: str(m).lower())
+
+    desc = " ".join(f"<@{user}>" for user in missing)
+    await thread.send(t.team_poll_missing(desc))
+
+
 async def handle_deleted_messages(bot, message_id: int):
     """if a message containing a poll gets deleted, this function deletes the interaction message (both direction)"""
     deleted_embed: Poll | None = await db.get(Poll, message_id=message_id)
@@ -414,8 +436,11 @@ class PollsCog(Cog, name="Polls"):
         polls: list[Poll] = await db.all(filter_by(Poll, status=PollStatus.ACTIVE))
 
         for poll in polls:
-            if not await check_poll_time(poll):
+            if not await check_poll_time(poll) and poll.poll_type == PollType.STANDARD:
                 await close_poll(self.bot, poll)
+            elif not await check_poll_time(poll) and poll.poll_type == PollType.TEAM:
+                poll.end_time = poll.end_time + relativedelta(days=1)
+                await notify_missing_staff(self.bot, poll)
 
     @commands.group(name="poll", aliases=["vote"])
     @guild_only()
