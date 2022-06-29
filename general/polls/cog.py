@@ -559,10 +559,10 @@ class PollsCog(Cog, name="Polls"):
             raise PermissionError
 
         if poll.status == PollStatus.ACTIVE:
-            raise CommandError(t.poll_status_not_changed("activated"))
+            raise CommandError(t.poll_status_not_changed(poll.status.value))
 
         await status_change(self.bot, poll)
-        await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed("activated")))
+        await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed(poll.status.value)))
 
     @poll.command(name="pause", aliases=["p", "deactivate", "disable"])
     @docs(t.commands.poll.paused)
@@ -574,10 +574,10 @@ class PollsCog(Cog, name="Polls"):
             raise PermissionError
 
         if poll.status == PollStatus.PAUSED:
-            raise CommandError(t.poll_status_not_changed("paused"))
+            raise CommandError(t.poll_status_not_changed(poll.status.value))
 
         await status_change(self.bot, poll)
-        await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed("paused")))
+        await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed(poll.status.value)))
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check
