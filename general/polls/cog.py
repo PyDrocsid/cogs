@@ -378,7 +378,11 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
 
     file = File(filename="poll_result.png", fp=buf)
 
-    embed = Embed(title="Poll results", description="Top 10 votes on the question xyz")
+    embed = Embed(
+        title=t.results.results,
+        description=t.results.desc(10 if len(data_tuple) >= 10 else len(data_tuple)),
+        color=Colors.Polls,
+    )
     embed.set_image(url="attachment://poll_result.png")
 
     return embed, file

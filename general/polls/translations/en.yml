@@ -176,6 +176,10 @@ wizard:
       
       --> Creates an anonymous, 6 hours long poll with 4 select choices for every user
 
+results:
+  results: "Poll results:"
+  desc: "Top {} votes on the poll: `{}`"
+
 poll: Poll
 team_poll: Team Poll
 poll_voted: "Vote was added to the poll"
