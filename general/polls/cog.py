@@ -1,6 +1,7 @@
 import string
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
+from io import BytesIO
 from typing import Optional, Union
 
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ import numpy as np
 from dateutil.relativedelta import relativedelta
 from discord import (
     Embed,
+    File,
     Forbidden,
     Guild,
     HTTPException,
@@ -358,7 +360,7 @@ async def status_change(bot: Bot, poll: Poll):
     await embed_message.edit(embed=embed)
 
 
-def show_results(poll: Poll):
+def show_results(poll: Poll) -> tuple[Embed, File]:
     data: list[float] = [sum([vote.vote_weight for vote in option.votes]) for option in poll.options]
     if not any(data):
         raise CommandError(t.error.no_votes)
@@ -369,8 +371,17 @@ def show_results(poll: Poll):
 
     plt.pie(data_np, autopct="%1.1f%%", startangle=0)
 
-    plt.legend(bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data])
-    plt.show()
+    plt.legend(bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data_tuple])
+    buf = BytesIO()
+    plt.savefig(buf, format="png", transparent=True)
+    buf.seek(0)
+
+    file = File(filename="poll_result.png", fp=buf)
+
+    embed = Embed(title="Poll results", description="Top 10 votes on the question xyz")
+    embed.set_image(url="attachment://poll_result.png")
+
+    return embed, file
 
 
 class MySelect(Select):
@@ -573,7 +584,9 @@ class PollsCog(Cog, name="Polls"):
         if not poll:
             raise CommandError(t.error.not_poll)
 
-        show_results(poll)
+        embed, file = show_results(poll)
+
+        await send_long_embed(ctx, embed=embed, file=file)
 
     @poll.command(name="activate", aliases=["a"])
     @docs(t.commands.poll.activate)
