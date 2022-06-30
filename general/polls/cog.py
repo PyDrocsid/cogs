@@ -369,8 +369,7 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
     data_tuple = data_tuple[:10]
     data_np = np.array([value for _, value in data_tuple])
 
-    plt.pie(data_np, autopct="%1.1f%%", startangle=0)
-
+    plt.pie(data_np, autopct="%1.1f%%", startangle=90, counterclock=False, shadow=True)
     plt.legend(bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data_tuple])
     buf = BytesIO()
     plt.savefig(buf, format="png", transparent=True)
@@ -380,7 +379,7 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
 
     embed = Embed(
         title=t.results.results,
-        description=t.results.desc(10 if len(data_tuple) >= 10 else len(data_tuple)),
+        description=t.results.desc(10 if len(data_tuple) >= 10 else len(data_tuple), poll.title),
         color=Colors.Polls,
     )
     embed.set_image(url="attachment://poll_result.png")
