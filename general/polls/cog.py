@@ -373,6 +373,7 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
     plt.legend(bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data_tuple])
     buf = BytesIO()
     plt.savefig(buf, format="png", transparent=True)
+    plt.clf()
     buf.seek(0)
 
     file = File(filename="poll_result.png", fp=buf)
