@@ -371,7 +371,7 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
     data_tuple.append(rest)
     data_np = np.array([value for _, value in data_tuple])
 
-    cc = plt.cycler("color", plt.cm.bwr(np.linspace(0.1, 0.9, len(data_np))))
+    cc = plt.cycler("color", plt.cm.bwr(np.linspace(0.9, 0.2, len(data_np))))
     explode = [len(data_tuple) / 30 for _ in data_tuple]
     with plt.style.context({"axes.prop_cycle": cc}):
         fig1, ax1 = plt.subplots()
