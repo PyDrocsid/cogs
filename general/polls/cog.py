@@ -360,7 +360,9 @@ async def status_change(bot: Bot, poll: Poll):
     await embed_message.edit(embed=embed)
 
 
-def show_results(poll: Poll) -> tuple[Embed, File]:
+def show_results(
+    poll: Poll,
+) -> tuple[Embed, File]:  # style is good for now, if you don't like it, change it by yourself
     data: list[float] = [sum([vote.vote_weight for vote in option.votes]) for option in poll.options]
     if not any(data):
         raise CommandError(t.error.no_votes)
@@ -368,22 +370,20 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
     data_tuple.sort(key=lambda x: x[1])
     data_np = np.array([value for _, value in data_tuple])
 
-    cc = plt.cycler("color", plt.cm.Spectral(np.linspace(1, 0, len(data_np))))
-    explode = [len(data_tuple) / 40 for _ in data_tuple]
+    cc = plt.cycler("color", plt.cm.rainbow(np.linspace(1, 0, len(data_np))))
+    explode = [len(data_tuple) / 50 for _ in data_tuple]
     with plt.style.context({"axes.prop_cycle": cc}):
         fig1, ax1 = plt.subplots()
         ax1.axis("equal")
-        pie, *_ = ax1.pie(
-            data_np, autopct="%1.1f%%", startangle=90, counterclock=False, pctdistance=0.8, explode=explode
-        )
+        pie, *_ = ax1.pie(data_np, autopct="%1.1f%%", startangle=90, pctdistance=0.8, explode=explode)
         plt.setp(pie, width=0.5)
         plt.legend(
             bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data_tuple]
         )
-        plt.title(poll.title, fontdict={"fontsize": 20, "color": "#FFFFFF"})
+        plt.title(poll.title, fontdict={"fontsize": 20, "color": "#FFFFFF"}, pad=50)
         buf = BytesIO()
-        fig1.set_size_inches(11.1, 6.3)
-        fig1.savefig(buf, format="png", transparent=True, dpi=300)
+        fig1.set_size_inches(11.1, 8)
+        fig1.savefig(buf, format="png", transparent=True, dpi=400)
         plt.clf()
         buf.seek(0)
 
