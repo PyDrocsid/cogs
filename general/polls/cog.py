@@ -380,6 +380,7 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
         plt.legend(
             bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data_tuple]
         )
+        plt.title(poll.title, fontdict={"fontsize": 20, "color": "#FFFFFF"})
         buf = BytesIO()
         fig1.set_size_inches(11.1, 6.3)
         fig1.savefig(buf, format="png", transparent=True, dpi=300)
@@ -388,11 +389,7 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
 
     file = File(filename="poll_result.png", fp=buf)
 
-    embed = Embed(
-        title=t.results.results,
-        description=t.results.desc(7 if len(data_tuple) >= 7 else len(data_tuple) - 1, poll.title),
-        color=Colors.Polls,
-    )
+    embed = Embed(title=t.results.results, color=Colors.Polls)
     embed.set_image(url="attachment://poll_result.png")
 
     return embed, file

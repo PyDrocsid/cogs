@@ -178,7 +178,6 @@ wizard:
 
 results:
   results: "Poll results:"
-  desc: "Top {} votes on the poll: `{}`"
 
 poll: Poll
 team_poll: Team Poll
