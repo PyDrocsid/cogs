@@ -141,7 +141,7 @@ yes_no:
 
 option:
   field:
-    name: "**Votes: {} ({}%)**"
+    name: "Option {}:"
 
 skip:
   message: skip

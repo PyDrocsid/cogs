@@ -84,13 +84,6 @@ def create_select_view(select_obj: Select, timeout: float = None) -> View:
     return view
 
 
-def get_percentage(poll: Poll) -> list[tuple[float, float]]:
-    """returns the amount of votes and the percentage of an option"""
-    values: list[float] = [sum([vote.vote_weight for vote in option.votes]) for option in poll.options]
-
-    return [(float(value), float(round(((value / sum(values)) * 100), 2))) for value in values]
-
-
 def build_wizard(skip: bool = False) -> Embed:
     """creates a help embed for setting up advanced polls"""
     if skip:
@@ -160,8 +153,8 @@ async def send_poll(
     if len({option.emoji for option in options}) < len(options):
         raise CommandError(t.option_duplicated)
 
-    for option in options:
-        embed.add_field(name=t.option.field.name(0, 0), value=str(option), inline=False)
+    for i, option in enumerate(options):
+        embed.add_field(name=t.option.field.name(i + 1), value=str(option), inline=False)
 
     if field:
         embed.add_field(name=field[0], value=field[1], inline=False)
@@ -203,7 +196,6 @@ async def send_poll(
 
 async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
     """edits the poll embed, updating the votes and percentages"""
-    calc = get_percentage(poll)
     for index, field in enumerate(embed.fields):
         if field.name == tg.status:
             missing.sort(key=lambda m: str(m).lower())
@@ -215,9 +207,7 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
                 value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
             )
         else:
-            weight: float | int = calc[index][0] if not calc[index][0].is_integer() else int(calc[index][0])
-            percentage: float | int = calc[index][1] if not calc[index][1].is_integer() else int(calc[index][1])
-            embed.set_field_at(index, name=t.option.field.name(weight, percentage), value=field.value, inline=False)
+            embed.set_field_at(index, name=t.option.field.name(index + 1), value=field.value, inline=False)
             embed.set_footer(text=t.footer(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
 
     return embed
@@ -378,7 +368,10 @@ def show_results(
         pie, *_ = ax1.pie(data_np, autopct="%1.1f%%", startangle=90, pctdistance=0.8, explode=explode)
         plt.setp(pie, width=0.5)
         plt.legend(
-            bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data_tuple]
+            bbox_to_anchor=(1.1, 1.1),
+            loc="upper right",
+            borderaxespad=0,
+            labels=[f"Option: {i}" for i, _ in data_tuple],
         )
         plt.title(poll.title, fontdict={"fontsize": 20, "color": "#FFFFFF"}, pad=50)
         buf = BytesIO()
