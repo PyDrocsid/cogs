@@ -366,25 +366,23 @@ def show_results(poll: Poll) -> tuple[Embed, File]:
         raise CommandError(t.error.no_votes)
     data_tuple: list[tuple[int | str, float]] = [(i + 1, num) for i, num in enumerate(data) if num]
     data_tuple.sort(key=lambda x: x[1])
-    data_tuple, other = data_tuple[:7], data_tuple[7:]
-    rest: tuple[str, float] = ("Other", sum([i for _, i in other]))
-    data_tuple.append(rest)
     data_np = np.array([value for _, value in data_tuple])
 
-    cc = plt.cycler("color", plt.cm.bwr(np.linspace(0.9, 0.2, len(data_np))))
-    explode = [len(data_tuple) / 30 for _ in data_tuple]
+    cc = plt.cycler("color", plt.cm.Spectral(np.linspace(1, 0, len(data_np))))
+    explode = [len(data_tuple) / 40 for _ in data_tuple]
     with plt.style.context({"axes.prop_cycle": cc}):
         fig1, ax1 = plt.subplots()
         ax1.axis("equal")
         pie, *_ = ax1.pie(
-            data_np, autopct="%1.1f%%", startangle=90, counterclock=False, shadow=True, pctdistance=0.8, explode=explode
+            data_np, autopct="%1.1f%%", startangle=90, counterclock=False, pctdistance=0.8, explode=explode
         )
         plt.setp(pie, width=0.5)
         plt.legend(
             bbox_to_anchor=(1.1, 1.1), loc="upper right", borderaxespad=0, labels=[str(i) for i, _ in data_tuple]
         )
         buf = BytesIO()
-        fig1.savefig(buf, format="png", transparent=True)
+        fig1.set_size_inches(11.1, 6.3)
+        fig1.savefig(buf, format="png", transparent=True, dpi=300)
         plt.clf()
         buf.seek(0)
 
