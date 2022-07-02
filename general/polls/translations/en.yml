@@ -36,13 +36,28 @@ permissions:
 
 error:
   weight_too_small: "Weight cant be lower than `0.1`"
+  empty_option: Empty option
   cant_set_weight: Can't set weight!
   not_poll: Mesage doesn't contains a poll
   no_teamlers: No user with team-role found!
+  missing_options: Missing options
+  too_many_options: You specified too many options. The maximum amount is {}.
+  option_too_long: Options are limited to {} characters.
   no_polls: No current {} {}-polls.
   no_votes: No votes on this poll
   poll_cant_be_used: Poll can't be used because it's {}
-  still active: "This poll is still open, please wait until it's closed!"
+  still_active: "This poll is still open, please wait until it's closed!"
+  poll_status_not_changed: Poll is already {}!
+  teampoll_missing: "{} please vote on the poll!"
+  teampoll_forbidden: You are not allowed to use a team poll!
+  option_duplicated: You may not use the same emoji twice!
+  team_role_not_set: Team role is not set.
+  team_role_no_members: The team role has no members.
+  teampoll_all_voted: "All teamlers voted :white_check_mark:"
+  foreign_message: Can't add reactions on messages that aren't yours
+  teamlers_missing:
+    one: "{last} hasn't voted yet."
+    many: "{teamlers} and {last} haven't voted yet."
   cant_pin:
     title: Error
     description: Can't pin any more messages in {}
@@ -79,53 +94,6 @@ polls:
   title: "List of {} {} polls"
   row: "\n[`{}`]({}) by <@{}> until {}"
 
-role_weight:
-  set: "Set vote weight for <@&{}> to `{}`"
-  reset: "Vote weight has been reset for <@&{}>"
-
-weight_everyone:
-  set: "Set vote weight for the default role to `{}`"
-  reset: Vote weight for the default role has been reset
-
-duration:
-  set:
-    one: "Set default duration for poll to {cnt} hour"
-    many: "Set default duration for poll to {cnt} hours"
-  reset: "Set the default duration for polls to unlimited"
-
-max_duration:
-  set:
-    one: "Set maximum duration for a poll to {cnt} day"
-    many: "Set maximum duration for a poll to {cnt} days"
-
-votes:
-  set:
-    one: "Set default votes for a poll to {cnt} vote"
-    many: "Set default votes for a poll to {cnt} votes"
-  reset: "Set the default votes for polls to unlimited"
-
-voted:
-  title: Votes
-  row: "\n <@{}> -> Options: {}"
-
-anonymous:
-  is_on: made default poll votes anonymous
-  is_off: made default poll votes visible
-
-fair:
-  is_on: made default poll votes fair
-  is_off: made default poll votes based on roles
-
-select:
-  place: Select Options
-  placeholder:
-    one: "Select an option!"
-    many: "Select up to {cnt} options!"
-  label: "Option {}."
-
-delete:
-  confirm_text: Are you sure that you want to delete this poll?
-
 usage:
   poll: |
     <question>
@@ -137,40 +105,33 @@ yes_no:
   against: "No"
   abstention: "Abstention"
   option_string: "{}\n:thumbsup: Yes\n:thumbsdown: No\n:zzz: Abstention"
-  count:
-    one: "{cnt} vote ({}%)"
-    many: "{cnt} votes ({}%)"
-
-option:
-  field:
-    name: "Option {}:"
-
-skip:
-  message: skip
-  title: Skipped
-  description: Skipped poll wizard -> default poll created!
 
 wizard:
   title: Poll wizard
-  description: Set arguments for an advanced poll
+  desc: Set arguments for an advanced poll
   skip:
+    message: skip
     name: Skip setup
     value: To skip the setup type `skip`
-  arg: Arguments
-  args: |
-    ```
-    --deadline DEADLINE, -D DEADLINE
-    time when the poll should be closed [Default: server settings]
-    
-    --anonymous {True,False}, -A {True,False} 
-    people can see who voted or not [Default: server settings]
-
-    --choices CHOICES, -C CHOICES 
-    the amount of votes someone can set [Default: multiple choices]
-
-    --fair {True,False}, -F {True,False} 
-    all roles have the same vote weight [Default: server settings]
-    ```
+    skipped:
+      title: Skipped
+      desc: Skipped poll wizard -> default poll created!
+  args:
+    name: Arguments
+    value: |
+      ```
+      --deadline DEADLINE, -D DEADLINE
+      time when the poll should be closed [Default: server settings]
+      
+      --anonymous {True,False}, -A {True,False} 
+      people can see who voted or not [Default: server settings]
+  
+      --choices CHOICES, -C CHOICES 
+      the amount of votes someone can set [Default: multiple choices]
+  
+      --fair {True,False}, -F {True,False} 
+      all roles have the same vote weight [Default: server settings]
+      ```
   example:
     name: Example
     value: |
@@ -178,39 +139,59 @@ wizard:
       
       --> Creates an anonymous, 6 hours long poll with 4 select choices for every user
 
-results:
-  results: "Poll results:"
-
-ignore:
-  title: Ignore
-  removed: "<@{}> was removed from the list of ignored member"
-  added: "<@{}> was added on the list of ignored member"
-
 team_settings:
   title: Team poll settings
   ignore:
     name: Ignored Members
 
-poll: Poll
-team_poll: Team Poll
-poll_voted: "Vote was added to the poll"
-poll_status_not_changed: Poll is already {}!
-poll_status_changed: Poll is now {}!
-team_poll_missing: "{} please vote on the poll!"
-team_yn_poll_forbidden: You are not allowed to use a team poll!
-vote_explanation: Vote using the reactions below!
-too_many_options: You specified too many options. The maximum amount is {}.
-option_too_long: Options are limited to {} characters.
-missing_options: Missing options
-option_duplicated: You may not use the same emoji twice!
-empty_option: Empty option
-team_role_not_set: Team role is not set.
-team_role_no_members: The team role has no members.
-teampoll_all_voted: "All teamlers voted :white_check_mark:"
-teamlers_missing:
-  one: "{last} hasn't voted yet."
-  many: "{teamlers} and {last} haven't voted yet."
-footer: Ends at {} UTC
-footer_closed: Closed
-footer_paused: Paused
-foreign_message: "You are not allowed to add yes/no reactions to foreign messages!"
+poll:
+  standard: Poll
+  team_poll: Team Poll
+  voted: "Vote was added to the poll"
+  footer:
+    default: Ends at {} UTC
+    closed: Closed
+    paused: Paused
+  select:
+    place: Select Options
+    placeholder:
+      one: "Select an option!"
+      many: "Select up to {cnt} options!"
+    label: "Option {}."
+  option: "Option {}:"
+  results: "Poll results:"
+  status_changed: Poll is now {}!
+
+texts:
+  delete:
+    confirm: Are you sure that you want to delete this poll?
+  voted:
+    title: Votes
+    row: "\n <@{}> -> Options: {}"
+  role_weight:
+    set: "Set vote weight for <@&{}> to `{}`"
+    reset: "Vote weight has been reset for <@&{}>"
+  duration:
+    set:
+      one: "Set default duration for poll to {cnt} hour"
+      many: "Set default duration for poll to {cnt} hours"
+    reset: "Set the default duration for polls to unlimited"
+  max_duration:
+    set:
+      one: "Set maximum duration for a poll to {cnt} day"
+      many: "Set maximum duration for a poll to {cnt} days"
+  votes:
+    set:
+      one: "Set default votes for a poll to {cnt} vote"
+      many: "Set default votes for a poll to {cnt} votes"
+    reset: "Set the default votes for polls to unlimited"
+  anonymous:
+    is_on: made default poll votes anonymous
+    is_off: made default poll votes visible
+  fair:
+    is_on: made default poll votes fair
+    is_off: made default poll votes based on roles
+  ignore:
+    title: Ignore
+    removed: "<@{}> was removed from the list of ignored member"
+    added: "<@{}> was added on the list of ignored member"

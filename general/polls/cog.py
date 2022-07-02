@@ -56,7 +56,7 @@ class PollOption:
 
     async def init(self, ctx: Context, line: str, number: int):
         if not line:
-            raise CommandError(t.empty_option)
+            raise CommandError(t.error.empty_option)
 
         emoji_candidate, *option = line.split()
         option = " ".join(option)
@@ -87,10 +87,10 @@ def create_select_view(select_obj: Select, timeout: float = None) -> View:
 def build_wizard(skip: bool = False) -> Embed:
     """creates a help embed for setting up advanced polls"""
     if skip:
-        return Embed(title=t.skip.title, description=t.skip.description, color=Colors.Polls)
+        return Embed(title=t.wizard.skip.skipped.title, description=t.wizard.skip.skipped.desc, color=Colors.Polls)
 
-    embed = Embed(title=t.wizard.title, description=t.wizard.description, color=Colors.Polls)
-    embed.add_field(name=t.wizard.arg, value=t.wizard.args, inline=False)
+    embed = Embed(title=t.wizard.title, description=t.wizard.desc, color=Colors.Polls)
+    embed.add_field(name=t.wizard.args.name, value=t.wizard.args.value, inline=False)
     embed.add_field(name=t.wizard.example.name, value=t.wizard.example.value, inline=False)
     embed.add_field(name=t.wizard.skip.name, value=t.wizard.skip.value, inline=False)
 
@@ -133,38 +133,38 @@ async def send_poll(
     question, *options = [line.replace("\x00", "\n") for line in poll_args.replace("\\\n", "\x00").split("\n") if line]
 
     if not options:
-        raise CommandError(t.missing_options)
+        raise CommandError(t.error.missing_options)
     if len(options) > MAX_OPTIONS:
-        raise CommandError(t.too_many_options(MAX_OPTIONS))
+        raise CommandError(t.error.too_many_options(MAX_OPTIONS))
     if field and len(options) >= MAX_OPTIONS:
-        raise CommandError(t.too_many_options(MAX_OPTIONS - 1))
+        raise CommandError(t.error.too_many_options(MAX_OPTIONS - 1))
 
     options = [await PollOption().init(ctx, line, i) for i, line in enumerate(options)]
 
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
-        raise CommandError(t.option_too_long(EmbedLimits.FIELD_VALUE))
+        raise CommandError(t.error.option_too_long(EmbedLimits.FIELD_VALUE))
 
     embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
 
     if deadline:
-        embed.set_footer(text=t.footer(calc_end_time(deadline).strftime("%Y-%m-%d %H:%M")))
+        embed.set_footer(text=t.poll.footer.default(calc_end_time(deadline).strftime("%Y-%m-%d %H:%M")))
 
     if len({option.emoji for option in options}) < len(options):
-        raise CommandError(t.option_duplicated)
+        raise CommandError(t.error.option_duplicated)
 
     for i, option in enumerate(options):
-        embed.add_field(name=t.option.field.name(i + 1), value=str(option), inline=False)
+        embed.add_field(name=t.error.option.field.name(i + 1), value=str(option), inline=False)
 
     if field:
         embed.add_field(name=field[0], value=field[1], inline=False)
 
     if not max_choices or isinstance(max_choices, str):
-        place = t.select.place
+        place = t.poll.select.place
         max_value = len(options)
     else:
         options_amount = len(options) if max_choices >= len(options) else max_choices
-        place: str = t.select.placeholder(cnt=options_amount)
+        place: str = t.poll.select.placeholder(cnt=options_amount)
         max_value = options_amount
 
     msg = await ctx.send(embed=embed)
@@ -173,14 +173,16 @@ async def send_poll(
         placeholder=place,
         max_values=max_value,
         options=[
-            SelectOption(label=t.select.label(index + 1), emoji=option.emoji, description=option.option)
+            SelectOption(label=t.poll.select.label(index + 1), emoji=option.emoji, description=option.option)
             for index, option in enumerate(options)
         ],
     )
     view_msg = await ctx.send(view=create_select_view(select_obj=select_obj))
     thread = await msg.create_thread(name=question)
 
-    parsed_options: list[tuple[str, str]] = [(obj.emoji, t.select.label(ix)) for ix, obj in enumerate(options, start=1)]
+    parsed_options: list[tuple[str, str]] = [
+        (obj.emoji, t.poll.select.label(ix)) for ix, obj in enumerate(options, start=1)
+    ]
 
     try:
         await msg.pin()
@@ -204,11 +206,11 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
             embed.set_field_at(
                 index,
                 name=field.name,
-                value=t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
+                value=t.error.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
             )
         else:
-            embed.set_field_at(index, name=t.option.field.name(index + 1), value=field.value, inline=False)
-            embed.set_footer(text=t.footer(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
+            embed.set_field_at(index, name=t.poll.option(index + 1), value=field.value, inline=False)
+            embed.set_footer(text=t.default.footer(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
 
     return embed
 
@@ -249,7 +251,7 @@ async def notify_missing_staff(bot: Bot, poll: Poll):
     missing.sort(key=lambda m: str(m).lower())
 
     desc = " ".join(f"<@{user}>" for user in missing)
-    await thread.send(t.team_poll_missing(desc))
+    await thread.send(t.error.team_poll_missing(desc))
 
 
 async def handle_deleted_messages(bot, message_id: int):
@@ -299,7 +301,7 @@ async def close_poll(bot, poll: Poll):
 
     await interaction_message.delete()
     embed = embed_message.embeds[0]
-    embed.set_footer(text=t.footer_closed)
+    embed.set_footer(text=t.poll.footer.closed)
 
     await embed_message.edit(embed=embed)
     await embed_message.unpin()
@@ -340,12 +342,12 @@ async def status_change(bot: Bot, poll: Poll):
     embed = embed_message.embeds[0]
     if poll.status == PollStatus.ACTIVE:
         poll.status = PollStatus.PAUSED
-        embed.set_footer(text=t.footer_paused)
+        embed.set_footer(text=t.poll.footer.paused)
         embed.colour = Colors.grey
         await embed_message.unpin()
     else:
         poll.status = PollStatus.ACTIVE
-        embed.set_footer(text=t.footer(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
+        embed.set_footer(text=t.poll.footer.default(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
         embed.colour = Colors.Polls
         await embed_message.pin()
 
@@ -384,7 +386,7 @@ def show_results(
 
     file = File(filename="poll_result.png", fp=buf)
 
-    embed = Embed(title=t.results.results, color=Colors.Polls)
+    embed = Embed(title=t.poll.results, color=Colors.Polls)
     embed.set_image(url="attachment://poll_result.png")
 
     return embed, file
@@ -439,7 +441,7 @@ class MySelect(Select):
                 await interaction.response.send_message(content=t.error.no_teamlers, ephemeral=True)
                 return
             if user not in teamlers:
-                await interaction.response.send_message(content=t.team_yn_poll_forbidden, ephemeral=True)
+                await interaction.response.send_message(content=t.error.teampoll_forbidden, ephemeral=True)
                 return
 
             user_ids: set[int] = set()
@@ -452,7 +454,7 @@ class MySelect(Select):
 
         embed = await edit_poll_embed(embed, poll, missing)
         await message.edit(embed=embed)
-        await interaction.response.send_message(content=t.poll_voted, ephemeral=True)
+        await interaction.response.send_message(content=t.poll.voted, ephemeral=True)
 
 
 class PollsCog(Cog, name="Polls"):
@@ -474,11 +476,11 @@ class PollsCog(Cog, name="Polls"):
             if await check_poll_time(poll):
                 select_obj = MySelect(
                     custom_id=str(poll.message_id),
-                    placeholder=t.select.placeholder(cnt=poll.max_choices),
+                    placeholder=t.poll.select.placeholder(cnt=poll.max_choices),
                     max_values=poll.max_choices,
                     options=[
                         SelectOption(
-                            label=t.select.label(option.field_position + 1),
+                            label=t.poll.select.label(option.field_position + 1),
                             emoji=option.emote,
                             description=option.option,
                         )
@@ -541,7 +543,7 @@ class PollsCog(Cog, name="Polls"):
         elif not poll.can_delete and not poll.owner_id == ctx.author.id:
             raise PermissionError  # if delete is False, only the owner can delete it
 
-        if not await Confirmation().run(ctx, t.delete.confirm_text):
+        if not await Confirmation().run(ctx, t.texts.delete.confirm):
             return
 
         await message.delete()
@@ -578,8 +580,8 @@ class PollsCog(Cog, name="Polls"):
 
         description = ""
         for key, value in users.items():
-            description += t.voted.row(key, value)
-        embed = Embed(title=t.voted.title, description=description, color=Colors.Polls)
+            description += t.texts.voted.row(key, value)
+        embed = Embed(title=t.texts.voted.title, description=description, color=Colors.Polls)
 
         await send_long_embed(ctx, embed=embed, repeat_title=True, paginate=True)
 
@@ -608,10 +610,10 @@ class PollsCog(Cog, name="Polls"):
             raise PermissionError
 
         if poll.status == PollStatus.ACTIVE:
-            raise CommandError(t.poll_status_not_changed(poll.status.value))
+            raise CommandError(t.error.poll_status_not_changed(poll.status.value))
 
         await status_change(self.bot, poll)
-        await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed(poll.status.value)))
+        await send_long_embed(ctx, embed=Embed(title=t.poll.status_changed(poll.status.value)))
 
     @poll.command(name="pause", aliases=["p", "deactivate", "disable"])
     @docs(t.commands.poll.paused)
@@ -623,10 +625,10 @@ class PollsCog(Cog, name="Polls"):
             raise PermissionError
 
         if poll.status == PollStatus.PAUSED:
-            raise CommandError(t.poll_status_not_changed(poll.status.value))
+            raise CommandError(t.error.poll_status_not_changed(poll.status.value))
 
         await status_change(self.bot, poll)
-        await send_long_embed(ctx, embed=Embed(title=t.poll_status_changed(poll.status.value)))
+        await send_long_embed(ctx, embed=Embed(title=t.poll.status_changed(poll.status.value)))
 
     @poll.group(name="settings", aliases=["s"])
     @PollsPermission.read.check
@@ -683,13 +685,13 @@ class PollsCog(Cog, name="Polls"):
 
         if element and weight:
             element.weight = weight
-            msg: str = t.role_weight.set(role.id, weight)
+            msg: str = t.texts.role_weight.set(role.id, weight)
         elif weight and not element:
             await RoleWeight.create(ctx.guild.id, role.id, weight, PollType.STANDARD)
-            msg: str = t.role_weight.set(role.id, weight)
+            msg: str = t.texts.role_weight.set(role.id, weight)
         else:
             await element.remove()
-            msg: str = t.role_weight.reset(role.id)
+            msg: str = t.texts.role_weight.reset(role.id)
 
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
@@ -700,9 +702,9 @@ class PollsCog(Cog, name="Polls"):
     async def duration(self, ctx: Context, hours: int | None = None):
         if not hours:
             hours = 0
-            msg: str = t.duration.reset()
+            msg: str = t.texts.duration.reset()
         else:
-            msg: str = t.duration.set(cnt=hours)
+            msg: str = t.texts.duration.set(cnt=hours)
 
         await PollsDefaultSettings.duration.set(hours)
         await add_reactions(ctx.message, "white_check_mark")
@@ -713,7 +715,7 @@ class PollsCog(Cog, name="Polls"):
     @docs(t.commands.poll.settings.max_duration)
     async def max_duration(self, ctx: Context, days: int | None = None):
         days = days or 7
-        msg: str = t.max_duration.set(cnt=days)
+        msg: str = t.texts.max_duration.set(cnt=days)
 
         await PollsDefaultSettings.max_duration.set(days)
         await add_reactions(ctx.message, "white_check_mark")
@@ -725,9 +727,9 @@ class PollsCog(Cog, name="Polls"):
     async def votes(self, ctx: Context, votes: int | None = None):
         if not votes:
             votes = 0
-            msg: str = t.votes.reset
+            msg: str = t.texts.votes.reset
         else:
-            msg: str = t.votes.set(cnt=votes)
+            msg: str = t.texts.votes.set(cnt=votes)
 
         if not 0 < votes < MAX_OPTIONS:
             votes = 0
@@ -740,7 +742,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.anonymous)
     async def anonymous(self, ctx: Context, status: bool):
-        msg: str = t.anonymous.is_on if status else t.anonymous.is_off
+        msg: str = t.texts.anonymous.is_on if status else t.texts.anonymous.is_off
 
         await PollsDefaultSettings.anonymous.set(status)
         await add_reactions(ctx.message, "white_check_mark")
@@ -750,7 +752,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.write.check
     @docs(t.commands.poll.settings.fair)
     async def fair(self, ctx: Context, status: bool):
-        msg: str = t.fair.is_on if status else t.fair.is_off
+        msg: str = t.texts.fair.is_on if status else t.texts.fair.is_off
 
         await PollsDefaultSettings.fair.set(status)
         await add_reactions(ctx.message, "white_check_mark")
@@ -788,10 +790,10 @@ class PollsCog(Cog, name="Polls"):
 
         if user:
             await user.remove()
-            desc = t.ignore.removed(member.id)
+            desc = t.texts.ignore.removed(member.id)
         else:
             await IgnoredUser.create(ctx.guild.id, member.id)
-            desc = t.ignore.added(member.id)
+            desc = t.texts.ignore.added(member.id)
 
         await send_to_changelog(ctx.guild, desc)
         await add_reactions(ctx.message, "white_check_mark")
@@ -820,7 +822,7 @@ class PollsCog(Cog, name="Polls"):
         deadline = await PollsDefaultSettings.duration.get() or await PollsDefaultSettings.max_duration.get() * 24
         max_choices = await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS
         message, interaction, parsed_options, question, thread_id = await send_poll(
-            ctx=ctx, title=t.poll, poll_args=args, max_choices=max_choices, deadline=deadline
+            ctx=ctx, title=t.poll.standard, poll_args=args, max_choices=max_choices, deadline=deadline
         )
 
         await Poll.create(
@@ -850,7 +852,7 @@ class PollsCog(Cog, name="Polls"):
         mess: Message = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author, timeout=60.0)
         args = mess.content
 
-        if args.lower() == t.skip.message:
+        if args.lower() == t.wizard.skip.message:
             await wizard.edit(embed=build_wizard(True), delete_after=5.0)
         else:
             await wizard.delete(delay=5.0)
@@ -879,7 +881,7 @@ class PollsCog(Cog, name="Polls"):
         """
 
         message, interaction, parsed_options, question, thread_id = await send_poll(
-            ctx=ctx, title=t.poll, poll_args=options, max_choices=choices, deadline=deadline
+            ctx=ctx, title=t.poll.standard, poll_args=options, max_choices=choices, deadline=deadline
         )
         await ctx.message.delete()
 
@@ -909,13 +911,13 @@ class PollsCog(Cog, name="Polls"):
             message = ctx.message
 
         if message.author != ctx.author and not await is_teamler(ctx.author):
-            raise CommandError(t.foreign_message)
+            raise CommandError(t.error.foreign_message)
 
         try:
             await message.add_reaction(name_to_emoji["thumbsup"])
             await message.add_reaction(name_to_emoji["thumbsdown"])
         except Forbidden:
-            raise CommandError(t.could_not_add_reactions(message.channel.mention))
+            raise CommandError(t.error.could_not_add_reactions(message.channel.mention))
 
         if message != ctx.message:
             try:
@@ -934,11 +936,11 @@ class PollsCog(Cog, name="Polls"):
         missing.sort(key=lambda m: str(m).lower())
         *teamlers, last = (x.mention for x in missing)
         teamlers: list[str]
-        field = (tg.status, t.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
+        field = (tg.status, t.error.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1))
 
         message, interaction, parsed_options, question, thread_id = await send_poll(
             ctx=ctx,
-            title=t.team_poll,
+            title=t.poll.team_poll,
             max_choices=1,
             poll_args=options,
             field=field,
