@@ -585,6 +585,10 @@ class PollsCog(Cog, name="Polls"):
     @docs(t.commands.poll.result)
     async def result(self, ctx: Context, message: Message):
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        if poll.status == PollStatus.ACTIVE and not (
+            poll.owner_id == ctx.author.id or await PollsPermission.manage.check_permissions(ctx.author)
+        ):
+            raise CommandError(t.error.still_active)
         if not poll:
             raise CommandError(t.error.not_poll)
 

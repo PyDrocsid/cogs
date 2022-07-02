@@ -41,6 +41,7 @@ error:
   no_polls: No current {} {}-polls.
   no_votes: No votes on this poll
   poll_cant_be_used: Poll can't be used because it's {}
+  still active: "This poll is still open, please wait until it's closed!"
   cant_pin:
     title: Error
     description: Can't pin any more messages in {}
