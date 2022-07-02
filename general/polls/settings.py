@@ -11,4 +11,4 @@ class PollsDefaultSettings(Settings):
 
 
 class PollsTeamsSettings(Settings):
-    duration = 0
+    duration = 1  # days after which all missing team-members should be pinged, if not excluded

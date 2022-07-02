@@ -37,7 +37,7 @@ from PyDrocsid.util import is_teamler
 from .colors import Colors
 from .models import Option, Poll, PollStatus, PollType, PollVote, RoleWeight, sync_redis
 from .permissions import PollsPermission
-from .settings import PollsDefaultSettings
+from .settings import PollsDefaultSettings, PollsTeamsSettings
 from ...contributor import Contributor
 from ...pubsub import send_alert, send_to_changelog
 
@@ -761,18 +761,18 @@ class PollsCog(Cog, name="Polls"):
         if not ctx.subcommand_passed:
             raise UserInputError
 
-    @team.group(name="settings", aliases=["s"])
+    @team.group(name="settings", aliases=["s"])  # TODO: function for team-poll settings
     @PollsPermission.read.check
     @docs(t.commands.poll.team.settings.settings)
     async def tp_settings(self, ctx: Context):
         pass
 
-    @team.command(name="unpin", aliases=["u"])
+    @team.command(name="unpin", aliases=["u"])  # TODO: function for unpinning polls
     @docs(t.commands.poll.team.unpin)
     async def unpin(self, ctx: Context, message: Message):
         pass
 
-    @team.command(name="new", aliases=["n"])
+    @team.command(name="new", aliases=["n"])  # TODO: new team-polls
     @docs(t.commands.poll.team.new)
     async def team_new(self, ctx: Context, *, args: str):
         pass
@@ -783,6 +783,11 @@ class PollsCog(Cog, name="Polls"):
         embed = await get_poll_list_embed(ctx, PollType.TEAM, PollStatus.ACTIVE)
 
         await send_long_embed(ctx, embed=embed, paginate=True)
+
+    @team.command(name="ignore", aliases=["i"])  # TODO: ignore user from being pinged by team-polls
+    @docs(t.commands.poll.team.ignore)
+    async def ignore(self, ctx: Context, member: Member):
+        pass
 
     @poll.command(name="quick", usage=t.usage.poll, aliases=["q"])
     @docs(t.commands.poll.quick)
@@ -912,7 +917,7 @@ class PollsCog(Cog, name="Polls"):
             max_choices=1,
             poll_args=options,
             field=field,
-            deadline=await PollsDefaultSettings.max_duration.get() * 24,
+            deadline=await PollsTeamsSettings.duration.get() * 24,
         )
         await Poll.create(
             message_id=message.id,
@@ -921,13 +926,13 @@ class PollsCog(Cog, name="Polls"):
             channel=message.channel.id,
             owner=ctx.author.id,
             title=question,
-            end=await PollsDefaultSettings.max_duration.get() * 24,
-            anonymous=False,
+            end=await PollsTeamsSettings.duration.get() * 24,
+            anonymous=False,  # TODO: make optional depending on settings
             can_delete=False,
             options=parsed_options,
             poll_type=PollType.TEAM,
             interaction=interaction.id,
-            fair=True,
+            fair=True,  # TODO: only fair if no weight is listed for team-polls
             max_choices=1,
             thread=thread_id,
         )
