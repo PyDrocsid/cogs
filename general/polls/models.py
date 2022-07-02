@@ -192,3 +192,25 @@ class RoleWeight(Base):
                 weight = _weight
 
         return weight
+
+
+class IgnoredUser(Base):
+    __tablename__ = "ignored_by_poll_ping"
+
+    id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
+    guild_id: Union[Column, int] = Column(BigInteger)
+    member_id: Union[Column, int] = Column(BigInteger, unique=True)
+    timestamp: Union[Column, datetime] = Column(UTCDateTime)
+
+    @staticmethod
+    async def create(guild_id: int, member_id: int):
+        ignored_user = IgnoredUser(guild_id=guild_id, member_id=member_id)
+        await db.add(ignored_user)
+        return ignored_user
+
+    async def remove(self) -> None:
+        await db.delete(self)
+
+    @staticmethod
+    async def get(guild_id: int) -> list[IgnoredUser]:
+        return await db.all(filter_by(IgnoredUser, guild_id=guild_id))

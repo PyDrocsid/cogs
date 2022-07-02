@@ -24,6 +24,7 @@ commands:
       list: show all open team-polls
       settings:
         settings: manage team-poll settings
+        ignore: ignore a member from being pinged, can be reverted by executing again
   yes_no: add thumbs-up/down emotes on a message
   team_yes_no: starts a yes/no poll and shows, which teamler has not voted yet.
 
@@ -179,6 +180,16 @@ wizard:
 
 results:
   results: "Poll results:"
+
+ignore:
+  title: Ignore
+  removed: "<@{}> was removed from the list of ignored member"
+  added: "<@{}> was added on the list of ignored member"
+
+team_settings:
+  title: Team poll settings
+  ignore:
+    name: Ignored Members
 
 poll: Poll
 team_poll: Team Poll

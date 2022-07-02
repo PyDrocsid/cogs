@@ -35,7 +35,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import Option, Poll, PollStatus, PollType, PollVote, RoleWeight, sync_redis
+from .models import IgnoredUser, Option, Poll, PollStatus, PollType, PollVote, RoleWeight, sync_redis
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings, PollsTeamsSettings
 from ...contributor import Contributor
@@ -238,10 +238,12 @@ async def notify_missing_staff(bot: Bot, poll: Poll):
         await thread.send(embed=Embed(title=t.error.no_teamlers, color=Colors.error))
         return
 
+    ignored_ids: list[int] = [i.id for i in await IgnoredUser.get(poll.guild_id)]
     user_ids: set[int] = set()
     for option in poll.options:
         for vote in option.votes:
-            user_ids.add(vote.user_id)
+            if vote.user_id not in ignored_ids:
+                user_ids.add(vote.user_id)
 
     missing: list[Member] | None = [teamler for teamler in teamlers if teamler.id not in user_ids]
     missing.sort(key=lambda m: str(m).lower())
@@ -765,9 +767,37 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.read.check
     @docs(t.commands.poll.team.settings.settings)
     async def tp_settings(self, ctx: Context):
-        pass
+        if ctx.subcommand_passed is not None:
+            if ctx.invoked_subcommand is None:
+                raise UserInputError
+            return
+
+        ignored: list[IgnoredUser] = await IgnoredUser.get(ctx.guild.id)
+        ignore = "None" if not ignored else " ".join(f"<@{i.member_id}>" for i in ignored)
+
+        embed = Embed(title=t.team_settings.title, color=Colors.Polls)
+        embed.add_field(name=t.team_settings.ignore.name, value=ignore)
+
+        await send_long_embed(ctx, embed=embed)
+
+    @tp_settings.command(name="ignore", aliases=["i"])
+    @PollsPermission.write.check
+    @docs(t.commands.poll.team.settings.ignore)
+    async def ignore(self, ctx: Context, member: Member):
+        user: IgnoredUser = await db.get(IgnoredUser, member_id=member.id, guild_id=ctx.guild.id)
+
+        if user:
+            await user.remove()
+            desc = t.ignore.removed(member.id)
+        else:
+            await IgnoredUser.create(ctx.guild.id, member.id)
+            desc = t.ignore.added(member.id)
+
+        await send_to_changelog(ctx.guild, desc)
+        await add_reactions(ctx.message, "white_check_mark")
 
     @team.command(name="unpin", aliases=["u"])  # TODO: function for unpinning polls
+    @PollsPermission.manage.check
     @docs(t.commands.poll.team.unpin)
     async def unpin(self, ctx: Context, message: Message):
         pass
@@ -783,11 +813,6 @@ class PollsCog(Cog, name="Polls"):
         embed = await get_poll_list_embed(ctx, PollType.TEAM, PollStatus.ACTIVE)
 
         await send_long_embed(ctx, embed=embed, paginate=True)
-
-    @team.command(name="ignore", aliases=["i"])  # TODO: ignore user from being pinged by team-polls
-    @docs(t.commands.poll.team.ignore)
-    async def ignore(self, ctx: Context, member: Member):
-        pass
 
     @poll.command(name="quick", usage=t.usage.poll, aliases=["q"])
     @docs(t.commands.poll.quick)
@@ -898,7 +923,7 @@ class PollsCog(Cog, name="Polls"):
             except Forbidden:
                 pass
 
-    @team.command(name="yes_no", aliases=["yn"])
+    @commands.command(name="team_yes_no", aliases=["tyn"])
     @PollsPermission.team_poll.check
     @guild_only()
     @docs(t.commands.team_yes_no)
