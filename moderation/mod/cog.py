@@ -60,7 +60,6 @@ MAX_TIMEOUT = timedelta(days=28)
 # TODO
 #  Docstring for all methods, functions and classes
 #  make all functions private, if the are not ment to be used by other
-#  do not require mute role, update whole code accordingly
 #  assign mute role to all muted members, when mute role gets set
 #  remove mute role from all muted members if mute role gets cleared
 
@@ -277,7 +276,8 @@ class ModCog(Cog, name="Mod Tools"):
         )
 
         if active_mutes:
-            await member.add_roles(mute_role)
+            if mute_role:
+                await member.add_roles(mute_role)
 
             for active_mute in active_mutes[1:]:
                 await Mute.delete(active_mute.id)
@@ -373,8 +373,6 @@ class ModCog(Cog, name="Mod Tools"):
                 )
 
         mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
-        if mute_role is None:
-            return
 
         # Undo expired mutes
         mute_keys = await redis.hkeys(mute_entries_key := f"mod_entries:{Mute.__tablename__}")
@@ -389,7 +387,8 @@ class ModCog(Cog, name="Mod Tools"):
                 timeout: datetime | None = member.communication_disabled_until if member else None
 
                 if member:
-                    await member.remove_roles(mute_role)
+                    if mute_role:
+                        await member.remove_roles(mute_role)
 
                     try:
                         await member.remove_timeout()
@@ -1127,14 +1126,12 @@ class ModCog(Cog, name="Mod Tools"):
 
         mute_role: Role | None = await get_mute_role(ctx.guild)
 
-        if mute_role is None:
-            raise CommandError(t.mute.role_not_set)
-
         if not await self.handle_timed(ctx, user, time, reason, t.mute, Mute, Colors.mute, ""):
             return
 
         if isinstance(user, Member):
-            await user.add_roles(mute_role)
+            if mute_role:
+                await user.add_roles(mute_role)
 
             try:
                 await user.timeout_for(min(timedelta(minutes=time), MAX_TIMEOUT) if time else MAX_TIMEOUT)
@@ -1191,7 +1188,7 @@ class ModCog(Cog, name="Mod Tools"):
             was_muted = False
             if isinstance(muted_user, Member) and (mute_role in muted_user.roles or user.timed_out):
                 was_muted = True
-                if mute_role is not None:
+                if mute_role:
                     await muted_user.remove_roles(mute_role)
 
                 try:
