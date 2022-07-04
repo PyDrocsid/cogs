@@ -235,7 +235,7 @@ async def notify_missing_staff(bot: Bot, poll: Poll):
     if not thread:
         return
     try:
-        teamlers: set[Member] = await get_staff(bot.get_guild(poll.guild_id), ["team"])
+        teamlers: set[Member] = await get_staff(bot.get_guild(poll.guild_id), ["team"])  # TODO: kann in libary sein
     except CommandError:
         await thread.send(embed=Embed(title=t.error.no_teamlers, color=Colors.error))
         return
@@ -245,7 +245,7 @@ async def notify_missing_staff(bot: Bot, poll: Poll):
     for option in poll.options:
         for vote in option.votes:
             if vote.user_id not in ignored_ids:
-                user_ids.add(vote.user_id)
+                user_ids.add(vote.user_id)  # TODO: nur die pingen die noch nicht abgestimmt haben
 
     missing: list[Member] | None = [teamler for teamler in teamlers if teamler.id not in user_ids]
     missing.sort(key=lambda m: str(m).lower())
@@ -363,7 +363,7 @@ def show_results(
     data_tuple: list[tuple[int | str, float]] = [(i + 1, num) for i, num in enumerate(data) if num]
     data_tuple.sort(key=lambda x: x[1])
     data_np = np.array([value for _, value in data_tuple])
-
+    # TODO: erste zehn zeigen der frage packen
     cc = plt.cycler("color", plt.cm.rainbow(np.linspace(1, 0, len(data_np))))
     explode = [len(data_tuple) / 50 for _ in data_tuple]
     with plt.style.context({"axes.prop_cycle": cc}):
@@ -585,7 +585,7 @@ class PollsCog(Cog, name="Polls"):
 
         await send_long_embed(ctx, embed=embed, repeat_title=True, paginate=True)
 
-    @poll.command(name="results", aliases=["res"])
+    @poll.command(name="results", aliases=["res"])  # TODO: wenn man True setzt alles, sonst nur 10
     @docs(t.commands.poll.result)
     async def result(self, ctx: Context, message: Message):
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
@@ -798,7 +798,7 @@ class PollsCog(Cog, name="Polls"):
         await send_to_changelog(ctx.guild, desc)
         await add_reactions(ctx.message, "white_check_mark")
 
-    @team.command(name="unpin", aliases=["u"])  # TODO: function for unpinning polls
+    @team.command(name="unpin", aliases=["u"])  # TODO: Accepted or dismiss poll commands for team-polls
     @PollsPermission.manage.check
     @docs(t.commands.poll.team.unpin)
     async def unpin(self, ctx: Context, message: Message):
