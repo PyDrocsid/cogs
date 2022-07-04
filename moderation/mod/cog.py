@@ -60,11 +60,9 @@ MAX_TIMEOUT = timedelta(days=28)
 # TODO
 #  Docstring for all methods, functions and classes
 #  make all functions private, if the are not ment to be used by other
-#  use timeout function for mutes (see actual mod tools)
 #  do not require mute role, update whole code accordingly
 #  assign mute role to all muted members, when mute role gets set
 #  remove mute role from all muted members if mute role gets cleared
-#  to be continued......
 
 
 class DurationConverter(Converter):  # TODO: Move to library
@@ -107,13 +105,11 @@ async def load_entries():
 
             async for entry in await db.stream(filter_by(db_model, active=True)):
                 if entry.minutes == -1:
-                    new_key = f"{entry_key}_inf"
-                    await pipe.rpush(new_key, str(entry.id))
                     continue
 
                 expiration_timestamp = entry.timestamp + timedelta(minutes=entry.minutes)
 
-                await pipe.hset(entry_key, str(entry.id), str(expiration_timestamp))
+                await pipe.hset(entry_key, str(entry.id), f"{str(entry.timestamp)}_{str(expiration_timestamp)}")
 
             await pipe.expire(entry_key, CACHE_TTL)
             await pipe.execute()
@@ -128,7 +124,7 @@ async def load_entries():
 
 
 async def invalidate_entry_cache():
-    await redis.delete("mod_entries_loaded")
+    await redis.delete("mod_entries_loaded", "last_refreshed_inf_mutes")
 
 
 def time_to_units(minutes: int | float) -> str:
@@ -148,10 +144,20 @@ def time_to_units(minutes: int | float) -> str:
     return ", ".join(get_func(key, time) for key in _keys if (time := getattr(rd, key)) != 0)
 
 
-async def get_mute_role(guild: Guild) -> Role:
+async def get_mute_role(guild: Guild) -> Role | None:
+    """
+    Receive the mute role as a Role object
+    """
+
     mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
     if not mute_role:
         await send_alert(guild, t.mute.role_not_set)
+
+    try:
+        check_role_assignable(mute_role)
+    except CommandError:
+        await send_alert(guild, t.mute.cannot_assign_role(mute_role, mute_role.id))
+
     return mute_role
 
 
@@ -264,11 +270,36 @@ class ModCog(Cog, name="Mod Tools"):
 
     async def on_member_join(self, member: Member):
         mute_role: Role | None = member.guild.get_role(await RoleSettings.get("mute"))
-        if mute_role is None:
-            return
 
-        if await db.exists(filter_by(Mute, active=True, member=member.id)):
+        active_mutes: list[TBase] = sorted(
+            await db.all(filter_by(Mute, active=True, member=member.id)),
+            key=lambda active_entry: active_entry.timestamp,
+        )
+
+        if active_mutes:
             await member.add_roles(mute_role)
+
+            for active_mute in active_mutes[1:]:
+                await Mute.delete(active_mute.id)
+
+            mute = active_mutes[0]
+
+            try:
+                await member.timeout_for(
+                    min(mute.timestamp + timedelta(minutes=mute.minutes) - utcnow())
+                    if mute.minutes != -1
+                    else MAX_TIMEOUT
+                )
+            except Forbidden:
+                await send_alert(member.guild, t.mute.cannot_permissions)
+
+        else:
+            if member.timed_out:
+                try:
+                    await member.remove_timeout()
+                except Forbidden:
+                    await send_alert(member.guild, t.mute.cannot_permissions)
+            return
 
     async def on_member_ban(self, guild: Guild, member: Member):
         search_limit = 100
@@ -311,10 +342,13 @@ class ModCog(Cog, name="Mod Tools"):
         guild: Guild = self.bot.guilds[0]
         await load_entries()
 
+        # Undo expired bans
         ban_keys = await redis.hkeys(ban_entries_key := f"mod_entries:{Ban.__tablename__}")
 
         for key in ban_keys:
-            if utcnow() >= datetime.fromisoformat(await redis.hget(ban_entries_key, key)):
+            stamps = await redis.hget(ban_entries_key, key)
+
+            if utcnow() >= datetime.fromisoformat(stamps.split("_")[1]):
                 ban = await db.get(Ban, id=int(key))
 
                 try:
@@ -322,7 +356,7 @@ class ModCog(Cog, name="Mod Tools"):
                 except NotFound:
                     user = ban.member, ban.member_name
                 except Forbidden:
-                    await send_alert(guild, t.cannot_unban_permissions)
+                    await send_alert(guild, t.ban.cannot_undo_permissions)
                     break
 
                 await Ban.deactivate(ban.id)
@@ -342,24 +376,26 @@ class ModCog(Cog, name="Mod Tools"):
         if mute_role is None:
             return
 
-        try:
-            check_role_assignable(mute_role)  # TODO move into get_mute_role
-        except CommandError:
-            await send_alert(guild, t.cannot_assign_mute_role(mute_role, mute_role.id))
-            return
-
+        # Undo expired mutes
         mute_keys = await redis.hkeys(mute_entries_key := f"mod_entries:{Mute.__tablename__}")
 
         for key in mute_keys:
-            if utcnow() >= datetime.fromisoformat(await redis.hget(mute_entries_key, key)):
+            stamps = (await redis.hget(ban_entries_key, key)).split("_")
+
+            if utcnow() >= (expiration_time := datetime.fromisoformat(stamps[1])):
                 mute = await db.get(Mute, id=int(key))
 
                 member = guild.get_member(mute.member)
-                timeout: datetime | None = member.communication_disabled_until
+                timeout: datetime | None = member.communication_disabled_until if member else None
 
                 if member:
                     await member.remove_roles(mute_role)
-                    await member.remove_timeout()
+
+                    try:
+                        await member.remove_timeout()
+                    except Forbidden:
+                        await send_alert(member.guild, t.mute.cannot_permissions)
+
                 else:
                     member = mute.member, mute.member_name
 
@@ -376,22 +412,37 @@ class ModCog(Cog, name="Mod Tools"):
 
                 await redis.hdel(mute_entries_key, key)
 
-        for infinite_mute in await redis.lrange(
-            inf_mute_key := f"mod_entries:{Mute.__tablename__}_inf", 0, await redis.llen(inf_mute_key) - 1
-        ):
-            mute = await db.get(Mute, id=int(infinite_mute))
+            elif expiration_time - datetime.fromisoformat(stamps[0]) > MAX_TIMEOUT:
+                mute = await db.get(Mute, id=int(key))
 
-            member = guild.get_member(mute.member)
-            timeout: datetime | None = member.communication_disabled_until
+                member = guild.get_member(mute.member)
+                timeout: datetime | None = member.communication_disabled_until
 
-            if member and infinite_mute.days == -1:
-                await member.timeout_for(MAX_TIMEOUT)
-            elif member and (
-                not timeout
-                or timeout + timedelta(seconds=2) < infinite_mute.timestamp + timedelta(days=infinite_mute.days)
-            ):
-                delta = min(infinite_mute.timestamp + timedelta(days=infinite_mute.days) - utcnow(), MAX_TIMEOUT)
-                await member.timeout_for(delta)
+                if member and (
+                    not timeout or timeout + timedelta(minutes=1) < mute.timestamp + timedelta(minutes=mute.minutes)
+                ):
+                    delta = min(mute.timestamp + timedelta(minutes=mute.minutes) - utcnow(), MAX_TIMEOUT)
+                    try:
+                        await member.timeout_for(delta)
+                    except Forbidden:
+                        await send_alert(member.guild, t.mute.cannot_permissions)
+                        break
+
+        # Refresh timeout time for members that are muted infinitely
+        if not await redis.exists(key_last_checked := "last_refreshed_inf_mutes") or utcnow() - datetime.fromisoformat(
+            await redis.get(key_last_checked)
+        ) > MAX_TIMEOUT - timedelta(minutes=1):
+            async for mute in await db.stream(filter_by(Mute, active=True, minutes=-1)):
+                member = guild.get_member(mute.member)
+
+                if member:
+                    try:
+                        await member.timeout_for(MAX_TIMEOUT)
+                    except Forbidden:
+                        await send_alert(member.guild, t.mute.cannot_permissions)
+                        break
+
+            await redis.setex("last_refreshed_inf_mutes", CACHE_TTL, str(utcnow()))
 
     @log_auto_kick.subscribe
     async def handle_log_auto_kick(self, member: Member):
@@ -1138,7 +1189,7 @@ class ModCog(Cog, name="Mod Tools"):
             mute_role: Role | None = await get_mute_role(context.guild)
 
             was_muted = False
-            if isinstance(muted_user, Member) and mute_role in muted_user.roles:
+            if isinstance(muted_user, Member) and (mute_role in muted_user.roles or user.timed_out):
                 was_muted = True
                 if mute_role is not None:
                     await muted_user.remove_roles(mute_role)
