@@ -58,10 +58,6 @@ TBase = TypeVar("TBase", bound=DBBase)
 MAX_TIMEOUT = timedelta(days=28)
 
 
-# TODO
-#  make all functions private, if the are not ment to be used by other (mit _ davor )
-
-
 class DurationConverter(Converter):  # TODO: Move to library
     """
     Converter for retrieving simple time spans from a string containing different time units
