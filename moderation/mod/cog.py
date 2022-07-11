@@ -58,8 +58,7 @@ MAX_TIMEOUT = timedelta(days=28)
 
 
 # TODO
-#  Docstring for all methods, functions and classes
-#  make all functions private, if the are not ment to be used by other
+#  make all functions private, if the are not ment to be used by other (mit _ davor )
 #  assign mute role to all muted members, when mute role gets set
 #  remove mute role from all muted members if mute role gets cleared
 
@@ -123,6 +122,9 @@ async def load_entries():
 
 
 async def invalidate_entry_cache():
+    """
+    Removes some keys from redis so the mod loop knows when it needs to reload the entries from the database
+    """
     await redis.delete("mod_entries_loaded", "last_refreshed_inf_mutes")
 
 
@@ -339,6 +341,9 @@ class ModCog(Cog, name="Mod Tools"):
     @tasks.loop(minutes=1)
     @db_wrapper
     async def mod_loop(self):
+        """
+        function that removes expired punishments and refreshes timeouts
+        """
         guild: Guild = self.bot.guilds[0]
         await load_entries()
 
@@ -449,6 +454,9 @@ class ModCog(Cog, name="Mod Tools"):
 
     @get_user_info_entries.subscribe
     async def handle_get_user_stats_entries(self, user_id: int) -> list[tuple[str, str]]:
+        """
+        function to retrieve mod related user statistics
+        """
         out: list[tuple[str, str]] = []
 
         async def count(cls):
@@ -475,6 +483,9 @@ class ModCog(Cog, name="Mod Tools"):
 
     @get_user_status_entries.subscribe
     async def handle_get_user_status_entries(self, user_id: int) -> list[tuple[str, str]]:
+        """
+        function to retrieve some mod related status information about a user
+        """
         status = t.none
         if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
             if ban.minutes != -1:
@@ -496,9 +507,16 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_get_userlog_entries(
         self, user_id: int, show_ids: bool, author: Member
     ) -> list[tuple[datetime, str]]:
+        """
+        function to retrieve mod related logs for a user
+        """
+
         def wrap_time_entry(
             translation, mod: int, reason: str, evidence: str, minutes: int | None = None, entry_id: int | None = None
         ) -> str:
+            """
+            function to process a duration-based punishment for the user log
+            """
             args = [f"<@{mod}>"]
 
             if minutes:
@@ -520,6 +538,9 @@ class ModCog(Cog, name="Mod Tools"):
             return translation(*args)
 
         def wrap_entry(translation, user: int, reason: str, evidence: str | None, entry_id: int | None = None) -> str:
+            """
+            function to process a non duration-based punishment for the user log
+            """
             if entry_id:
                 return translation.id_on(f"<@{user}>", reason, entry_id, show_evidence(evidence))
             else:
@@ -637,6 +658,10 @@ class ModCog(Cog, name="Mod Tools"):
     @ModPermission.modtools_write.check
     @docs(t.commands.send_delete_message)
     async def send_delete_message(self, ctx: Context, send: bool | None = None):
+        """
+        command to set whether the user should receive an information
+        about how a punishment concerning him has been deleted
+        """
         embed = Embed(title=t.modtools, color=Colors.ModTools)
 
         if send is None:
@@ -652,6 +677,10 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_single(
         self, ctx: Context, user: User | Member, reason: str, translation: Any, model: Type[TBase], color: int
     ) -> bool:
+        """
+        function to handle the execution of non duration-based punishments
+        (wrapper for kicks and warns)
+        """
         user: Member | User
 
         if len(reason) > 900:
@@ -696,6 +725,10 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_edit_single(
         self, ctx: Context, entry_id: int, reason: str, translation: Any, model: Type[TBase], color: int
     ):
+        """
+        function to handle changes to non duration-based punishments
+        (wrapper for kick and warn edits)
+        """
         entry = await get_database_entry(model, entry_id)
 
         if len(reason) > 900:
@@ -732,6 +765,10 @@ class ModCog(Cog, name="Mod Tools"):
         )
 
     async def handle_delete_single(self, ctx: Context, entry_id: int, translation, model: Type[TBase], color: int):
+        """
+        function to handle deletions of non duration-based punishments
+        (wrapper for kick and warn deletions)
+        """
         entry = await get_database_entry(model, entry_id)
 
         conf_embed = Embed(
@@ -785,6 +822,11 @@ class ModCog(Cog, name="Mod Tools"):
         color: int,
         embed_addition: str,
     ) -> bool:
+        """
+        function to handle the execution of duration-based punishments
+        (wrapper for mutes and bans)
+        """
+
         time: int | None
         minutes = time
 
@@ -843,6 +885,11 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_edit_timed_reason(
         self, ctx: Context, entry_id: int, reason: str, translation: Any, model: Type[TBase], color: int
     ):
+        """
+        function to handle changes to teh reasons of duration-based punishments
+        (wrapper for mute and ban edits)
+        """
+
         entry = await get_database_entry(model, entry_id)
 
         if len(reason) > 900:
@@ -885,6 +932,11 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_edit_timed_duration(
         self, ctx: Context, user: User | Member, time: int | None, translation: Any, model: Type[TBase], color: int
     ):
+        """
+        function to handle changes to the duration of duration-based punishments
+        (wrapper for mute and ban edits)
+        """
+
         user: Member | User
         time: int | None
         minutes = time
@@ -947,6 +999,11 @@ class ModCog(Cog, name="Mod Tools"):
     async def handle_delete_timed(
         self, ctx: Context, entry_id: int, translation: Any, model: Type[TBase], color: int
     ) -> TBase | None:
+        """
+        function to handle deletions of duration-based punishments
+        (wrapper for mute and ban deletions)
+        """
+
         entry = await get_database_entry(model, entry_id)
 
         conf_embed = Embed(
@@ -1008,6 +1065,11 @@ class ModCog(Cog, name="Mod Tools"):
         color: int,
         undo_function: Callable[[Context, Member | User], Awaitable[bool]],
     ):
+        """
+        function to handle revocations of duration-based punishments
+        (wrapper for unmute/unban)
+        """
+
         user: Member | User
 
         if len(reason) > 900:
