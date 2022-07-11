@@ -181,3 +181,23 @@ Returns: `None`
 Subscriptions:
 
 - [Logging](/cogs/moderation/logging)
+
+
+## `role_updated`
+
+Use this PubSub to inform about role changes
+
+```python
+async def role_updated(role: Role, role_name: str) -> []
+```
+
+Arguments:
+
+- `role`: The new role
+- `role_name`: The internal role name
+
+Returns: `None`
+
+Subscriptions:
+
+- [Mod Tools](/cogs/moderation/mod)

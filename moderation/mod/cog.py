@@ -46,6 +46,7 @@ from ...pubsub import (
     get_userlog_entries,
     log_auto_kick,
     revoke_verification,
+    role_updated,
     send_alert,
     send_to_changelog,
 )
@@ -59,8 +60,6 @@ MAX_TIMEOUT = timedelta(days=28)
 
 # TODO
 #  make all functions private, if the are not ment to be used by other (mit _ davor )
-#  assign mute role to all muted members, when mute role gets set
-#  remove mute role from all muted members if mute role gets cleared
 
 
 class DurationConverter(Converter):  # TODO: Move to library
@@ -75,10 +74,10 @@ class DurationConverter(Converter):  # TODO: Move to library
             raise BadArgument(t.duration_suffixes)
 
         years, months, weeks, days, hours, minutes = [
-            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 5)
+            0 if (value := match.group(i)) is None else int(value[:-1]) for i in range(1, 7)
         ]
 
-        years += days * 365
+        days += years * 365
         days += months * 30
         days += weeks * 7
         td = timedelta(days=days, hours=hours, minutes=minutes)
@@ -153,11 +152,13 @@ async def get_mute_role(guild: Guild) -> Role | None:
     mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
     if not mute_role:
         await send_alert(guild, t.mute.role_not_set)
+        return None
 
     try:
         check_role_assignable(mute_role)
     except CommandError:
         await send_alert(guild, t.mute.cannot_assign_role(mute_role, mute_role.id))
+        return None
 
     return mute_role
 
@@ -377,13 +378,13 @@ class ModCog(Cog, name="Mod Tools"):
                     reason=t.ban.log_undo_expired,
                 )
 
-        mute_role: Role | None = guild.get_role(await RoleSettings.get("mute"))
+        mute_role: Role | None = await get_mute_role(guild)
 
         # Undo expired mutes
         mute_keys = await redis.hkeys(mute_entries_key := f"mod_entries:{Mute.__tablename__}")
 
         for key in mute_keys:
-            stamps = (await redis.hget(ban_entries_key, key)).split("_")
+            stamps = (await redis.hget(mute_entries_key, key)).split("_")
 
             if utcnow() >= (expiration_time := datetime.fromisoformat(stamps[1])):
                 mute = await db.get(Mute, id=int(key))
@@ -447,6 +448,18 @@ class ModCog(Cog, name="Mod Tools"):
                         break
 
             await redis.setex("last_refreshed_inf_mutes", CACHE_TTL, str(utcnow()))
+
+    @role_updated.subscribe
+    async def handle_role_update(self, role: Role, role_name: str):
+        if role_name != "mute":
+            return
+
+        guild: Guild = self.bot.guilds[0]
+        async for mute in await db.stream(filter_by(Mute, active=True)):
+            member = guild.get_member(mute.member)
+            print(member)
+            if member:
+                await member.add_roles(role)
 
     @log_auto_kick.subscribe
     async def handle_log_auto_kick(self, member: Member):

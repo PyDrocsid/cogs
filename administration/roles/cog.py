@@ -20,7 +20,7 @@ from .colors import Colors
 from .models import PermaRole, RoleAuth
 from .permissions import RolesPermission
 from ...contributor import Contributor
-from ...pubsub import send_alert, send_to_changelog
+from ...pubsub import role_updated, send_alert, send_to_changelog
 
 
 tg = t.g
@@ -32,6 +32,7 @@ async def configure_role(ctx: Context, role_name: str, role: Role, check_assigna
         check_role_assignable(role)
 
     await RoleSettings.set(role_name, role.id)
+    await role_updated(role=role, role_name=role_name)
     await reply(ctx, t.role_set)
     await send_to_changelog(ctx.guild, t.log_role_set(Config.ROLES[role_name][0], role.name, role.id))
 

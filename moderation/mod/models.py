@@ -44,7 +44,6 @@ class Punishment(ModBase):
 
 class TimedPunishment(ModBase):
     mod: Column | int = Column(BigInteger)
-    mod_level: Column | int = Column(Integer)
     minutes: Column | int = Column(Integer)
     active: Column | bool = Column(Boolean)
     deactivation_timestamp: Column | datetime | None = Column(UTCDateTime, nullable=True)
@@ -53,13 +52,12 @@ class TimedPunishment(ModBase):
 
     @classmethod
     async def create(
-        cls, member: int, member_name: str, mod: int, mod_level: int, minutes: int, reason: str, evidence: str | None
+        cls, member: int, member_name: str, mod: int, minutes: int, reason: str, evidence: str | None
     ) -> TimedPunishment:
         row = cls(
             member=member,
             member_name=member_name,
             mod=mod,
-            mod_level=mod_level,
             timestamp=utcnow(),
             minutes=minutes,
             reason=reason,

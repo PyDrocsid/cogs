@@ -135,7 +135,7 @@ mute:
     not_inf: Your mute for {} with the reason ```\n{}\n``` has been deleted"
   deleted_response: ":white_check_mark: The mute has been deleted"
   log_deleted: ":loud_sound: Mute deleted"
-  role_not_set: User could not be muted because no mute role is configured.
+  role_not_set: No mute role is configured.
   cannot_assign_role: Cannot manage mute role `@{}` ({})
   cannot_undo: This member cannot be unmuted.
   cannot_permissions: User could not be muted because I don't have the `moderate_members` permission on this server.
