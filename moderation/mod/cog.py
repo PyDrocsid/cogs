@@ -90,7 +90,7 @@ class DurationConverter(Converter):  # TODO: Move to library
         return duration
 
 
-async def load_entries():
+async def _load_entries():
     """
     Loads active mute and ban entries from the database and caches them in Redis.
     Bans and timed mutes are stored in hashes, while infinite mutes are stored in a list
@@ -120,14 +120,14 @@ async def load_entries():
     await redis.setex("mod_entries_loaded", CACHE_TTL, 1)
 
 
-async def invalidate_entry_cache():
+async def _invalidate_entry_cache():
     """
     Removes some keys from redis so the mod loop knows when it needs to reload the entries from the database
     """
     await redis.delete("mod_entries_loaded", "last_refreshed_inf_mutes")
 
 
-def time_to_units(minutes: int | float) -> str:
+def _time_to_units(minutes: int | float) -> str:
     """
     Util function to split minutes back into different time units
     """
@@ -144,7 +144,7 @@ def time_to_units(minutes: int | float) -> str:
     return ", ".join(get_func(key, time) for key in _keys if (time := getattr(rd, key)) != 0)
 
 
-async def get_mute_role(guild: Guild) -> Role | None:
+async def _get_mute_role(guild: Guild) -> Role | None:
     """
     Receive the mute role as a Role object
     """
@@ -163,7 +163,7 @@ async def get_mute_role(guild: Guild) -> Role | None:
     return mute_role
 
 
-def extract_evidence(message: Message) -> Tuple[Attachment | None, str | None]:
+def _extract_evidence(message: Message) -> Tuple[Attachment | None, str | None]:
     """
     Extracts possible evidence attachments from a message
     """
@@ -174,14 +174,14 @@ def extract_evidence(message: Message) -> Tuple[Attachment | None, str | None]:
     return evidence, evidence_url
 
 
-def show_evidence(evidence: str | None) -> str:
+def _show_evidence(evidence: str | None) -> str:
     """
     Util function to display evidences correctly
     """
     return t.ulog.evidence(evidence) if evidence else ""
 
 
-async def get_database_entry(entry_format: Type[TBase], entry_id: int) -> TBase:
+async def _get_database_entry(entry_format: Type[TBase], entry_id: int) -> TBase:
     """
     Loads an entry with a given id from the database
     """
@@ -192,7 +192,7 @@ async def get_database_entry(entry_format: Type[TBase], entry_id: int) -> TBase:
     return entry
 
 
-async def confirm_no_evidence(ctx: Context):
+async def _confirm_no_evidence(ctx: Context):
     """
     Function that lets the user confirm that he does not want to attach an evidence
     """
@@ -201,7 +201,7 @@ async def confirm_no_evidence(ctx: Context):
     return await Confirmation().run(ctx, embed=conf_embed)
 
 
-async def send_to_changelog_mod(
+async def _send_to_changelog_mod(
     guild: Guild,
     message: Message | None,
     colour: int,
@@ -319,7 +319,7 @@ class ModCog(Cog, name="Mod Tools"):
                     if entry.reason:
                         await Ban.create(entry.target.id, str(entry.target), entry.user.id, -1, entry.reason, None)
 
-                        await send_to_changelog_mod(
+                        await _send_to_changelog_mod(
                             guild=guild,
                             message=None,
                             colour=Colors.ban,
@@ -346,7 +346,7 @@ class ModCog(Cog, name="Mod Tools"):
         function that removes expired punishments and refreshes timeouts
         """
         guild: Guild = self.bot.guilds[0]
-        await load_entries()
+        await _load_entries()
 
         # Undo expired bans
         ban_keys = await redis.hkeys(ban_entries_key := f"mod_entries:{Ban.__tablename__}")
@@ -369,7 +369,7 @@ class ModCog(Cog, name="Mod Tools"):
 
                 await redis.hdel(ban_entries_key, key)
 
-                await send_to_changelog_mod(
+                await _send_to_changelog_mod(
                     guild=guild,
                     message=None,
                     colour=Colors.unban,
@@ -378,7 +378,7 @@ class ModCog(Cog, name="Mod Tools"):
                     reason=t.ban.log_undo_expired,
                 )
 
-        mute_role: Role | None = await get_mute_role(guild)
+        mute_role: Role | None = await _get_mute_role(guild)
 
         # Undo expired mutes
         mute_keys = await redis.hkeys(mute_entries_key := f"mod_entries:{Mute.__tablename__}")
@@ -404,7 +404,7 @@ class ModCog(Cog, name="Mod Tools"):
                 else:
                     member = mute.member, mute.member_name
 
-                await send_to_changelog_mod(
+                await _send_to_changelog_mod(
                     guild=guild,
                     message=None,
                     colour=Colors.unmute,
@@ -503,15 +503,15 @@ class ModCog(Cog, name="Mod Tools"):
         if (ban := await db.get(Ban, member=user_id, active=True)) is not None:
             if ban.minutes != -1:
                 expiry_date: datetime = ban.timestamp + timedelta(minutes=ban.minutes)
-                time_left = time_to_units((expiry_date - utcnow()).total_seconds() / 60 + 1)
-                status = t.status_banned_time(time_to_units(ban.minutes), time_left)
+                time_left = _time_to_units((expiry_date - utcnow()).total_seconds() / 60 + 1)
+                status = t.status_banned_time(_time_to_units(ban.minutes), time_left)
             else:
                 status = t.status_banned
         elif (mute := await db.get(Mute, member=user_id, active=True)) is not None:
             if mute.minutes != -1:
                 expiry_date: datetime = mute.timestamp + timedelta(minutes=mute.minutes)
-                time_left = time_to_units((expiry_date - utcnow()).total_seconds() / 60 + 1)
-                status = t.status_muted_time(time_to_units(mute.minutes), time_left)
+                time_left = _time_to_units((expiry_date - utcnow()).total_seconds() / 60 + 1)
+                status = t.status_muted_time(_time_to_units(mute.minutes), time_left)
             else:
                 status = t.status_muted
         return [(t.active_sanctions, status)]
@@ -534,7 +534,7 @@ class ModCog(Cog, name="Mod Tools"):
 
             if minutes:
                 translation = translation.temp
-                args.append(time_to_units(minutes))
+                args.append(_time_to_units(minutes))
             else:
                 translation = translation.inf
 
@@ -546,7 +546,7 @@ class ModCog(Cog, name="Mod Tools"):
             else:
                 translation = translation.id_off
 
-            args.append(show_evidence(evidence))
+            args.append(_show_evidence(evidence))
 
             return translation(*args)
 
@@ -555,9 +555,9 @@ class ModCog(Cog, name="Mod Tools"):
             function to process a non duration-based punishment for the user log
             """
             if entry_id:
-                return translation.id_on(f"<@{user}>", reason, entry_id, show_evidence(evidence))
+                return translation.id_on(f"<@{user}>", reason, entry_id, _show_evidence(evidence))
             else:
-                return translation.id_off(f"<@{user}>", reason, show_evidence(evidence))
+                return translation.id_off(f"<@{user}>", reason, _show_evidence(evidence))
 
         out: list[tuple[datetime, str]] = []
 
@@ -687,7 +687,7 @@ class ModCog(Cog, name="Mod Tools"):
         await reply(ctx, embed=embed)
         await send_to_changelog(ctx.guild, t.configured_send_delete_message[send])
 
-    async def handle_single(
+    async def _handle_single(
         self, ctx: Context, user: User | Member, reason: str, translation: Any, model: Type[TBase], color: int
     ) -> bool:
         """
@@ -702,10 +702,10 @@ class ModCog(Cog, name="Mod Tools"):
         if user == self.bot.user:
             raise UserCommandError(user, translation.cannot)
 
-        evidence, evidence_url = extract_evidence(ctx.message)
+        evidence, evidence_url = _extract_evidence(ctx.message)
 
         if not evidence:
-            if not await confirm_no_evidence(ctx):
+            if not await _confirm_no_evidence(ctx):
                 return False
 
         user_embed = Embed(
@@ -723,7 +723,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await model.create(user.id, str(user), ctx.author.id, reason, evidence_url)
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
+        await _send_to_changelog_mod(
             guild=ctx.guild,
             message=ctx.message,
             colour=color,
@@ -735,14 +735,14 @@ class ModCog(Cog, name="Mod Tools"):
 
         return True
 
-    async def handle_edit_single(
+    async def _handle_edit_single(
         self, ctx: Context, entry_id: int, reason: str, translation: Any, model: Type[TBase], color: int
     ):
         """
         function to handle changes to non duration-based punishments
         (wrapper for kick and warn edits)
         """
-        entry = await get_database_entry(model, entry_id)
+        entry = await _get_database_entry(model, entry_id)
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -773,16 +773,16 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
+        await _send_to_changelog_mod(
             guild=ctx.guild, message=ctx.message, colour=color, title=translation.log_edited, member=user, reason=reason
         )
 
-    async def handle_delete_single(self, ctx: Context, entry_id: int, translation, model: Type[TBase], color: int):
+    async def _handle_delete_single(self, ctx: Context, entry_id: int, translation, model: Type[TBase], color: int):
         """
         function to handle deletions of non duration-based punishments
         (wrapper for kick and warn deletions)
         """
-        entry = await get_database_entry(model, entry_id)
+        entry = await _get_database_entry(model, entry_id)
 
         conf_embed = Embed(
             title=t.confirmation,
@@ -815,7 +815,7 @@ class ModCog(Cog, name="Mod Tools"):
                 server_embed.colour = Colors.error
 
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
+        await _send_to_changelog_mod(
             guild=ctx.guild,
             message=ctx.message,
             colour=color,
@@ -824,7 +824,7 @@ class ModCog(Cog, name="Mod Tools"):
             reason=entry.reason,
         )
 
-    async def handle_timed(
+    async def _handle_timed(
         self,
         ctx: Context,
         user: Member | User,
@@ -849,10 +849,10 @@ class ModCog(Cog, name="Mod Tools"):
         if await db.exists(filter_by(model, active=True, member=user.id)):
             raise UserCommandError(user, translation.already_done)
 
-        evidence, evidence_url = extract_evidence(ctx.message)
+        evidence, evidence_url = _extract_evidence(ctx.message)
 
         if not evidence:
-            if not await confirm_no_evidence(ctx):
+            if not await _confirm_no_evidence(ctx):
                 return False
 
         user_embed = Embed(title=translation.action, colour=Colors.ModTools)
@@ -863,22 +863,22 @@ class ModCog(Cog, name="Mod Tools"):
             user.id, str(user), ctx.author.id, minutes if minutes is not None else -1, reason, evidence_url
         )
 
-        await invalidate_entry_cache()
+        await _invalidate_entry_cache()
 
-        await send_to_changelog_mod(
+        await _send_to_changelog_mod(
             guild=ctx.guild,
             message=ctx.message,
             colour=color,
             title=translation.log,
             member=user,
             reason=reason,
-            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            duration=_time_to_units(minutes) if minutes is not None else t.log_field.infinity,
             evidence=evidence,
         )
 
         if minutes is not None:
             user_embed.description = translation.done(
-                ctx.author.mention, ctx.guild.name, time_to_units(minutes), reason
+                ctx.author.mention, ctx.guild.name, _time_to_units(minutes), reason
             )
         else:
             user_embed.description = translation.done_inf(ctx.author.mention, ctx.guild.name, reason)
@@ -895,7 +895,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         return True
 
-    async def handle_edit_timed_reason(
+    async def _handle_edit_timed_reason(
         self, ctx: Context, entry_id: int, reason: str, translation: Any, model: Type[TBase], color: int
     ):
         """
@@ -903,7 +903,7 @@ class ModCog(Cog, name="Mod Tools"):
         (wrapper for mute and ban edits)
         """
 
-        entry = await get_database_entry(model, entry_id)
+        entry = await _get_database_entry(model, entry_id)
 
         if len(reason) > 900:
             raise CommandError(t.reason_too_long)
@@ -938,11 +938,11 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.description = f"{t.no_dm}\n\n{server_embed.description}"
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
-        await send_to_changelog_mod(
+        await _send_to_changelog_mod(
             guild=ctx.guild, message=ctx.message, colour=color, title=translation.log_edited, member=user, reason=reason
         )
 
-    async def handle_edit_timed_duration(
+    async def _handle_edit_timed_duration(
         self, ctx: Context, user: User | Member, time: int | None, translation: Any, model: Type[TBase], color: int
     ):
         """
@@ -968,12 +968,12 @@ class ModCog(Cog, name="Mod Tools"):
 
         conf_embed = Embed(title=t.confirmation, color=Colors.ModTools)
 
-        old_time = t.infinity if entry.minutes == -1 else time_to_units(entry.minutes)
+        old_time = t.infinity if entry.minutes == -1 else _time_to_units(entry.minutes)
 
         if minutes is None:
             conf_embed.description = translation.confirm_edit.duration(old_time, t.infinity)
         else:
-            conf_embed.description = translation.confirm_edit.duration(old_time, time_to_units(minutes))
+            conf_embed.description = translation.confirm_edit.duration(old_time, _time_to_units(minutes))
 
         if not await Confirmation().run(ctx, embed=conf_embed):
             return
@@ -987,19 +987,19 @@ class ModCog(Cog, name="Mod Tools"):
 
         await model.edit_duration(entry.id, ctx.author.id, minutes)
 
-        await invalidate_entry_cache()
+        await _invalidate_entry_cache()
 
         user_embed.description = translation.edited.duration(
-            time_to_units(entry.minutes), t.infinity if minutes is None else time_to_units(minutes)
+            _time_to_units(entry.minutes), t.infinity if minutes is None else _time_to_units(minutes)
         )
-        await send_to_changelog_mod(
+        await _send_to_changelog_mod(
             guild=ctx.guild,
             message=ctx.message,
             colour=color,
             title=translation.log_edited,
             member=user,
             reason=entry.reason,
-            duration=t.log_field.infinity if minutes is None else time_to_units(minutes),
+            duration=t.log_field.infinity if minutes is None else _time_to_units(minutes),
         )
 
         try:
@@ -1009,7 +1009,7 @@ class ModCog(Cog, name="Mod Tools"):
             server_embed.colour = Colors.error
         await reply(ctx, embed=server_embed)
 
-    async def handle_delete_timed(
+    async def _handle_delete_timed(
         self, ctx: Context, entry_id: int, translation: Any, model: Type[TBase], color: int
     ) -> TBase | None:
         """
@@ -1017,7 +1017,7 @@ class ModCog(Cog, name="Mod Tools"):
         (wrapper for mute and ban deletions)
         """
 
-        entry = await get_database_entry(model, entry_id)
+        entry = await _get_database_entry(model, entry_id)
 
         conf_embed = Embed(
             title=t.confirmation,
@@ -1035,7 +1035,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         await model.delete(entry_id)
 
-        await invalidate_entry_cache()
+        await _invalidate_entry_cache()
 
         server_embed = Embed(title=translation.action, description=translation.deleted_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
@@ -1046,7 +1046,7 @@ class ModCog(Cog, name="Mod Tools"):
             if entry.minutes == -1:
                 user_embed.description = translation.deleted.inf(entry.reason)
             else:
-                user_embed.description = translation.deleted.not_inf(time_to_units(entry.minutes), entry.reason)
+                user_embed.description = translation.deleted.not_inf(_time_to_units(entry.minutes), entry.reason)
 
             try:
                 await user.send(embed=user_embed)
@@ -1056,19 +1056,19 @@ class ModCog(Cog, name="Mod Tools"):
 
         await reply(ctx, embed=server_embed)
 
-        await send_to_changelog_mod(
+        await _send_to_changelog_mod(
             guild=ctx.guild,
             message=ctx.message,
             colour=color,
             title=translation.log_deleted,
             member=user,
             reason=entry.reason,
-            duration=t.log_field_infinity if entry.minutes == -1 else time_to_units(entry.minutes),
+            duration=t.log_field_infinity if entry.minutes == -1 else _time_to_units(entry.minutes),
         )
 
         return entry
 
-    async def handle_undo_timed(
+    async def _handle_undo_timed(
         self,
         ctx: Context,
         user: User | Member,
@@ -1102,20 +1102,20 @@ class ModCog(Cog, name="Mod Tools"):
         if not was_done:
             raise UserCommandError(user, translation.not_done)
 
-        await invalidate_entry_cache()
+        await _invalidate_entry_cache()
 
         server_embed = Embed(title=translation.undo, description=translation.undo_response, colour=Colors.ModTools)
         server_embed.set_author(name=str(user), icon_url=user.display_avatar.url)
         await reply(ctx, embed=server_embed)
 
-        await send_to_changelog_mod(
+        await _send_to_changelog_mod(
             guild=ctx.guild,
             message=ctx.message,
             colour=color,
             title=translation.log_undo,
             member=user,
             reason=reason,
-            duration=time_to_units(minutes) if minutes is not None else t.log_field.infinity,
+            duration=_time_to_units(minutes) if minutes is not None else t.log_field.infinity,
             mod=ctx.author,
             original_reason=entry.reason,
         )
@@ -1140,7 +1140,7 @@ class ModCog(Cog, name="Mod Tools"):
         if not await Confirmation().run(ctx, embed=conf_embed):
             return
 
-        evidence, evidence_url = extract_evidence(ctx.message)
+        evidence, evidence_url = _extract_evidence(ctx.message)
 
         await Report.create(user.id, str(user), ctx.author.id, reason, evidence_url)
         server_embed = Embed(title=t.report, description=t.reported_response, colour=Colors.ModTools)
@@ -1172,21 +1172,21 @@ class ModCog(Cog, name="Mod Tools"):
     async def warn(self, ctx: Context, user: UserMemberConverter, *, reason: str):
         user: User | Member
 
-        await self.handle_single(ctx, user, reason, t.warn, Warn, Colors.warn)
+        await self._handle_single(ctx, user, reason, t.warn, Warn, Colors.warn)
 
     @commands.command(aliases=["warn_edit"])
     @ModPermission.warn.check
     @guild_only()
     @docs(t.commands.edit_warn)
     async def edit_warn(self, ctx: Context, warn_id: int, *, reason: str):
-        await self.handle_edit_single(ctx, warn_id, reason, t.warn, Warn, Colors.warn)
+        await self._handle_edit_single(ctx, warn_id, reason, t.warn, Warn, Colors.warn)
 
     @commands.command(aliases=["warn_delete"])
     @ModPermission.warn.check
     @guild_only()
     @docs(t.commands.delete_warn)
     async def delete_warn(self, ctx: Context, warn_id: int):
-        await self.handle_delete_single(ctx, warn_id, t.warn, Warn, Colors.warn)
+        await self._handle_delete_single(ctx, warn_id, t.warn, Warn, Colors.warn)
 
     @commands.command()
     @ModPermission.mute.check
@@ -1199,9 +1199,9 @@ class ModCog(Cog, name="Mod Tools"):
         if user == self.bot.user or await is_teamler(user):
             raise UserCommandError(user, t.mute.cannot)
 
-        mute_role: Role | None = await get_mute_role(ctx.guild)
+        mute_role: Role | None = await _get_mute_role(ctx.guild)
 
-        if not await self.handle_timed(ctx, user, time, reason, t.mute, Mute, Colors.mute, ""):
+        if not await self._handle_timed(ctx, user, time, reason, t.mute, Mute, Colors.mute, ""):
             return
 
         if isinstance(user, Member):
@@ -1224,7 +1224,7 @@ class ModCog(Cog, name="Mod Tools"):
     @edit_mute.command(name="reason", aliases=["r"])
     @docs(t.commands.edit_mute_reason)
     async def edit_mute_reason(self, ctx: Context, mute_id: int, *, reason: str):
-        await self.handle_edit_timed_reason(ctx, mute_id, reason, t.mute, Mute, Colors.mute)
+        await self._handle_edit_timed_reason(ctx, mute_id, reason, t.mute, Mute, Colors.mute)
 
     @edit_mute.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_mute_duration)
@@ -1232,14 +1232,14 @@ class ModCog(Cog, name="Mod Tools"):
         user: User | Member
         time: int | None
 
-        await self.handle_edit_timed_duration(ctx, user, time, t.mute, Mute, Colors.mute)
+        await self._handle_edit_timed_duration(ctx, user, time, t.mute, Mute, Colors.mute)
 
     @commands.command(aliases=["mute_delete"])
     @ModPermission.mute.check
     @guild_only()
     @docs(t.commands.delete_mute)
     async def delete_mute(self, ctx: Context, mute_id: int):
-        if not (mute := await self.handle_delete_timed(ctx, mute_id, t.mute, Mute, Colors.mute)):
+        if not (mute := await self._handle_delete_timed(ctx, mute_id, t.mute, Mute, Colors.mute)):
             return
 
         active_mutes: list[Mute] = await db.all(filter_by(Mute, active=True, member=mute.member))
@@ -1247,7 +1247,7 @@ class ModCog(Cog, name="Mod Tools"):
         if len(active_mutes) == 1 and mute in active_mutes:
             user = ctx.guild.get_member(mute.member)
             if user is not None:
-                if (mute_role := await get_mute_role(ctx.guild)) in user.roles:
+                if (mute_role := await _get_mute_role(ctx.guild)) in user.roles:
                     await user.remove_roles(mute_role)
 
     @commands.command()
@@ -1258,7 +1258,7 @@ class ModCog(Cog, name="Mod Tools"):
         user: User | Member
 
         async def unmute_inner(context: Context, muted_user: Member | User) -> bool:
-            mute_role: Role | None = await get_mute_role(context.guild)
+            mute_role: Role | None = await _get_mute_role(context.guild)
 
             was_muted = False
             if isinstance(muted_user, Member) and (mute_role in muted_user.roles or user.timed_out):
@@ -1273,7 +1273,7 @@ class ModCog(Cog, name="Mod Tools"):
 
             return was_muted
 
-        await self.handle_undo_timed(ctx, user, reason, t.mute, Mute, Colors.unmute, unmute_inner)
+        await self._handle_undo_timed(ctx, user, reason, t.mute, Mute, Colors.unmute, unmute_inner)
 
     @commands.command()
     @ModPermission.kick.check
@@ -1289,7 +1289,7 @@ class ModCog(Cog, name="Mod Tools"):
         if member.top_role >= ctx.guild.me.top_role or member.id == ctx.guild.owner_id:
             raise UserCommandError(member, t.cannot_kick)
 
-        if not self.handle_single(ctx, member, reason, t.kick, Kick, Colors.kick):
+        if not self._handle_single(ctx, member, reason, t.kick, Kick, Colors.kick):
             return
 
         await member.kick(reason=reason)
@@ -1300,14 +1300,14 @@ class ModCog(Cog, name="Mod Tools"):
     @guild_only()
     @docs(t.commands.edit_kick)
     async def edit_kick(self, ctx: Context, kick_id: int, *, reason: str):
-        await self.handle_edit_single(ctx, kick_id, reason, t.kick, Kick, Colors.kick)
+        await self._handle_edit_single(ctx, kick_id, reason, t.kick, Kick, Colors.kick)
 
     @commands.command(aliases=["kick_delete"])
     @ModPermission.kick.check
     @guild_only()
     @docs(t.commands.delete_kick)
     async def delete_kick(self, ctx: Context, kick_id: int):
-        await self.handle_delete_single(ctx, kick_id, t.kick, Kick, Colors.kick)
+        await self._handle_delete_single(ctx, kick_id, t.kick, Kick, Colors.kick)
 
     @commands.command()
     @ModPermission.ban.check
@@ -1330,7 +1330,7 @@ class ModCog(Cog, name="Mod Tools"):
 
         active_mutes: list[Mute] = await db.all(filter_by(Mute, active=True, member=user.id))
 
-        if not await self.handle_timed(
+        if not await self._handle_timed(
             ctx, user, time, reason, t.ban, Ban, Colors.ban, f"\n\n{t.ban.previously_muted}" if active_mutes else ""
         ):
             return
@@ -1352,7 +1352,7 @@ class ModCog(Cog, name="Mod Tools"):
     @edit_ban.command(name="reason", aliases=["r"])
     @docs(t.commands.edit_ban_reason)
     async def edit_ban_reason(self, ctx: Context, ban_id: int, *, reason: str):
-        await self.handle_edit_timed_reason(ctx, ban_id, reason, t.ban, Ban, Colors.ban)
+        await self._handle_edit_timed_reason(ctx, ban_id, reason, t.ban, Ban, Colors.ban)
 
     @edit_ban.command(name="duration", aliases=["d"])
     @docs(t.commands.edit_ban_duration)
@@ -1360,14 +1360,14 @@ class ModCog(Cog, name="Mod Tools"):
         user: User | Member
         time: int | None
 
-        await self.handle_edit_timed_duration(ctx, user, time, t.ban, Ban, Colors.ban)
+        await self._handle_edit_timed_duration(ctx, user, time, t.ban, Ban, Colors.ban)
 
     @commands.command(aliases=["ban_delete"])
     @ModPermission.ban.check
     @guild_only()
     @docs(t.commands.delete_ban)
     async def delete_ban(self, ctx: Context, ban_id: int):
-        if not (ban := await self.handle_delete_timed(ctx, ban_id, t.ban, Ban, Colors.ban)):
+        if not (ban := await self._handle_delete_timed(ctx, ban_id, t.ban, Ban, Colors.ban)):
             return
 
         active_bans: list[Ban] = await db.all(filter_by(Ban, active=True, member=ban.member))
@@ -1399,4 +1399,4 @@ class ModCog(Cog, name="Mod Tools"):
 
             return was_banned
 
-        await self.handle_undo_timed(ctx, user, reason, t.ban, Ban, Colors.unban, unban_inner)
+        await self._handle_undo_timed(ctx, user, reason, t.ban, Ban, Colors.unban, unban_inner)
