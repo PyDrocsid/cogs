@@ -1,1 +1,4 @@
-from .cog import LoggingCog, send_to_changelog
+from .cog import LoggingCog
+
+
+__all__ = ["LoggingCog"]

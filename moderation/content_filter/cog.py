@@ -2,10 +2,10 @@ import re
 
 from discord import Embed, Forbidden, Message
 from discord.ext import commands
-from discord.ext.commands import guild_only, Context, Converter, CommandError, UserInputError
+from discord.ext.commands import CommandError, Context, Converter, UserInputError, guild_only
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import confirm, docs, add_reactions
+from PyDrocsid.command import Confirmation, add_reactions, docs
 from PyDrocsid.database import db, filter_by, select
 from PyDrocsid.embeds import send_long_embed
 from PyDrocsid.emojis import name_to_emoji
@@ -13,11 +13,13 @@ from PyDrocsid.environment import CACHE_TTL
 from PyDrocsid.events import StopEventHandling
 from PyDrocsid.redis import redis
 from PyDrocsid.translations import t
+
 from .colors import Colors
 from .models import BadWord, BadWordPost, sync_redis
 from .permissions import ContentFilterPermission
 from ...contributor import Contributor
-from ...pubsub import send_to_changelog, send_alert, get_userlog_entries
+from ...pubsub import get_userlog_entries, send_alert, send_to_changelog
+
 
 tg = t.g
 t = t.content_filter
@@ -121,7 +123,7 @@ async def check_message(message: Message) -> None:
 
 
 class ContentFilterCog(Cog, name="Content Filter"):
-    CONTRIBUTORS = [Contributor.NekoFanatic, Contributor.Defelo]
+    CONTRIBUTORS = [Contributor.Infinity, Contributor.Defelo]
 
     @get_userlog_entries.subscribe
     async def handle_get_ulog_entries(self, user_id: int, _):
@@ -190,12 +192,8 @@ class ContentFilterCog(Cog, name="Content Filter"):
     async def remove(self, ctx: Context, pattern: ContentFilterConverter):
         pattern: BadWord
 
-        conf_embed = Embed(title=t.confirm, description=t.confirm_text(pattern.regex, pattern.description))
-        async with confirm(ctx, conf_embed, danger=True) as (result, msg):
-            if not result:
-                return
-            if msg:
-                await msg.delete(delay=5)
+        if not await Confirmation().run(ctx, t.confirm_text(pattern.regex, pattern.description)):
+            return
 
         await pattern.remove()
         await add_reactions(ctx.message, "white_check_mark")

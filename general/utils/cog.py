@@ -2,25 +2,28 @@ import itertools
 from random import random
 from typing import Optional, Union
 
-from discord import Embed, User, Member
+from discord import Embed, Member, User
 from discord.ext import commands
-from discord.ext.commands import Context, CommandError, max_concurrency, guild_only
-from discord.utils import snowflake_time, format_dt
+from discord.ext.commands import CommandError, Context, guild_only, max_concurrency
+from discord.utils import format_dt, snowflake_time
 
 from PyDrocsid.async_thread import run_in_thread
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import reply, docs
+from PyDrocsid.command import docs, reply
 from PyDrocsid.converter import Color, UserMemberConverter
 from PyDrocsid.translations import t
 from PyDrocsid.util import measure_latency
+
 from .colors import Colors
 from .permissions import UtilsPermission
 from ...contributor import Contributor
+
 
 tg = t.g
 t = t.utils
 
 
+@run_in_thread
 def generate_color(colors: list[tuple[float, float, float]], n: int, a: float) -> tuple[float, float, float]:
     guess = [random() for _ in range(3)]  # noqa: S311
     last = None
@@ -94,7 +97,7 @@ class UtilsCog(Cog, name="Utils"):
         colors = [[int(x, 16) / 255 for x in [c[:2], c[2:4], c[4:]]] for c in colors]
         colors += itertools.product(range(2), repeat=3)
 
-        color = await run_in_thread(generate_color, colors, 2000, 5e-5)
+        color = await generate_color(colors, 2000, 5e-5)
         color = "%02X" * 3 % tuple([round(float(c) * 255) for c in color])
 
         embed = Embed(title="#" + color, color=int(color, 16))
