@@ -103,13 +103,13 @@ async def send_custom_command_message(
         for embed_data in msg.get("embeds") or [None]:
             embed = None
             if embed_data is not None:
-                embed: Embed = type("", (), {"to_dict": lambda _: embed_data})()
+                embed: Embed = type("", (), {"to_dict": lambda _, d=embed_data: d})()
             elif not content:
                 if test:
                     await reply(ctx, embed=warning(t.empty_message(ctx.prefix, custom_command.name)))
                 break
 
-            async def _send_message():
+            async def _send_message(content=content, embed=embed):
                 if test:
                     allowed_mentions = AllowedMentions(everyone=False, users=False, roles=False)
                     await reply(ctx, content, embed=embed, allowed_mentions=allowed_mentions)
@@ -119,9 +119,9 @@ async def send_custom_command_message(
                     else:
                         await reply(ctx, content, embed=embed)
                 else:
-                    msg = await channel.send(content, embed=embed)
+                    m = await channel.send(content, embed=embed)
                     if not custom_command.delete_command:
-                        await link_response(ctx, msg)
+                        await link_response(ctx, m)
                         await add_reactions(ctx, "white_check_mark")
 
             try:
