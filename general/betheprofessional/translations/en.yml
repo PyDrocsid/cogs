@@ -69,19 +69,15 @@ must_be_above_zero: "`{}` must be above zero!"
 must_be_zero_or_above: "`{}` must be zero or above!"
 
 settings:
-  role_limit:
+  RoleLimit:
     name: "Role Limit"
-    internal_name: "RoleLimit"
     updated: "The BTP Role Limit is now `{}`"
-  role_create_min_users:
+  RoleCreateMinUsers:
     name: "Role Create Min Users"
-    internal_name: "RoleCreateMinUsers"
     updated: "Role Create Min Users Limit is now `{}`"
-  leaderboard_default_n:
+  LeaderboardDefaultN:
     name: "Leaderboard Default N"
-    internal_name: "LeaderboardDefaultN"
     updated: "Leaderboard Default N is now `{}`"
-  leaderboard_max_n:
+  LeaderboardMaxN:
     name: "Leaderboard Max N"
-    internal_name: "LeaderboardMaxN"
     updated: "Leaderboard Max N is now `{}`"

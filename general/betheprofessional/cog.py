@@ -93,7 +93,7 @@ async def get_topics() -> list[BTPTopic]:
 
 async def change_setting(ctx: Context, name: str, value: any):
     data = t.settings[name]
-    await getattr(BeTheProfessionalSettings, data["internal_name"]).set(value)
+    await getattr(BeTheProfessionalSettings, name).set(value)
 
     embed = Embed(title=t.betheprofessional, color=Colors.green)
     embed.description = data["updated"].format(value)
@@ -361,10 +361,11 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         embed = Embed(title=t.betheprofessional, color=Colors.BeTheProfessional)
         # TODO do not do that!!!!
-        for setting_item in t.settings.__dict__["_fallback"].keys():
+
+        for setting_item in ["RoleLimit", "RoleCreateMinUsers", "LeaderboardDefaultN", "LeaderboardMaxN"]:
             data = getattr(t.settings, setting_item)
             embed.add_field(
-                name=data.name, value=await getattr(BeTheProfessionalSettings, data.internal_name).get(), inline=False
+                name=data.name, value=await getattr(BeTheProfessionalSettings, setting_item).get(), inline=False
             )
         await reply(ctx, embed=embed)
 
@@ -378,7 +379,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         if role_limit <= 0:
             raise CommandError(t.must_be_above_zero(t.settings.role_limit.name))
-        await change_setting(ctx, "role_limit", role_limit)
+        await change_setting(ctx, "RoleLimit", role_limit)
 
     @btp.command()
     @guild_only()
@@ -390,7 +391,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         if role_create_min_users < 0:
             raise CommandError(t.must_be_zero_or_above(t.settings.role_create_min_users.name))
-        await change_setting(ctx, "role_create_min_users", role_create_min_users)
+        await change_setting(ctx, "RoleCreateMinUsers", role_create_min_users)
 
     @btp.command()
     @guild_only()
@@ -402,7 +403,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         if leaderboard_default_n <= 0:
             raise CommandError(t.must_be_above_zero(t.settings.leaderboard_default_n.name))
-        await change_setting(ctx, "leaderboard_default_n", leaderboard_default_n)
+        await change_setting(ctx, "LeaderboardDefaultN", leaderboard_default_n)
 
     @btp.command()
     @guild_only()
@@ -414,7 +415,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         if leaderboard_max_n <= 0:
             raise CommandError(t.must_be_above_zero(t.settings.leaderboard_max_n.name))
-        await change_setting(ctx, "leaderboard_max_n", leaderboard_max_n)
+        await change_setting(ctx, "LeaderboardMaxN", leaderboard_max_n)
 
     @btp.command(aliases=["lb"])
     @guild_only()
@@ -541,7 +542,6 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         logger.info("Started Update Role Loop")
         topic_count: dict[int, int] = {}
 
-        # TODO rewrite from here....
         for topic in await db.all(select(BTPTopic).order_by(BTPTopic.id.asc())):
             if len(topic.users) >= role_create_min_users:
                 topic_count[topic.id] = len(topic.users)
@@ -550,8 +550,6 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         top_topics: list[int] = sorted(topic_count, key=lambda x: topic_count[x], reverse=True)[
             : await BeTheProfessionalSettings.RoleLimit.get()
         ]
-
-        # TODO until here
 
         # Delete old Top Topic Roles
         for topic in await db.all(
