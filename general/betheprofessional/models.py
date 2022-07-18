@@ -16,7 +16,7 @@ class BTPTopic(Base):
         "BTPTopic", backref=backref("parent", remote_side=id, foreign_keys=[parent_id]), lazy="subquery"
     )
     role_id: Column | int = Column(BigInteger, unique=True)
-    users: list[BTPUser] = relationship("BTPUser", back_populates="topic")
+    users: list[BTPUser] = relationship("BTPUser", back_populates="topic", lazy="subquery")
     assignable: Column | bool = Column(Boolean)
 
     @staticmethod

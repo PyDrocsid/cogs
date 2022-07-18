@@ -283,9 +283,11 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
                 registered_topics.append(topic)
 
         for registered_topic in registered_topics:
-            # TODO: assignable?
             await BTPTopic.create(
-                registered_topic[0], None, True, registered_topic[2][-1].id if len(registered_topic[2]) > 0 else None
+                registered_topic[0],
+                None,
+                assignable,
+                registered_topic[2][-1].id if len(registered_topic[2]) > 0 else None,
             )
 
         embed = Embed(title=t.betheprofessional, colour=Colors.BeTheProfessional)
@@ -503,7 +505,6 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         if member is None:
             member = ctx.author
 
-        # TODO use relationships and join
         topics_assignments: list[BTPUser] = await db.all(select(BTPUser).filter_by(user_id=member.id))
 
         embed = Embed(title=t.betheprofessional, color=Colors.BeTheProfessional)
@@ -541,44 +542,32 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         topic_count: dict[int, int] = {}
 
         # TODO rewrite from here....
-        for topic in await db.all(select(BTPTopic)):
-            # TODO use relationship and join
-            topic_count[topic.id] = await db.count(select(BTPUser).filter_by(topic_id=topic.id))
-        # not using dict.items() because of typing
-        # TODO Let db sort topics by count and then by
-        # TODO fix TODO ^^
-        topic_count_items: list[tuple[int, int]] = list(zip(topic_count.keys(), topic_count.values()))
-        topic_count = dict(sorted(topic_count_items, key=lambda x: x[0]))
+        for topic in await db.all(select(BTPTopic).order_by(BTPTopic.id.asc())):
+            if len(topic.users) >= role_create_min_users:
+                topic_count[topic.id] = len(topic.users)
 
-        # Sort Topics By Count, Keep only Topics with a Count of BeTheProfessionalSettings.RoleCreateMinUsers or above
-        # Limit Roles to BeTheProfessionalSettings.RoleLimit
-        top_topics: list[int] = list(
-            filter(
-                lambda topic_id: topic_count[topic_id] >= role_create_min_users,
-                sorted(topic_count, key=lambda x: topic_count[x], reverse=True),
-            )
-        )[: await BeTheProfessionalSettings.RoleLimit.get()]
+        # Sort Topics By Count and Limit Roles to BeTheProfessionalSettings.RoleLimit
+        top_topics: list[int] = sorted(topic_count, key=lambda x: topic_count[x], reverse=True)[
+            : await BeTheProfessionalSettings.RoleLimit.get()
+        ]
 
         # TODO until here
 
         # Delete old Top Topic Roles
-        # TODO use filter_by
-        for topic in await db.all(select(BTPTopic).filter(BTPTopic.role_id is not None)):  # type: BTPTopic
-            # TODO use sql "NOT IN" expression
-            if topic.id not in top_topics:
-                if topic.role_id is not None:
-                    await self.bot.guilds[0].get_role(topic.role_id).delete()
-                    topic.role_id = None
+        for topic in await db.all(
+            select(BTPTopic).filter(BTPTopic.role_id.is_not(None), BTPTopic.id.not_in(top_topics))
+        ):  # type: BTPTopic
+            await self.bot.guilds[0].get_role(topic.role_id).delete()
+            topic.role_id = None
 
         # Create new Topic Roles
         roles: dict[int, Role] = {}
-        # TODO use sql "IN" expression
-        for top_topic in top_topics:
-            topic: BTPTopic = await db.first(select(BTPTopic).filter_by(id=top_topic))
-            if topic.role_id is None:
-                role = await self.bot.guilds[0].create_role(name=topic.name)
-                topic.role_id = role.id
-                roles[topic.id] = role
+        for topic in await db.all(
+            select(BTPTopic).filter(BTPTopic.id.in_(top_topics), BTPTopic.role_id.is_(None))
+        ):  # type: BTPTopic
+            role = await self.bot.guilds[0].create_role(name=topic.name)
+            topic.role_id = role.id
+            roles[topic.id] = role
 
         # Iterate over all members(with topics) and add the role to them
         # TODO add filter, only select topics with newly added roles
@@ -597,8 +586,8 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         logger.info("Created Top Topic Roles")
 
     async def on_member_join(self, member: Member):
-        # TODO use relationship and join
-        topics: list[BTPUser] = await db.all(select(BTPUser).filter_by(user_id=member.id))
-        role_ids: list[int] = [(await db.first(select(BTPTopic).filter_by(id=topic))).role_id for topic in topics]
-        roles: list[Role] = [self.bot.guilds[0].get_role(role_id) for role_id in role_ids]
+        roles: list[Role] = [
+            self.bot.guilds[0].get_role(topic.role_id)
+            for topic in await db.all(select(BTPUser).filter_by(user_id=member.id))
+        ]
         await member.add_roles(*roles, atomic=False)
