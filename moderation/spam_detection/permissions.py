@@ -11,3 +11,4 @@ class SpamDetectionPermission(BasePermission):
 
     read = auto()
     write = auto()
+    bypass = auto()

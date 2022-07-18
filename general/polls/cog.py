@@ -56,7 +56,7 @@ async def send_poll(
     if allow_delete:
         embed.set_footer(text=t.created_by(ctx.author, ctx.author.id), icon_url=ctx.author.display_avatar.url)
 
-    if len(set(map(lambda x: x.emoji, options))) < len(options):
+    if len({x.emoji for x in options}) < len(options):
         raise CommandError(t.option_duplicated)
 
     for option in options:
