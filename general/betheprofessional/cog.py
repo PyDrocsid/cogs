@@ -358,7 +358,6 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             return
 
         embed = Embed(title=t.betheprofessional, color=Colors.BeTheProfessional)
-        # TODO do not do that!!!!
 
         for setting_item in ["RoleLimit", "RoleCreateMinUsers", "LeaderboardDefaultN", "LeaderboardMaxN"]:
             data = getattr(t.settings, setting_item)
@@ -549,6 +548,8 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             : await BeTheProfessionalSettings.RoleLimit.get()
         ]
 
+        new_roles_topic_id: list[int] = []
+
         # Delete old Top Topic Roles
         for topic in await db.all(
             select(BTPTopic).filter(BTPTopic.role_id.is_not(None), BTPTopic.id.not_in(top_topics))
@@ -561,13 +562,15 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         for topic in await db.all(
             select(BTPTopic).filter(BTPTopic.id.in_(top_topics), BTPTopic.role_id.is_(None))
         ):  # type: BTPTopic
+            new_roles_topic_id.append(topic.id)
             role = await self.bot.guilds[0].create_role(name=topic.name)
             topic.role_id = role.id
             roles[topic.id] = role
 
         # Iterate over all members(with topics) and add the role to them
-        # TODO add filter, only select topics with newly added roles
-        member_ids: set[int] = {btp_user.user_id for btp_user in await db.all(select(BTPUser))}
+        member_ids: set[int] = {
+            btp_user.user_id for btp_user in await db.all(select(BTPUser)) if btp_user.topic.id in new_roles_topic_id
+        }
         for member_id in member_ids:
             member: Member = self.bot.guilds[0].get_member(member_id)
             if member is None:
@@ -575,8 +578,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             member_roles: list[Role] = [
                 roles.get(btp_user.topic) for btp_user in await db.all(select(BTPUser).filter_by(user_id=member_id))
             ]
-            # TODO use filter or something?
-            member_roles = [item for item in member_roles if item is not None]
+            member_roles = list(filter(lambda x: x is not None, member_roles))
             await member.add_roles(*member_roles, atomic=False)
 
         logger.info("Created Top Topic Roles")
