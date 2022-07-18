@@ -68,11 +68,9 @@ async def parse_topics(topics_str: str) -> list[BTPTopic]:
         topic = await db.first(filter_by(BTPTopic, name=topic_name))
 
         if topic is None and len(all_topics) > 0:
-
-            def dist(name: str) -> int:
-                return calculate_edit_distance(name.lower(), topic_name.lower())
-
-            best_dist, best_match = min((dist(r.name), r.name) for r in all_topics)
+            best_dist, best_match = min(
+                (calculate_edit_distance(r.name.lower(), topic_name.lower()), r.name) for r in all_topics
+            )
             if best_dist <= 5:
                 raise CommandError(t.topic_not_found_did_you_mean(topic_name, best_match))
 
@@ -341,7 +339,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             mention = f"<@&{topic.role_id}>"
         else:
             topic_members: list[BTPUser] = await db.all(select(BTPUser).filter_by(topic_id=topic.id))
-            mention = ", ".join(map(lambda m: f"<@{m.user_id}>", topic_members))
+            mention = ", ".join([f"<@{m.user_id}>" for m in topic_members])
 
         if mention == "":
             raise CommandError(t.nobody_has_topic(topic_name))
