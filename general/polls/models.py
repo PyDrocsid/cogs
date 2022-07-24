@@ -65,6 +65,7 @@ class Poll(Base):
     can_delete: Union[Column, bool] = Column(Boolean)
     fair: Union[Column, bool] = Column(Boolean)
     status: Union[Column, PollStatus] = Column(Enum(PollStatus))
+    last_time_state_change: Union[Column, datetime] = Column(UTCDateTime)
     max_choices: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
@@ -75,7 +76,7 @@ class Poll(Base):
         channel: int,
         owner: int,
         title: str,
-        options: list[tuple[str, str]],
+        options: list[tuple[str, str, str]],
         end: Optional[int],
         anonymous: bool,
         can_delete: bool,
@@ -101,12 +102,17 @@ class Poll(Base):
             thread_id=thread,
             fair=fair,
             status=PollStatus.ACTIVE,
+            last_time_state_change=utcnow(),
             max_choices=max_choices,
         )
         for position, poll_option in enumerate(options):
             row.options.append(
                 await Option.create(
-                    poll=message_id, emote=poll_option[0], option_text=poll_option[1], field_position=position
+                    poll=message_id,
+                    emote=poll_option[0],
+                    text=poll_option[1],
+                    option=poll_option[2],
+                    field_position=position,
                 )
             )
 
@@ -124,13 +130,14 @@ class Option(Base):
     poll_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll.message_id"))
     votes: list[PollVote] = relationship("PollVote", back_populates="option", cascade="all, delete")
     poll: Poll = relationship("Poll", back_populates="options")
-    emote: Union[Column, str] = Column(Text(30))
-    option: Union[Column, str] = Column(Text(250))
+    emote: Union[Column, str] = Column(Text(32))
+    option: Union[Column, str] = Column(Text(20))
+    text: Union[Column, str] = Column(Text(1024))
     field_position: Union[Column, int] = Column(BigInteger)
 
     @staticmethod
-    async def create(poll: int, emote: str, option_text: str, field_position: int) -> Option:
-        options = Option(poll_id=poll, emote=emote, option=option_text, field_position=field_position)
+    async def create(poll: int, emote: str, option: str, text: str, field_position: int) -> Option:
+        options = Option(poll_id=poll, emote=emote, option=option, text=text, field_position=field_position)
         await db.add(options)
         return options
 

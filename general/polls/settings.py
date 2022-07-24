@@ -10,5 +10,5 @@ class PollsDefaultSettings(Settings):
     fair = False
 
 
-class PollsTeamsSettings(Settings):
+class PollsTeamSettings(Settings):
     duration = 1  # days after which all missing team-members should be pinged, if not excluded

@@ -92,7 +92,7 @@ poll_config:
 
 polls:
   title: "List of {} {} polls"
-  row: "\n[`{}`]({}) by <@{}> until {}"
+  row: "\n[`{}`]({}) by <@{}> ({})"
 
 usage:
   poll: |
