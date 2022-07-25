@@ -26,7 +26,7 @@ from discord.ui import Select, View
 from discord.utils import format_dt, utcnow
 
 from PyDrocsid.cog import Cog
-from PyDrocsid.command import Confirmation, add_reactions, docs
+from PyDrocsid.command import Confirmation, add_reactions, docs, optional_permissions
 from PyDrocsid.database import db, db_wrapper, filter_by
 from PyDrocsid.embeds import EmbedLimits, send_long_embed
 from PyDrocsid.emojis import emoji_to_name, name_to_emoji
@@ -227,15 +227,17 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
     """edits the poll embed, updating the votes from team-members"""
     for index, field in enumerate(embed.fields):
         if field.name == tg.status:
-            missing.sort(key=lambda m: str(m).lower())
-            *teamlers, last = (x.mention for x in missing)
-            teamlers: list[str]
-            embed.set_field_at(
-                index,
-                name=field.name,
-                value=t.error.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
-            )
-        embed.set_footer(text=t.poll.footer.default(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
+            if missing:
+                missing.sort(key=lambda m: str(m).lower())
+                *teamlers, last = (x.mention for x in missing)
+                teamlers: list[str]
+                text = t.error.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1)
+            else:
+                text = t.poll.all_voted
+
+            embed.set_field_at(index, name=field.name, value=text)
+            break
+    embed.set_footer(text=t.poll.footer.default(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
 
     return embed
 
@@ -288,6 +290,8 @@ async def handle_deleted_messages(bot, message_id: int):
         return
 
     poll = deleted_embed or deleted_interaction
+    if poll.status == PollStatus.CLOSED or poll.poll_type == PollType.TEAM:
+        return
     channel = await bot.fetch_channel(poll.channel_id)
     try:
         if deleted_interaction:
@@ -331,15 +335,15 @@ async def close_poll(bot, poll: Poll):
         poll.status = PollStatus.CLOSED
         return
 
+    poll.status = PollStatus.CLOSED
+    poll.last_time_state_change = utcnow()
+
     await interaction_message.delete()
     embed = embed_message.embeds[0]
     embed.set_footer(text=t.poll.footer.closed)
 
     await embed_message.edit(embed=embed)
     await embed_message.unpin()
-
-    poll.status = PollStatus.CLOSED
-    poll.last_time_state_change = utcnow()
 
 
 async def get_poll_list_embed(ctx: Context, poll_type: PollType, state: PollStatus) -> Embed:
@@ -486,7 +490,6 @@ class MySelect(Select):
                     user_ids.add(vote.user_id)
 
             missing: list[Member] | None = [teamler for teamler in teamlers if teamler.id not in user_ids]
-            missing.sort(key=lambda m: str(m).lower())
             embed = await edit_poll_embed(embed, poll, missing)
 
         await message.edit(embed=embed)
@@ -546,7 +549,7 @@ class PollsCog(Cog, name="Polls"):
             if not await check_poll_time(poll) and poll.poll_type == PollType.STANDARD:
                 await close_poll(self.bot, poll)
             elif not await check_poll_time(poll) and poll.poll_type == PollType.TEAM:
-                poll.end_time = poll.end_time + relativedelta(days=1)
+                poll.end_time = poll.end_time + relativedelta(days=1).seconds
                 await notify_missing_staff(self.bot, poll)
 
     @commands.group(name="poll", aliases=["vote"])
@@ -567,16 +570,13 @@ class PollsCog(Cog, name="Polls"):
     # TODO: close command for polls
 
     @poll.command(name="delete", aliases=["del"])
+    @optional_permissions(PollsPermission.manage)
     @docs(t.commands.poll.delete)
     async def delete(self, ctx: Context, message: Message):
         poll: Poll = await db.get(Poll, message_id=message.id)
         if not poll:
             raise CommandError(t.error.not_poll)
-        if (
-            poll.can_delete
-            and not await PollsPermission.manage.check_permissions(ctx.author)
-            and not poll.owner_id == ctx.author.id
-        ):
+        if poll.can_delete and not poll.owner_id == ctx.author.id:
             raise PermissionError
         elif not poll.can_delete and not poll.owner_id == ctx.author.id:
             raise PermissionError  # if delete is False, only the owner can delete it
@@ -595,17 +595,14 @@ class PollsCog(Cog, name="Polls"):
         await add_reactions(ctx.message, "white_check_mark")
 
     @poll.command(name="voted", aliases=["v"])
+    @optional_permissions(PollsPermission.manage)
     @docs(t.commands.poll.voted)
     async def voted(self, ctx: Context, message: Message):
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
         author = ctx.author
         if not poll:
             raise CommandError(t.error.not_poll)
-        if (
-            poll.anonymous
-            and not await PollsPermission.manage.check_permissions(author)
-            and not poll.owner_id == author.id
-        ):
+        if poll.anonymous and not poll.owner_id == author.id:
             raise PermissionError
 
         users = {}
@@ -624,12 +621,11 @@ class PollsCog(Cog, name="Polls"):
         await send_long_embed(ctx, embed=embed, repeat_title=True, paginate=True)
 
     @poll.command(name="results", aliases=["res"])
+    @optional_permissions(PollsPermission.manage)
     @docs(t.commands.poll.result)
     async def result(self, ctx: Context, message: Message, show_all: bool = False):
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
-        if poll.status == PollStatus.ACTIVE and not (
-            poll.owner_id == ctx.author.id or await PollsPermission.manage.check_permissions(ctx.author)
-        ):
+        if poll.status == PollStatus.ACTIVE and not poll.owner_id == ctx.author.id:
             raise CommandError(t.error.still_active)
         if not poll:
             raise CommandError(t.error.not_poll)
@@ -639,12 +635,13 @@ class PollsCog(Cog, name="Polls"):
         await send_long_embed(ctx, embed=embed, file=file)
 
     @poll.command(name="activate", aliases=["a"])
+    @optional_permissions(PollsPermission.manage)
     @docs(t.commands.poll.activate)
     async def activate(self, ctx: Context, message: Message):
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
         if not poll:
             raise CommandError(t.error.not_poll)
-        if not ctx.author.id == poll.owner_id and not await PollsPermission.manage.check_permissions(ctx.author):
+        if not ctx.author.id == poll.owner_id:
             raise PermissionError
 
         if poll.status == PollStatus.ACTIVE:
@@ -654,12 +651,13 @@ class PollsCog(Cog, name="Polls"):
         await send_long_embed(ctx, embed=Embed(title=t.poll.status_changed(poll.status.value)))
 
     @poll.command(name="pause", aliases=["p", "deactivate", "disable"])
+    @optional_permissions(PollsPermission.manage)
     @docs(t.commands.poll.paused)
     async def pause(self, ctx: Context, message: Message):
         poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
         if not poll:
             raise CommandError(t.error.not_poll)
-        if not ctx.author.id == poll.owner_id and not await PollsPermission.manage.check_permissions(ctx.author):
+        if not ctx.author.id == poll.owner_id:
             raise PermissionError
 
         if poll.status == PollStatus.PAUSED:
@@ -834,11 +832,37 @@ class PollsCog(Cog, name="Polls"):
         await send_to_changelog(ctx.guild, desc)
         await add_reactions(ctx.message, "white_check_mark")
 
-    @team.command(name="unpin", aliases=["u"])  # TODO: Accepted or dismiss poll commands for team-polls
+    @team.command(name="conclude", aliases=["c"])  # TODO: Accepted or dismiss poll commands for team-polls
     @PollsPermission.manage.check
-    @docs(t.commands.poll.team.unpin)
-    async def unpin(self, ctx: Context, message: Message):
-        pass
+    @docs(t.commands.poll.team.conclude)
+    async def conclude(self, ctx: Context, message: Message, accepted: bool):
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        if not poll or poll.poll_type != PollType.TEAM or poll.status == PollStatus.CLOSED or not message.embeds:
+            raise CommandError(t.error.not_poll)
+
+        embed: Embed = message.embeds[0] if message.embeds else None
+        thread = self.bot.get_channel(poll.thread_id)
+
+        for index, field in enumerate(embed.fields):
+            if field.name == tg.status:
+                if accepted:
+                    embed.colour = Colors.green
+                    text = t.texts.conclude.accepted
+                else:
+                    embed.colour = Colors.red
+                    text = t.texts.conclude.rejected
+
+                embed.set_field_at(index, name=field.name, value=text(ctx.author.mention))
+        await message.edit(embed=embed)
+
+        res = show_results(poll, True)
+        if thread:
+            await thread.send(embed=res[0], file=res[1])
+            await thread.archive(True)
+        else:
+            await ctx.send(embed=res[0], file=res[1])
+
+        await close_poll(self.bot, poll)
 
     @team.command(name="new", aliases=["n"])  # TODO: new team-polls
     @docs(t.commands.poll.team.new)

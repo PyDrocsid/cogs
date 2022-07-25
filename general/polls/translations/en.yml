@@ -19,7 +19,7 @@ commands:
       fair: manage if role weights impact on default polls
     team:
       team: create and manage team-polls
-      unpin: unpin a team-poll
+      conclude: close a team-poll by accepting or rejecting
       new: create a new team-poll
       list: show all open team-polls
       settings:
@@ -161,6 +161,7 @@ poll:
   option: "Option {}:"
   results: "Poll results:"
   status_changed: Poll is now {}!
+  all_voted: ":white_check_mark: All team-members have voted!"
 
 texts:
   delete:
@@ -195,3 +196,6 @@ texts:
     title: Ignore
     removed: "<@{}> was removed from the list of ignored member"
     added: "<@{}> was added on the list of ignored member"
+  conclude:
+    accepted: "Poll was accepted by {}"
+    rejected: "Poll was rejected by {}"
