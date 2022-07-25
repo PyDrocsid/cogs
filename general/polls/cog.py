@@ -224,7 +224,7 @@ async def send_poll(
 
 
 async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None) -> Embed:
-    """edits the poll embed, updating the votes and percentages"""
+    """edits the poll embed, updating the votes from team-members"""
     for index, field in enumerate(embed.fields):
         if field.name == tg.status:
             missing.sort(key=lambda m: str(m).lower())
@@ -235,9 +235,7 @@ async def edit_poll_embed(embed: Embed, poll: Poll, missing: list[Member] = None
                 name=field.name,
                 value=t.error.teamlers_missing(teamlers=", ".join(teamlers), last=last, cnt=len(teamlers) + 1),
             )
-        else:
-            embed.set_field_at(index, name=t.poll.option(index + 1), value=field.value, inline=False)
-            embed.set_footer(text=t.poll.footer.default(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
+        embed.set_footer(text=t.poll.footer.default(calc_end_time(poll.end_time).strftime("%Y-%m-%d %H:%M")))
 
     return embed
 
@@ -452,7 +450,6 @@ class MySelect(Select):
             return
 
         new_options: list[Option] = [option for option in poll.options if option.option in selected_options]
-        missing: list[Member] | None = None
 
         opt: Option
         for opt in poll.options:
@@ -490,8 +487,8 @@ class MySelect(Select):
 
             missing: list[Member] | None = [teamler for teamler in teamlers if teamler.id not in user_ids]
             missing.sort(key=lambda m: str(m).lower())
+            embed = await edit_poll_embed(embed, poll, missing)
 
-        embed = await edit_poll_embed(embed, poll, missing)
         await message.edit(embed=embed)
         await interaction.response.send_message(content=t.poll.voted, ephemeral=True)
 
