@@ -32,32 +32,28 @@ LEADERBOARD_TABLE_SPACING = 2
 
 
 def split_topics(topics: str) -> list[str]:
+    # TODO docstring
     return [topic for topic in map(str.strip, topics.replace(";", ",").split(",")) if topic]
 
 
-async def split_parents(topics: list[str], assignable: bool) -> list[tuple[str, bool, list[BTPTopic]] | None]:
+async def split_parents(topics: list[str], assignable: bool) -> list[tuple[str, bool, list[BTPTopic]]]:
+    # TODO docstring
     result: list[tuple[str, bool, list[BTPTopic]] | None] = []
     for topic in topics:
         topic_tree = topic.split("/")
 
-        parents: list[BTPTopic | None | CommandError] = [
-            await db.first(filter_by(BTPTopic, name=topic))
-            if await db.exists(filter_by(BTPTopic, name=topic))
-            else CommandError(t.parent_not_exists(topic))
-            for topic in topic_tree[:-1]
-        ]
+        parents: list[BTPTopic | None] = []
+        for par in topic_tree[:-1]:
+            parents.append(parent := await db.first(filter_by(BTPTopic, name=par)))  # TODO redis?
+            if parent is None:
+                raise CommandError(t.parent_not_exists(topic))
 
-        parents = [parent for parent in parents if parent is not None]
-        for parent in parents:
-            if isinstance(parent, CommandError):
-                raise parent
-
-        topic = topic_tree[-1]
-        result.append((topic, assignable, parents))
+        result.append((topic_tree[-1], assignable, parents))
     return result
 
 
 async def parse_topics(topics_str: str) -> list[BTPTopic]:
+    # TODO docstring
     topics: list[BTPTopic] = []
     all_topics: list[BTPTopic] = await get_topics()
 
@@ -65,7 +61,7 @@ async def parse_topics(topics_str: str) -> list[BTPTopic]:
         raise CommandError(t.no_topics_registered)
 
     for topic_name in split_topics(topics_str):
-        topic = await db.first(filter_by(BTPTopic, name=topic_name))
+        topic = await db.first(filter_by(BTPTopic, name=topic_name))  # TODO db obsolete
 
         if topic is None and len(all_topics) > 0:
             best_dist, best_match = min(
@@ -83,13 +79,12 @@ async def parse_topics(topics_str: str) -> list[BTPTopic]:
 
 
 async def get_topics() -> list[BTPTopic]:
-    topics: list[BTPTopic] = []
-    async for topic in await db.stream(select(BTPTopic)):
-        topics.append(topic)
-    return topics
+    # TODO docstring
+    return await db.all(select(BTPTopic))
 
 
 async def change_setting(ctx: Context, name: str, value: any):
+    # TODO docstring
     data = t.settings[name]
     await getattr(BeTheProfessionalSettings, name).set(value)
 
@@ -115,6 +110,65 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
             self.update_roles.start()
         except RuntimeError:
             self.update_roles.restart()
+
+    @tasks.loop(hours=24)
+    @db_wrapper
+    async def update_roles(self):
+        role_create_min_users = await BeTheProfessionalSettings.RoleCreateMinUsers.get()
+
+        logger.info("Started Update Role Loop")
+        topic_count: dict[int, int] = {}
+
+        for topic in await db.all(select(BTPTopic).order_by(BTPTopic.id.asc())):
+            if len(topic.users) >= role_create_min_users:
+                topic_count[topic.id] = len(topic.users)
+
+        # Sort Topics By Count and Limit Roles to BeTheProfessionalSettings.RoleLimit
+        top_topics: list[int] = sorted(topic_count, key=lambda x: topic_count[x], reverse=True)[
+            : await BeTheProfessionalSettings.RoleLimit.get()
+        ]
+
+        new_roles_topic_id: list[int] = []
+
+        # Delete old Top Topic Roles
+        for topic in await db.all(
+            select(BTPTopic).filter(BTPTopic.role_id.is_not(None), BTPTopic.id.not_in(top_topics))
+        ):  # type: BTPTopic
+            await self.bot.guilds[0].get_role(topic.role_id).delete()
+            topic.role_id = None
+
+        # Create new Topic Roles
+        roles: dict[int, Role] = {}
+        for topic in await db.all(
+            select(BTPTopic).filter(BTPTopic.id.in_(top_topics), BTPTopic.role_id.is_(None))
+        ):  # type: BTPTopic
+            new_roles_topic_id.append(topic.id)
+            role = await self.bot.guilds[0].create_role(name=topic.name)
+            topic.role_id = role.id
+            roles[topic.id] = role
+
+        # Iterate over all members(with topics) and add the role to them
+        member_ids: set[int] = {
+            btp_user.user_id for btp_user in await db.all(select(BTPUser)) if btp_user.topic.id in new_roles_topic_id
+        }
+        for member_id in member_ids:
+            member: Member = self.bot.guilds[0].get_member(member_id)
+            if member is None:
+                continue
+            member_roles: list[Role] = [
+                roles.get(btp_user.topic) for btp_user in await db.all(select(BTPUser).filter_by(user_id=member_id))
+            ]
+            member_roles = list(filter(lambda x: x is not None, member_roles))
+            await member.add_roles(*member_roles, atomic=False)
+
+        logger.info("Created Top Topic Roles")
+
+    async def on_member_join(self, member: Member):
+        roles: list[Role] = [
+            self.bot.guilds[0].get_role(topic.role_id)
+            async for topic in await db.stream(select(BTPUser).filter_by(user_id=member.id))
+        ]
+        await member.add_roles(*roles, atomic=False)
 
     @commands.command(name="?")
     @guild_only()
@@ -177,7 +231,7 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         topics: list[BTPTopic] = [
             topic
             for topic in await parse_topics(topics)
-            if (await db.exists(filter_by(BTPTopic, id=topic.id)))
+            if (await db.exists(filter_by(BTPTopic, id=topic.id)))  # TODO db obsolete
             and not (await db.exists(filter_by(BTPUser, user_id=member.id, topic_id=topic.id)))  # noqa: W503
         ]
 
@@ -263,14 +317,14 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
         """
 
         names = split_topics(topic_paths)
-        topic_paths: list[tuple[str, bool, list[BTPTopic] | None]] = await split_parents(names, assignable)
+        topic_paths: list[tuple[str, bool, list[BTPTopic]]] = await split_parents(names, assignable)
         if not names or not topic_paths:
             raise UserInputError
 
         valid_chars = set(string.ascii_letters + string.digits + " !#$%&'()+-./:<=>?[\\]^_`{|}~")
         registered_topics: list[tuple[str, bool, list[BTPTopic]] | None] = []
         for topic in topic_paths:
-            if len(topic) > 100:
+            if len(topic) > 100:  # TODO
                 raise CommandError(t.topic_too_long(topic))
             if any(c not in valid_chars for c in topic[0]):
                 raise CommandError(t.topic_invalid_chars(topic))
@@ -530,62 +584,3 @@ class BeTheProfessionalCog(Cog, name="BeTheProfessional"):
 
         await self.update_roles()
         await reply(ctx, "Updated Topic Roles")
-
-    @tasks.loop(hours=24)
-    @db_wrapper
-    async def update_roles(self):
-        role_create_min_users = await BeTheProfessionalSettings.RoleCreateMinUsers.get()
-
-        logger.info("Started Update Role Loop")
-        topic_count: dict[int, int] = {}
-
-        for topic in await db.all(select(BTPTopic).order_by(BTPTopic.id.asc())):
-            if len(topic.users) >= role_create_min_users:
-                topic_count[topic.id] = len(topic.users)
-
-        # Sort Topics By Count and Limit Roles to BeTheProfessionalSettings.RoleLimit
-        top_topics: list[int] = sorted(topic_count, key=lambda x: topic_count[x], reverse=True)[
-            : await BeTheProfessionalSettings.RoleLimit.get()
-        ]
-
-        new_roles_topic_id: list[int] = []
-
-        # Delete old Top Topic Roles
-        for topic in await db.all(
-            select(BTPTopic).filter(BTPTopic.role_id.is_not(None), BTPTopic.id.not_in(top_topics))
-        ):  # type: BTPTopic
-            await self.bot.guilds[0].get_role(topic.role_id).delete()
-            topic.role_id = None
-
-        # Create new Topic Roles
-        roles: dict[int, Role] = {}
-        for topic in await db.all(
-            select(BTPTopic).filter(BTPTopic.id.in_(top_topics), BTPTopic.role_id.is_(None))
-        ):  # type: BTPTopic
-            new_roles_topic_id.append(topic.id)
-            role = await self.bot.guilds[0].create_role(name=topic.name)
-            topic.role_id = role.id
-            roles[topic.id] = role
-
-        # Iterate over all members(with topics) and add the role to them
-        member_ids: set[int] = {
-            btp_user.user_id for btp_user in await db.all(select(BTPUser)) if btp_user.topic.id in new_roles_topic_id
-        }
-        for member_id in member_ids:
-            member: Member = self.bot.guilds[0].get_member(member_id)
-            if member is None:
-                continue
-            member_roles: list[Role] = [
-                roles.get(btp_user.topic) for btp_user in await db.all(select(BTPUser).filter_by(user_id=member_id))
-            ]
-            member_roles = list(filter(lambda x: x is not None, member_roles))
-            await member.add_roles(*member_roles, atomic=False)
-
-        logger.info("Created Top Topic Roles")
-
-    async def on_member_join(self, member: Member):
-        roles: list[Role] = [
-            self.bot.guilds[0].get_role(topic.role_id)
-            for topic in await db.all(select(BTPUser).filter_by(user_id=member.id))
-        ]
-        await member.add_roles(*roles, atomic=False)
