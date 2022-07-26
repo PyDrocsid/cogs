@@ -3,6 +3,7 @@ commands:
     poll: poll commands
     quick: small poll with default options
     new: advanced poll with more options
+    close: close a poll without deleting it
     delete: delete polls
     activate: activate a paused poll
     paused: pause an active poll
@@ -61,6 +62,7 @@ error:
   cant_pin:
     title: Error
     description: Can't pin any more messages in {}
+  poll_closed: Poll is closed
 
 poll_config:
   title: Default poll configuration

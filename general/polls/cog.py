@@ -329,21 +329,31 @@ async def close_poll(bot, poll: Poll):
     """deletes the interaction message and edits the footer of the poll embed"""
     try:
         channel = await bot.fetch_channel(poll.channel_id)
+        thread = await bot.fetch_channel(poll.thread_id)
         embed_message = await channel.fetch_message(poll.message_id)
         interaction_message = await channel.fetch_message(poll.interaction_message_id)
     except NotFound:
         poll.status = PollStatus.CLOSED
         return
 
-    poll.status = PollStatus.CLOSED
-    poll.last_time_state_change = utcnow()
-
-    await interaction_message.delete()
     embed = embed_message.embeds[0]
+    embed.colour = Colors.purple
     embed.set_footer(text=t.poll.footer.closed)
 
     await embed_message.edit(embed=embed)
     await embed_message.unpin()
+
+    try:
+        res = show_results(poll, True)
+        await thread.send(embed=res[0], file=res[1])
+    except CommandError:
+        pass
+    await thread.archive(True)
+
+    poll.status = PollStatus.CLOSED
+    poll.last_time_state_change = utcnow()
+    await db.commit()
+    await interaction_message.delete()
 
 
 async def get_poll_list_embed(ctx: Context, poll_type: PollType, state: PollStatus) -> Embed:
@@ -399,9 +409,9 @@ def show_results(
     poll: Poll, show_all: bool = False
 ) -> tuple[Embed, File]:  # style is good for now, if you don't like it, change it by yourself
     data: list[tuple[float, str]] = [
-        (sum([vote.vote_weight for vote in option.votes]), option.option) for option in poll.options
+        (sum([vote.vote_weight for vote in option.votes]), option.text) for option in poll.options
     ]
-    if not any(data):
+    if not any(True for x in data if x[0] != 0):
         raise CommandError(t.error.no_votes)
     data_tuple: list[tuple[str, float]] = [(text[:10], num) for num, text in data if num]
     data_tuple.sort(key=lambda x: x[1])
@@ -567,7 +577,20 @@ class PollsCog(Cog, name="Polls"):
 
         await send_long_embed(ctx, embed=embed, paginate=True)
 
-    # TODO: close command for polls
+    @poll.command(name="close", aliases=["c"])
+    @optional_permissions(PollsPermission.manage)
+    @docs(t.commands.poll.close)
+    async def close(self, ctx: Context, message: Message):
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        if not poll:
+            raise CommandError(t.error.not_poll)
+        if poll.status == PollStatus.CLOSED:
+            raise CommandError(t.error.poll_closed)
+        if poll.owner_id != ctx.author.id:
+            raise CommandError(tg.not_allowed)
+
+        await close_poll(self.bot, poll)
+        await ctx.message.add_reaction(name_to_emoji["white_check_mark"])
 
     @poll.command(name="delete", aliases=["del"])
     @optional_permissions(PollsPermission.manage)
@@ -832,7 +855,7 @@ class PollsCog(Cog, name="Polls"):
         await send_to_changelog(ctx.guild, desc)
         await add_reactions(ctx.message, "white_check_mark")
 
-    @team.command(name="conclude", aliases=["c"])  # TODO: Accepted or dismiss poll commands for team-polls
+    @team.command(name="conclude", aliases=["c"])
     @PollsPermission.manage.check
     @docs(t.commands.poll.team.conclude)
     async def conclude(self, ctx: Context, message: Message, accepted: bool):
