@@ -600,9 +600,9 @@ class PollsCog(Cog, name="Polls"):
         if not poll:
             raise CommandError(t.error.not_poll)
         if poll.can_delete and not poll.owner_id == ctx.author.id:
-            raise PermissionError
+            raise CommandError(tg.not_allowed)
         elif not poll.can_delete and not poll.owner_id == ctx.author.id:
-            raise PermissionError  # if delete is False, only the owner can delete it
+            raise CommandError(tg.not_allowed)  # if delete is False, only the owner can delete it
 
         if not await Confirmation().run(ctx, t.texts.delete.confirm):
             return
@@ -626,7 +626,7 @@ class PollsCog(Cog, name="Polls"):
         if not poll:
             raise CommandError(t.error.not_poll)
         if poll.anonymous and not poll.owner_id == author.id:
-            raise PermissionError
+            raise CommandError(tg.not_allowed)
 
         users = {}
         for option in poll.options:
@@ -665,7 +665,7 @@ class PollsCog(Cog, name="Polls"):
         if not poll:
             raise CommandError(t.error.not_poll)
         if not ctx.author.id == poll.owner_id:
-            raise PermissionError
+            raise CommandError(tg.not_allowed)
 
         if poll.status == PollStatus.ACTIVE:
             raise CommandError(t.error.poll_status_not_changed(poll.status.value))
@@ -681,7 +681,7 @@ class PollsCog(Cog, name="Polls"):
         if not poll:
             raise CommandError(t.error.not_poll)
         if not ctx.author.id == poll.owner_id:
-            raise PermissionError
+            raise CommandError(tg.not_allowed)
 
         if poll.status == PollStatus.PAUSED:
             raise CommandError(t.error.poll_status_not_changed(poll.status.value))
