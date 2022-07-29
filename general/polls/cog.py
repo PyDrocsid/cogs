@@ -408,12 +408,12 @@ async def status_change(bot: Bot, poll: Poll):
 def show_results(
     poll: Poll, show_all: bool = False
 ) -> tuple[Embed, File]:  # style is good for now, if you don't like it, change it by yourself
-    data: list[tuple[float, str]] = [
-        (sum([vote.vote_weight for vote in option.votes]), option.text) for option in poll.options
+    data: list[tuple[str, float | int]] = [
+        (option.text, weight) for option in poll.options if (weight := sum(vote.vote_weight for vote in option.votes))
     ]
-    if not any(True for x in data if x[0] != 0):
+    if not data:
         raise CommandError(t.error.no_votes)
-    data_tuple: list[tuple[str, float]] = [(text[:10], num) for num, text in data if num]
+    data_tuple: list[tuple[str, float]] = [(text[:10], num) for text, num in data if num]
     data_tuple.sort(key=lambda x: x[1])
     if not show_all:
         data_tuple = data_tuple[:10]
@@ -522,22 +522,24 @@ class PollsCog(Cog, name="Polls"):
         await sync_redis()
         polls: list[Poll] = await db.all(filter_by(Poll, (Poll.options, Option.votes), status=PollStatus.ACTIVE))
         for poll in polls:
-            if await check_poll_time(poll):
-                select_obj = MySelect(
-                    custom_id=str(poll.message_id),
-                    placeholder=t.poll.select.placeholder(cnt=poll.max_choices),
-                    max_values=poll.max_choices,
-                    options=[
-                        SelectOption(
-                            label=t.poll.select.label(option.field_position + 1),
-                            emoji=option.emote,
-                            description=option.option,
-                        )
-                        for option in poll.options
-                    ],
-                )
+            if not await check_poll_time(poll):
+                continue
 
-                self.bot.add_view(view=create_select_view(select_obj), message_id=poll.interaction_message_id)
+            select_obj = MySelect(
+                custom_id=str(poll.message_id),
+                placeholder=t.poll.select.placeholder(cnt=poll.max_choices),
+                max_values=poll.max_choices,
+                options=[
+                    SelectOption(
+                        label=t.poll.select.label(option.field_position + 1),
+                        emoji=option.emote,
+                        description=option.option,
+                    )
+                    for option in poll.options
+                ],
+            )
+
+            self.bot.add_view(view=create_select_view(select_obj), message_id=poll.interaction_message_id)
 
         try:
             self.poll_loop.start()
