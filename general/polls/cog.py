@@ -17,7 +17,6 @@ from discord import (
     Message,
     NotFound,
     RawMessageDeleteEvent,
-    Role,
     SelectOption,
 )
 from discord.ext import commands, tasks
@@ -100,10 +99,11 @@ def build_wizard(skip: bool = False) -> Embed:
 async def get_parser() -> ArgumentParser:
     """creates a parser object with options for advanced polls"""
     parser = ArgumentParser()
-    parser.add_argument("--deadline", "-D", default=await PdS.duration.get() * 60 * 60, type=int)
-    parser.add_argument("--anonymous", "-A", default=await PdS.anonymous.get(), type=bool, choices=[True, False])
-    parser.add_argument("--choices", "-C", default=await PdS.max_choices.get() or MAX_OPTIONS, type=int)
-    parser.add_argument("--fair", "-F", default=await PdS.fair.get(), type=bool, choices=[True, False])
+    parser.add_argument("--deadline", "-D", default=0, type=int)
+    parser.add_argument("--anonymous", "-A", default=False, type=bool, choices=[True, False])
+    parser.add_argument("--choices", "-C", default=MAX_OPTIONS, type=int)
+    parser.add_argument("--roles", "-R", default="0", type=str)
+    parser.add_argument("--weights", "-W", default="0", type=str)
 
     return parser
 
@@ -122,7 +122,6 @@ async def send_poll(
     deadline: Optional[int] = None,
     anonymous: bool = False,
     can_delete: bool = False,
-    fair: bool = False,
 ):
     """sends a poll embed + view message containing the select field"""
 
@@ -214,7 +213,6 @@ async def send_poll(
         options=parsed_options,
         poll_type=poll_type,
         interaction=view_msg.id,
-        fair=fair,
         max_choices=max_choices,
         thread=thread.id,
     )
@@ -703,54 +701,12 @@ class PollsCog(Cog, name="Polls"):
         embed.add_field(
             name=t.poll_config.duration.name,
             value=t.poll_config.duration.time(cnt=time) if not time <= 0 else t.poll_config.duration.time(cnt=max_time),
-            inline=False,
         )
-        embed.add_field(
-            name=t.poll_config.max_duration.name, value=t.poll_config.max_duration.time(cnt=max_time), inline=False
-        )
-        choice: int = await PdS.max_choices.get() or MAX_OPTIONS
-        embed.add_field(
-            name=t.poll_config.choices.name,
-            value=t.poll_config.choices.amount(cnt=choice) if not choice <= 0 else t.poll_config.choices.unlimited,
-            inline=False,
-        )
-        anonymous: bool = await PdS.anonymous.get()
-        embed.add_field(name=t.poll_config.anonymous.name, value=str(anonymous), inline=False)
-        fair: bool = await PdS.fair.get()
-        embed.add_field(name=t.poll_config.fair.name, value=str(fair), inline=False)
-        roles = await RoleWeight.get(ctx.guild.id, PollType.STANDARD)
-        everyone: int = await PdS.everyone_power.get()
-        base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
-        if roles:
-            base += "".join(t.poll_config.roles.row(role.role_id, role.weight) for role in roles)
-        embed.add_field(name=t.poll_config.roles.name, value=base, inline=False)
+        embed.add_field(name=t.poll_config.max_duration.name, value=t.poll_config.max_duration.time(cnt=max_time))
+        base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, await PdS.everyone_power.get())
+        embed.add_field(name=t.poll_config.roles.name, value=base)
 
         await send_long_embed(ctx, embed, paginate=False)
-
-    @settings.command(name="roles_weights", aliases=["rw"])
-    @PollsPermission.write.check
-    @docs(t.commands.poll.settings.roles_weights)
-    async def roles_weights(self, ctx: Context, role: Role, weight: float | None = None):
-        element = await db.get(RoleWeight, role_id=role.id)
-
-        if not weight and not element:
-            raise CommandError(t.error.cant_set_weight)
-
-        if weight and weight < 0.1:
-            raise CommandError(t.error.weight_too_small)
-
-        if element and weight:
-            element.weight = weight
-            msg: str = t.texts.role_weight.set(role.id, weight)
-        elif weight and not element:
-            await RoleWeight.create(ctx.guild.id, role.id, weight, PollType.STANDARD)
-            msg: str = t.texts.role_weight.set(role.id, weight)
-        else:
-            await element.remove()
-            msg: str = t.texts.role_weight.reset(role.id)
-
-        await add_reactions(ctx.message, "white_check_mark")
-        await send_to_changelog(ctx.guild, msg)
 
     @settings.command(name="duration", aliases=["d"])
     @PollsPermission.write.check
@@ -774,43 +730,6 @@ class PollsCog(Cog, name="Polls"):
         msg: str = t.texts.max_duration.set(cnt=days)
 
         await PdS.max_duration.set(days)
-        await add_reactions(ctx.message, "white_check_mark")
-        await send_to_changelog(ctx.guild, msg)
-
-    @settings.command(name="votes", aliases=["v", "choices", "c"])
-    @PollsPermission.write.check
-    @docs(t.commands.poll.settings.votes)
-    async def votes(self, ctx: Context, votes: int | None = None):
-        if not votes:
-            votes = 0
-            msg: str = t.texts.votes.reset
-        else:
-            msg: str = t.texts.votes.set(cnt=votes)
-
-        if not 0 < votes < MAX_OPTIONS:
-            votes = 0
-
-        await PdS.max_choices.set(votes)
-        await add_reactions(ctx.message, "white_check_mark")
-        await send_to_changelog(ctx.guild, msg)
-
-    @settings.command(name="anonymous", aliases=["a"])
-    @PollsPermission.write.check
-    @docs(t.commands.poll.settings.anonymous)
-    async def anonymous(self, ctx: Context, status: bool):
-        msg: str = t.texts.anonymous.is_on if status else t.texts.anonymous.is_off
-
-        await PdS.anonymous.set(status)
-        await add_reactions(ctx.message, "white_check_mark")
-        await send_to_changelog(ctx.guild, msg)
-
-    @settings.command(name="fair", aliases=["f"])
-    @PollsPermission.write.check
-    @docs(t.commands.poll.settings.fair)
-    async def fair(self, ctx: Context, status: bool):
-        msg: str = t.texts.fair.is_on if status else t.texts.fair.is_off
-
-        await PdS.fair.set(status)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
@@ -905,10 +824,8 @@ class PollsCog(Cog, name="Polls"):
             ctx=ctx,
             title=t.poll.standard,
             poll_args=args,
-            max_choices=await PdS.max_choices.get() or MAX_OPTIONS,
+            max_choices=MAX_OPTIONS,
             deadline=await PdS.duration.get() * 60 * 60 or await PdS.max_duration.get() * 60 * 60 * 24,
-            anonymous=await PdS.anonymous.get(),
-            fair=await PdS.fair.get(),
             can_delete=True,
         )
 
@@ -944,7 +861,6 @@ class PollsCog(Cog, name="Polls"):
             max_choices=parsed.choices,
             deadline=deadline,
             anonymous=parsed.anonymous,
-            fair=parsed.fair,
             can_delete=True,
         )
         await ctx.message.delete()

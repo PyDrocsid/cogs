@@ -49,6 +49,7 @@ class Poll(Base):
     id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
 
     options: list[Option] = relationship("Option", back_populates="poll", cascade="all, delete")
+    roles: list[RoleWeight] = relationship("RoleWeight", back_populates="poll", cascade="all, delete")
 
     message_id: Union[Column, int] = Column(BigInteger, unique=True)
     message_url: Union[Column, str] = Column(Text(256))
@@ -83,8 +84,8 @@ class Poll(Base):
         poll_type: enum.Enum,
         interaction: int,
         thread: int,
-        fair: bool,
         max_choices: int,
+        roles: list[tuple[int, float]] | None = None,
     ) -> Poll:
         row = Poll(
             message_id=message_id,
@@ -100,7 +101,6 @@ class Poll(Base):
             can_delete=can_delete,
             interaction_message_id=interaction,
             thread_id=thread,
-            fair=fair,
             status=PollStatus.ACTIVE,
             last_time_state_change=utcnow(),
             max_choices=max_choices,
@@ -115,6 +115,8 @@ class Poll(Base):
                     field_position=position,
                 )
             )
+        for role_id, weight in roles or []:
+            row.roles.append(await RoleWeight.create(message_id, role_id, weight))
 
         await db.add(row)
         return row
@@ -166,17 +168,14 @@ class RoleWeight(Base):
     __tablename__ = "role_weight"
 
     id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
-    guild_id: Union[Column, int] = Column(BigInteger)
     role_id: Union[Column, int] = Column(BigInteger, unique=True)
     weight: Union[Column, float] = Column(Float)
-    poll_type: Union[Column, PollType] = Column(Enum(PollType))
-    timestamp: Union[Column, datetime] = Column(UTCDateTime)
+    poll: Poll = relationship("Poll", back_populates="roles")
+    poll_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll.message_id"))
 
     @staticmethod
-    async def create(guild_id: int, role: int, weight: float, poll_type: PollType) -> RoleWeight:
-        role_weight = RoleWeight(
-            guild_id=guild_id, role_id=role, weight=weight, timestamp=utcnow(), poll_type=poll_type
-        )
+    async def create(poll_id: int, role: int, weight: float) -> RoleWeight:
+        role_weight = RoleWeight(poll_id=poll_id, role_id=role, weight=weight)
         await db.add(role_weight)
         await sync_redis()
         return role_weight

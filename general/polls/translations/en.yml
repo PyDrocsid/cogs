@@ -67,7 +67,7 @@ error:
 poll_config:
   title: Default poll configuration
   duration:
-    name: "**Duration**"
+    name: "**Default Duration**"
     time:
       one: "{cnt} hour"
       many: "{cnt} hours"
@@ -77,20 +77,9 @@ poll_config:
     time:
       one: "{cnt} days"
       many: "{cnt} days"
-  choices:
-    name: "**Choices per user**"
-    amount:
-      one: "{cnt} choice per user"
-      many: "{cnt} choices per user"
-    unlimited: unlimited
-  anonymous:
-    name: "**Anonymous**"
-  fair:
-    name: "**Fair polls**"
   roles:
     name: "**Role Weights**"
     ev_row: "{} -> `{}x`"
-    row: "\n<@&{}> -> `{}x`"
 
 polls:
   title: "List of {} {} polls"
@@ -121,23 +110,17 @@ wizard:
   args:
     name: Arguments
     value: |
-      ```
-      --deadline DEADLINE, -D DEADLINE
-      time when the poll should be closed [Default: server settings]
-      
-      --anonymous {True,False}, -A {True,False} 
-      people can see who voted or not [Default: server settings]
-  
-      --choices CHOICES, -C CHOICES 
-      the amount of votes someone can set [Default: multiple choices]
-  
-      --fair {True,False}, -F {True,False} 
-      all roles have the same vote weight [Default: server settings]
+      ```py
+      --deadline DEADLINE, -D DEADLINE           |time in hours| 0 for server default
+      --anonymous {True,False}, -A {True,False}  |public who voted| True or False
+      --choices CHOICES, -C CHOICES              |amount of choices per user| 0 for multiple choice
+      --roles ROLES, -R ROLES                    |which roles can participate| ("role1, role2, role3, ...") "0" for all
+      --weights WEIGHTS, -W WEIGHTS              |role weights| ("role1: weight, role2: weight, ...") "0" for server default / "1" for fair
       ```
   example:
     name: Example
     value: |
-      `--duration 6 --choices 4 -A True`
+      `--deadline 6 --choices 4 -A True`
       
       --> Creates an anonymous, 6 hours long poll with 4 select choices for every user
 
@@ -183,17 +166,6 @@ texts:
     set:
       one: "Set maximum duration for a poll to {cnt} day"
       many: "Set maximum duration for a poll to {cnt} days"
-  votes:
-    set:
-      one: "Set default votes for a poll to {cnt} vote"
-      many: "Set default votes for a poll to {cnt} votes"
-    reset: "Set the default votes for polls to unlimited"
-  anonymous:
-    is_on: made default poll votes anonymous
-    is_off: made default poll votes visible
-  fair:
-    is_on: made default poll votes fair
-    is_off: made default poll votes based on roles
   ignore:
     title: Ignore
     removed: "<@{}> was removed from the list of ignored member"
