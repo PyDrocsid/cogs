@@ -37,7 +37,8 @@ from PyDrocsid.util import is_teamler
 from .colors import Colors
 from .models import IgnoredUser, Option, Poll, PollStatus, PollType, PollVote, RoleWeight, sync_redis
 from .permissions import PollsPermission
-from .settings import PollsDefaultSettings, PollsTeamSettings
+from .settings import PollsDefaultSettings as PdS
+from .settings import PollsTeamSettings as PtS
 from ...contributor import Contributor
 from ...pubsub import send_alert, send_to_changelog
 
@@ -99,14 +100,10 @@ def build_wizard(skip: bool = False) -> Embed:
 async def get_parser() -> ArgumentParser:
     """creates a parser object with options for advanced polls"""
     parser = ArgumentParser()
-    parser.add_argument("--deadline", "-D", default=await PollsDefaultSettings.duration.get() * 60 * 60, type=int)
-    parser.add_argument(
-        "--anonymous", "-A", default=await PollsDefaultSettings.anonymous.get(), type=bool, choices=[True, False]
-    )
-    parser.add_argument(
-        "--choices", "-C", default=await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS, type=int
-    )
-    parser.add_argument("--fair", "-F", default=await PollsDefaultSettings.fair.get(), type=bool, choices=[True, False])
+    parser.add_argument("--deadline", "-D", default=await PdS.duration.get() * 60 * 60, type=int)
+    parser.add_argument("--anonymous", "-A", default=await PdS.anonymous.get(), type=bool, choices=[True, False])
+    parser.add_argument("--choices", "-C", default=await PdS.max_choices.get() or MAX_OPTIONS, type=int)
+    parser.add_argument("--fair", "-F", default=await PdS.fair.get(), type=bool, choices=[True, False])
 
     return parser
 
@@ -472,7 +469,7 @@ class MySelect(Select):
                     await vote.remove()
                     opt.votes.remove(vote)
 
-        ev_pover = await PollsDefaultSettings.everyone_power.get()
+        ev_pover = await PdS.everyone_power.get()
         if poll.fair:
             user_weight: float = ev_pover
         else:
@@ -701,8 +698,8 @@ class PollsCog(Cog, name="Polls"):
             return
 
         embed = Embed(title=t.poll_config.title, color=Colors.Polls)
-        time: int = await PollsDefaultSettings.duration.get()
-        max_time: int = await PollsDefaultSettings.max_duration.get()
+        time: int = await PdS.duration.get()
+        max_time: int = await PdS.max_duration.get()
         embed.add_field(
             name=t.poll_config.duration.name,
             value=t.poll_config.duration.time(cnt=time) if not time <= 0 else t.poll_config.duration.time(cnt=max_time),
@@ -711,18 +708,18 @@ class PollsCog(Cog, name="Polls"):
         embed.add_field(
             name=t.poll_config.max_duration.name, value=t.poll_config.max_duration.time(cnt=max_time), inline=False
         )
-        choice: int = await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS
+        choice: int = await PdS.max_choices.get() or MAX_OPTIONS
         embed.add_field(
             name=t.poll_config.choices.name,
             value=t.poll_config.choices.amount(cnt=choice) if not choice <= 0 else t.poll_config.choices.unlimited,
             inline=False,
         )
-        anonymous: bool = await PollsDefaultSettings.anonymous.get()
+        anonymous: bool = await PdS.anonymous.get()
         embed.add_field(name=t.poll_config.anonymous.name, value=str(anonymous), inline=False)
-        fair: bool = await PollsDefaultSettings.fair.get()
+        fair: bool = await PdS.fair.get()
         embed.add_field(name=t.poll_config.fair.name, value=str(fair), inline=False)
         roles = await RoleWeight.get(ctx.guild.id, PollType.STANDARD)
-        everyone: int = await PollsDefaultSettings.everyone_power.get()
+        everyone: int = await PdS.everyone_power.get()
         base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, everyone)
         if roles:
             base += "".join(t.poll_config.roles.row(role.role_id, role.weight) for role in roles)
@@ -765,7 +762,7 @@ class PollsCog(Cog, name="Polls"):
         else:
             msg: str = t.texts.duration.set(cnt=hours)
 
-        await PollsDefaultSettings.duration.set(hours)
+        await PdS.duration.set(hours)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
@@ -776,7 +773,7 @@ class PollsCog(Cog, name="Polls"):
         days = days or 7
         msg: str = t.texts.max_duration.set(cnt=days)
 
-        await PollsDefaultSettings.max_duration.set(days)
+        await PdS.max_duration.set(days)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
@@ -793,7 +790,7 @@ class PollsCog(Cog, name="Polls"):
         if not 0 < votes < MAX_OPTIONS:
             votes = 0
 
-        await PollsDefaultSettings.max_choices.set(votes)
+        await PdS.max_choices.set(votes)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
@@ -803,7 +800,7 @@ class PollsCog(Cog, name="Polls"):
     async def anonymous(self, ctx: Context, status: bool):
         msg: str = t.texts.anonymous.is_on if status else t.texts.anonymous.is_off
 
-        await PollsDefaultSettings.anonymous.set(status)
+        await PdS.anonymous.set(status)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
@@ -813,7 +810,7 @@ class PollsCog(Cog, name="Polls"):
     async def fair(self, ctx: Context, status: bool):
         msg: str = t.texts.fair.is_on if status else t.texts.fair.is_off
 
-        await PollsDefaultSettings.fair.set(status)
+        await PdS.fair.set(status)
         await add_reactions(ctx.message, "white_check_mark")
         await send_to_changelog(ctx.guild, msg)
 
@@ -908,11 +905,10 @@ class PollsCog(Cog, name="Polls"):
             ctx=ctx,
             title=t.poll.standard,
             poll_args=args,
-            max_choices=await PollsDefaultSettings.max_choices.get() or MAX_OPTIONS,
-            deadline=await PollsDefaultSettings.duration.get() * 60 * 60
-            or await PollsDefaultSettings.max_duration.get() * 60 * 60 * 24,
-            anonymous=await PollsDefaultSettings.anonymous.get(),
-            fair=await PollsDefaultSettings.fair.get(),
+            max_choices=await PdS.max_choices.get() or MAX_OPTIONS,
+            deadline=await PdS.duration.get() * 60 * 60 or await PdS.max_duration.get() * 60 * 60 * 24,
+            anonymous=await PdS.anonymous.get(),
+            fair=await PdS.fair.get(),
             can_delete=True,
         )
 
@@ -934,12 +930,12 @@ class PollsCog(Cog, name="Polls"):
         parser = await get_parser()
         parsed: Namespace = parser.parse_known_args(args.split())[0]
 
-        max_deadline = await PollsDefaultSettings.max_duration.get() * 60 * 60 * 24
+        max_deadline = await PdS.max_duration.get() * 60 * 60 * 24
         deadline: Union[list[str, str], int] = parsed.deadline
         if isinstance(deadline, int):
             deadline = deadline or max_deadline if deadline <= max_deadline else max_deadline
         else:
-            deadline = await PollsDefaultSettings.duration.get() * 60 * 60 or max_deadline
+            deadline = await PdS.duration.get() * 60 * 60 or max_deadline
 
         await send_poll(
             ctx=ctx,
@@ -986,6 +982,6 @@ class PollsCog(Cog, name="Polls"):
             max_choices=1,
             poll_args=t.yes_no.option_string(text),
             team_poll=True,
-            deadline=await PollsTeamSettings.duration.get() * 60 * 60 * 24,
+            deadline=await PtS.duration.get() * 60 * 60 * 24,
             can_delete=False,
         )
