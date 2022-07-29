@@ -2,7 +2,6 @@ import string
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
 from io import BytesIO
-from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -108,7 +107,7 @@ async def get_parser() -> ArgumentParser:
     return parser
 
 
-def calc_end_time(duration: Optional[float]) -> Optional[datetime]:
+def calc_end_time(duration: float | None) -> datetime | None:
     """returns the time when a poll should be closed"""
     return utcnow() + relativedelta(seconds=int(duration)) if duration else None
 
@@ -119,9 +118,11 @@ async def send_poll(
     poll_args: str,
     max_choices: int = None,
     team_poll: bool = False,
-    deadline: Optional[int] = None,
+    deadline: int | None = None,
     anonymous: bool = False,
     can_delete: bool = False,
+    allowed_roles: list[int] | None = None,
+    weights: list[tuple[int, float]] | None = None,
 ):
     """sends a poll embed + view message containing the select field"""
 
@@ -134,16 +135,30 @@ async def send_poll(
         raise CommandError(t.error.missing_options)
     if len(options) > MAX_OPTIONS:
         raise CommandError(t.error.too_many_options(MAX_OPTIONS))
-    if team_poll and len(options) >= MAX_OPTIONS:
-        raise CommandError(t.error.too_many_options(MAX_OPTIONS - 1))
 
     options = [await PollOption().init(ctx, line, i) for i, line in enumerate(options)]
 
     if any(len(str(option)) > EmbedLimits.FIELD_VALUE for option in options):
         raise CommandError(t.error.option_too_long(EmbedLimits.FIELD_VALUE))
 
+    if not max_choices or isinstance(max_choices, str):
+        place = t.poll.select.place
+        max_value = len(options)
+    else:
+        options_amount = len(options) if max_choices >= len(options) else max_choices
+        place: str = t.poll.select.placeholder(cnt=options_amount)
+        max_value = options_amount
+
     embed = Embed(title=title, description=question, color=Colors.Polls, timestamp=utcnow())
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.display_avatar.url)
+
+    embed.add_field(name=t.poll.choices.name, value=str(max_value))
+    if allowed_roles:
+        embed.add_field(name=t.poll.roles.name, value=" ".join([f"<@&{role}>" for role in allowed_roles]))
+    if weights:
+        embed.add_field(
+            name=t.poll.weights.name, value=" ".join([f"<@&{role}>: `{weight}`" for role, weight in weights])
+        )
 
     if deadline:
         embed.set_footer(text=t.poll.footer.default(calc_end_time(deadline).strftime("%Y-%m-%d %H:%M")))
@@ -151,8 +166,7 @@ async def send_poll(
     if len({option.emoji for option in options}) < len(options):
         raise CommandError(t.error.option_duplicated)
 
-    for i, option in enumerate(options):
-        embed.add_field(name=t.poll.option(i + 1), value=str(option), inline=False)
+    embed.add_field(name=t.poll.option, value="\n".join([str(opt) for opt in options]), inline=False)
 
     poll_type: PollType = PollType.STANDARD
     if team_poll:
@@ -164,14 +178,6 @@ async def send_poll(
 
         poll_type = poll_type.TEAM
         embed.add_field(name=field[0], value=field[1], inline=False)
-
-    if not max_choices or isinstance(max_choices, str):
-        place = t.poll.select.place
-        max_value = len(options)
-    else:
-        options_amount = len(options) if max_choices >= len(options) else max_choices
-        place: str = t.poll.select.placeholder(cnt=options_amount)
-        max_value = options_amount
 
     msg = await ctx.send(embed=embed)
     select_obj = MySelect(
@@ -848,7 +854,7 @@ class PollsCog(Cog, name="Polls"):
         parsed: Namespace = parser.parse_known_args(args.split())[0]
 
         max_deadline = await PdS.max_duration.get() * 60 * 60 * 24
-        deadline: Union[list[str, str], int] = parsed.deadline
+        deadline: list[str, str] | int = parsed.deadline
         if isinstance(deadline, int):
             deadline = deadline or max_deadline if deadline <= max_deadline else max_deadline
         else:
@@ -868,7 +874,7 @@ class PollsCog(Cog, name="Polls"):
     @commands.command(aliases=["yn"])
     @guild_only()
     @docs(t.commands.yes_no)
-    async def yesno(self, ctx: Context, message: Optional[Message] = None, text: Optional[str] = None):
+    async def yesno(self, ctx: Context, message: Message | None = None, text: str | None = None):
         if message is None or message.guild is None or text:
             message = ctx.message
 

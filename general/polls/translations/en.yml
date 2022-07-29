@@ -12,12 +12,8 @@ commands:
     list: show the active polls
     settings:
       settings: poll settings
-      roles_weights: manage weight for certain roles
       duration: set the default hours a poll should be open
       max_duration: set the maximum duration a poll can be opened
-      votes: set the default amount of votes a user can have on polls
-      anonymous: set if user can see who voted on a poll
-      fair: manage if role weights impact on default polls
     team:
       team: create and manage team-polls
       conclude: close a team-poll by accepting or rejecting
@@ -143,7 +139,13 @@ poll:
       one: "Select an option!"
       many: "Select up to {cnt} options!"
     label: "Option {}."
-  option: "Option {}:"
+  option: "Options:"
+  choices:
+    name: "Choices per user:"
+  roles:
+    name: "Allowed roles:"
+  weights:
+    name: "Weights for roles"
   results: "Poll results:"
   status_changed: Poll is now {}!
   all_voted: ":white_check_mark: All team-members have voted!"
