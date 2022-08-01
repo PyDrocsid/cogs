@@ -63,7 +63,7 @@ class Poll(Base):
     poll_type: Union[Column, PollType] = Column(Enum(PollType))
     end_time: Union[Column, int] = Column(BigInteger)
     anonymous: Union[Column, bool] = Column(Boolean)
-    can_delete: Union[Column, bool] = Column(Boolean)
+    can_delete: Union[Column, bool] = Column(Boolean)  # TODO: nicht nötig
     fair: Union[Column, bool] = Column(Boolean)
     status: Union[Column, PollStatus] = Column(Enum(PollStatus))
     last_time_state_change: Union[Column, datetime] = Column(UTCDateTime)

@@ -651,10 +651,8 @@ class PollsCog(Cog, name="Polls"):
         poll: Poll = await db.get(Poll, message_id=message.id)
         if not poll:
             raise CommandError(t.error.not_poll)
-        if poll.can_delete and not poll.owner_id == ctx.author.id:
+        if not poll.owner_id == ctx.author.id and not PollsPermission.manage.check(ctx):
             raise CommandError(tg.not_allowed)
-        elif not poll.can_delete and not poll.owner_id == ctx.author.id:
-            raise CommandError(tg.not_allowed)  # if delete is False, only the owner can delete it
 
         if not await Confirmation().run(ctx, t.texts.delete.confirm):
             return
