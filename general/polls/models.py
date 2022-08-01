@@ -63,7 +63,6 @@ class Poll(Base):
     poll_type: Union[Column, PollType] = Column(Enum(PollType))
     end_time: Union[Column, int] = Column(BigInteger)
     anonymous: Union[Column, bool] = Column(Boolean)
-    can_delete: Union[Column, bool] = Column(Boolean)  # TODO: nicht nötig
     fair: Union[Column, bool] = Column(Boolean)
     status: Union[Column, PollStatus] = Column(Enum(PollStatus))
     last_time_state_change: Union[Column, datetime] = Column(UTCDateTime)
@@ -81,7 +80,6 @@ class Poll(Base):
         options: list[tuple[str, str, str]],
         end: Optional[int],
         anonymous: bool,
-        can_delete: bool,
         poll_type: enum.Enum,
         interaction: int,
         thread: int,
@@ -100,7 +98,6 @@ class Poll(Base):
             poll_type=poll_type,
             end_time=end,
             anonymous=anonymous,
-            can_delete=can_delete,
             interaction_message_id=interaction,
             thread_id=thread,
             status=PollStatus.ACTIVE,

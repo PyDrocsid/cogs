@@ -168,7 +168,6 @@ async def send_poll(
     team_poll: bool = False,
     deadline: int | None = None,
     anonymous: bool = False,
-    can_delete: bool = False,
     allowed_roles: list[int] | None = None,
     weights: list[tuple[int, float]] | None = None,
 ):
@@ -263,7 +262,6 @@ async def send_poll(
         title=question,
         end=deadline,
         anonymous=anonymous,
-        can_delete=can_delete,
         options=parsed_options,
         poll_type=poll_type,
         interaction=view_msg.id,
@@ -877,7 +875,6 @@ class PollsCog(Cog, name="Polls"):
             poll_args=args,
             max_choices=MAX_OPTIONS,
             deadline=await PdS.duration.get() * 60 * 60 or await PdS.max_duration.get() * 60 * 60 * 24,
-            can_delete=True,
         )
 
         await ctx.message.delete()
@@ -915,7 +912,6 @@ class PollsCog(Cog, name="Polls"):
             max_choices=parsed.choices,
             deadline=deadline,
             anonymous=parsed.anonymous,
-            can_delete=True,
             allowed_roles=roles,
             weights=weights,
         )
@@ -955,5 +951,4 @@ class PollsCog(Cog, name="Polls"):
             poll_args=t.yes_no.option_string(text),
             team_poll=True,
             deadline=await PtS.duration.get() * 60 * 60 * 24,
-            can_delete=False,
         )
