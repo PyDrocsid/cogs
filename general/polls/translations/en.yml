@@ -73,9 +73,6 @@ poll_config:
     time:
       one: "{cnt} days"
       many: "{cnt} days"
-  roles:
-    name: "**Role Weights**"
-    ev_row: "{} -> `{}x`"
 
 polls:
   title: "List of {} {} polls"
@@ -156,9 +153,6 @@ texts:
   voted:
     title: Votes
     row: "\n <@{}> -> Options: {}"
-  role_weight:
-    set: "Set vote weight for <@&{}> to `{}`"
-    reset: "Vote weight has been reset for <@&{}>"
   duration:
     set:
       one: "Set default duration for poll to {cnt} hour"

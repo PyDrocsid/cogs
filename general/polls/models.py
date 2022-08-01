@@ -68,6 +68,7 @@ class Poll(Base):
     status: Union[Column, PollStatus] = Column(Enum(PollStatus))
     last_time_state_change: Union[Column, datetime] = Column(UTCDateTime)
     max_choices: Union[Column, int] = Column(BigInteger)
+    limited: Union[Column, bool] = Column(Boolean)
 
     @staticmethod
     async def create(
@@ -85,7 +86,8 @@ class Poll(Base):
         interaction: int,
         thread: int,
         max_choices: int,
-        roles: list[tuple[int, float]] | None = None,
+        allowed_roles: list[int] | None = None,
+        weights: list[tuple[int, float]] | None = None,
     ) -> Poll:
         row = Poll(
             message_id=message_id,
@@ -104,6 +106,8 @@ class Poll(Base):
             status=PollStatus.ACTIVE,
             last_time_state_change=utcnow(),
             max_choices=max_choices,
+            limited=bool(allowed_roles),
+            fair=bool(weights),
         )
         for position, poll_option in enumerate(options):
             row.options.append(
@@ -115,8 +119,15 @@ class Poll(Base):
                     field_position=position,
                 )
             )
-        for role_id, weight in roles or []:
-            row.roles.append(await RoleWeight.create(message_id, role_id, weight))
+
+        if not weights:
+            for role_id in allowed_roles or []:
+                row.roles.append(await RoleWeight.create(message_id, role_id, 1.0))
+        else:
+            for role_id, weight in weights:
+                if allowed_roles and role_id not in allowed_roles:
+                    continue
+                row.roles.append(await RoleWeight.create(message_id, role_id, weight))
 
         await db.add(row)
         return row

@@ -1,5 +1,6 @@
+import shlex
 import string
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from datetime import datetime
 from io import BytesIO
 
@@ -16,10 +17,21 @@ from discord import (
     Message,
     NotFound,
     RawMessageDeleteEvent,
+    Role,
     SelectOption,
 )
 from discord.ext import commands, tasks
-from discord.ext.commands import Bot, CommandError, Context, EmojiConverter, EmojiNotFound, UserInputError, guild_only
+from discord.ext.commands import (
+    BadArgument,
+    Bot,
+    CommandError,
+    Context,
+    EmojiConverter,
+    EmojiNotFound,
+    RoleConverter,
+    UserInputError,
+    guild_only,
+)
 from discord.ui import Select, View
 from discord.utils import format_dt, utcnow
 
@@ -74,6 +86,42 @@ class PollOption:
         return f"{self.emoji} {self.option}" if self.option else self.emoji
 
 
+class RoleParser:
+    def __init__(self, ctx: Context):
+        self.ctx = ctx
+
+    async def parse_roles(self, raw: str) -> list[int]:
+        out: list[int] = []
+        parsed = raw.replace(" ", "").split(",")
+        for role_str in parsed:
+            try:
+                role: Role = await RoleConverter().convert(self.ctx, role_str)
+                out.append(role.id)
+            except BadArgument:
+                continue
+
+        return out
+
+    async def parse_weights(self, raw: str) -> list[tuple[int, float]]:
+        out: list[tuple[int, float]] = []
+        parsed = raw.replace(" ", "").split(",")
+        for role_str in parsed:
+            spl = role_str.split(":")
+            if not len(spl) == 2:
+                continue
+            try:
+                weight = float(spl[1])
+            except ValueError:
+                continue
+            try:
+                role: Role = await RoleConverter().convert(self.ctx, spl[0])
+                out.append((role.id, weight))
+            except BadArgument:
+                continue
+
+        return out
+
+
 def create_select_view(select_obj: Select, timeout: float = None) -> View:
     """returns a view object"""
     view = View(timeout=timeout)
@@ -101,8 +149,8 @@ async def get_parser() -> ArgumentParser:
     parser.add_argument("--deadline", "-D", default=0, type=int)
     parser.add_argument("--anonymous", "-A", default=False, type=bool, choices=[True, False])
     parser.add_argument("--choices", "-C", default=MAX_OPTIONS, type=int)
-    parser.add_argument("--roles", "-R", default="0", type=str)
-    parser.add_argument("--weights", "-W", default="0", type=str)
+    parser.add_argument("--roles", "-R", default="none", type=str)
+    parser.add_argument("--weights", "-W", default="none", type=str)
 
     return parser
 
@@ -221,6 +269,7 @@ async def send_poll(
         interaction=view_msg.id,
         max_choices=max_choices,
         thread=thread.id,
+        weights=weights,
     )
 
 
@@ -448,7 +497,7 @@ class MySelect(Select):
     """adds a method for handling interactions with the select menu"""
 
     @db_wrapper
-    async def callback(self, interaction):
+    async def callback(self, interaction):  # TODO: needs to check for weights and allowed roles
         user = interaction.user
         selected_options: list = self.values
         message: Message = await interaction.channel.fetch_message(interaction.custom_id)
@@ -473,7 +522,7 @@ class MySelect(Select):
                     await vote.remove()
                     opt.votes.remove(vote)
 
-        ev_pover = await PdS.everyone_power.get()
+        ev_pover = 1
         if poll.fair:
             user_weight: float = ev_pover
         else:
@@ -650,7 +699,7 @@ class PollsCog(Cog, name="Polls"):
     @optional_permissions(PollsPermission.manage)
     @docs(t.commands.poll.result)
     async def result(self, ctx: Context, message: Message, show_all: bool = False):
-        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Poll.roles, Option.votes), message_id=message.id)
         if poll.status == PollStatus.ACTIVE and not poll.owner_id == ctx.author.id:
             raise CommandError(t.error.still_active)
         if not poll:
@@ -709,10 +758,8 @@ class PollsCog(Cog, name="Polls"):
             value=t.poll_config.duration.time(cnt=time) if not time <= 0 else t.poll_config.duration.time(cnt=max_time),
         )
         embed.add_field(name=t.poll_config.max_duration.name, value=t.poll_config.max_duration.time(cnt=max_time))
-        base: str = t.poll_config.roles.ev_row(ctx.guild.default_role, await PdS.everyone_power.get())
-        embed.add_field(name=t.poll_config.roles.name, value=base)
 
-        await send_long_embed(ctx, embed, paginate=False)
+        await send_long_embed(ctx, embed)
 
     @settings.command(name="duration", aliases=["d"])
     @PollsPermission.write.check
@@ -783,7 +830,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.manage.check
     @docs(t.commands.poll.team.conclude)
     async def conclude(self, ctx: Context, message: Message, accepted: bool):
-        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Poll.roles, Option.votes), message_id=message.id)
         if not poll or poll.poll_type != PollType.TEAM or poll.status == PollStatus.CLOSED or not message.embeds:
             raise CommandError(t.error.not_poll)
 
@@ -841,7 +888,7 @@ class PollsCog(Cog, name="Polls"):
     @docs(t.commands.poll.new)
     async def new(self, ctx: Context, *, options: str):
         wizard = await ctx.send(embed=build_wizard())
-        mess: Message = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author, timeout=60.0)
+        mess: Message = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author, timeout=120.0)
         args = mess.content
 
         if args.lower() == t.wizard.skip.message:
@@ -851,14 +898,17 @@ class PollsCog(Cog, name="Polls"):
         await mess.delete()
 
         parser = await get_parser()
-        parsed: Namespace = parser.parse_known_args(args.split())[0]
+        parsed, _ = parser.parse_known_args(shlex.split(args))
 
-        max_deadline = await PdS.max_duration.get() * 60 * 60 * 24
-        deadline: list[str, str] | int = parsed.deadline
-        if isinstance(deadline, int):
-            deadline = deadline or max_deadline if deadline <= max_deadline else max_deadline
-        else:
-            deadline = await PdS.duration.get() * 60 * 60 or max_deadline
+        max_deadline = await PdS.max_duration.get() * 24
+        deadline: int = parsed.deadline
+        if deadline == 0:
+            deadline = await PdS.duration.get()
+        deadline = max_deadline if not deadline or deadline > max_deadline else deadline
+        deadline *= 3600
+
+        roles = await RoleParser(ctx).parse_roles(parsed.roles)
+        weights = await RoleParser(ctx).parse_weights(parsed.weights)
 
         await send_poll(
             ctx=ctx,
@@ -868,6 +918,8 @@ class PollsCog(Cog, name="Polls"):
             deadline=deadline,
             anonymous=parsed.anonymous,
             can_delete=True,
+            allowed_roles=roles,
+            weights=weights,
         )
         await ctx.message.delete()
 
