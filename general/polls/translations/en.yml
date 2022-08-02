@@ -43,6 +43,7 @@ error:
   no_polls: No current {} {}-polls.
   no_votes: No votes on this poll
   poll_cant_be_used: Poll can't be used because it's {}
+  poll_is_limited: Poll is limited to specific roles
   still_active: "This poll is still open, please wait until it's closed!"
   poll_status_not_changed: Poll is already {}!
   teampoll_missing: "{} please vote on the poll!"
@@ -142,7 +143,7 @@ poll:
   roles:
     name: "Allowed roles:"
   weights:
-    name: "Weights for roles"
+    name: "Weights for roles:"
   results: "Poll results:"
   status_changed: Poll is now {}!
   all_voted: ":white_check_mark: All team-members have voted!"

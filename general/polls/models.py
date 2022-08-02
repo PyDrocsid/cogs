@@ -9,9 +9,7 @@ from discord.utils import utcnow
 from sqlalchemy import BigInteger, Boolean, Column, Enum, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
-from PyDrocsid.database import Base, UTCDateTime, db, filter_by, select
-from PyDrocsid.environment import CACHE_TTL
-from PyDrocsid.redis import redis
+from PyDrocsid.database import Base, UTCDateTime, db, filter_by
 
 
 class PollType(enum.Enum):
@@ -23,24 +21,6 @@ class PollStatus(enum.Enum):
     ACTIVE = "active"
     PAUSED = "paused"
     CLOSED = "closed"
-
-
-async def sync_redis(role_id: int = None) -> list[dict[str, int | float]]:
-    out = []
-
-    async with redis.pipeline() as pipe:
-        if role_id:
-            await pipe.delete(f"poll_role_weight={role_id}")
-        weights: RoleWeight
-        async for weights in await db.stream(select(RoleWeight)):
-            await pipe.delete(key := f"poll_role_weight={role_id or weights.role_id}")
-            save = {"role": int(weights.role_id), "weight": float(weights.weight)}
-            out.append(save)
-            await pipe.setex(key, CACHE_TTL, str(weights.weight))
-
-        await pipe.execute()
-
-    return out
 
 
 class Poll(Base):
@@ -104,7 +84,7 @@ class Poll(Base):
             last_time_state_change=utcnow(),
             max_choices=max_choices,
             limited=bool(allowed_roles),
-            fair=bool(weights),
+            fair=not bool(weights),
         )
         for position, poll_option in enumerate(options):
             row.options.append(
@@ -117,13 +97,18 @@ class Poll(Base):
                 )
             )
 
-        if not weights:
-            for role_id in allowed_roles or []:
-                row.roles.append(await RoleWeight.create(message_id, role_id, 1.0))
-        else:
-            for role_id, weight in weights:
-                if allowed_roles and role_id not in allowed_roles:
+        if allowed_roles:
+            _allowed_roles = allowed_roles
+            for role_id, weight in weights or []:
+                if role_id not in allowed_roles:
                     continue
+                row.roles.append(await RoleWeight.create(message_id, role_id, weight))
+                _allowed_roles.remove(role_id)
+
+            for role_id in _allowed_roles:
+                row.roles.append(await RoleWeight.create(message_id, role_id, 1))
+        else:
+            for role_id, weight in weights or []:
                 row.roles.append(await RoleWeight.create(message_id, role_id, weight))
 
         await db.add(row)
@@ -131,6 +116,20 @@ class Poll(Base):
 
     async def remove(self):
         await db.delete(self)
+
+    async def get_highest_weight(self, user_roles: list[Role]) -> float | None:
+        role_ids = [role.id for role in user_roles]
+        print(self.roles)
+        weight: float = 1
+        for role in self.roles or []:
+            if self.limited and role.role_id not in role_ids:
+                continue
+
+            _weight = role.weight
+            if _weight and weight < (_weight := float(_weight)):
+                weight = _weight
+
+        return weight if weight != 1 else None
 
 
 class Option(Base):
@@ -176,7 +175,7 @@ class RoleWeight(Base):
     __tablename__ = "role_weight"
 
     id: Union[Column, int] = Column(BigInteger, primary_key=True, autoincrement=True, unique=True)
-    role_id: Union[Column, int] = Column(BigInteger, unique=True)
+    role_id: Union[Column, int] = Column(BigInteger)
     weight: Union[Column, float] = Column(Float)
     poll: Poll = relationship("Poll", back_populates="roles")
     poll_id: Union[Column, int] = Column(BigInteger, ForeignKey("poll.message_id"))
@@ -185,27 +184,14 @@ class RoleWeight(Base):
     async def create(poll_id: int, role: int, weight: float) -> RoleWeight:
         role_weight = RoleWeight(poll_id=poll_id, role_id=role, weight=weight)
         await db.add(role_weight)
-        await sync_redis()
         return role_weight
 
     async def remove(self) -> None:
         await db.delete(self)
-        await sync_redis(self.role_id)
 
     @staticmethod
     async def get(guild: int, poll_type: PollType) -> list[RoleWeight]:
         return await db.all(filter_by(RoleWeight, guild_id=guild, poll_type=poll_type))
-
-    @staticmethod
-    async def get_highest(user_roles: list[Role]) -> float:
-        weight: float = 0.0
-        for role in user_roles:
-            _weight = await redis.get(f"poll_role_weight={role.id}")
-
-            if _weight and weight < (_weight := float(_weight)):
-                weight = _weight
-
-        return weight
 
 
 class IgnoredUser(Base):

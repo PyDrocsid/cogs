@@ -45,7 +45,7 @@ from PyDrocsid.translations import t
 from PyDrocsid.util import is_teamler
 
 from .colors import Colors
-from .models import IgnoredUser, Option, Poll, PollStatus, PollType, PollVote, RoleWeight, sync_redis
+from .models import IgnoredUser, Option, Poll, PollStatus, PollType, PollVote
 from .permissions import PollsPermission
 from .settings import PollsDefaultSettings as PdS
 from .settings import PollsTeamSettings as PtS
@@ -268,6 +268,7 @@ async def send_poll(
         max_choices=max_choices,
         thread=thread.id,
         weights=weights,
+        allowed_roles=allowed_roles,
     )
 
 
@@ -351,7 +352,10 @@ async def handle_deleted_messages(bot, message_id: int):
 
     if msg:
         await poll.remove()
-        await msg.delete()
+        try:
+            await msg.delete()
+        except NotFound:
+            pass
 
 
 async def check_poll_time(poll: Poll) -> bool:
@@ -495,20 +499,24 @@ class MySelect(Select):
     """adds a method for handling interactions with the select menu"""
 
     @db_wrapper
-    async def callback(self, interaction):  # TODO: needs to check for weights and allowed roles
+    async def callback(self, interaction):
         user = interaction.user
         selected_options: list = self.values
         message: Message = await interaction.channel.fetch_message(interaction.custom_id)
         embed: Embed = message.embeds[0] if message.embeds else None
-        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles), message_id=message.id)
 
         if not poll or not embed:
             return
 
         if not poll.status == PollStatus.ACTIVE:
             await interaction.response.send_message(
-                content=t.error.poll_cant_be_used(poll.status.value), ephemeral=True
+                content=t.error.poll_cant_be_used(poll.status.value), ephemeral=True, delete_after=5.0
             )
+            return
+
+        if poll.limited and not await poll.get_highest_weight(user.roles):
+            await interaction.response.send_message(content=t.error.poll_is_limited, ephemeral=True, delete_after=5.0)
             return
 
         new_options: list[Option] = [option for option in poll.options if option.option in selected_options]
@@ -520,11 +528,11 @@ class MySelect(Select):
                     await vote.remove()
                     opt.votes.remove(vote)
 
-        ev_pover = 1
+        ev_pover = 1.0
         if poll.fair:
             user_weight: float = ev_pover
         else:
-            highest_role = await RoleWeight.get_highest(user.roles) or 0
+            highest_role = await poll.get_highest_weight(user.roles)
             user_weight: float = ev_pover if highest_role < ev_pover else highest_role
 
         for option in new_options:
@@ -567,7 +575,6 @@ class PollsCog(Cog, name="Polls"):
         self.team_roles: list[str] = team_roles
 
     async def on_ready(self):
-        await sync_redis()
         polls: list[Poll] = await db.all(filter_by(Poll, (Poll.options, Option.votes), status=PollStatus.ACTIVE))
         for poll in polls:
             if not await check_poll_time(poll):
@@ -695,7 +702,7 @@ class PollsCog(Cog, name="Polls"):
     @optional_permissions(PollsPermission.manage)
     @docs(t.commands.poll.result)
     async def result(self, ctx: Context, message: Message, show_all: bool = False):
-        poll: Poll = await db.get(Poll, (Poll.options, Poll.roles, Option.votes), message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles), message_id=message.id)
         if poll.status == PollStatus.ACTIVE and not poll.owner_id == ctx.author.id:
             raise CommandError(t.error.still_active)
         if not poll:
@@ -826,7 +833,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.manage.check
     @docs(t.commands.poll.team.conclude)
     async def conclude(self, ctx: Context, message: Message, accepted: bool):
-        poll: Poll = await db.get(Poll, (Poll.options, Poll.roles, Option.votes), message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles), message_id=message.id)
         if not poll or poll.poll_type != PollType.TEAM or poll.status == PollStatus.CLOSED or not message.embeds:
             raise CommandError(t.error.not_poll)
 
