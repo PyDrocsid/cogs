@@ -155,9 +155,12 @@ async def get_parser() -> ArgumentParser:
     return parser
 
 
-def calc_end_time(duration: float | None) -> datetime | None:
+def calc_end_time(poll_end: Poll | None | float) -> datetime | None:
     """returns the time when a poll should be closed"""
-    return utcnow() + relativedelta(seconds=int(duration)) if duration else None
+    if isinstance(poll_end, float) or not poll_end:
+        return utcnow() + relativedelta(seconds=int(poll_end)) if poll_end else None
+    duration: float | None = poll_end.end_time
+    return poll_end.last_time_state_change + relativedelta(seconds=int(duration)) if duration else None
 
 
 async def send_poll(
@@ -413,11 +416,7 @@ async def get_poll_list_embed(ctx: Context, poll_type: PollType, state: PollStat
     polls: list[Poll] = await db.all(filter_by(Poll, status=state, guild_id=ctx.guild.id, poll_type=poll_type))
 
     for poll in polls:
-        time = (
-            f'until {format_dt(calc_end_time(poll.end_time), style="R")}'
-            if poll.status == PollStatus.ACTIVE
-            else poll.status
-        )
+        time = f'until {format_dt(calc_end_time(poll), style="R")}' if poll.status == PollStatus.ACTIVE else poll.status
         description += t.polls.row(poll.title, poll.message_url, poll.owner_id, time)
 
     if polls and description:
@@ -504,7 +503,7 @@ class MySelect(Select):
         selected_options: list = self.values
         message: Message = await interaction.channel.fetch_message(interaction.custom_id)
         embed: Embed = message.embeds[0] if message.embeds else None
-        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles), message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles,), message_id=message.id)
 
         if not poll or not embed:
             return
@@ -702,7 +701,7 @@ class PollsCog(Cog, name="Polls"):
     @optional_permissions(PollsPermission.manage)
     @docs(t.commands.poll.result)
     async def result(self, ctx: Context, message: Message, show_all: bool = False):
-        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles), message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles,), message_id=message.id)
         if poll.status == PollStatus.ACTIVE and not poll.owner_id == ctx.author.id:
             raise CommandError(t.error.still_active)
         if not poll:
@@ -833,7 +832,7 @@ class PollsCog(Cog, name="Polls"):
     @PollsPermission.manage.check
     @docs(t.commands.poll.team.conclude)
     async def conclude(self, ctx: Context, message: Message, accepted: bool):
-        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles), message_id=message.id)
+        poll: Poll = await db.get(Poll, (Poll.options, Option.votes), (Poll.roles,), message_id=message.id)
         if not poll or poll.poll_type != PollType.TEAM or poll.status == PollStatus.CLOSED or not message.embeds:
             raise CommandError(t.error.not_poll)
 
