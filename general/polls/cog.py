@@ -155,12 +155,13 @@ async def get_parser() -> ArgumentParser:
     return parser
 
 
-def calc_end_time(poll_end: Poll | None | float) -> datetime | None:
+def calc_end_time(poll_end: Poll | None | int) -> datetime | None:
     """returns the time when a poll should be closed"""
-    if isinstance(poll_end, float) or not poll_end:
+    if isinstance(poll_end, int) or not poll_end:
         return utcnow() + relativedelta(seconds=int(poll_end)) if poll_end else None
-    duration: float | None = poll_end.end_time
-    return poll_end.last_time_state_change + relativedelta(seconds=int(duration)) if duration else None
+    if isinstance(poll_end, Poll):
+        duration: float | None = poll_end.end_time
+        return poll_end.last_time_state_change + relativedelta(seconds=int(duration)) if duration else None
 
 
 async def send_poll(
