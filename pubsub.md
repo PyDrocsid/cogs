@@ -106,12 +106,13 @@ Subscriptions:
 Use this PubSub channel to get/provide log entries about a user for the user log command.
 
 ```python
-async def get_userlog_entries(user_id: int) -> list[list[tuple[datetime, str]]]
+async def get_userlog_entries(user_id: int, author: Member) -> list[list[tuple[datetime, str]]]
 ```
 
 Arguments:
 
 - `user_id`: The user id
+- `author`: The member who asked fot the userlogs
 
 Returns: A list of `(datetime, log_entry)` tuples
 
@@ -121,6 +122,7 @@ Subscriptions:
 - [MediaOnly](/cogs/moderation/mediaonly)
 - [Mod Tools](/cogs/moderation/mod)
 - [User Notes](/cogs/moderation/user_notes)
+- [Content Filter](/cogs/moderation/content_filter)
 
 
 ## `revoke_verification`
