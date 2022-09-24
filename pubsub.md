@@ -123,6 +123,7 @@ Subscriptions:
 - [MediaOnly](/cogs/moderation/mediaonly)
 - [Mod Tools](/cogs/moderation/mod)
 - [User Notes](/cogs/moderation/user_notes)
+- [Content Filter](/cogs/moderation/content_filter)
 
 
 ## `revoke_verification`
