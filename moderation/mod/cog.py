@@ -1112,7 +1112,6 @@ class ModCog(Cog, name="Mod Tools"):
             member=user,
             reason=reason,
             duration=_time_to_units(minutes) if minutes is not None else t.log_field.infinity,
-            mod=ctx.author,
             original_reason=entry.reason,
         )
 
