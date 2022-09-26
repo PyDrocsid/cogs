@@ -606,7 +606,7 @@ class ModCog(Cog, name="Mod Tools"):
                         (
                             mute.deactivation_timestamp,
                             wrap_entry(
-                                translation=t.unmuted,
+                                translation=t.ulog.unmuted,
                                 user=mute.deactivate_mod,
                                 reason=mute.deactivate_reason,
                                 evidence=None,
