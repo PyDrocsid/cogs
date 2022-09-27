@@ -1194,6 +1194,9 @@ class ModCog(Cog, name="Mod Tools"):
         if user == self.bot.user or await is_teamler(user):
             raise UserCommandError(user, t.mute.cannot)
 
+        if not ctx.guild.me.guild_permissions.moderate_members:
+            raise CommandError(t.mute.cannot_permissions)
+
         mute_role: Role | None = await _get_mute_role(ctx.guild)
 
         if not await self._handle_timed(ctx, user, time, reason, t.mute, Mute, Colors.mute, ""):
@@ -1315,7 +1318,7 @@ class ModCog(Cog, name="Mod Tools"):
         time: int | None
 
         if not ctx.guild.me.guild_permissions.ban_members:
-            raise CommandError(t.cannot_ban_permissions)
+            raise CommandError(t.ban.cannot_permissions)
 
         if not 0 <= delete_days <= 7:
             raise CommandError(tg.invalid_duration)
