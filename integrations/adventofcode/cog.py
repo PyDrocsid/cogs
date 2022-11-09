@@ -158,7 +158,7 @@ def get_git_repo(url: str) -> Optional[str]:
     servers = [
         (
             r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
-            "https://gitlab.com/api/v4/projects/{}%2F{}",
+            "https://gitlab.com/api/v4/projects/{user}%2F{repo}",
         ),
         (
             r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
