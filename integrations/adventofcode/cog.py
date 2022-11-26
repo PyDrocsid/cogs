@@ -203,6 +203,8 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
 
         new_members: set[Member] = set()
         for member in list(leaderboard["members"].values())[:rank]:
+            if member["local_score"] <= 0:
+                continue
             if link := await db.get(AOCLink, aoc_id=member["id"]):
                 if member := guild.get_member(link.discord_id):
                     new_members.add(member)
