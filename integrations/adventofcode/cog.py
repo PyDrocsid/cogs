@@ -174,7 +174,7 @@ def get_git_repo(url: str) -> Optional[str]:
         if not (match := re.match(pattern, url)):
             continue
         _, user, repo, path = match.groups()
-        if not (response := requests.get(api.format(user, repo))).ok:
+        if not (response := requests.get(api.format(user=user, repo=repo))).ok:
             continue  # TODO or exit here
         url = response.json()["html_url"] + (path or "")
         if not requests.head(url).ok:
