@@ -153,21 +153,52 @@ def escape_aoc_name(name: Optional[str]) -> str:
     return "".join(c for c in name if c.isalnum() or c in " _-") if name else ""
 
 
-def get_github_repo(url: str) -> Optional[str]:
-    if not (match := re.match(r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$", url)):
-        return None
-    _, user, repo, path = match.groups()
-    if not (response := requests.get(f"https://api.github.com/repos/{user}/{repo}")).ok:
-        return None
-    url = response.json()["html_url"] + (path or "")
-    if not requests.head(url).ok:
-        return None
-    return url
+# Alternative get facility
+def get_git_repo(url: str) -> Optional[str]:
+    servers = [
+        (
+            r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+            "https://gitlab.com/api/v4/projects/{user}%2F{repo}",
+            "web_url",
+        ),
+        (
+            r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+            "https://gitea.com/api/v1/repos/{user}/{repo}",
+            "html_url",
+        ),
+        (
+            r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
+            "https://api.github.com/repos/{user}/{repo}",
+            "html_url",
+        ),
+    ]
+
+    for pattern, api, web_url_key in servers:
+        if not (match := re.match(pattern, url)):
+            continue
+        _, user, repo, path = match.groups()
+        if not (response := requests.get(api.format(user=user, repo=repo))).ok:
+            break
+        url = response.json()[web_url_key] + (path or "")
+        if not requests.head(url).ok:
+            break
+        return url
+    return None
 
 
-def parse_github_url(url: str) -> tuple[str, str]:
-    user, repo = re.match(r"^https://github.com/([^/]+)/([^/]+).*", url).groups()
-    return user, repo
+# Alternative parsing facility
+def parse_git_url(url: str) -> tuple[str, str]:
+    patterns = [
+        r"^https://gitlab.com/([^/]+)/([^/]+).*",
+        r"^https://gitea.com/([^/]+)/([^/]+).*",
+        r"^https://github.com/([^/]+)/([^/]+).*",
+    ]
+    for pattern in patterns:
+        match = re.match(pattern, url)
+        if match is not None:
+            user, repo = match.groups()
+            return user, repo
+    return "", ""  # TODO how handle error
 
 
 class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
@@ -336,7 +367,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         embed.add_field(name=":chart_with_upwards_trend: Progress", value=progress, inline=True)
 
         if link and link.solutions:
-            user, repo = parse_github_url(link.solutions)
+            user, repo = parse_git_url(link.solutions)
             embed.add_field(name=":package: Solutions", value=f"[[{user}/{repo}]]({link.solutions})", inline=True)
 
         embed.add_field(name=":star: Stars", value=aoc_member["stars"], inline=True)
@@ -526,7 +557,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
         if not await db.get(AOCLink, discord_id=ctx.author.id):
             raise CommandError(t.not_verified)
 
-        url: Optional[str] = get_github_repo(url)
+        url: Optional[str] = get_git_repo(url)
         if not url or len(url) > 128:
             raise CommandError(t.invalid_url)
 
@@ -561,7 +592,7 @@ class AdventOfCodeCog(Cog, name="Advent of Code Integration"):
             if not link.solutions or link.aoc_id not in members:
                 continue
 
-            user, repo = parse_github_url(link.solutions)
+            user, repo = parse_git_url(link.solutions)
             out.append(f"<@{link.discord_id}> ({members[link.aoc_id]['name']}): [[{user}/{repo}]]({link.solutions})")
 
         if not out:
