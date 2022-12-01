@@ -178,10 +178,10 @@ def get_git_repo(url: str) -> Optional[str]:
             continue
         _, user, repo, path = match.groups()
         if not (response := requests.get(api.format(user=user, repo=repo))).ok:
-            continue  # TODO or exit here
+            break
         url = response.json()[web_url_key] + (path or "")
         if not requests.head(url).ok:
-            continue  # TODO or exit here
+            break
         return url
     return None
 
