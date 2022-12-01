@@ -159,24 +159,27 @@ def get_git_repo(url: str) -> Optional[str]:
         (
             r"^(https?://)?gitlab.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
             "https://gitlab.com/api/v4/projects/{user}%2F{repo}",
+            "web_url",
         ),
         (
             r"^(https?://)?gitea.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
             "https://gitea.com/api/v1/repos/{user}/{repo}",
+            "html_url",
         ),
         (
             r"^(https?://)?github.com/([a-zA-Z0-9.\-_]+)/([a-zA-Z0-9.\-_]+)(/.*)?$",
             "https://api.github.com/repos/{user}/{repo}",
+            "html_url",
         ),
     ]
 
-    for pattern, api in servers:
+    for pattern, api, web_url_key in servers:
         if not (match := re.match(pattern, url)):
             continue
         _, user, repo, path = match.groups()
         if not (response := requests.get(api.format(user=user, repo=repo))).ok:
             continue  # TODO or exit here
-        url = response.json()["html_url"] + (path or "")
+        url = response.json()[web_url_key] + (path or "")
         if not requests.head(url).ok:
             continue  # TODO or exit here
         return url
