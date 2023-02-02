@@ -311,7 +311,9 @@ class LoggingCog(Cog, name="Logging"):
             return
 
         if join := member.joined_at:
-            await log_channel.send(t.member_left_server_with_joined(member, member.id, join.strftime("%m/%d/%Y, %H:%M:%S")))
+            await log_channel.send(
+                t.member_left_server_with_joined(member, member.id, join.strftime("%m/%d/%Y, %H:%M:%S"))
+            )
         else:
             await log_channel.send(t.member_left_server(member, member.id))
 
