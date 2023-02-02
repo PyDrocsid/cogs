@@ -24,6 +24,7 @@ message_id: Message ID
 created_at: Created At
 
 member_joined_server: "{} ({}) just joined the server!"
+member_left_server_with_joined: "**{}** just left the server! Latest join was at {}"
 member_left_server: "**{}** just left the server!"
 
 log_not_changed_no_permissions: >

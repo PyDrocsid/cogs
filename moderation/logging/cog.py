@@ -310,7 +310,10 @@ class LoggingCog(Cog, name="Logging"):
         if (log_channel := await self.get_logging_channel(LoggingSettings.member_leave_channel)) is None:
             return
 
-        await log_channel.send(t.member_left_server(member))
+        if (join := member.joined_at):
+            await log_channel.send(t.member_left_server_with_joined(member, join.strftime("%m/%d/%Y, %H:%M:%S")))
+        else:
+            await log_channel.send(t.member_left_server(member))
 
     @commands.group(aliases=["log"])
     @LoggingPermission.read.check
