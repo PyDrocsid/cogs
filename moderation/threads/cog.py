@@ -40,6 +40,7 @@ class ThreadsCog(Cog, name="Thread Utils"):
             return
 
         try:
+            await asyncio.sleep(1)
             msg = await thread.send(role.mention)
             await msg.delete()
         except Forbidden:
