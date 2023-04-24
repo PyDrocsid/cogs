@@ -1,6 +1,9 @@
 permissions:
-  manage: manage betheprofessional roles
-
+  manage: manage betheprofessional
+  read: read betheprofessional settings
+  bypass_leaderboard_cache: bypass leadboard cache
+  bypass_leaderboard_n_limit: bypass leaderboard n limit
+missing_cache_bypass_permission: "Missing Cache bypass Permission"
 # betheprofessional
 betheprofessional: BeTheProfessional
 youre_not_the_first_one: "Topic `{}` not found.\nYou're not the first one to try this, {}"
@@ -23,8 +26,6 @@ topic_invalid_chars: Topic name `{}` contains invalid characters.
 topic_too_long: Topic name `{}` is too long.
 topic_already_registered: Topic `{}` has already been registered.
 topic_not_registered: Topic `{}` has not been registered.
-topic_not_registered_too_high: Topic could not be registered because `@{}` is higher than `@{}`.
-topic_not_registered_managed_role: Topic could not be registered because `@{}` cannot be assigned manually.
 
 topics_registered:
   one: "Topic has been registered successfully. :white_check_mark:"
@@ -34,8 +35,49 @@ log_topics_registered:
   many: "{cnt} **topics** have been **registered**: {topics}"
 
 topics_unregistered:
-  one: "Topic has been deleted successfully. :white_check_mark:"
-  many: "{cnt} topics have been deleted successfully. :white_check_mark:"
+  one: "Topic has been deleted successfully. :white_check_mark:\nAll child Topics have been removed as well."
+  many: "{cnt} topics have been deleted successfully. :white_check_mark:\nAll child Topics have been removed as well."
+confirm_delete_topics: "Are you sure you want to delete the following topics?\n{topics}\n:warning: This will delete all child Topics as well. :warning:"
 log_topics_unregistered:
-  one: "The **topic** {topics} has been **removed**."
-  many: "{cnt} **topics** have been **removed**: {topics}"
+  one: "The **topic** {topics} has been **removed**.\nAll child Topics have been removed as well."
+  many: "{cnt} **topics** have been **removed**: {topics}\nAll child Topics have been removed as well."
+
+single_un_assign_help: "Hey, did you know, that you can assign multiple topics by using `.+ TOPIC1,TOPIC2,TOPIC3` and remove multiple topics the same way using `.-`?\nTo remove all your Topics you can use `.- *`"
+
+user_topics:
+  zero: "{} has no topics assigned"
+  one: "{} has assigned the following topic: {}"
+  many: "{} has assigned the following topics: {}"
+
+parent_not_exists: "Parent `{}` doesn't exists"
+parent_format_help: "Please write `[Parents/]Topic-Name`"
+group_not_parent_group: "The group `{}` is not the same as the group of the Parent `{}`"
+nobody_has_topic: "Nobody has the Topic `{}`"
+
+leaderboard_n_too_big: "The given `N={}` is bigger than the maximum `N={}`"
+leaderboard_default_n_bigger_than_max_n: "The default N is bigger than the maximum N"
+leaderboard_configuration_error: "Internal Configuration Error"
+leaderboard_n_zero_error: "N cant be zero or less!"
+
+fetching_topic_role_failed: "Failed to fetch Role of the Topic `{}` with the Role ID `{}`"
+
+leaderboard_colmn_name: "[NAME]"
+leaderboard_colmn_users: "[USERS]"
+leaderboard_title: "Top `{}` - Most assigned Topics"
+
+must_be_above_zero: "`{}` must be above zero!"
+must_be_zero_or_above: "`{}` must be zero or above!"
+
+settings:
+  RoleLimit:
+    name: "Role Limit"
+    updated: "The BTP Role Limit is now `{}`"
+  RoleCreateMinUsers:
+    name: "Role Create Min Users"
+    updated: "Role Create Min Users Limit is now `{}`"
+  LeaderboardDefaultN:
+    name: "Leaderboard Default N"
+    updated: "Leaderboard Default N is now `{}`"
+  LeaderboardMaxN:
+    name: "Leaderboard Max N"
+    updated: "Leaderboard Max N is now `{}`"
