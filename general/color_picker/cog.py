@@ -1,0 +1,92 @@
+import colorsys
+import re
+from collections import namedtuple
+
+from discord import Colour, Embed
+from discord.ext import commands
+from discord.ext.commands import CommandError, Context
+
+from PyDrocsid.cog import Cog
+from PyDrocsid.command import docs, reply
+from PyDrocsid.translations import t
+
+from ...contributor import Contributor
+
+
+t = t.color_picker
+
+
+COLOR_ARGS = namedtuple("ColorParameter", ["value", "max_value"])
+COLOR = namedtuple("RGB_Tuple", ["R", "G", "B"])
+
+
+def _to_floats(given: list[COLOR_ARGS]) -> tuple[float, float, float]:
+    """
+    takes a list with tuples containing a value and a max_values
+    at the end it should return a number between 0 and 1 for each tuple
+    """
+    out: list[float] = []
+
+    for arg in given:
+        if 0 < int(arg.value) > arg.max_value:
+            raise CommandError(t.error.invalid_input(arg.value, arg.max_value))
+
+        out.append(float(int(arg.value) / arg.max_value))
+
+    return out[0], out[1], out[2]
+
+
+def _hex_to_color(hex_color: str) -> COLOR:
+    return COLOR(*tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4)))  # noqa: E203
+
+
+class ColorPickerCog(Cog, name="Color Picker"):
+    CONTRIBUTORS = [Contributor.Tert0, Contributor.Infinity]
+
+    RE_HEX = re.compile(r"^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
+    REG = r" *(\()?([0-9]{1,3}),? *([0-9]{1,3}),? *([0-9]{1,3})(?(1)\)|)$"
+    RE_RGB = re.compile(r"^rgb" + REG)
+    RE_HSV = re.compile(r"^hsv" + REG)
+    RE_HSL = re.compile(r"^hsl" + REG)
+
+    @commands.command(name="color_picker", aliases=["cp", "color"])
+    @docs(t.commands.color_picker)
+    async def color_picker(self, ctx: Context, *, color: str):
+
+        if color_re := self.RE_HEX.match(color):
+            rgb = _hex_to_color(color_re.group(1))
+            rgb = _to_floats([COLOR_ARGS(rgb[i], 255) for i in range(3)])
+
+        elif color_re := self.RE_RGB.match(color):
+            rgb = _to_floats([COLOR_ARGS(color_re.group(i), 255) for i in range(2, 5)])
+
+        elif color_re := self.RE_HSV.match(color):
+            rgb = colorsys.hsv_to_rgb(
+                *_to_floats([COLOR_ARGS(color_re.group(i), value) for i, value in ((2, 360), (3, 100), (4, 100))])
+            )
+
+        elif color_re := self.RE_HSL.match(color):
+            rgb = colorsys.hls_to_rgb(
+                *_to_floats([COLOR_ARGS(color_re.group(i), value) for i, value in ((2, 360), (3, 100), (4, 100))])
+            )
+
+        else:
+            raise CommandError(t.error.parse_color_example(color))
+
+        h, s, v = colorsys.rgb_to_hsv(*rgb)
+        hsv = (int(round(h * 360, 0)), int(round(s * 100, 0)), int(round(v * 100, 0)))
+
+        h, l, s = colorsys.rgb_to_hls(*rgb)
+        hsl = (int(round(h * 360)), int(round(s * 100)), int(round(l * 100)))
+
+        rgb = tuple(int(color * 255) for color in rgb)
+        color_hex = f"{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+
+        embed: Embed = Embed(title=t.embed.title, color=Colour(int(color_hex, 16)))
+        embed.set_image(url=f"https://singlecolorimage.com/get/{color_hex}/300x50")
+        embed.add_field(name="HEX", value=f"`#{color_hex}`")
+        embed.add_field(name="RGB", value=f"`rgb{rgb}`")
+        embed.add_field(name="HSV", value=f"`hsv{hsv}`")
+        embed.add_field(name="HSL", value=f"`hsl{hsl}`")
+
+        await reply(ctx, embed=embed)
