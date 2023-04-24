@@ -30,7 +30,7 @@ class UserNoteCog(Cog, name="User Notes"):
     CONTRIBUTORS = [Contributor.Florian, Contributor.Defelo]
 
     @get_userlog_entries.subscribe
-    async def handle_get_userlog_entries(self, user_id: int, author: Member) -> list[tuple[datetime, str]]:
+    async def handle_get_userlog_entries(self, user_id: int, _, author: Member) -> list[tuple[datetime, str]]:
         if not await is_teamler(author):
             return []
 

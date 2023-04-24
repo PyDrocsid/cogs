@@ -106,13 +106,14 @@ Subscriptions:
 Use this PubSub channel to get/provide log entries about a user for the user log command.
 
 ```python
-async def get_userlog_entries(user_id: int, author: Member) -> list[list[tuple[datetime, str]]]
+async def get_userlog_entries(user_id: int, show_ids: bool, author: Member) -> list[list[tuple[datetime, str]]]
 ```
 
 Arguments:
 
 - `user_id`: The user id
-- `author`: The member who asked fot the userlogs
+- `show_ids`: Whether to put ids from moderation events into the log entry (only relevant for the mod cog)
+- `author`: The member who requested the user logs (only relevant for the mod and user notes cog)
 
 Returns: A list of `(datetime, log_entry)` tuples
 
@@ -181,3 +182,23 @@ Returns: `None`
 Subscriptions:
 
 - [Logging](/cogs/moderation/logging)
+
+
+## `role_updated`
+
+Use this PubSub to inform about role changes
+
+```python
+async def role_updated(role: Role, role_name: str) -> []
+```
+
+Arguments:
+
+- `role`: The new role
+- `role_name`: The internal role name
+
+Returns: `None`
+
+Subscriptions:
+
+- [Mod Tools](/cogs/moderation/mod)

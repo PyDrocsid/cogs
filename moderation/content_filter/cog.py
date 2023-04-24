@@ -126,7 +126,7 @@ class ContentFilterCog(Cog, name="Content Filter"):
     CONTRIBUTORS = [Contributor.Infinity, Contributor.Defelo]
 
     @get_userlog_entries.subscribe
-    async def handle_get_ulog_entries(self, user_id: int, _):
+    async def handle_get_ulog_entries(self, user_id: int, *_):
         out = []
 
         log: BadWordPost

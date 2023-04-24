@@ -13,3 +13,4 @@ class ModPermission(BasePermission):
     mute = auto()
     kick = auto()
     ban = auto()
+    modtools_write = auto()

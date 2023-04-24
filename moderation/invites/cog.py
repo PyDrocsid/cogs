@@ -95,7 +95,7 @@ class InvitesCog(Cog, name="Allowed Discord Invites"):
     ]
 
     @get_userlog_entries.subscribe
-    async def handle_get_ulog_entries(self, user_id: int, _):
+    async def handle_get_ulog_entries(self, user_id: int, *_):
         out = []
 
         async for log in await db.stream(filter_by(InviteLog, applicant=user_id)):  # type: InviteLog
